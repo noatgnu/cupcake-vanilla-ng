@@ -1,0 +1,125 @@
+<div class="modal-header">
+  <h5 class="modal-title">
+    <i class="bi bi-table me-2"></i>Create Table from Template
+  </h5>
+  <button type="button" class="btn-close" (click)="onClose()" aria-label="Close"></button>
+</div>
+
+<div class="modal-body">
+  @if (template) {
+    <div class="alert alert-info d-flex align-items-center mb-4">
+      <i class="bi bi-info-circle me-2"></i>
+      <div>
+        <strong>Template:</strong> {{ template.name }}
+        @if (template.description) {
+          <br><small>{{ template.description }}</small>
+        }
+      </div>
+    </div>
+
+    @if (errorMessage) {
+      <div class="alert alert-danger d-flex align-items-center">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        {{ errorMessage }}
+      </div>
+    }
+
+    <form [formGroup]="tableForm" (ngSubmit)="onSubmit()">
+      <div class="row g-3">
+        <!-- Table Name -->
+        <div class="col-12">
+          <div class="form-floating">
+            <input 
+              type="text" 
+              class="form-control" 
+              id="tableName" 
+              formControlName="name"
+              placeholder="Table name"
+              [class.is-invalid]="getFieldError('name')">
+            <label for="tableName">Table Name *</label>
+          </div>
+          @if (getFieldError('name')) {
+            <div class="invalid-feedback d-block">
+              {{ getFieldError('name') }}
+            </div>
+          }
+        </div>
+
+        <!-- Sample Count -->
+        <div class="col-md-6">
+          <div class="form-floating">
+            <input 
+              type="number" 
+              class="form-control" 
+              id="sampleCount" 
+              formControlName="sample_count"
+              placeholder="Sample count"
+              min="1"
+              max="10000"
+              [class.is-invalid]="getFieldError('sample_count')">
+            <label for="sampleCount">Number of Samples *</label>
+          </div>
+          @if (getFieldError('sample_count')) {
+            <div class="invalid-feedback d-block">
+              {{ getFieldError('sample_count') }}
+            </div>
+          }
+          <div class="form-text">
+            Number of sample rows to create in the table (1-10,000)
+          </div>
+        </div>
+
+        <!-- Lab Group -->
+        <div class="col-md-6">
+          <div class="form-floating">
+            <select 
+              class="form-select" 
+              id="labGroupSelect" 
+              formControlName="lab_group_id">
+              <option [ngValue]="null">No Lab Group</option>
+              @for (group of labGroups; track group.id) {
+                <option [ngValue]="group.id">{{ group.name }}</option>
+              }
+            </select>
+            <label for="labGroupSelect">Lab Group</label>
+          </div>
+          <div class="form-text">
+            Optional: Assign table to a specific lab group
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div class="col-12">
+          <div class="form-floating">
+            <textarea 
+              class="form-control" 
+              id="tableDescription" 
+              formControlName="description"
+              placeholder="Description"
+              style="height: 100px"></textarea>
+            <label for="tableDescription">Description (optional)</label>
+          </div>
+          <div class="form-text">
+            Optional description for the metadata table
+          </div>
+        </div>
+      </div>
+    </form>
+  }
+</div>
+
+<div class="modal-footer">
+  <button type="button" class="btn btn-secondary" (click)="onClose()" [disabled]="isCreating">
+    Cancel
+  </button>
+  <button 
+    type="submit" 
+    class="btn btn-success"
+    (click)="onSubmit()"
+    [disabled]="tableForm.invalid || isCreating">
+    @if (isCreating) {
+      <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+    }
+    <i class="bi bi-table me-1"></i>Create Table
+  </button>
+</div>

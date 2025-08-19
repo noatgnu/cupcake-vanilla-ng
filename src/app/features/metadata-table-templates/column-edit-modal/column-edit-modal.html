@@ -1,0 +1,148 @@
+<div class="modal-header">
+  <h4 class="modal-title">
+    <i class="bi bi-columns-gap me-2"></i>{{ title }}
+  </h4>
+  <button type="button" class="btn-close" (click)="onCancel()"></button>
+</div>
+
+<div class="modal-body">
+  <form [formGroup]="editForm" (ngSubmit)="onSubmit()">
+    <div class="row">
+      <!-- Basic Information -->
+      <div class="col-12 mb-3">
+        <h6 class="text-muted border-bottom pb-2">
+          <i class="bi bi-info-circle me-2"></i>Column Details
+        </h6>
+      </div>
+      
+      <div class="col-12 mb-3">
+        <label for="columnName" class="form-label">Column Name *</label>
+        <input 
+          type="text" 
+          class="form-control"
+          id="columnName"
+          formControlName="name"
+          [class.is-invalid]="editForm.get('name')?.invalid && editForm.get('name')?.touched"
+          placeholder="Enter column name">
+        <div class="invalid-feedback">
+          {{ getFieldError('name') }}
+        </div>
+      </div>
+
+      <div class="col-md-6 mb-3">
+        <label for="columnType" class="form-label">Column Type *</label>
+        <select 
+          class="form-select"
+          id="columnType"
+          formControlName="type"
+          [class.is-invalid]="editForm.get('type')?.invalid && editForm.get('type')?.touched">
+          @for (type of columnTypes; track type.value) {
+            <option [value]="type.value">{{ type.label }}</option>
+          }
+        </select>
+        <div class="invalid-feedback">
+          {{ getFieldError('type') }}
+        </div>
+      </div>
+
+      <div class="col-md-6 mb-3">
+        <label for="ontologyType" class="form-label">Ontology Type</label>
+        <select 
+          class="form-select"
+          id="ontologyType"
+          formControlName="ontology_type">
+          @for (ontology of ontologyTypes; track ontology.value) {
+            <option [value]="ontology.value">{{ ontology.label }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="col-12 mb-3">
+        <label for="defaultValue" class="form-label">Default Value</label>
+        <input 
+          type="text" 
+          class="form-control"
+          id="defaultValue"
+          formControlName="value"
+          placeholder="Optional default value">
+      </div>
+
+      <!-- Column Options -->
+      <div class="col-12 mb-3">
+        <h6 class="text-muted border-bottom pb-2">
+          <i class="bi bi-sliders me-2"></i>Column Options
+        </h6>
+      </div>
+
+      <div class="col-12 mb-3">
+        <div class="row">
+          <div class="col-md-3">
+            <div class="form-check form-switch">
+              <input 
+                class="form-check-input" 
+                type="checkbox" 
+                id="mandatory"
+                formControlName="mandatory">
+              <label class="form-check-label" for="mandatory">
+                <i class="bi bi-exclamation-circle me-1"></i>Mandatory
+              </label>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="form-check form-switch">
+              <input 
+                class="form-check-input" 
+                type="checkbox" 
+                id="hidden"
+                formControlName="hidden">
+              <label class="form-check-label" for="hidden">
+                <i class="bi bi-eye-slash me-1"></i>Hidden
+              </label>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="form-check form-switch">
+              <input 
+                class="form-check-input" 
+                type="checkbox" 
+                id="readonly"
+                formControlName="readonly">
+              <label class="form-check-label" for="readonly">
+                <i class="bi bi-lock me-1"></i>Read Only
+              </label>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="form-check form-switch">
+              <input 
+                class="form-check-input" 
+                type="checkbox" 
+                id="notApplicable"
+                formControlName="not_applicable">
+              <label class="form-check-label" for="notApplicable">
+                <i class="bi bi-dash-circle me-1"></i>N/A
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </form>
+</div>
+
+<div class="modal-footer">
+  <button type="button" class="btn btn-outline-secondary" (click)="onCancel()">
+    <i class="bi bi-x-circle me-1"></i>Cancel
+  </button>
+  <button 
+    type="button" 
+    class="btn btn-primary" 
+    (click)="onSubmit()"
+    [disabled]="editForm.invalid || isLoading()">
+    @if (isLoading()) {
+      <span class="spinner-border spinner-border-sm me-2"></span>
+    }
+    <i class="bi bi-check-circle me-1"></i>
+    {{ isEdit ? 'Update' : 'Add' }} Column
+  </button>
+</div>

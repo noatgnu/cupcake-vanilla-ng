@@ -1,0 +1,160 @@
+@if (isAuthenticated$ | async) {
+  <nav class="navbar navbar-expand-lg navbar-dark" 
+       [style.background-color]="(siteConfig$ | async)?.primary_color || '#1976d2'">
+  <div class="container-fluid">
+    <!-- Brand -->
+    @if (siteConfig$ | async; as config) {
+      <a class="navbar-brand" routerLink="/">
+        <i class="bi bi-flask me-2"></i>
+        {{ config.site_name }}
+      </a>
+    }
+
+    <!-- Navbar toggler for mobile -->
+    <button 
+      class="navbar-toggler" 
+      type="button" 
+      data-bs-toggle="collapse" 
+      data-bs-target="#navbarNav"
+      aria-controls="navbarNav" 
+      aria-expanded="false" 
+      aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <!-- Navbar content -->
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <!-- Main navigation -->
+      <ul class="navbar-nav me-auto">
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/metadata" routerLinkActive="active">
+            <i class="bi bi-house me-1"></i>
+            Home
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/metadata-tables" routerLinkActive="active">
+            <i class="bi bi-table me-1"></i>
+            Data Tables
+          </a>
+        </li>
+        <li class="nav-item dropdown" ngbDropdown>
+          <a class="nav-link dropdown-toggle" 
+             id="templatesDropdown" 
+             ngbDropdownToggle
+             role="button"
+             aria-expanded="false">
+            <i class="bi bi-layout-text-window me-1"></i>
+            Templates
+          </a>
+          <ul class="dropdown-menu" ngbDropdownMenu aria-labelledby="templatesDropdown">
+            <li>
+              <a class="dropdown-item" routerLink="/metadata-table-templates">
+                <i class="bi bi-grid-3x3-gap me-2"></i>
+                Table Templates
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item" routerLink="/metadata-templates">
+                <i class="bi bi-columns me-2"></i>
+                Column Templates
+              </a>
+            </li>
+          </ul>
+        </li>
+        <li class="nav-item dropdown" ngbDropdown>
+          <a class="nav-link dropdown-toggle" 
+             id="adminDropdown" 
+             ngbDropdownToggle
+             role="button"
+             aria-expanded="false">
+            <i class="bi bi-gear me-1"></i>
+            Admin
+          </a>
+          <ul class="dropdown-menu" ngbDropdownMenu aria-labelledby="adminDropdown">
+            <li>
+              <a class="dropdown-item" routerLink="/admin/site-config">
+                <i class="bi bi-building me-2"></i>
+                Site Configuration
+              </a>
+            </li>
+          </ul>
+        </li>
+      </ul>
+
+      <!-- Theme toggle and User menu -->
+      <ul class="navbar-nav">
+        <!-- Theme Toggle -->
+        <li class="nav-item">
+          <button 
+            class="nav-link btn btn-link" 
+            (click)="toggleTheme()"
+            [title]="getThemeLabel()"
+            style="border: none; background: none; color: inherit;">
+            <i [class]="getThemeIcon()"></i>
+          </button>
+        </li>
+        
+        @if (currentUser$ | async; as user) {
+        <li class="nav-item dropdown" ngbDropdown>
+          <a class="nav-link dropdown-toggle" 
+             id="userDropdown" 
+             ngbDropdownToggle
+             role="button"
+             aria-expanded="false">
+            <i class="bi bi-person-circle me-1"></i>
+            {{ getUserDisplayName(user) }}
+            @if (user.orcid_id) {
+              <span class="badge bg-secondary ms-1">ORCID</span>
+            }
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end" ngbDropdownMenu aria-labelledby="userDropdown">
+            <li>
+              <h6 class="dropdown-header">
+                <i class="bi bi-person me-1"></i>
+                {{ getUserDisplayName(user) }}
+              </h6>
+            </li>
+            @if (user.email) {
+              <li>
+                <span class="dropdown-item-text text-muted small">
+                  <i class="bi bi-envelope me-1"></i>
+                  {{ user.email }}
+                </span>
+              </li>
+            }
+            @if (user.orcid_id) {
+              <li>
+                <span class="dropdown-item-text text-muted small">
+                  <i class="bi bi-person-badge me-1"></i>
+                  {{ user.orcid_id }}
+                </span>
+              </li>
+            }
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <a class="dropdown-item" routerLink="/lab-groups">
+                <i class="bi bi-people me-1"></i>
+                Lab Groups
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item" routerLink="/admin">
+                <i class="bi bi-gear-fill me-1"></i>
+                Admin Panel
+              </a>
+            </li>
+            <li>
+              <button class="dropdown-item" (click)="logout()">
+                <i class="bi bi-box-arrow-right me-1"></i>
+                Sign Out
+              </button>
+            </li>
+          </ul>
+        </li>
+        }
+      </ul>
+    </div>
+  </div>
+  </nav>
+}

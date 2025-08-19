@@ -1,0 +1,30 @@
+.form-floating > .form-control,
+.form-floating > .form-select {
+  height: calc(3.5rem + 2px);
+}
+
+.form-text {
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+}
+
+.alert {
+  border-radius: 0.5rem;
+}
+
+.modal-header {
+  border-bottom: 1px solid var(--bs-border-color);
+}
+
+.modal-footer {
+  border-top: 1px solid var(--bs-border-color);
+}
+
+.spinner-border-sm {
+  width: 1rem;
+  height: 1rem;
+}
+
+.invalid-feedback {
+  font-size: 0.875rem;
+}

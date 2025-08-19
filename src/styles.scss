@@ -1,1 +1,256 @@
 /* You can add global styles to this file, and also import other style files */
+
+/* CSS Custom Properties for dynamic theming */
+:root {
+  --cupcake-primary: #1976d2;
+  --cupcake-primary-rgb: 25, 118, 210;
+  --cupcake-primary-dark: #1565c0;
+  --cupcake-primary-light: #42a5f5;
+  
+  /* Light theme colors */
+  --cupcake-bg: #ffffff;
+  --cupcake-bg-secondary: #f8f9fa;
+  --cupcake-bg-tertiary: #e9ecef;
+  --cupcake-text: #212529;
+  --cupcake-text-muted: #6c757d;
+  --cupcake-border: rgba(0, 0, 0, 0.125);
+  --cupcake-shadow: rgba(0, 0, 0, 0.075);
+  
+  /* Card colors */
+  --cupcake-card-bg: #ffffff;
+  --cupcake-card-header-bg: rgba(0, 0, 0, 0.03);
+  --cupcake-card-border: rgba(0, 0, 0, 0.125);
+  
+  /* Table colors */
+  --cupcake-table-striped: rgba(0, 0, 0, 0.025);
+  --cupcake-table-hover: rgba(0, 0, 0, 0.075);
+  
+  /* Loading overlay */
+  --cupcake-loading-overlay: rgba(255, 255, 255, 0.9);
+}
+
+/* Dark theme overrides */
+:root[data-bs-theme="dark"], .dark-mode {
+  --cupcake-bg: #121212;
+  --cupcake-bg-secondary: #1e1e1e;
+  --cupcake-bg-tertiary: #2d2d2d;
+  --cupcake-text: #ffffff;
+  --cupcake-text-muted: #adb5bd;
+  --cupcake-border: rgba(255, 255, 255, 0.125);
+  --cupcake-shadow: rgba(0, 0, 0, 0.3);
+  
+  /* Adjust primary colors for dark mode - make them lighter for better contrast */
+  --cupcake-primary: #42a5f5;
+  --cupcake-primary-rgb: 66, 165, 245;
+  --cupcake-primary-dark: #1976d2;
+  --cupcake-primary-light: #90caf9;
+  
+  /* Card colors for dark mode */
+  --cupcake-card-bg: #1e1e1e;
+  --cupcake-card-header-bg: rgba(255, 255, 255, 0.03);
+  --cupcake-card-border: rgba(255, 255, 255, 0.125);
+  
+  /* Table colors for dark mode */
+  --cupcake-table-striped: rgba(255, 255, 255, 0.05);
+  --cupcake-table-hover: rgba(255, 255, 255, 0.075);
+  
+  /* Loading overlay for dark mode */
+  --cupcake-loading-overlay: rgba(18, 18, 18, 0.9);
+}
+
+/* Importing Bootstrap SCSS file. */
+@import 'bootstrap/scss/bootstrap';
+
+/* Import Bootstrap Icons */
+@import 'bootstrap-icons/font/bootstrap-icons.css';
+
+// Override Bootstrap primary colors with CSS custom properties
+.btn-primary {
+  --bs-btn-bg: var(--cupcake-primary);
+  --bs-btn-border-color: var(--cupcake-primary);
+  --bs-btn-hover-bg: var(--cupcake-primary-dark);
+  --bs-btn-hover-border-color: var(--cupcake-primary-dark);
+  --bs-btn-focus-shadow-rgb: var(--cupcake-primary-rgb);
+  --bs-btn-active-bg: var(--cupcake-primary-dark);
+  --bs-btn-active-border-color: var(--cupcake-primary-dark);
+}
+
+.btn-outline-primary {
+  --bs-btn-color: var(--cupcake-primary);
+  --bs-btn-border-color: var(--cupcake-primary);
+  --bs-btn-hover-bg: var(--cupcake-primary);
+  --bs-btn-hover-border-color: var(--cupcake-primary);
+  --bs-btn-focus-shadow-rgb: var(--cupcake-primary-rgb);
+  --bs-btn-active-bg: var(--cupcake-primary);
+  --bs-btn-active-border-color: var(--cupcake-primary);
+}
+
+.bg-primary {
+  background-color: var(--cupcake-primary) !important;
+}
+
+.text-primary {
+  color: var(--cupcake-primary) !important;
+}
+
+.border-primary {
+  border-color: var(--cupcake-primary) !important;
+}
+
+.alert-primary {
+  --bs-alert-color: var(--cupcake-primary);
+  --bs-alert-bg: rgba(var(--cupcake-primary-rgb), 0.1);
+  --bs-alert-border-color: rgba(var(--cupcake-primary-rgb), 0.2);
+}
+
+.badge.bg-primary {
+  background-color: var(--cupcake-primary) !important;
+}
+
+.spinner-border.text-primary {
+  color: var(--cupcake-primary) !important;
+}
+
+.form-control:focus {
+  border-color: var(--cupcake-primary);
+  box-shadow: 0 0 0 0.25rem rgba(var(--cupcake-primary-rgb), 0.25);
+}
+
+.form-check-input:checked {
+  background-color: var(--cupcake-primary);
+  border-color: var(--cupcake-primary);
+}
+
+.nav-link.active {
+  color: var(--cupcake-primary) !important;
+}
+
+// Global CUPCAKE Vanilla styles
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  line-height: 1.6;
+}
+
+// Navigation
+.navbar-brand {
+  font-weight: 600;
+  font-size: 1.25rem;
+}
+
+// Cards
+.card {
+  background-color: var(--cupcake-card-bg);
+  border: 1px solid var(--cupcake-card-border);
+  box-shadow: 0 0.125rem 0.25rem var(--cupcake-shadow);
+}
+
+.card-header {
+  background-color: var(--cupcake-card-header-bg);
+  border-bottom: 1px solid var(--cupcake-card-border);
+}
+
+// Tables
+.table {
+  --bs-table-striped-bg: var(--cupcake-table-striped);
+  --bs-table-hover-bg: var(--cupcake-table-hover);
+}
+
+.table th {
+  font-weight: 600;
+  border-bottom: 2px solid #dee2e6;
+}
+
+// Empty states
+.empty-state {
+  padding: 3rem 1rem;
+  text-align: center;
+}
+
+.empty-state i {
+  opacity: 0.5;
+}
+
+// Utility classes
+.cursor-pointer {
+  cursor: pointer;
+}
+
+// Loading states
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--cupcake-loading-overlay);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.loading-content {
+  text-align: center;
+}
+
+.spinner {
+  width: 2rem;
+  height: 2rem;
+  border: 0.25em solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spinner-border 0.75s linear infinite;
+}
+
+// Custom scrollbars
+.scrollable-dropdown {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+// Form improvements
+.form-floating > label {
+  font-weight: 500;
+}
+
+// Badge improvements
+.badge {
+  font-weight: 500;
+}
+
+// Button improvements
+.btn {
+  font-weight: 500;
+}
+
+// Responsive improvements
+@media (max-width: 768px) {
+  .container-fluid {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .table-responsive {
+    font-size: 0.875rem;
+  }
+}
+
+html {
+  box-sizing: border-box;
+}
+*, *:before, *:after {
+  box-sizing: inherit;
+}
+body, html {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  background-color: var(--cupcake-bg-secondary);
+  color: var(--cupcake-text);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+// Dark mode specific body styling
+.dark-mode body {
+  background: linear-gradient(135deg, var(--cupcake-bg) 0%, var(--cupcake-bg-secondary) 100%);
+}

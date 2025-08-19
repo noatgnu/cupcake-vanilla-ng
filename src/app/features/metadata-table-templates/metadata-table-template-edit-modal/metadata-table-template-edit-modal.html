@@ -1,0 +1,219 @@
+<div class="modal-header">
+  <h4 class="modal-title">
+    <i class="bi bi-file-earmark-text me-2"></i>{{ title }}
+  </h4>
+  <button type="button" class="btn-close" (click)="onCancel()"></button>
+</div>
+
+<div class="modal-body">
+  <form [formGroup]="editForm" (ngSubmit)="onSubmit()">
+    <div class="row">
+      <!-- Basic Information -->
+      <div class="col-12 mb-3">
+        <h6 class="text-muted border-bottom pb-2">
+          <i class="bi bi-info-circle me-2"></i>Basic Information
+        </h6>
+      </div>
+      
+      <div class="col-12 mb-3">
+        <label for="templateName" class="form-label">Template Name *</label>
+        <input 
+          type="text" 
+          class="form-control"
+          id="templateName"
+          formControlName="name"
+          [class.is-invalid]="editForm.get('name')?.invalid && editForm.get('name')?.touched"
+          placeholder="Enter template name">
+        <div class="invalid-feedback">
+          {{ getFieldError('name') }}
+        </div>
+      </div>
+
+      <div class="col-12 mb-3">
+        <label for="description" class="form-label">Description</label>
+        <textarea 
+          class="form-control" 
+          id="description"
+          formControlName="description"
+          rows="3"
+          placeholder="Optional description"></textarea>
+      </div>
+
+      <!-- Configuration -->
+      <div class="col-12 mb-3">
+        <h6 class="text-muted border-bottom pb-2">
+          <i class="bi bi-gear me-2"></i>Configuration
+        </h6>
+      </div>
+
+      <div class="col-md-6 mb-3">
+        <label for="labGroup" class="form-label">Lab Group</label>
+        <select 
+          class="form-select"
+          id="labGroup"
+          formControlName="lab_group">
+          <option [ngValue]="null">No Lab Group</option>
+          @for (group of labGroups; track group.id) {
+            <option [ngValue]="group.id">{{ group.name }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="col-12 mb-3">
+        <div class="row">
+          <div class="col-md-6">
+            <div class="form-check form-switch">
+              <input 
+                class="form-check-input" 
+                type="checkbox" 
+                id="isPublic"
+                formControlName="is_public">
+              <label class="form-check-label" for="isPublic">
+                <i class="bi bi-globe me-1"></i>Public Template
+              </label>
+              <small class="form-text text-muted d-block">Make this template accessible to all users</small>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="form-check form-switch">
+              <input 
+                class="form-check-input" 
+                type="checkbox" 
+                id="isDefault"
+                formControlName="is_default">
+              <label class="form-check-label" for="isDefault">
+                <i class="bi bi-star me-1"></i>Default Template
+              </label>
+              <small class="form-text text-muted d-block">Use as default for new projects</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Column Management -->
+      <div class="col-12 mb-3">
+        <h6 class="text-muted border-bottom pb-2">
+          <i class="bi bi-columns-gap me-2"></i>Template Columns
+          <button type="button" class="btn btn-sm btn-outline-primary ms-2" (click)="addColumn()">
+            <i class="bi bi-plus me-1"></i>Add Column
+          </button>
+        </h6>
+      </div>
+
+      <div class="col-12 mb-3">
+        @if (templateColumns().length > 0) {
+          <div class="table-responsive">
+            <table class="table table-sm table-hover">
+              <thead class="table-light">
+                <tr>
+                  <th style="width: 40px;"><i class="bi bi-arrows-move"></i></th>
+                  <th>Position</th>
+                  <th>Column Name</th>
+                  <th>Type</th>
+                  <th>Default Value</th>
+                  <th>Options</th>
+                  <th style="width: 120px;">Actions</th>
+                </tr>
+              </thead>
+              <tbody cdkDropList (cdkDropListDropped)="onColumnDrop($event)" [cdkDropListData]="templateColumns()">
+                @for (column of templateColumns(); track column.id; let i = $index) {
+                  <tr cdkDrag [cdkDragData]="column" class="column-row" [attr.data-column-id]="column.id">
+                    <td class="text-center">
+                      <i class="bi bi-grip-vertical drag-handle" cdkDragHandle></i>
+                    </td>
+                    <td>
+                      <span class="badge bg-secondary">{{ i + 1 }}</span>
+                    </td>
+                    <td>
+                      <strong>{{ column.name }}</strong>
+                    </td>
+                    <td>
+                      <span class="badge bg-info">{{ column.type }}</span>
+                    </td>
+                    <td>
+                      <span class="text-muted">{{ column.value || '-' }}</span>
+                    </td>
+                    <td>
+                      <div class="d-flex gap-1">
+                        @if (column.mandatory) {
+                          <span class="badge badge-pill bg-warning" title="Mandatory">
+                            <i class="bi bi-exclamation-circle"></i>
+                          </span>
+                        }
+                        @if (column.hidden) {
+                          <span class="badge badge-pill bg-secondary" title="Hidden">
+                            <i class="bi bi-eye-slash"></i>
+                          </span>
+                        }
+                        @if (column.readonly) {
+                          <span class="badge badge-pill bg-dark" title="Read Only">
+                            <i class="bi bi-lock"></i>
+                          </span>
+                        }
+                        @if (column.ontology_type) {
+                          <span class="badge badge-pill bg-success" title="Has Ontology">
+                            <i class="bi bi-tags"></i>
+                          </span>
+                        }
+                      </div>
+                    </td>
+                    <td>
+                      <div class="btn-group btn-group-sm" role="group">
+                        <button 
+                          type="button"
+                          class="btn btn-outline-primary" 
+                          (click)="editColumn(column)"
+                          title="Edit column">
+                          <i class="bi bi-pencil"></i>
+                        </button>
+                        <button 
+                          type="button"
+                          class="btn btn-outline-info" 
+                          (click)="duplicateColumn(column)"
+                          title="Duplicate column">
+                          <i class="bi bi-copy"></i>
+                        </button>
+                        <button 
+                          type="button"
+                          class="btn btn-outline-danger" 
+                          (click)="removeColumn(column)"
+                          title="Remove column">
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <div class="text-center py-4 text-muted">
+            <i class="bi bi-columns-gap fs-1 mb-2"></i>
+            <p>No columns in this template yet.</p>
+            <button type="button" class="btn btn-primary btn-sm" (click)="addColumn()">
+              <i class="bi bi-plus me-1"></i>Add First Column
+            </button>
+          </div>
+        }
+      </div>
+    </div>
+  </form>
+</div>
+
+<div class="modal-footer">
+  <button type="button" class="btn btn-outline-secondary" (click)="onCancel()">
+    <i class="bi bi-x-circle me-1"></i>Cancel
+  </button>
+  <button 
+    type="button" 
+    class="btn btn-primary" 
+    (click)="onSubmit()"
+    [disabled]="editForm.invalid || isLoading()">
+    @if (isLoading()) {
+      <span class="spinner-border spinner-border-sm me-2"></span>
+    }
+    <i class="bi bi-check-circle me-1"></i>
+    {{ isEdit ? 'Update' : 'Create' }} Template
+  </button>
+</div>

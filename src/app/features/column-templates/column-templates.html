@@ -1,0 +1,231 @@
+<div class="column-templates-container">
+  <!-- Header Section -->
+  <nav class="navbar navbar-expand-lg bg-body-tertiary shadow-sm">
+    <div class="container-fluid">
+      <div class="d-flex align-items-center justify-content-between w-100">
+        <div class="d-flex align-items-center">
+          <h4 class="navbar-brand m-0 fw-bold">
+            <i class="bi bi-clipboard-list me-2"></i>Column Templates
+          </h4>
+          @if (selectedLabGroup()) {
+            <span class="badge bg-primary ms-3">{{ selectedLabGroup()!.name }}</span>
+          }
+        </div>
+        <div class="d-flex gap-2">
+          <button class="btn btn-primary btn-sm" (click)="createTemplate()">
+            <i class="bi bi-plus me-1"></i>New Template
+          </button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="templates-content p-4">
+    <!-- Search and Filters Section -->
+    <div class="card mb-4">
+      <div class="card-header">
+        <h5 class="mb-0">
+          <i class="bi bi-search me-2"></i>Search & Filters
+        </h5>
+      </div>
+      <div class="card-body">
+        <form [formGroup]="searchForm" class="row g-3">
+          <div class="col-md-4">
+            <div class="form-floating">
+              <input 
+                type="search" 
+                class="form-control" 
+                id="templateSearch" 
+                formControlName="search"
+                placeholder="Search templates...">
+              <label for="templateSearch">
+                <i class="bi bi-search me-1"></i>Search Templates
+              </label>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="form-floating">
+              <select 
+                class="form-select" 
+                id="labGroupSelect" 
+                formControlName="lab_group_id"
+                (change)="onLabGroupChange($event)">
+                <option [ngValue]="null">All Lab Groups</option>
+                @if (hasLabGroups()) {
+                  @for (group of labGroupsData().results; track group.id) {
+                    <option [ngValue]="group.id">{{ group.name }}</option>
+                  }
+                }
+              </select>
+              <label for="labGroupSelect">Lab Group</label>
+            </div>
+            
+            <!-- Lab Groups Pagination -->
+            @if (showLabGroupsPagination()) {
+                <div class="d-flex justify-content-center mt-2">
+                  <ngb-pagination
+                    [collectionSize]="labGroupsData().count"
+                    [page]="labGroupsCurrentPage()"
+                    [pageSize]="labGroupsPageSize()"
+                    [maxSize]="3"
+                    [boundaryLinks]="false"
+                    [rotate]="true"
+                    (pageChange)="onLabGroupsPageChange($event)"
+                    class="pagination-sm">
+                  </ngb-pagination>
+                </div>
+            }
+          </div>
+          <div class="col-md-4">
+            <div class="form-check form-switch mt-3">
+              <input 
+                class="form-check-input" 
+                type="checkbox" 
+                id="globalTemplates" 
+                formControlName="is_global">
+              <label class="form-check-label" for="globalTemplates">
+                <i class="bi bi-globe me-1"></i>Global Templates Only
+              </label>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Templates Table -->
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+          <i class="bi bi-table me-2"></i>Column Templates
+          <span class="badge bg-primary ms-2">{{ templatesData().count }}</span>
+        </h5>
+        @if (isLoading()) {
+          <div class="spinner-border spinner-border-sm text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+        }
+      </div>
+      <div class="card-body p-0">
+        @if (hasTemplates()) {
+            <div class="table-responsive">
+              <table class="table table-hover mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th><i class="bi bi-tag me-1"></i>Template Name</th>
+                    <th><i class="bi bi-list me-1"></i>Column Name</th>
+                    <th><i class="bi bi-layers me-1"></i>Type</th>
+                    <th><i class="bi bi-diagram-3 me-1"></i>Ontology</th>
+                    <th><i class="bi bi-globe me-1"></i>Visibility</th>
+                    <th><i class="bi bi-folder me-1"></i>Category</th>
+                    <th><i class="bi bi-gear me-1"></i>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (template of templatesData().results; track template.id) {
+                    <tr>
+                      <td>
+                        <strong>{{ template.name }}</strong>
+                        @if (template.is_system_template) {
+                          <i class="bi bi-shield-check text-success ms-2" title="System template"></i>
+                        }
+                      </td>
+                      <td>{{ template.column_name }}</td>
+                      <td>
+                        <span class="badge bg-secondary">{{ template.column_type }}</span>
+                      </td>
+                      <td>
+                        @if (template.ontology_type) {
+                          <span class="badge bg-success">{{ template.ontology_type }}</span>
+                        } @else {
+                          <span class="text-muted">-</span>
+                        }
+                      </td>
+                      <td>
+                        @switch (template.visibility) {
+                          @case ('global') {
+                            <span class="badge bg-primary">Global</span>
+                          }
+                          @case ('public') {
+                            <span class="badge bg-info">Public</span>
+                          }
+                          @case ('lab_group') {
+                            <span class="badge bg-warning">Lab Group</span>
+                          }
+                          @case ('private') {
+                            <span class="badge bg-secondary">Private</span>
+                          }
+                          @default {
+                            <span class="badge bg-secondary">{{ template.visibility }}</span>
+                          }
+                        }
+                      </td>
+                      <td>
+                        @if (template.category) {
+                          <span class="badge bg-secondary">{{ template.category }}</span>
+                        } @else {
+                          <span class="text-muted">-</span>
+                        }
+                      </td>
+                      <td>
+                        <div class="btn-group btn-group-sm" role="group">
+                          <button 
+                            class="btn btn-outline-primary" 
+                            (click)="editTemplate(template)"
+                            title="Edit template">
+                            <i class="bi bi-pencil"></i>
+                          </button>
+                          <button 
+                            class="btn btn-outline-info" 
+                            (click)="duplicateTemplate(template)"
+                            title="Duplicate template">
+                            <i class="bi bi-copy"></i>
+                          </button>
+                          <button 
+                            class="btn btn-outline-danger" 
+                            (click)="deleteTemplate(template)"
+                            title="Delete template">
+                            <i class="bi bi-trash"></i>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Pagination -->
+            @if (showTemplatesPagination()) {
+              <div class="d-flex justify-content-center mt-3 p-3">
+                <ngb-pagination
+                  [collectionSize]="templatesData().count"
+                  [page]="currentPage()"
+                  [pageSize]="pageSize()"
+                  [maxSize]="5"
+                  [boundaryLinks]="true"
+                  [rotate]="true"
+                  (pageChange)="onPageChange($event)"
+                  class="pagination-sm">
+                </ngb-pagination>
+              </div>
+            }
+          } @else {
+            <div class="empty-state text-center py-5">
+              <i class="bi bi-clipboard-list fs-1 text-muted mb-3"></i>
+              <h5 class="text-muted">No Column Templates Found</h5>
+              <p class="text-muted">
+                @if (searchForm.get('search')?.value || searchForm.get('lab_group_id')?.value) {
+                  Try adjusting your search criteria or create a new template.
+                } @else {
+                  Get started by creating your first column template.
+                }
+              </p>
+              <button class="btn btn-primary" (click)="createTemplate()">
+                <i class="bi bi-plus me-1"></i>Create First Template
+              </button>
+            </div>
+          }
+      </div>
+    </div>
+  </div>
+</div>

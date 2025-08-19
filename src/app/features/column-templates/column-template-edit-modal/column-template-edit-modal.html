@@ -1,0 +1,244 @@
+<div class="modal-header">
+  <h4 class="modal-title">
+    <i class="bi bi-clipboard-list me-2"></i>{{ title }}
+  </h4>
+  <button type="button" class="btn-close" (click)="onCancel()"></button>
+</div>
+
+<div class="modal-body">
+  <form [formGroup]="editForm" (ngSubmit)="onSubmit()">
+    <div class="row">
+      <!-- Basic Information -->
+      <div class="col-12 mb-3">
+        <h6 class="text-muted border-bottom pb-2">
+          <i class="bi bi-info-circle me-2"></i>Basic Information
+        </h6>
+      </div>
+
+      <div class="col-md-6 mb-3">
+        <label for="templateName" class="form-label">Template Name *</label>
+        <input
+          type="text"
+          class="form-control"
+          id="templateName"
+          formControlName="name"
+          [class.is-invalid]="editForm.get('name')?.invalid && editForm.get('name')?.touched"
+          placeholder="Enter template name">
+        <div class="invalid-feedback">
+          {{ getFieldError('name') }}
+        </div>
+      </div>
+
+      <div class="col-md-6 mb-3">
+        <label for="columnName" class="form-label">Column Name *</label>
+        <input
+          type="text"
+          class="form-control"
+          id="columnName"
+          formControlName="column_name"
+          [class.is-invalid]="editForm.get('column_name')?.invalid && editForm.get('column_name')?.touched"
+          placeholder="column_name">
+        <div class="invalid-feedback">
+          {{ getFieldError('column_name') }}
+        </div>
+        <small class="form-text text-muted">Column name based on column type and template name. Example: characteristics[biological replicate]</small>
+      </div>
+
+      <div class="col-12 mb-3">
+        <label for="description" class="form-label">Description</label>
+        <textarea
+          class="form-control"
+          id="description"
+          formControlName="description"
+          rows="2"
+          placeholder="Optional description"></textarea>
+      </div>
+
+      <!-- Column Configuration -->
+      <div class="col-12 mb-3">
+        <h6 class="text-muted border-bottom pb-2">
+          <i class="bi bi-gear me-2"></i>Column Configuration
+        </h6>
+      </div>
+
+      <div class="col-md-6 mb-3">
+        <label for="columnType" class="form-label">Column Type *</label>
+        <select
+          class="form-select"
+          id="columnType"
+          formControlName="column_type"
+          [class.is-invalid]="editForm.get('column_type')?.invalid && editForm.get('column_type')?.touched">
+          @for (type of columnTypes; track type.value) {
+            <option [value]="type.value">{{ type.label }}</option>
+          }
+        </select>
+        <div class="invalid-feedback">
+          {{ getFieldError('column_type') }}
+        </div>
+      </div>
+
+      <div class="col-md-6 mb-3">
+        <label for="defaultPosition" class="form-label">Default Position</label>
+        <input
+          type="number"
+          class="form-control"
+          id="defaultPosition"
+          formControlName="default_position"
+          [class.is-invalid]="editForm.get('default_position')?.invalid && editForm.get('default_position')?.touched"
+          min="0"
+          placeholder="0">
+        <div class="invalid-feedback">
+          {{ getFieldError('default_position') }}
+        </div>
+      </div>
+
+      <div class="col-md-6 mb-3">
+        <label for="defaultValue" class="form-label">Default Value</label>
+        <input
+          type="text"
+          class="form-control"
+          id="defaultValue"
+          formControlName="default_value"
+          placeholder="Optional default value">
+      </div>
+
+      <div class="col-md-6 mb-3">
+        <label for="ontologyType" class="form-label">Ontology Type</label>
+        <select
+          class="form-select"
+          id="ontologyType"
+          formControlName="ontology_type">
+          @for (ontology of ontologyTypes; track ontology.value) {
+            <option [value]="ontology.value">{{ ontology.label }}</option>
+          }
+        </select>
+      </div>
+
+      <!-- Visibility and Access -->
+      <div class="col-12 mb-3">
+        <h6 class="text-muted border-bottom pb-2">
+          <i class="bi bi-eye me-2"></i>Visibility and Access
+        </h6>
+      </div>
+
+      <div class="col-md-6 mb-3">
+        <label for="visibility" class="form-label">Visibility *</label>
+        <select
+          class="form-select"
+          id="visibility"
+          formControlName="visibility"
+          (change)="onVisibilityChange()"
+          [class.is-invalid]="editForm.get('visibility')?.invalid && editForm.get('visibility')?.touched">
+          @for (option of visibilityOptions; track option.value) {
+            <option [value]="option.value">{{ option.label }}</option>
+          }
+        </select>
+        <div class="invalid-feedback">
+          {{ getFieldError('visibility') }}
+        </div>
+      </div>
+
+      <div class="col-md-6 mb-3">
+        <label for="labGroup" class="form-label">Lab Group</label>
+        <select
+          class="form-select"
+          id="labGroup"
+          formControlName="lab_group"
+          [class.is-invalid]="editForm.get('lab_group')?.invalid && editForm.get('lab_group')?.touched">
+          <option [ngValue]="null">Select Lab Group</option>
+          @for (group of labGroups; track group.id) {
+            <option [ngValue]="group.id">{{ group.name }}</option>
+          }
+        </select>
+        <div class="invalid-feedback">
+          {{ getFieldError('lab_group') }}
+        </div>
+      </div>
+
+      <!-- Additional Options -->
+      <div class="col-12 mb-3">
+        <h6 class="text-muted border-bottom pb-2">
+          <i class="bi bi-sliders me-2"></i>Additional Options
+        </h6>
+      </div>
+
+      <div class="col-md-6 mb-3">
+        <label for="category" class="form-label">Category</label>
+        <input
+          type="text"
+          class="form-control"
+          id="category"
+          formControlName="category"
+          placeholder="Template category">
+      </div>
+
+      <div class="col-md-6 mb-3">
+        <label for="tags" class="form-label">Tags</label>
+        <input
+          type="text"
+          class="form-control"
+          id="tags"
+          formControlName="tags"
+          placeholder="Comma-separated tags">
+      </div>
+
+      <div class="col-12 mb-3">
+        <div class="row">
+          <div class="col-md-3">
+            <div class="form-check form-switch">
+              <input
+                class="form-check-input"
+                type="checkbox"
+                id="enableTypeahead"
+                formControlName="enable_typeahead">
+              <label class="form-check-label" for="enableTypeahead">
+                Enable Typeahead
+              </label>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="form-check form-switch">
+              <input
+                class="form-check-input"
+                type="checkbox"
+                id="excelValidation"
+                formControlName="excel_validation">
+              <label class="form-check-label" for="excelValidation">
+                Excel Validation
+              </label>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="form-check form-switch">
+              <input
+                class="form-check-input"
+                type="checkbox"
+                id="isActive"
+                formControlName="is_active">
+              <label class="form-check-label" for="isActive">
+                Active
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </form>
+</div>
+
+<div class="modal-footer">
+  <button type="button" class="btn btn-outline-secondary" (click)="onCancel()">
+    <i class="bi bi-x-circle me-1"></i>Cancel
+  </button>
+  <button
+    type="button"
+    class="btn btn-primary"
+    (click)="onSubmit()"
+    [disabled]="editForm.invalid || isLoading()">
+    @if (isLoading()) {
+      <span class="spinner-border spinner-border-sm me-2"></span>
+    }
+    <i class="bi bi-check-circle me-1"></i>
+    {{ isEdit ? 'Update' : 'Create' }} Template
+  </button>
+</div>

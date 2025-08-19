@@ -1,0 +1,115 @@
+.container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  overflow: auto;
+}
+
+.login-wrapper {
+  width: 100%;
+  max-width: 450px;
+}
+
+.card {
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px var(--cupcake-shadow);
+  background: var(--cupcake-card-bg);
+  backdrop-filter: blur(10px);
+  width: 100%;
+}
+
+.card-body {
+  padding: 2rem;
+}
+
+.card-title {
+  color: var(--cupcake-text);
+  font-weight: 600;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--cupcake-primary) 0%, var(--cupcake-primary-dark) 100%);
+  border: none;
+  border-radius: 8px;
+  padding: 12px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(var(--cupcake-primary-rgb), 0.3);
+  }
+}
+
+.btn-outline-primary {
+  border-radius: 8px;
+  padding: 12px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(var(--cupcake-primary-rgb), 0.2);
+  }
+}
+
+.input-group-text {
+  background: var(--cupcake-bg-tertiary);
+  border-color: var(--cupcake-border);
+  color: var(--cupcake-text-muted);
+}
+
+.form-control {
+  border-radius: 0 8px 8px 0;
+  transition: all 0.3s ease;
+
+  &:focus {
+    box-shadow: 0 0 0 0.2rem rgba(var(--cupcake-primary-rgb), 0.15);
+    border-color: var(--cupcake-primary);
+  }
+}
+
+.input-group-text:first-child {
+  border-radius: 8px 0 0 8px;
+}
+
+.spinner-border-sm {
+  width: 1rem;
+  height: 1rem;
+}
+
+ngb-alert {
+  border-radius: 8px;
+  border: none;
+
+  &.alert-success {
+    background: var(--bs-success-bg-subtle, rgba(25, 135, 84, 0.1));
+    color: var(--bs-success-text-emphasis, #0f5132);
+    border: 1px solid var(--bs-success-border-subtle, rgba(25, 135, 84, 0.2));
+  }
+
+  &.alert-danger {
+    background: var(--bs-danger-bg-subtle, rgba(220, 53, 69, 0.1));
+    color: var(--bs-danger-text-emphasis, #842029);
+    border: 1px solid var(--bs-danger-border-subtle, rgba(220, 53, 69, 0.2));
+  }
+}
+
+// Dark mode specific alert adjustments
+:root[data-bs-theme="dark"] ngb-alert,
+.dark-mode ngb-alert {
+  &.alert-success {
+    background: rgba(25, 135, 84, 0.15);
+    color: #75b798;
+    border: 1px solid rgba(25, 135, 84, 0.3);
+  }
+
+  &.alert-danger {
+    background: rgba(220, 53, 69, 0.15);
+    color: #ea868f;
+    border: 1px solid rgba(220, 53, 69, 0.3);
+  }
+}

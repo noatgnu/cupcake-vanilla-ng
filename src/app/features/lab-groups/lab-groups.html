@@ -1,0 +1,407 @@
+<div class="lab-groups-container">
+  <!-- Header Section -->
+  <nav class="navbar navbar-expand-lg bg-body-tertiary shadow-sm">
+    <div class="container-fluid">
+      <div class="d-flex align-items-center justify-content-between w-100">
+        <div class="d-flex align-items-center">
+          <h4 class="navbar-brand m-0 fw-bold">
+            <i class="bi bi-people me-2"></i>Lab Groups
+          </h4>
+        </div>
+        <div class="d-flex gap-2">
+          <button class="btn btn-primary btn-sm" (click)="toggleCreateForm()">
+            <i class="bi bi-plus me-1"></i>New Lab Group
+          </button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="groups-content p-4">
+    <!-- Create Group Form -->
+    @if (showCreateForm()) {
+      <div class="card mb-4">
+        <div class="card-header">
+          <h5 class="mb-0">
+            <i class="bi bi-plus-circle me-2"></i>Create New Lab Group
+          </h5>
+        </div>
+        <div class="card-body">
+          <form [formGroup]="createGroupForm" (ngSubmit)="createLabGroup()">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <div class="form-floating">
+                  <input 
+                    type="text" 
+                    class="form-control" 
+                    id="groupName" 
+                    formControlName="name"
+                    placeholder="Group name">
+                  <label for="groupName">Group Name *</label>
+                </div>
+                @if (createGroupForm.get('name')?.invalid && createGroupForm.get('name')?.touched) {
+                  <div class="text-danger small mt-1">
+                    @if (createGroupForm.get('name')?.errors?.['required']) {
+                      Group name is required
+                    }
+                    @if (createGroupForm.get('name')?.errors?.['minlength']) {
+                      Group name must be at least 2 characters
+                    }
+                  </div>
+                }
+              </div>
+              <div class="col-md-6">
+                <div class="form-check form-switch mt-3">
+                  <input 
+                    class="form-check-input" 
+                    type="checkbox" 
+                    id="allowInvites" 
+                    formControlName="allow_member_invites">
+                  <label class="form-check-label" for="allowInvites">
+                    Allow members to invite others
+                  </label>
+                </div>
+              </div>
+              <div class="col-12">
+                <div class="form-floating">
+                  <textarea 
+                    class="form-control" 
+                    id="groupDescription" 
+                    formControlName="description"
+                    style="height: 100px"
+                    placeholder="Description"></textarea>
+                  <label for="groupDescription">Description (optional)</label>
+                </div>
+              </div>
+            </div>
+            <div class="d-flex gap-2 mt-3">
+              <button 
+                type="submit" 
+                class="btn btn-primary"
+                [disabled]="createGroupForm.invalid || isCreatingGroup()">
+                @if (isCreatingGroup()) {
+                  <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                }
+                Create Group
+              </button>
+              <button type="button" class="btn btn-secondary" (click)="toggleCreateForm()">
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    }
+
+    <!-- Search Section -->
+    <div class="card mb-4">
+      <div class="card-header">
+        <h5 class="mb-0">
+          <i class="bi bi-search me-2"></i>Search Lab Groups
+        </h5>
+      </div>
+      <div class="card-body">
+        <form [formGroup]="searchForm">
+          <div class="form-floating">
+            <input 
+              type="search" 
+              class="form-control" 
+              id="groupSearch" 
+              formControlName="search"
+              placeholder="Search groups...">
+            <label for="groupSearch">
+              <i class="bi bi-search me-1"></i>Search Groups
+            </label>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Groups List -->
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+          <i class="bi bi-people me-2"></i>Lab Groups
+          <span class="badge bg-primary ms-2">{{ labGroupsData().count }}</span>
+        </h5>
+        @if (isLoading()) {
+          <div class="spinner-border spinner-border-sm text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+        }
+      </div>
+      <div class="card-body p-0">
+        @if (hasLabGroups()) {
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th><i class="bi bi-tag me-1"></i>Group Name</th>
+                  <th><i class="bi bi-person me-1"></i>Creator</th>
+                  <th><i class="bi bi-people me-1"></i>Members</th>
+                  <th><i class="bi bi-check-circle me-1"></i>Status</th>
+                  <th><i class="bi bi-calendar me-1"></i>Created</th>
+                  <th><i class="bi bi-gear me-1"></i>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (group of labGroupsData().results; track group.id) {
+                  <tr>
+                    <td>
+                      <strong>{{ group.name }}</strong>
+                      @if (group.description) {
+                        <br><small class="text-muted">{{ group.description }}</small>
+                      }
+                    </td>
+                    <td>{{ group.creator_name || 'Unknown' }}</td>
+                    <td>
+                      <span class="badge bg-info">{{ group.member_count }}</span>
+                    </td>
+                    <td>
+                      @if (group.is_active) {
+                        <span class="badge bg-success">Active</span>
+                      } @else {
+                        <span class="badge bg-secondary">Inactive</span>
+                      }
+                    </td>
+                    <td>
+                      <small>{{ group.created_at | date:'short' }}</small>
+                    </td>
+                    <td>
+                      <div class="btn-group btn-group-sm" role="group">
+                        <button 
+                          class="btn btn-outline-info" 
+                          (click)="viewGroupMembers(group)"
+                          title="View members">
+                          <i class="bi bi-people"></i>
+                        </button>
+                        @if (group.is_member && !group.is_creator) {
+                          <button 
+                            class="btn btn-outline-warning" 
+                            (click)="leaveGroup(group)"
+                            title="Leave group">
+                            <i class="bi bi-box-arrow-right"></i>
+                          </button>
+                        }
+                        @if (group.can_manage) {
+                          <button 
+                            class="btn btn-outline-danger" 
+                            (click)="deleteGroup(group)"
+                            title="Delete group">
+                            <i class="bi bi-trash"></i>
+                          </button>
+                        }
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination -->
+          @if (showPagination()) {
+            <div class="d-flex justify-content-center mt-3 p-3">
+              <ngb-pagination
+                [collectionSize]="labGroupsData().count"
+                [page]="currentPage()"
+                [pageSize]="pageSize()"
+                [maxSize]="5"
+                [boundaryLinks]="true"
+                [rotate]="true"
+                (pageChange)="onPageChange($event)"
+                class="pagination-sm">
+              </ngb-pagination>
+            </div>
+          }
+        } @else {
+          <div class="empty-state text-center py-5">
+            <i class="bi bi-people fs-1 text-muted mb-3"></i>
+            <h5 class="text-muted">No Lab Groups Found</h5>
+            <p class="text-muted">
+              @if (searchForm.get('search')?.value) {
+                Try adjusting your search criteria or create a new lab group.
+              } @else {
+                Get started by creating your first lab group.
+              }
+            </p>
+            <button class="btn btn-primary" (click)="toggleCreateForm()">
+              <i class="bi bi-plus me-1"></i>Create First Lab Group
+            </button>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Group Members Modal -->
+@if (selectedGroupForMembers()) {
+  <div class="modal-backdrop fade show"></div>
+  <div class="modal fade show d-block" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="bi bi-people me-2"></i>{{ selectedGroupForMembers()!.name }} - Members
+          </h5>
+          <button type="button" class="btn-close" (click)="closeGroupDetails()"></button>
+        </div>
+        <div class="modal-body">
+          <!-- Invite Form -->
+          @if (selectedGroupForMembers()!.can_invite) {
+            <div class="card mb-4">
+              <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">
+                  <i class="bi bi-envelope me-2"></i>Invite Member
+                </h6>
+                <button 
+                  class="btn btn-sm btn-outline-primary" 
+                  (click)="toggleInviteForm()">
+                  @if (showInviteForm()) {
+                    Cancel
+                  } @else {
+                    <i class="bi bi-plus me-1"></i>Invite
+                  }
+                </button>
+              </div>
+              @if (showInviteForm()) {
+                <div class="card-body">
+                  <form [formGroup]="inviteForm" (ngSubmit)="inviteMember()">
+                    <div class="row g-3">
+                      <div class="col-md-8">
+                        <div class="form-floating">
+                          <input 
+                            type="email" 
+                            class="form-control" 
+                            id="inviteEmail" 
+                            formControlName="invited_email"
+                            placeholder="Email address">
+                          <label for="inviteEmail">Email Address *</label>
+                        </div>
+                        @if (inviteForm.get('invited_email')?.invalid && inviteForm.get('invited_email')?.touched) {
+                          <div class="text-danger small mt-1">
+                            @if (inviteForm.get('invited_email')?.errors?.['required']) {
+                              Email is required
+                            }
+                            @if (inviteForm.get('invited_email')?.errors?.['email']) {
+                              Please enter a valid email address
+                            }
+                          </div>
+                        }
+                      </div>
+                      <div class="col-md-4">
+                        <button 
+                          type="submit" 
+                          class="btn btn-primary w-100 h-100"
+                          [disabled]="inviteForm.invalid || isInviting()">
+                          @if (isInviting()) {
+                            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                          }
+                          Send Invite
+                        </button>
+                      </div>
+                      <div class="col-12">
+                        <div class="form-floating">
+                          <textarea 
+                            class="form-control" 
+                            id="inviteMessage" 
+                            formControlName="message"
+                            style="height: 80px"
+                            placeholder="Message"></textarea>
+                          <label for="inviteMessage">Message (optional)</label>
+                        </div>
+                      </div>
+                    </div>
+                  </form>
+                </div>
+              }
+            </div>
+          }
+
+          <!-- Current Members -->
+          <div class="card mb-3">
+            <div class="card-header">
+              <h6 class="mb-0">
+                <i class="bi bi-people me-2"></i>Current Members ({{ groupMembers().length }})
+              </h6>
+            </div>
+            <div class="card-body p-0">
+              @if (groupMembers().length > 0) {
+                <div class="list-group list-group-flush">
+                  @for (member of groupMembers(); track member.id) {
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                      <div>
+                        <strong>{{ member.first_name }} {{ member.last_name }}</strong>
+                        <br>
+                        <small class="text-muted">{{ member.email }}</small>
+                        @if (member.is_creator) {
+                          <span class="badge bg-warning ms-2">Creator</span>
+                        }
+                      </div>
+                      @if (selectedGroupForMembers()!.can_manage && !member.is_creator) {
+                        <button 
+                          class="btn btn-outline-danger btn-sm" 
+                          (click)="removeMember(member.id)"
+                          title="Remove member">
+                          <i class="bi bi-person-dash"></i>
+                        </button>
+                      }
+                    </div>
+                  }
+                </div>
+              } @else {
+                <div class="text-center py-3 text-muted">
+                  No members found
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- Pending Invitations -->
+          @if (pendingInvitations().length > 0) {
+            <div class="card">
+              <div class="card-header">
+                <h6 class="mb-0">
+                  <i class="bi bi-clock me-2"></i>Pending Invitations ({{ pendingInvitations().length }})
+                </h6>
+              </div>
+              <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                  @for (invitation of pendingInvitations(); track invitation.id) {
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                      <div>
+                        <strong>{{ invitation.invited_email }}</strong>
+                        <br>
+                        <small class="text-muted">
+                          Invited by {{ invitation.inviter_name }} on {{ invitation.created_at | date:'short' }}
+                        </small>
+                        @if (invitation.message) {
+                          <br>
+                          <small class="text-info">{{ invitation.message }}</small>
+                        }
+                      </div>
+                      @if (selectedGroupForMembers()!.can_manage) {
+                        <button 
+                          class="btn btn-outline-danger btn-sm" 
+                          (click)="cancelInvitation(invitation.id)"
+                          title="Cancel invitation">
+                          <i class="bi bi-x-circle"></i>
+                        </button>
+                      }
+                    </div>
+                  }
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeGroupDetails()">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}

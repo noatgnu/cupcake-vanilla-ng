@@ -1,0 +1,105 @@
+<div class="container">
+  <div class="login-wrapper">
+      <div class="card">
+        <div class="card-body">
+          <h3 class="card-title text-center mb-4" *ngIf="siteConfig$ | async as config">
+            <i class="bi bi-flask me-2"></i>{{ config.site_name }}
+          </h3>
+
+          <!-- Success Alert -->
+          <ngb-alert *ngIf="success" type="success" (closed)="clearSuccess()" [dismissible]="true">
+            {{ success }}
+          </ngb-alert>
+
+          <!-- Error Alert -->
+          <ngb-alert *ngIf="error" type="danger" (closed)="clearError()" [dismissible]="true">
+            {{ error }}
+          </ngb-alert>
+
+          <!-- ORCID Login Section -->
+          <div class="mb-4">
+            <button 
+              type="button" 
+              class="btn btn-primary w-100 mb-3"
+              [disabled]="loading"
+              (click)="loginWithORCID()">
+              <span *ngIf="loading" class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+              <i class="bi bi-person-badge me-2"></i>
+              Login with ORCID
+            </button>
+            <p class="text-muted text-center small">
+              Sign in with your ORCID account for seamless access
+            </p>
+          </div>
+
+          <!-- Divider -->
+          <div class="text-center mb-4">
+            <span class="text-muted">or</span>
+          </div>
+
+          <!-- Traditional Login Form -->
+          <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+            <div class="mb-3">
+              <label for="username" class="form-label">Username</label>
+              <div class="input-group">
+                <span class="input-group-text">
+                  <i class="bi bi-person"></i>
+                </span>
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  id="username"
+                  formControlName="username"
+                  [class.is-invalid]="loginForm.get('username')?.invalid && loginForm.get('username')?.touched"
+                  placeholder="Enter your username">
+              </div>
+              <div *ngIf="loginForm.get('username')?.invalid && loginForm.get('username')?.touched" 
+                   class="invalid-feedback d-block">
+                Username is required
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="password" class="form-label">Password</label>
+              <div class="input-group">
+                <span class="input-group-text">
+                  <i class="bi bi-lock"></i>
+                </span>
+                <input 
+                  type="password" 
+                  class="form-control" 
+                  id="password"
+                  formControlName="password"
+                  [class.is-invalid]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
+                  placeholder="Enter your password">
+              </div>
+              <div *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched" 
+                   class="invalid-feedback d-block">
+                Password is required
+              </div>
+            </div>
+
+            <button 
+              type="submit" 
+              class="btn btn-outline-primary w-100"
+              [disabled]="loginForm.invalid || loading">
+              <span *ngIf="loading" class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+              <i class="bi bi-box-arrow-in-right me-2"></i>
+              Sign In
+            </button>
+          </form>
+
+          <!-- Additional Information -->
+          <div class="mt-4 text-center" *ngIf="siteConfig$ | async as config">
+            <p class="text-muted small">
+              {{ config.site_name }} - Scientific Metadata Management
+            </p>
+            <p class="text-muted small">
+              <i class="bi bi-info-circle me-1"></i>
+              New users can sign in directly with ORCID
+            </p>
+          </div>
+        </div>
+      </div>
+  </div>
+</div>
