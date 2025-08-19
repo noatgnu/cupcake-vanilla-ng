@@ -4,7 +4,7 @@ import { MetadataTableTemplates } from './features/metadata-table-templates/meta
 import { LoginComponent } from './auth/login/login';
 import { SiteConfigComponent } from './features/admin/site-config/site-config';
 import { MetadataSelector } from './features/metadata-selector/metadata-selector';
-import { MetadataTablesComponent } from './features/metadata-tables/metadata-tables';
+import { MetadataTablesComponent} from './features/metadata-tables/metadata-tables';
 import { MetadataTableDetailsComponent } from './features/metadata-table-details/metadata-table-details';
 import { LabGroupsComponent } from './features/lab-groups/lab-groups';
 import { authGuard } from './shared/guards/auth-guard';
