@@ -39,11 +39,18 @@ export class FavoriteManagementComponent implements OnInit {
   // State management
   isLoading = signal(false);
   favorites = signal<FavouriteMetadataOption[]>([]);
+  
+  // Search filter signals - these will be updated when form changes
+  searchTerm = signal('');
+  scopeFilter = signal('');
+  labGroupFilter = signal('');
+  columnTypeFilter = signal('');
+
   filteredFavorites = computed(() => {
-    const searchTerm = this.searchForm.get('search')?.value?.toLowerCase() || '';
-    const scopeFilter = this.searchForm.get('scope')?.value;
-    const labGroupFilter = this.searchForm.get('labGroup')?.value;
-    const columnTypeFilter = this.searchForm.get('columnType')?.value;
+    const searchTerm = this.searchTerm().toLowerCase();
+    const scopeFilter = this.scopeFilter();
+    const labGroupFilter = this.labGroupFilter();
+    const columnTypeFilter = this.columnTypeFilter();
 
     return this.favorites().filter(fav => {
       // Search filter
@@ -183,9 +190,16 @@ export class FavoriteManagementComponent implements OnInit {
 
     this.loadAvailableColumnTemplates();
 
-    // Watch for search form changes
-    this.searchForm.valueChanges.subscribe(() => {
-      this.currentPage.set(1); // Reset to first page on filter change
+    // Watch for search form changes and update filter signals
+    this.searchForm.valueChanges.subscribe(formValues => {
+      // Update filter signals to trigger computed recalculation
+      this.searchTerm.set(formValues.search || '');
+      this.scopeFilter.set(formValues.scope || '');
+      this.labGroupFilter.set(formValues.labGroup || '');
+      this.columnTypeFilter.set(formValues.columnType || '');
+      
+      // Reset to first page on filter change
+      this.currentPage.set(1);
     });
   }
 
@@ -411,6 +425,16 @@ export class FavoriteManagementComponent implements OnInit {
 
   onPageSizeChange(size: number): void {
     this.pageSize.set(size);
+    this.currentPage.set(1);
+  }
+
+  clearFilters(): void {
+    this.searchForm.reset();
+    // Manually reset filter signals to ensure they're cleared
+    this.searchTerm.set('');
+    this.scopeFilter.set('');
+    this.labGroupFilter.set('');
+    this.columnTypeFilter.set('');
     this.currentPage.set(1);
   }
 

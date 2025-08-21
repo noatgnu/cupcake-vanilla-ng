@@ -100,9 +100,9 @@
         <div class="text-center py-5">
           <i class="bi bi-heart display-1 text-muted"></i>
           <h5 class="mt-3 text-muted">No Favorites Found</h5>
-          @if (searchForm.get('search')?.value || searchForm.get('scope')?.value || searchForm.get('columnType')?.value) {
+          @if (searchTerm() || scopeFilter() || columnTypeFilter()) {
             <p class="text-muted">Try adjusting your search criteria</p>
-            <button type="button" class="btn btn-outline-secondary" (click)="searchForm.reset()">
+            <button type="button" class="btn btn-outline-secondary" (click)="clearFilters()">
               <i class="bi bi-arrow-clockwise me-1"></i>Clear Filters
             </button>
           } @else {
@@ -261,7 +261,7 @@
 
 <!-- Edit/Create Modal -->
 @if (showEditModal()) {
-  <div class="modal fade show d-block" tabindex="-1" style="background: var(--bs-modal-backdrop-bg, rgba(0,0,0,0.5));">
+  <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
     <div class="modal-dialog modal-lg">
       <div class="modal-content">
         <div class="modal-header">
