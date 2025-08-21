@@ -183,6 +183,57 @@
           </form>
           </div>
         </div>
+
+        <!-- Authentication Settings Card -->
+        <div class="card mb-4">
+          <div class="card-header">
+            <h5 class="mb-0">
+              <i class="bi bi-shield-lock me-2"></i>Authentication Settings
+            </h5>
+          </div>
+          <div class="card-body">
+            
+            <!-- Allow User Registration -->
+            <div class="mb-3">
+              <div class="form-check">
+                <input 
+                  class="form-check-input" 
+                  type="checkbox" 
+                  id="allow_user_registration"
+                  formControlName="allow_user_registration">
+                <label class="form-check-label" for="allow_user_registration">
+                  <i class="bi bi-person-plus me-1"></i>
+                  Allow Public User Registration
+                </label>
+              </div>
+              <div class="form-text">
+                When enabled, users can register new accounts without admin approval. 
+                The registration API endpoint will be accessible to the public.
+              </div>
+            </div>
+
+            <!-- Enable ORCID Login -->
+            <div class="mb-3">
+              <div class="form-check">
+                <input 
+                  class="form-check-input" 
+                  type="checkbox" 
+                  id="enable_orcid_login"
+                  formControlName="enable_orcid_login">
+                <label class="form-check-label" for="enable_orcid_login">
+                  <i class="bi bi-person-badge me-1"></i>
+                  Enable ORCID OAuth Login
+                </label>
+              </div>
+              <div class="form-text">
+                Allow users to log in using their ORCID account. 
+                Requires ORCID OAuth configuration in server settings.
+              </div>
+            </div>
+
+          </div>
+        </div>
+
       </div>
 
       <div class="col-lg-4">
@@ -217,16 +268,59 @@
               }
               {{ configForm.get('site_name')?.value || 'Your Site Name' }}
             </h6>
+            @if (configForm.get('enable_orcid_login')?.value) {
+              <div class="preview-button mb-2"
+                   [style.background]="'linear-gradient(135deg, ' + (configForm.get('primary_color')?.value || '#1976d2') + ' 0%, ' + getDarkerColor(configForm.get('primary_color')?.value || '#1976d2') + ' 100%)'">
+                <i class="bi bi-person-badge me-2"></i>
+                Login with ORCID
+              </div>
+            }
             <div class="preview-button mb-2"
                  [style.background]="'linear-gradient(135deg, ' + (configForm.get('primary_color')?.value || '#1976d2') + ' 0%, ' + getDarkerColor(configForm.get('primary_color')?.value || '#1976d2') + ' 100%)'">
-              <i class="bi bi-person-badge me-2"></i>
-              Login with ORCID
+              <i class="bi bi-box-arrow-in-right me-2"></i>
+              Regular Login
             </div>
+            @if (configForm.get('allow_user_registration')?.value) {
+              <div class="text-center mb-2">
+                <small class="text-muted">
+                  <i class="bi bi-person-plus me-1"></i>
+                  Don't have an account? <a href="#" class="text-decoration-none">Register here</a>
+                </small>
+              </div>
+            }
             <div class="text-center">
               <small class="text-muted">
                 {{ configForm.get('site_name')?.value || 'Your Site Name' }} - Scientific Metadata Management
               </small>
             </div>
+          </div>
+
+          <div class="mt-3">
+            <h6 class="text-muted">Authentication Status:</h6>
+            <ul class="list-unstyled small text-muted mb-0">
+              <li>
+                <i class="bi bi-check-circle-fill text-success me-1"></i>
+                Regular login: Always enabled
+              </li>
+              <li>
+                @if (configForm.get('enable_orcid_login')?.value) {
+                  <i class="bi bi-check-circle-fill text-success me-1"></i>
+                  ORCID login: Enabled
+                } @else {
+                  <i class="bi bi-x-circle-fill text-danger me-1"></i>
+                  ORCID login: Disabled
+                }
+              </li>
+              <li>
+                @if (configForm.get('allow_user_registration')?.value) {
+                  <i class="bi bi-check-circle-fill text-success me-1"></i>
+                  Public registration: Enabled
+                } @else {
+                  <i class="bi bi-x-circle-fill text-danger me-1"></i>
+                  Public registration: Disabled
+                }
+              </li>
+            </ul>
           </div>
 
           @if (configForm.get('show_powered_by')?.value) {

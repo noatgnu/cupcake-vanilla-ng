@@ -4,3 +4,4 @@ export * from './sample-pool';
 export * from './lab-group';
 export * from './metadata-template';
 export * from './site-config';
+export * from './user';

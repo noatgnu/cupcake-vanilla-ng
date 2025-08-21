@@ -23,240 +23,251 @@
     </div>
   </nav>
 
-  <!-- Search and Filter Section -->
-  <div class="bg-body-secondary border-bottom p-3">
-    <div class="container-fluid">
-      <form [formGroup]="searchForm" class="row g-3">
-        <div class="col-md-3">
-          <label for="search" class="form-label">Search</label>
-          <div class="input-group">
+  <div class="tables-content p-4">
+    <!-- Search and Filters Section -->
+    <div class="card mb-4">
+      <div class="card-header">
+        <h5 class="mb-0">
+          <i class="bi bi-search me-2"></i>Search & Filters
+        </h5>
+      </div>
+      <div class="card-body">
+        <form [formGroup]="searchForm" class="row g-3">
+          <div class="col-md-3">
+            <label for="search" class="form-label">Search</label>
+            <div class="input-group">
             <span class="input-group-text">
               <i class="bi bi-search"></i>
             </span>
+              <input
+                type="text"
+                class="form-control"
+                id="search"
+                formControlName="search"
+                placeholder="Search by name or value">
+            </div>
+          </div>
+
+          <div class="col-md-3">
+            <label for="scope" class="form-label">Scope</label>
+            <select class="form-select" id="scope" formControlName="scope">
+              <option value="">All Scopes</option>
+              <option value="personal">Personal</option>
+              <option value="lab_group">Lab Group</option>
+              <option value="global">Global</option>
+            </select>
+          </div>
+
+          <div class="col-md-3">
+            <label for="labGroup" class="form-label">Lab Group</label>
             <input
               type="text"
               class="form-control"
-              id="search"
-              formControlName="search"
-              placeholder="Search by name or value">
+              id="labGroup"
+              formControlName="labGroup"
+              placeholder="All Lab Groups"
+              [ngbTypeahead]="searchLabGroups"
+              [resultFormatter]="formatLabGroup"
+              [inputFormatter]="formatLabGroup"
+              (selectItem)="onLabGroupSelected($event)"
+              [editable]="true"
+              [showHint]="true"
+              [focusFirst]="false"
+              container="body">
           </div>
-        </div>
 
-        <div class="col-md-3">
-          <label for="scope" class="form-label">Scope</label>
-          <select class="form-select" id="scope" formControlName="scope">
-            <option value="">All Scopes</option>
-            <option value="personal">Personal</option>
-            <option value="lab_group">Lab Group</option>
-            <option value="global">Global</option>
-          </select>
-        </div>
-
-        <div class="col-md-3">
-          <label for="labGroup" class="form-label">Lab Group</label>
-          <input
-            type="text"
-            class="form-control"
-            id="labGroup"
-            formControlName="labGroup"
-            placeholder="All Lab Groups"
-            [ngbTypeahead]="searchLabGroups"
-            [resultFormatter]="formatLabGroup"
-            [inputFormatter]="formatLabGroup"
-            (selectItem)="onLabGroupSelected($event)"
-            [editable]="true"
-            [showHint]="true"
-            [focusFirst]="false"
-            container="body">
-        </div>
-
-        <div class="col-md-3">
-          <label for="columnType" class="form-label">Column Type</label>
-          <select class="form-select" id="columnType" formControlName="columnType">
-            @for (type of columnTypes; track type.value) {
-              <option [value]="type.value">{{ type.label }}</option>
-            }
-          </select>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- Loading State -->
-  @if (isLoading()) {
-    <div class="d-flex justify-content-center align-items-center" style="height: 400px;">
-      <div class="spinner-border text-primary" role="status">
-        <span class="visually-hidden">Loading...</span>
+          <div class="col-md-3">
+            <label for="columnType" class="form-label">Column Type</label>
+            <select class="form-select" id="columnType" formControlName="columnType">
+              @for (type of columnTypes; track type.value) {
+                <option [value]="type.value">{{ type.label }}</option>
+              }
+            </select>
+          </div>
+        </form>
       </div>
     </div>
-  }
 
-  <!-- Main Content -->
-  @if (!isLoading()) {
-    <div class="container-fluid p-4">
-
-      <!-- Empty State -->
-      @if (filteredFavorites().length === 0) {
-        <div class="text-center py-5">
-          <i class="bi bi-heart display-1 text-muted"></i>
-          <h5 class="mt-3 text-muted">No Favorites Found</h5>
-          @if (searchTerm() || scopeFilter() || columnTypeFilter()) {
-            <p class="text-muted">Try adjusting your search criteria</p>
-            <button type="button" class="btn btn-outline-secondary" (click)="clearFilters()">
-              <i class="bi bi-arrow-clockwise me-1"></i>Clear Filters
-            </button>
-          } @else {
-            <p class="text-muted">Create your first favorite to get started</p>
-            <button type="button" class="btn btn-primary" (click)="openCreateModal()">
-              <i class="bi bi-plus-circle me-1"></i>Add First Favorite
-            </button>
-          }
-        </div>
-      }
-
-      <!-- Favorites Table -->
-      @if (filteredFavorites().length > 0) {
-        <div class="card">
-          <div class="card-body p-0">
-            <div class="table-responsive">
-              <table class="table table-hover mb-0">
-                <thead class="table-secondary">
-                  <tr>
-                    <th scope="col" style="width: 200px;">Column</th>
-                    <th scope="col" style="width: 200px;">Display Name</th>
-                    <th scope="col">Value</th>
-                    <th scope="col" style="width: 150px;">Scope</th>
-                    <th scope="col" style="width: 120px;">Created</th>
-                    <th scope="col" style="width: 120px;">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (favorite of paginatedFavorites(); track favorite.id) {
-                    <tr>
-                      <td>
-                        <div class="d-flex align-items-center gap-2">
-                          <span class="fw-semibold">{{ getCleanColumnName(favorite.name) }}</span>
-                          <span class="badge bg-secondary">{{ getCleanColumnType(favorite.type) }}</span>
-                        </div>
-                      </td>
-                      <td>
-                        <div class="text-truncate" [title]="favorite.display_value || 'No display name'">
-                          @if (favorite.display_value && favorite.display_value.trim()) {
-                            {{ favorite.display_value }}
-                          } @else {
-                            <span class="text-muted fst-italic">No display name</span>
-                          }
-                        </div>
-                      </td>
-                      <td>
-                        <div style="max-width: 300px;">
-                          @if (isComplexValue(favorite.value)) {
-                            <!-- Complex value with key-value pairs -->
-                            <div class="d-flex flex-wrap gap-1">
-                              @for (pair of parseComplexValue(favorite.value); track $index) {
-                                <span class="badge bg-light text-dark border">
-                                  <small><strong>{{ pair.key }}:</strong> {{ pair.value }}</small>
-                                </span>
-                              }
-                            </div>
-                          } @else {
-                            <!-- Simple value -->
-                            <div class="text-truncate" [title]="favorite.value">
-                              {{ favorite.value }}
-                            </div>
-                          }
-                        </div>
-                      </td>
-                      <td>
-                        <span [class]="getScopeClass(favorite)">
-                          @if (favorite.is_global) {
-                            <i class="bi bi-globe me-1"></i>Global
-                          } @else if (favorite.lab_group) {
-                            <i class="bi bi-people me-1"></i>Lab Group
-                          } @else {
-                            <i class="bi bi-person me-1"></i>Personal
-                          }
-                        </span>
-                        @if (favorite.user_username && !favorite.is_global) {
-                          <br><small class="text-muted">{{ favorite.user_username }}</small>
-                        }
-                        @if (favorite.lab_group_name) {
-                          <br><small class="text-muted">{{ favorite.lab_group_name }}</small>
-                        }
-                      </td>
-                      <td>
-                        <small class="text-muted">
-                          {{ favorite.created_at | date:'MMM d, y' }}
-                        </small>
-                      </td>
-                      <td>
-                        <div class="btn-group btn-group-sm">
-                          @if (canEditFavorite(favorite)) {
-                            <button
-                              type="button"
-                              class="btn btn-outline-primary"
-                              (click)="openEditModal(favorite)"
-                              title="Edit favorite">
-                              <i class="bi bi-pencil"></i>
-                            </button>
-                          }
-                          @if (canDeleteFavorite(favorite)) {
-                            <button
-                              type="button"
-                              class="btn btn-outline-danger"
-                              (click)="deleteFavorite(favorite)"
-                              title="Delete favorite">
-                              <i class="bi bi-trash"></i>
-                            </button>
-                          }
-                        </div>
-                      </td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        <!-- Pagination -->
-        @if (totalPages() > 1) {
-          <div class="d-flex justify-content-between align-items-center mt-4">
-            <div class="d-flex align-items-center gap-2">
-              <span class="text-muted">Show:</span>
-              <select
-                class="form-select form-select-sm"
-                style="width: auto;"
-                [value]="pageSize()"
-                (change)="onPageSizeChange(+($any($event.target).value))">
-                <option value="10">10</option>
-                <option value="25">25</option>
-                <option value="50">50</option>
-                <option value="100">100</option>
-              </select>
-              <span class="text-muted">per page</span>
-            </div>
-
-            <ngb-pagination
-              [collectionSize]="filteredFavorites().length"
-              [page]="currentPage()"
-              [pageSize]="pageSize()"
-              [maxSize]="5"
-              [boundaryLinks]="true"
-              [rotate]="true"
-              (pageChange)="onPageChange($event)"
-              class="pagination-sm mb-0">
-            </ngb-pagination>
-
-            <span class="text-muted">
-              Showing {{ ((currentPage() - 1) * pageSize()) + 1 }}-{{ Math.min(currentPage() * pageSize(), filteredFavorites().length) }}
-              of {{ filteredFavorites().length }} favorites
-            </span>
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+          <i class="bi bi-table me-2"></i>Favorites options
+          <span class="badge bg-primary ms-2"></span>
+        </h5>
+        @if (isLoading()) {
+          <div class="spinner-border spinner-border-sm text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
           </div>
         }
-      }
+      </div>
+      <div class="card-body p-0">
+        @if (!isLoading()) {
+
+          @if (filteredFavorites().length === 0) {
+            <div class="text-center py-5">
+              <i class="bi bi-heart display-1 text-muted"></i>
+              <h5 class="mt-3 text-muted">No Favorites Found</h5>
+              @if (searchTerm() || scopeFilter() || columnTypeFilter()) {
+                <p class="text-muted">Try adjusting your search criteria</p>
+                <button type="button" class="btn btn-outline-secondary" (click)="clearFilters()">
+                  <i class="bi bi-arrow-clockwise me-1"></i>Clear Filters
+                </button>
+              } @else {
+                <p class="text-muted">Create your first favorite to get started</p>
+                <button type="button" class="btn btn-primary" (click)="openCreateModal()">
+                  <i class="bi bi-plus-circle me-1"></i>Add First Favorite
+                </button>
+              }
+            </div>
+          }
+
+          <!-- Favorites Table -->
+          @if (filteredFavorites().length > 0) {
+            <div class="card">
+              <div class="card-body p-0">
+                <div class="table-responsive">
+                  <table class="table table-hover mb-0">
+                    <thead class="table-secondary">
+                    <tr>
+                      <th scope="col" style="width: 200px;">Column</th>
+                      <th scope="col" style="width: 200px;">Display Name</th>
+                      <th scope="col">Value</th>
+                      <th scope="col" style="width: 150px;">Scope</th>
+                      <th scope="col" style="width: 120px;">Created</th>
+                      <th scope="col" style="width: 120px;">Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                      @for (favorite of paginatedFavorites(); track favorite.id) {
+                        <tr>
+                          <td>
+                            <div class="d-flex align-items-center gap-2">
+                              <div class="d-flex align-items-center">
+                                <i class="me-2" [class]="getColumnTypeIcon(favorite) + ' ' + getColumnTypeClass(favorite)"></i>
+                                <span class="fw-semibold">{{ getCleanColumnName(favorite.name) }}</span>
+                              </div>
+                            </div>
+                          </td>
+                          <td>
+                            <div class="text-truncate" [title]="favorite.display_value || 'No display name'">
+                              @if (favorite.display_value && favorite.display_value.trim()) {
+                                {{ favorite.display_value }}
+                              } @else {
+                                <span class="text-muted fst-italic">No display name</span>
+                              }
+                            </div>
+                          </td>
+                          <td>
+                            <div style="max-width: 300px;">
+                              @if (isComplexValue(favorite.value)) {
+                                <!-- Complex value with key-value pairs -->
+                                <div class="d-flex flex-wrap gap-1">
+                                  @for (pair of parseComplexValue(favorite.value); track $index) {
+                                    <span class="badge bg-light text-dark border">
+                                <small><strong>{{ pair.key }}:</strong> {{ pair.value }}</small>
+                              </span>
+                                  }
+                                </div>
+                              } @else {
+                                <!-- Simple value -->
+                                <div class="text-truncate" [title]="favorite.value">
+                                  {{ favorite.value }}
+                                </div>
+                              }
+                            </div>
+                          </td>
+                          <td>
+                      <span [class]="getScopeClass(favorite)">
+                        @if (favorite.is_global) {
+                          <i class="bi bi-globe me-1"></i>Global
+                        } @else if (favorite.lab_group) {
+                          <i class="bi bi-people me-1"></i>Lab Group
+                        } @else {
+                          <i class="bi bi-person me-1"></i>Personal
+                        }
+                      </span>
+                            @if (favorite.user_username && !favorite.is_global) {
+                              <br><small class="text-muted">{{ favorite.user_username }}</small>
+                            }
+                            @if (favorite.lab_group_name) {
+                              <br><small class="text-muted">{{ favorite.lab_group_name }}</small>
+                            }
+                          </td>
+                          <td>
+                            <small class="text-muted">
+                              {{ favorite.created_at | date:'MMM d, y' }}
+                            </small>
+                          </td>
+                          <td>
+                            <div class="btn-group btn-group-sm">
+                              @if (canEditFavorite(favorite)) {
+                                <button
+                                  type="button"
+                                  class="btn btn-outline-primary"
+                                  (click)="openEditModal(favorite)"
+                                  title="Edit favorite">
+                                  <i class="bi bi-pencil"></i>
+                                </button>
+                              }
+                              @if (canDeleteFavorite(favorite)) {
+                                <button
+                                  type="button"
+                                  class="btn btn-outline-danger"
+                                  (click)="deleteFavorite(favorite)"
+                                  title="Delete favorite">
+                                  <i class="bi bi-trash"></i>
+                                </button>
+                              }
+                            </div>
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- Pagination -->
+            @if (totalPages() > 1) {
+              <div class="d-flex justify-content-between align-items-center mt-4">
+                <div class="d-flex align-items-center gap-2">
+                  <span class="text-muted">Show:</span>
+                  <select
+                    class="form-select form-select-sm"
+                    style="width: auto;"
+                    [value]="pageSize()"
+                    (change)="onPageSizeChange(+($any($event.target).value))">
+                    <option value="10">10</option>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                  </select>
+                  <span class="text-muted">per page</span>
+                </div>
+
+                <ngb-pagination
+                  [collectionSize]="filteredFavorites().length"
+                  [page]="currentPage()"
+                  [pageSize]="pageSize()"
+                  [maxSize]="5"
+                  [boundaryLinks]="true"
+                  [rotate]="true"
+                  (pageChange)="onPageChange($event)"
+                  class="pagination-sm mb-0">
+                </ngb-pagination>
+
+                <span class="text-muted">
+            Showing {{ ((currentPage() - 1) * pageSize()) + 1 }}-{{ Math.min(currentPage() * pageSize(), filteredFavorites().length) }}
+                  of {{ filteredFavorites().length }} favorites
+          </span>
+              </div>
+            }
+          }
+        }
+      </div>
     </div>
-  }
+  </div>
 </div>
 
 <!-- Edit/Create Modal -->

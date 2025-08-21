@@ -19,7 +19,15 @@ import {
   MetadataTableTemplateQueryResponse,
   OntologySuggestion,
   OntologySuggestionResponse,
-  SamplePool
+  SamplePool,
+  SiteConfig,
+  AuthConfig,
+  RegistrationStatus,
+  User,
+  UserCreateRequest,
+  UserRegistrationRequest,
+  UserResponse,
+  UserListResponse
 } from '../models';
 import { environment } from '../../../environments/environment';
 
@@ -431,5 +439,69 @@ export class ApiService {
     value_type?: 'default' | 'sample_specific' | 'replace_all';
   }): Observable<MetadataColumn> {
     return this.http.post<MetadataColumn>(`${this.apiUrl}/metadata-columns/${columnId}/update_column_value/`, data);
+  }
+
+  // ===================================================================
+  // SITE CONFIGURATION METHODS
+  // ===================================================================
+
+  getSiteConfig(): Observable<SiteConfig[]> {
+    return this.http.get<SiteConfig[]>(`${this.apiUrl}/site-config/`);
+  }
+
+  updateSiteConfig(id: number, config: Partial<SiteConfig>): Observable<SiteConfig> {
+    return this.http.patch<SiteConfig>(`${this.apiUrl}/site-config/${id}/`, config);
+  }
+
+  // ===================================================================
+  // USER MANAGEMENT METHODS
+  // ===================================================================
+
+  // Admin-only user management
+  getUsers(params?: {
+    is_staff?: boolean;
+    is_active?: boolean;
+    search?: string;
+    page?: number;
+    page_size?: number;
+  }): Observable<UserListResponse> {
+    let httpParams = new HttpParams();
+    if (params?.is_staff !== undefined) httpParams = httpParams.set('is_staff', params.is_staff.toString());
+    if (params?.is_active !== undefined) httpParams = httpParams.set('is_active', params.is_active.toString());
+    if (params?.search) httpParams = httpParams.set('search', params.search);
+    if (params?.page) httpParams = httpParams.set('page', params.page.toString());
+    if (params?.page_size) httpParams = httpParams.set('page_size', params.page_size.toString());
+    
+    return this.http.get<UserListResponse>(`${this.apiUrl}/users/`, { params: httpParams });
+  }
+
+  getUser(id: number): Observable<User> {
+    return this.http.get<User>(`${this.apiUrl}/users/${id}/`);
+  }
+
+  createUser(userData: UserCreateRequest): Observable<UserResponse> {
+    return this.http.post<UserResponse>(`${this.apiUrl}/users/admin-create/`, userData);
+  }
+
+  updateUser(id: number, userData: Partial<User>): Observable<User> {
+    return this.http.patch<User>(`${this.apiUrl}/users/${id}/`, userData);
+  }
+
+  deleteUser(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/users/${id}/`);
+  }
+
+  // Public user registration
+  registerUser(userData: UserRegistrationRequest): Observable<UserResponse> {
+    return this.http.post<UserResponse>(`${this.apiUrl}/users/register/`, userData);
+  }
+
+  // Authentication configuration
+  getAuthConfig(): Observable<AuthConfig> {
+    return this.http.get<AuthConfig>(`${this.apiUrl}/users/auth-config/`);
+  }
+
+  getRegistrationStatus(): Observable<RegistrationStatus> {
+    return this.http.get<RegistrationStatus>(`${this.apiUrl}/users/registration-status/`);
   }
 }

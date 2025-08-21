@@ -35,7 +35,9 @@ export class SiteConfigComponent implements OnInit {
       site_name: ['', [Validators.required, Validators.minLength(1), Validators.maxLength(255)]],
       logo_url: [''],
       primary_color: ['#1976d2', [Validators.pattern(/^#[0-9A-Fa-f]{6}$/)]],
-      show_powered_by: [true]
+      show_powered_by: [true],
+      allow_user_registration: [false],
+      enable_orcid_login: [false]
     });
   }
 

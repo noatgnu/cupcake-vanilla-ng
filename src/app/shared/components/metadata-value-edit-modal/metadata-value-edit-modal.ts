@@ -1,7 +1,7 @@
 import { Component, Input, Output, EventEmitter, OnInit, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { NgbActiveModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
+import { NgbActiveModal, NgbModule, NgbNavModule } from '@ng-bootstrap/ng-bootstrap';
 import { Observable, of, catchError, debounceTime, distinctUntilChanged, tap, switchMap } from 'rxjs';
 import { MetadataColumn, OntologySuggestion, FavouriteMetadataOption } from '../../models';
 import { ApiService } from '../../services/api';
@@ -32,6 +32,7 @@ export interface MetadataValueEditConfig {
     CommonModule,
     ReactiveFormsModule,
     NgbModule,
+    NgbNavModule,
     SdrfAgeInput,
     SdrfModificationInput,
     SdrfCleavageInput,
@@ -59,6 +60,9 @@ export class MetadataValueEditModal implements OnInit {
   // User info
   currentUser = signal<User | null>(null);
   userLabGroups = signal<number[]>([]);
+
+  // Favorites tab management  
+  activeFavoritesTab: 'user' | 'lab_group' | 'global' = 'user';
 
   // SDRF special syntax support
   private sdrfSyntaxService = inject(SdrfSyntaxService);
@@ -257,22 +261,68 @@ export class MetadataValueEditModal implements OnInit {
       next: (response) => {
         this.globalFavorites.set(response.results);
         this.isLoadingFavorites.set(false);
+        // Set initial active tab based on available favorites
+        this.setInitialActiveFavoritesTab();
       },
       error: () => {
         this.globalFavorites.set([]);
         this.isLoadingFavorites.set(false);
+        // Set initial active tab based on available favorites
+        this.setInitialActiveFavoritesTab();
       }
     });
   }
 
   selectFavorite(favorite: FavouriteMetadataOption): void {
-    this.editForm.get('value')?.setValue(favorite.value || '');
+    const favoriteValue = favorite.value || '';
+    
+    // Set the form value
+    this.editForm.get('value')?.setValue(favoriteValue);
     this.editForm.get('value')?.markAsTouched();
     this.selectedFavorite.set(favorite);
+
+    // If we have special syntax and enhanced editor is enabled, update special input value too
+    if (this.showSpecialInput() && this.specialSyntaxType()) {
+      this.specialInputValue.set(favoriteValue);
+    }
+
+    // If the favorite has a stored template ID, update our config to use it for typeahead
+    if (favorite.column_template && favorite.column_template !== this.config.templateId) {
+      this.config.templateId = favorite.column_template;
+    }
 
     // Optional: Show a brief toast if display name differs from actual value
     if (this.hasCustomDisplayValue(favorite)) {
       console.log(`Selected "${favorite.display_value}" (value: ${favorite.value})`);
+    }
+  }
+
+  onFavoriteSelected(event: Event, favoritesList: FavouriteMetadataOption[]): void {
+    const selectElement = event.target as HTMLSelectElement;
+    const favoriteId = selectElement.value;
+    
+    if (!favoriteId) {
+      return; // No selection made
+    }
+
+    const selectedFavorite = favoritesList.find(fav => fav.id?.toString() === favoriteId);
+    if (selectedFavorite) {
+      this.selectFavorite(selectedFavorite);
+    }
+  }
+
+  setActiveFavoritesTab(tab: 'user' | 'lab_group' | 'global'): void {
+    this.activeFavoritesTab = tab;
+  }
+
+  setInitialActiveFavoritesTab(): void {
+    // Set the first available tab as active
+    if (this.userFavorites().length > 0) {
+      this.activeFavoritesTab = 'user';
+    } else if (this.labGroupFavorites().length > 0) {
+      this.activeFavoritesTab = 'lab_group';
+    } else if (this.globalFavorites().length > 0) {
+      this.activeFavoritesTab = 'global';
     }
   }
 

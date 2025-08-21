@@ -4,7 +4,7 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
 import { RouterModule } from '@angular/router';
 import { NgbModule, NgbModal, NgbTypeahead } from '@ng-bootstrap/ng-bootstrap';
 import { Observable, OperatorFunction, debounceTime, distinctUntilChanged, filter, map, switchMap, of, catchError, forkJoin, firstValueFrom } from 'rxjs';
-import { FavouriteMetadataOption, MetadataColumnTemplate, OntologySuggestion } from '../../shared/models';
+import {FavouriteMetadataOption, MetadataColumn, MetadataColumnTemplate, OntologySuggestion} from '../../shared/models';
 import { ApiService } from '../../shared/services/api';
 import { ToastService } from '../../shared/services/toast';
 import { AuthService, User } from '../../shared/services/auth';
@@ -39,7 +39,8 @@ export class FavoriteManagementComponent implements OnInit {
   // State management
   isLoading = signal(false);
   favorites = signal<FavouriteMetadataOption[]>([]);
-  
+  totalFavoritesCount = signal(0); // Total count from backend
+
   // Search filter signals - these will be updated when form changes
   searchTerm = signal('');
   scopeFilter = signal('');
@@ -197,7 +198,7 @@ export class FavoriteManagementComponent implements OnInit {
       this.scopeFilter.set(formValues.scope || '');
       this.labGroupFilter.set(formValues.labGroup || '');
       this.columnTypeFilter.set(formValues.columnType || '');
-      
+
       // Reset to first page on filter change
       this.currentPage.set(1);
     });
@@ -206,70 +207,14 @@ export class FavoriteManagementComponent implements OnInit {
   loadFavorites(): void {
     this.isLoading.set(true);
 
-    const userId = this.currentUserId();
-    const labGroups = this.userLabGroups();
-    
-
-    // Load favorites with proper backend filtering
-    // We'll make multiple API calls and combine results for better performance and security
-    const favoriteRequests: Observable<{count: number, results: FavouriteMetadataOption[]}>[] = [];
-
-    // 1. Load user's personal favorites
-    if (userId) {
-      favoriteRequests.push(
-        this.apiService.getFavouriteMetadataOptions({
-          user_id: userId,
-          limit: 10
-        })
-      );
-    }
-
-    // 2. Load lab group favorites for each lab group the user belongs to
-    labGroups.forEach(labGroupId => {
-      favoriteRequests.push(
-        this.apiService.getFavouriteMetadataOptions({
-          lab_group_id: labGroupId,
-          limit: 10
-        })
-      );
-    });
-
-    // 3. Load global favorites
-    favoriteRequests.push(
-      this.apiService.getFavouriteMetadataOptions({
-        is_global: true,
-        limit: 10
-      })
-    );
-
-    // Combine all requests
-    if (favoriteRequests.length === 0) {
-      // No user and no lab groups, just load global favorites
-      favoriteRequests.push(
-        this.apiService.getFavouriteMetadataOptions({
-          is_global: true,
-          limit: 10
-        })
-      );
-    }
-
-    // Execute all requests in parallel and combine results
-    forkJoin(favoriteRequests).subscribe({
-      next: (responses) => {
-        // Combine all results and remove duplicates
-        const allFavorites: FavouriteMetadataOption[] = [];
-        const seenIds = new Set<number>();
-        
-        responses.forEach(response => {
-          response.results.forEach(fav => {
-            if (fav.id && !seenIds.has(fav.id)) {
-              seenIds.add(fav.id);
-              allFavorites.push(fav);
-            }
-          });
-        });
-        
-        this.favorites.set(allFavorites);
+    // Make a single API call - the backend will handle filtering based on user access
+    // The backend should return all favorites the user has access to (personal, lab group, global)
+    this.apiService.getFavouriteMetadataOptions({
+      limit: 1000 // Get all accessible favorites, backend will handle access control
+    }).subscribe({
+      next: (response) => {
+        this.favorites.set(response.results);
+        this.totalFavoritesCount.set(response.count || response.results.length);
         this.isLoading.set(false);
       },
       error: (error) => {
@@ -327,37 +272,45 @@ export class FavoriteManagementComponent implements OnInit {
     if (favorite.is_global) scope = 'global';
     else if (favorite.lab_group) scope = 'lab_group';
 
-    // Find template_id for typeahead functionality
-    this.findTemplatesForColumnName(favorite.name).then(templates => {
-      const matchingTemplate = templates.find(t => 
-        t.column_name === favorite.name && t.column_type === favorite.type
-      );
-      
-      this.editForm.patchValue({
-        name: favorite.name,
-        type: favorite.type,
-        value: favorite.value,
-        display_value: favorite.display_value || '',
-        scope: scope,
-        template_id: matchingTemplate?.id || null
-      });
-
-      // Check for special SDRF syntax and activate enhanced editor
-      const syntaxType = this.sdrfSyntaxService.detectSpecialSyntax(
-        favorite.name,
-        favorite.type
-      );
-
-      if (syntaxType) {
-        this.specialSyntaxType.set(syntaxType);
-        this.showSpecialInput.set(true);
-        this.specialInputValue.set(favorite.value || '');
-      } else {
-        this.specialSyntaxType.set(null);
-        this.showSpecialInput.set(false);
-        this.specialInputValue.set('');
-      }
+    // Use stored column_template ID if available, otherwise try to find matching template
+    let templateId = favorite.column_template || null;
+    
+    this.editForm.patchValue({
+      name: favorite.name,
+      type: favorite.type,
+      value: favorite.value,
+      display_value: favorite.display_value || '',
+      scope: scope,
+      template_id: templateId
     });
+
+    // Check for special SDRF syntax and activate enhanced editor
+    const syntaxType = this.sdrfSyntaxService.detectSpecialSyntax(
+      favorite.name,
+      favorite.type
+    );
+
+    if (syntaxType) {
+      this.specialSyntaxType.set(syntaxType);
+      this.showSpecialInput.set(true);
+      this.specialInputValue.set(favorite.value || '');
+    } else {
+      this.specialSyntaxType.set(null);
+      this.showSpecialInput.set(false);
+      this.specialInputValue.set('');
+    }
+
+    // If no stored template ID, try to find one as fallback for future use
+    if (!templateId) {
+      this.findTemplatesForColumnName(favorite.name).then(templates => {
+        const matchingTemplate = templates.find(t => 
+          t.column_name === favorite.name && t.column_type === favorite.type
+        );
+        if (matchingTemplate?.id) {
+          this.editForm.patchValue({ template_id: matchingTemplate.id });
+        }
+      });
+    }
   }
 
   saveFavorite(): void {
@@ -471,7 +424,7 @@ export class FavoriteManagementComponent implements OnInit {
         this.availableLabGroups.set(labGroups);
 
         this.userLabGroupsLoaded.set(true);
-        
+
         // Reload favorites now that we have user lab groups
         this.loadFavorites();
       },
@@ -480,7 +433,7 @@ export class FavoriteManagementComponent implements OnInit {
         this.userLabGroups.set([]);
         this.availableLabGroups.set([]);
         this.userLabGroupsLoaded.set(true);
-        
+
         // Still load favorites even if lab group loading failed
         this.loadFavorites();
       }
@@ -494,7 +447,7 @@ export class FavoriteManagementComponent implements OnInit {
           name: group.name
         }));
         this.allLabGroups.set(allLabGroups);
-        
+
         // If user is admin, also update available lab groups for filtering
         if (this.isAdmin()) {
           this.availableLabGroups.set(allLabGroups);
@@ -640,7 +593,7 @@ export class FavoriteManagementComponent implements OnInit {
     // First check cached templates
     const cached = this.availableColumnTemplates();
     const cachedMatches = cached.filter(template => template.column_name === columnName);
-    
+
     if (cachedMatches.length > 0) {
       return cachedMatches;
     }
@@ -651,7 +604,7 @@ export class FavoriteManagementComponent implements OnInit {
         search: columnName,
         limit: 10
       }));
-      
+
       if (response) {
         const exactMatches = response.results.filter(template => template.column_name === columnName);
         return exactMatches;
@@ -767,7 +720,7 @@ export class FavoriteManagementComponent implements OnInit {
 
   private getLabGroupSuggestions(term: string): {id: number, name: string}[] {
     const allGroups = this.allLabGroups();
-    
+
     if (!term) {
       return allGroups.slice(0, 10);
     }
@@ -791,14 +744,14 @@ export class FavoriteManagementComponent implements OnInit {
   // Clean up column name display for table
   getCleanColumnName(name: string): string {
     if (!name) return '';
-    
+
     // Extract content inside brackets if it exists
     // e.g., "comment[modification parameters]" becomes "modification parameters"
     const bracketMatch = name.match(/\[(.+?)\]/);
     if (bracketMatch) {
       return bracketMatch[1];
     }
-    
+
     // If no brackets, return the name as is
     return name;
   }
@@ -806,11 +759,11 @@ export class FavoriteManagementComponent implements OnInit {
   // Clean up column type display for table
   getCleanColumnType(type: string): string {
     if (!type) return '';
-    
+
     // Remove brackets and content inside them
     // e.g., "characteristics[organism]" becomes "characteristics"
     const cleanType = type.replace(/\[.*?\]/g, '').trim();
-    
+
     // Capitalize first letter for better display
     return cleanType.charAt(0).toUpperCase() + cleanType.slice(1);
   }
@@ -818,23 +771,23 @@ export class FavoriteManagementComponent implements OnInit {
   // Check if value contains multiple key-value pairs (complex value)
   isComplexValue(value: string): boolean {
     if (!value) return false;
-    
+
     // Check for SDRF-style key=value pairs separated by semicolons
     // e.g., "AC=UNIMOD:21;CF=H O(3) P;PP=Anywhere;TA=T,S;MM=79.966331"
     const sdrfPattern = /^[A-Z]{2,3}=[^;]+(?:;[A-Z]{2,3}=[^;]+)+$/;
-    
+
     // Check for other common key-value patterns
     const keyValuePattern = /\w+[:=][^;,]+[;,]\w+[:=]/;
-    
+
     return sdrfPattern.test(value) || keyValuePattern.test(value);
   }
 
   // Parse complex value into key-value pairs
   parseComplexValue(value: string): {key: string, value: string}[] {
     if (!value) return [];
-    
+
     const pairs: {key: string, value: string}[] = [];
-    
+
     // Handle SDRF-style format (key=value;key=value)
     if (value.includes('=') && value.includes(';')) {
       const parts = value.split(';');
@@ -862,7 +815,7 @@ export class FavoriteManagementComponent implements OnInit {
         }
       });
     }
-    
+
     return pairs;
   }
 
@@ -913,5 +866,25 @@ export class FavoriteManagementComponent implements OnInit {
       case 'spiked_compound': return 'Spiked Compound Editor';
       default: return 'Special Format Editor';
     }
+  }
+
+  getColumnTypeClass(favouriteOption: FavouriteMetadataOption): string {
+    const type = favouriteOption.type?.toLowerCase() || '';
+    if (type.includes('characteristics')) return 'text-primary';
+    if (type.includes('factor')) return 'text-success';
+    if (type.includes('comment')) return 'text-info';
+    if (type.includes('source')) return 'text-warning';
+    if (type === 'special') return 'text-danger';
+    return 'text-muted';
+  }
+
+  getColumnTypeIcon(favouriteMetadataOption: FavouriteMetadataOption): string {
+    const type = favouriteMetadataOption.type?.toLowerCase() || '';
+    if (type.includes('characteristics')) return 'bi-tags';
+    if (type.includes('factor')) return 'bi-sliders';
+    if (type.includes('comment')) return 'bi-chat-left-text';
+    if (type.includes('source')) return 'bi-diagram-3';
+    if (type === 'special') return 'bi-star';
+    return 'bi-circle';
   }
 }
