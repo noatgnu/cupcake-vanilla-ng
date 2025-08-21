@@ -57,14 +57,64 @@
         </select>
       </div>
 
+      @if (hasOntologyType) {
+        <div class="col-12 mb-3">
+          <div class="form-check form-switch">
+            <input 
+              class="form-check-input" 
+              type="checkbox" 
+              id="enableTypeahead"
+              formControlName="enable_typeahead">
+            <label class="form-check-label" for="enableTypeahead">
+              <i class="bi bi-search me-1"></i>Enable Typeahead Autocomplete
+            </label>
+            <div class="form-text">
+              <i class="bi bi-info-circle me-1"></i>
+              Enable autocomplete suggestions from {{ editForm.get('ontology_type')?.value }} ontology when editing values
+            </div>
+          </div>
+        </div>
+      }
+
       <div class="col-12 mb-3">
-        <label for="defaultValue" class="form-label">Default Value</label>
-        <input 
-          type="text" 
-          class="form-control"
-          id="defaultValue"
-          formControlName="value"
-          placeholder="Optional default value">
+        <label for="defaultValue" class="form-label">
+          Default Value
+          @if (hasTypeaheadEnabled) {
+            <span class="badge bg-success ms-2">
+              <i class="bi bi-search me-1"></i>Typeahead Enabled
+            </span>
+          }
+        </label>
+        
+        <div class="input-group">
+          <input 
+            type="text" 
+            class="form-control"
+            id="defaultValue"
+            formControlName="value"
+            placeholder="Enter default value"
+            readonly>
+          <button 
+            type="button" 
+            class="btn btn-outline-primary"
+            (click)="openValueEditModal()"
+            title="Open advanced value editor">
+            <i class="bi bi-pencil me-1"></i>Edit
+          </button>
+        </div>
+        
+        <div class="form-text">
+          @if (hasTypeaheadEnabled) {
+            <i class="bi bi-info-circle me-1"></i>
+            Click "Edit" to use autocomplete suggestions from {{ editForm.get('ontology_type')?.value }} ontology
+          } @else if (hasOntologyType) {
+            <i class="bi bi-info-circle me-1"></i>
+            Click "Edit" to set default value. Enable typeahead above for autocomplete suggestions.
+          } @else {
+            <i class="bi bi-info-circle me-1"></i>
+            Click "Edit" to set the default value (select an ontology type above for smart suggestions)
+          }
+        </div>
       </div>
 
       <!-- Column Options -->

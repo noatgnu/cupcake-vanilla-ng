@@ -1,0 +1,91 @@
+// Header cell styling - optimized for performance
+.header-cell {
+  position: relative;
+  
+  .header-actions {
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+}
+
+// Use efficient hover selector on table header
+thead th:hover .header-actions {
+  opacity: 1;
+}
+
+.header-edit-btn {
+  --bs-btn-padding-y: 0.125rem;
+  --bs-btn-padding-x: 0.25rem;
+  --bs-btn-font-size: 0.65rem;
+  border: none !important;
+  
+  &.btn-outline-primary:hover {
+    background-color: var(--bs-primary);
+    border-color: var(--bs-primary);
+  }
+  
+  &.btn-outline-danger:hover {
+    background-color: var(--bs-danger);
+    border-color: var(--bs-danger);
+  }
+}
+
+// Optimized row-level styling - much better performance
+.sample-row {
+  &.editable {
+    .sample-cell {
+      cursor: pointer;
+      transition: background-color 0.1s ease;
+      
+      &:hover {
+        background-color: rgba(40, 167, 69, 0.08);
+        position: relative;
+        
+        // Add edit indicator on hover using pseudo-element
+        &::after {
+          content: '✎';
+          position: absolute;
+          right: 4px;
+          top: 50%;
+          transform: translateY(-50%);
+          color: rgba(40, 167, 69, 0.6);
+          font-size: 0.75em;
+          pointer-events: none;
+        }
+      }
+    }
+  }
+}
+
+.pool-row {
+  &.editable {
+    .pool-cell {
+      cursor: pointer;
+      transition: background-color 0.1s ease;
+      
+      &:hover {
+        background-color: rgba(255, 193, 7, 0.15);
+        position: relative;
+        
+        &::after {
+          content: '✎';
+          position: absolute;
+          right: 4px;
+          top: 50%;
+          transform: translateY(-50%);
+          color: rgba(255, 193, 7, 0.8);
+          font-size: 0.75em;
+          pointer-events: none;
+        }
+      }
+    }
+  }
+}
+
+// Remove transitions on large tables for even better performance
+@media (max-width: 768px) {
+  .sample-row.editable .sample-cell,
+  .pool-row.editable .pool-cell {
+    transition: none;
+  }
+}

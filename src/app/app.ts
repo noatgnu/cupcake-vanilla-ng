@@ -27,6 +27,17 @@ export class App implements OnInit {
   private appInitializedSubject = new BehaviorSubject<boolean>(false);
   public appInitialized$ = this.appInitializedSubject.asObservable();
 
+  // React to theme changes to adjust colors for dark mode
+  private themeEffect = effect(() => {
+    // This effect will run whenever the theme changes
+    this.themeService.isDark();
+    this.siteConfigService.getCurrentConfig().subscribe(currentConfig => {
+      if (currentConfig) {
+        this.updatePrimaryColorTheme(currentConfig.primary_color || '#1976d2');
+      }
+    });
+  });
+
   ngOnInit(): void {
     this.initializeApp();
   }
@@ -39,17 +50,6 @@ export class App implements OnInit {
       // Subscribe to site config changes and update CSS custom properties
       this.siteConfigService.config$.subscribe(config => {
         this.updatePrimaryColorTheme(config.primary_color || '#1976d2');
-      });
-
-      // React to theme changes to adjust colors for dark mode
-      effect(() => {
-        // This effect will run whenever the theme changes
-        this.themeService.isDark();
-        this.siteConfigService.getCurrentConfig().subscribe(currentConfig => {
-          if (currentConfig) {
-            this.updatePrimaryColorTheme(currentConfig.primary_color || '#1976d2');
-          }
-        });
       });
 
       // Mark app as initialized

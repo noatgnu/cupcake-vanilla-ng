@@ -1,8 +1,9 @@
 import { Component, Input, Output, EventEmitter, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { NgbActiveModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
+import { NgbActiveModal, NgbModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { MetadataColumn } from '../../../shared/models';
+import { MetadataValueEditModal, MetadataValueEditConfig } from '../../../shared/components/metadata-value-edit-modal/metadata-value-edit-modal';
 
 @Component({
   selector: 'app-column-edit-modal',
@@ -12,6 +13,7 @@ import { MetadataColumn } from '../../../shared/models';
 })
 export class ColumnEditModal implements OnInit {
   @Input() column: MetadataColumn | null = null;
+  @Input() templateId: number | null = null; // Add template ID for API calls
   @Input() isEdit = false;
   @Output() columnSaved = new EventEmitter<Partial<MetadataColumn>>();
 
@@ -43,15 +45,18 @@ export class ColumnEditModal implements OnInit {
     { value: 'psi_ms', label: 'PSI-MS Controlled Vocabulary' }
   ];
 
+  
   constructor(
     private fb: FormBuilder,
-    private activeModal: NgbActiveModal
+    private activeModal: NgbActiveModal,
+    private modalService: NgbModal
   ) {
     this.editForm = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(1)]],
       type: ['characteristics', Validators.required],
       value: [''],
       ontology_type: [''],
+      enable_typeahead: [false],
       mandatory: [false],
       hidden: [false],
       readonly: [false],
@@ -72,6 +77,7 @@ export class ColumnEditModal implements OnInit {
         type: this.column.type,
         value: this.column.value || '',
         ontology_type: this.column.ontology_type || '',
+        enable_typeahead: this.column.enable_typeahead || false,
         mandatory: this.column.mandatory || false,
         hidden: this.column.hidden || false,
         readonly: this.column.readonly || false,
@@ -90,6 +96,7 @@ export class ColumnEditModal implements OnInit {
         type: formValue.type,
         value: formValue.value || '',
         ontology_type: formValue.ontology_type || null,
+        enable_typeahead: formValue.enable_typeahead || false,
         mandatory: formValue.mandatory || false,
         hidden: formValue.hidden || false,
         readonly: formValue.readonly || false,
@@ -129,5 +136,39 @@ export class ColumnEditModal implements OnInit {
 
   get title(): string {
     return this.isEdit ? 'Edit Column' : 'Add Column';
+  }
+
+  get hasOntologyType(): boolean {
+    const ontologyType = this.editForm.get('ontology_type')?.value;
+    return !!(ontologyType && ontologyType.length > 0);
+  }
+
+  get hasTypeaheadEnabled(): boolean {
+    return this.hasOntologyType && this.editForm.get('enable_typeahead')?.value === true;
+  }
+
+  openValueEditModal(): void {
+    const config: MetadataValueEditConfig = {
+      columnId: this.column?.id,
+      columnName: this.editForm.get('name')?.value || 'Column',
+      columnType: this.editForm.get('type')?.value || '',
+      ontologyType: this.editForm.get('ontology_type')?.value || '',
+      enableTypeahead: this.editForm.get('enable_typeahead')?.value || false,
+      currentValue: this.editForm.get('value')?.value || '',
+      context: 'template',
+      templateId: this.templateId || undefined
+    };
+
+    const modalRef = this.modalService.open(MetadataValueEditModal, {
+      size: 'lg',
+      backdrop: 'static'
+    });
+
+    modalRef.componentInstance.config = config;
+    modalRef.componentInstance.valueSaved.subscribe((newValue: string) => {
+      this.editForm.get('value')?.setValue(newValue);
+      this.editForm.get('value')?.markAsTouched();
+      modalRef.componentInstance.onClose();
+    });
   }
 }

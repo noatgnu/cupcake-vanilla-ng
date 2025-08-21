@@ -7,6 +7,7 @@ import { MetadataSelector } from './features/metadata-selector/metadata-selector
 import { MetadataTablesComponent} from './features/metadata-tables/metadata-tables';
 import { MetadataTableDetailsComponent } from './features/metadata-table-details/metadata-table-details';
 import { LabGroupsComponent } from './features/lab-groups/lab-groups';
+import { FavoriteManagementComponent } from './features/favorite-management/favorite-management';
 import { authGuard } from './shared/guards/auth-guard';
 
 export const routes: Routes = [
@@ -57,6 +58,11 @@ export const routes: Routes = [
   {
     path: 'lab-groups',
     component: LabGroupsComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'favorites',
+    component: FavoriteManagementComponent,
     canActivate: [authGuard]
   },
   {

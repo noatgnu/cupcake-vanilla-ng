@@ -2,13 +2,14 @@ import { Component, inject, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { NgbAlert } from '@ng-bootstrap/ng-bootstrap';
+import { ColorSketchModule } from 'ngx-color/sketch';
 import { SiteConfigService } from '../../../shared/services/site-config';
 import { SiteConfig } from '../../../shared/models';
 
 @Component({
   selector: 'app-site-config',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, NgbAlert],
+  imports: [CommonModule, ReactiveFormsModule, NgbAlert, ColorSketchModule],
   templateUrl: './site-config.html',
   styleUrl: './site-config.scss'
 })
@@ -21,6 +22,13 @@ export class SiteConfigComponent implements OnInit {
   error: string | null = null;
   success: string | null = null;
   selectedLogoFile: File | null = null;
+
+  // Preset colors for the color picker
+  presetColors = [
+    '#1976d2', '#2196f3', '#03a9f4', '#00bcd4', '#009688', '#4caf50',
+    '#8bc34a', '#cddc39', '#ffeb3b', '#ffc107', '#ff9800', '#ff5722',
+    '#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#607d8b'
+  ];
 
   constructor() {
     this.configForm = this.fb.group({
@@ -87,6 +95,41 @@ export class SiteConfigComponent implements OnInit {
     this.configForm.patchValue(currentConfig);
     this.error = null;
     this.success = null;
+  }
+
+  /**
+   * Handle color change from ngx-color picker
+   */
+  onColorChange(event: any) {
+    const color = event.color?.hex || event.hex || event;
+    if (color && typeof color === 'string') {
+      this.configForm.get('primary_color')?.setValue(color);
+      this.configForm.get('primary_color')?.markAsTouched();
+    }
+  }
+
+  /**
+   * Get a darker version of the given color for gradients
+   */
+  getDarkerColor(hex: string): string {
+    if (!hex || !hex.startsWith('#')) {
+      return '#1565c0'; // Default darker color
+    }
+    
+    // Remove # and convert to RGB
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    
+    // Darken by 20%
+    const factor = 0.8;
+    const darkR = Math.floor(r * factor);
+    const darkG = Math.floor(g * factor);
+    const darkB = Math.floor(b * factor);
+    
+    // Convert back to hex
+    const toHex = (n: number) => n.toString(16).padStart(2, '0');
+    return `#${toHex(darkR)}${toHex(darkG)}${toHex(darkB)}`;
   }
 
   /**

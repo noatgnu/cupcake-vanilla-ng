@@ -1,10 +1,14 @@
 import { Component, OnInit, signal, computed, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute, Router } from '@angular/router';
-import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
-import { MetadataTable, MetadataColumn } from '../../shared/models';
+import { NgbModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import { MetadataTable, MetadataColumn, SamplePool } from '../../shared/models';
 import { ApiService } from '../../shared/services/api';
 import { ToastService } from '../../shared/services/toast';
+import { MetadataValueEditModal, MetadataValueEditConfig } from '../../shared/components/metadata-value-edit-modal/metadata-value-edit-modal';
+import { MetadataTableEditModal } from '../../shared/components/metadata-table-edit-modal/metadata-table-edit-modal';
+import { SamplePoolDetailsModal } from '../../shared/components/sample-pool-details-modal/sample-pool-details-modal';
+import { SamplePoolEditModal } from '../../shared/components/sample-pool-edit-modal/sample-pool-edit-modal';
 
 @Component({
   selector: 'app-metadata-table-details',
@@ -23,15 +27,23 @@ export class MetadataTableDetailsComponent implements OnInit {
   isLoading = signal(false);
   table = signal<MetadataTable | null>(null);
   tableId = signal<number | null>(null);
-  viewMode = signal<'list' | 'table'>('list');
+  viewMode = signal<'list' | 'table'>('table');
   currentPage = signal(1);
-  pageSize = signal(50);
+  pageSize = signal(10);
 
   // Computed values
   hasColumns = computed(() => this.table()?.columns && this.table()!.columns.length > 0);
+  hasPools = computed(() => {
+    const table = this.table();
+    return table?.sample_pools && table.sample_pools.length > 0;
+  });
   sortedColumns = computed(() => {
     const columns = this.table()?.columns || [];
     return [...columns].sort((a, b) => (a.column_position || 0) - (b.column_position || 0));
+  });
+  sortedPools = computed(() => {
+    const pools = this.table()?.sample_pools || [];
+    return [...pools].sort((a, b) => a.pool_name.localeCompare(b.pool_name));
   });
 
   // Table data generation
@@ -41,34 +53,13 @@ export class MetadataTableDetailsComponent implements OnInit {
 
     const rows: any[] = [];
     for (let i = 0; i < table.sample_count; i++) {
-      const row: any = { _sampleIndex: i + 1 };
+      const sampleIndex = i + 1; // 1-based sample index
+      const row: any = { _sampleIndex: sampleIndex };
 
       this.sortedColumns().forEach(column => {
-        // Use default value or modifier value for this sample
-        let value = column.value || '';
-
-        // Check if this sample has a specific modifier
-        if (column.modifiers && column.modifiers.length > 0) {
-          for (const modifier of column.modifiers) {
-            if (modifier?.samples) {
-              const sampleRanges = modifier.samples.split(',').map(s => s.trim());
-              for (const range of sampleRanges) {
-                if (range.includes('-')) {
-                  const [start, end] = range.split('-').map(n => parseInt(n.trim()));
-                  if (i + 1 >= start && i + 1 <= end) {
-                    value = modifier.value || '';
-                    break;
-                  }
-                } else if (parseInt(range) === i + 1) {
-                  value = modifier.value || '';
-                  break;
-                }
-              }
-            }
-          }
-        }
-
-        row[column.name] = value;
+        // Use column ID as key to avoid name collisions
+        const value = this.getSampleColumnValue(column, sampleIndex);
+        row[`col_${column.id}`] = value;
       });
 
       rows.push(row);
@@ -77,7 +68,43 @@ export class MetadataTableDetailsComponent implements OnInit {
     return rows;
   });
 
-  // Paginated table data
+  // Pool table data - separate table for pools
+  poolTableRows = computed(() => {
+    const table = this.table();
+    if (!table || !this.hasPools() || !this.hasColumns()) return [];
+
+    const rows: any[] = [];
+    this.sortedPools().forEach(pool => {
+      const row: any = { 
+        _poolName: pool.pool_name,
+        _poolId: pool.id,
+        _poolData: pool
+      };
+
+      // For each column, get the value from the pool's metadata_columns
+      this.sortedColumns().forEach(column => {
+        let value = '';
+        
+        // Find the corresponding metadata column in this pool by matching column IDs if available
+        // or fall back to name matching for compatibility
+        const poolColumn = pool.metadata_columns.find(pc => 
+          (pc.id && column.id && pc.id === column.id) || pc.name === column.name
+        );
+        if (poolColumn) {
+          value = poolColumn.value || '';
+        }
+
+        // Use column ID as key to avoid name collisions
+        row[`col_${column.id}`] = value;
+      });
+
+      rows.push(row);
+    });
+
+    return rows;
+  });
+
+  // Paginated table data (only for samples, pools shown separately)
   paginatedRows = computed(() => {
     const rows = this.tableRows();
     const page = this.currentPage();
@@ -97,7 +124,8 @@ export class MetadataTableDetailsComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private apiService: ApiService,
-    private toastService: ToastService
+    private toastService: ToastService,
+    private modalService: NgbModal
   ) {}
 
   ngOnInit(): void {
@@ -165,10 +193,24 @@ export class MetadataTableDetailsComponent implements OnInit {
 
   editTable(): void {
     const table = this.table();
-    if (!table) return;
+    if (!table || !table.can_edit) return;
 
-    // TODO: Implement edit functionality
-    this.toastService.info('Edit functionality will be implemented soon');
+    const modalRef = this.modalService.open(MetadataTableEditModal, {
+      size: 'lg',
+      centered: true
+    });
+
+    modalRef.componentInstance.table = table;
+
+    modalRef.componentInstance.tableSaved.subscribe((updatedTable: MetadataTable) => {
+      // Update the local table data
+      this.table.set(updatedTable);
+      this.toastService.success(`Table "${updatedTable.name}" updated successfully!`);
+    });
+
+    modalRef.result.catch(() => {
+      // Modal was dismissed - no action needed
+    });
   }
 
   triggerFileInput(): void {
@@ -378,5 +420,327 @@ export class MetadataTableDetailsComponent implements OnInit {
     return column.modifiers!.map(modifier =>
       `Samples ${modifier.samples}: "${modifier.value}"`
     );
+  }
+
+  // Sample Pool Methods
+  getPoolSampleCount(pool: SamplePool): number {
+    return pool.pooled_only_samples.length + pool.pooled_and_independent_samples.length;
+  }
+
+  getPoolSampleDisplay(pool: SamplePool): string {
+    const pooledOnly = pool.pooled_only_samples.length;
+    const pooledAndIndependent = pool.pooled_and_independent_samples.length;
+    const total = pooledOnly + pooledAndIndependent;
+    
+    if (pooledOnly > 0 && pooledAndIndependent > 0) {
+      return `${total} samples (${pooledOnly} pool-only, ${pooledAndIndependent} shared)`;
+    } else if (pooledOnly > 0) {
+      return `${pooledOnly} pool-only samples`;
+    } else if (pooledAndIndependent > 0) {
+      return `${pooledAndIndependent} shared samples`;
+    } else {
+      return '0 samples';
+    }
+  }
+
+  getPoolSamples(pool: SamplePool): string {
+    const allSamples = [...pool.pooled_only_samples, ...pool.pooled_and_independent_samples].sort((a, b) => a - b);
+    if (allSamples.length === 0) return 'None';
+    
+    // Group consecutive numbers into ranges
+    const ranges: string[] = [];
+    let start = allSamples[0];
+    let end = allSamples[0];
+    
+    for (let i = 1; i < allSamples.length; i++) {
+      if (allSamples[i] === end + 1) {
+        end = allSamples[i];
+      } else {
+        ranges.push(start === end ? start.toString() : `${start}-${end}`);
+        start = end = allSamples[i];
+      }
+    }
+    ranges.push(start === end ? start.toString() : `${start}-${end}`);
+    
+    return ranges.join(', ');
+  }
+
+  getPoolTypeIcon(pool: SamplePool): string {
+    return pool.is_reference ? 'bi-star-fill' : 'bi-layers';
+  }
+
+  getPoolTypeClass(pool: SamplePool): string {
+    return pool.is_reference ? 'text-warning' : 'text-primary';
+  }
+
+  getPoolTypeLabel(pool: SamplePool): string {
+    return pool.is_reference ? 'Reference Pool' : 'Sample Pool';
+  }
+
+  viewPoolDetails(pool: SamplePool): void {
+    const modalRef = this.modalService.open(SamplePoolDetailsModal, {
+      size: 'lg',
+      centered: true
+    });
+
+    modalRef.componentInstance.pool = pool;
+  }
+
+  editPool(pool: SamplePool): void {
+    const table = this.table();
+    if (!table || !table.can_edit) return;
+
+    const modalRef = this.modalService.open(SamplePoolEditModal, {
+      size: 'lg',
+      centered: true
+    });
+
+    modalRef.componentInstance.pool = pool;
+    modalRef.componentInstance.maxSampleCount = table.sample_count;
+
+    modalRef.componentInstance.poolSaved.subscribe((updatedPool: SamplePool) => {
+      // Update the pool in the table's sample_pools array
+      const currentTable = this.table();
+      if (currentTable && currentTable.sample_pools) {
+        const poolIndex = currentTable.sample_pools.findIndex(p => p.id === updatedPool.id);
+        if (poolIndex !== -1) {
+          currentTable.sample_pools[poolIndex] = updatedPool;
+          this.table.set({ ...currentTable }); // Trigger reactivity
+        }
+      }
+      this.toastService.success(`Pool "${updatedPool.pool_name}" updated successfully!`);
+    });
+
+    modalRef.result.catch(() => {
+      // Modal was dismissed - no action needed
+    });
+  }
+
+  deletePool(pool: SamplePool): void {
+    const table = this.table();
+    if (!table || !pool.id) return;
+
+    const confirmMessage = `Are you sure you want to delete the pool "${pool.pool_name}"?\n\nThis action cannot be undone.`;
+    
+    if (confirm(confirmMessage)) {
+      this.apiService.deleteSamplePool(pool.id).subscribe({
+        next: () => {
+          // Remove the pool from the table's sample_pools array
+          const currentTable = this.table();
+          if (currentTable && currentTable.sample_pools) {
+            currentTable.sample_pools = currentTable.sample_pools.filter(p => p.id !== pool.id);
+            this.table.set({ ...currentTable }); // Trigger reactivity
+          }
+          this.toastService.success(`Pool "${pool.pool_name}" deleted successfully!`);
+        },
+        error: (error) => {
+          console.error('Error deleting pool:', error);
+          this.toastService.error(`Failed to delete pool "${pool.pool_name}"`);
+        }
+      });
+    }
+  }
+
+  // Metadata value editing methods
+  editColumnValue(column: MetadataColumn): void {
+    const table = this.table();
+    if (!table || !table.can_edit || !column.id) return;
+
+    const config: MetadataValueEditConfig = {
+      columnId: column.id,
+      columnName: column.name,
+      columnType: column.type,
+      ontologyType: column.ontology_type,
+      currentValue: column.value,
+      context: 'table',
+      tableId: table.id
+    };
+
+    const modalRef = this.modalService.open(MetadataValueEditModal, {
+      size: 'lg',
+      backdrop: 'static'
+    });
+
+    modalRef.componentInstance.config = config;
+    modalRef.componentInstance.valueSaved.subscribe((newValue: string) => {
+      // Use the API to update the default value
+      this.apiService.updateMetadataColumnValue(column.id!, {
+        value: newValue,
+        value_type: 'default'
+      }).subscribe({
+        next: (updatedColumn) => {
+          // Update the local column data
+          const currentTable = this.table();
+          if (currentTable) {
+            const updatedColumns = currentTable.columns.map(col => 
+              col.id === column.id ? updatedColumn : col
+            );
+            this.table.set({ ...currentTable, columns: updatedColumns });
+          }
+          this.toastService.success('Column value updated successfully!');
+          modalRef.componentInstance.onClose();
+        },
+        error: (error) => {
+          console.error('Error updating column value:', error);
+          this.toastService.error('Failed to update column value');
+        }
+      });
+    });
+  }
+
+  // Pool metadata value editing method
+  editPoolColumnValue(pool: SamplePool, column: any): void {
+    const table = this.table();
+    if (!table || !table.can_edit) return;
+
+    // Find the pool's metadata column that corresponds to this table column
+    const poolColumn = pool.metadata_columns.find(pc => pc.name === column.name);
+    if (!poolColumn || !poolColumn.id) return;
+
+    const config: MetadataValueEditConfig = {
+      columnId: poolColumn.id,
+      columnName: poolColumn.name,
+      columnType: poolColumn.type,
+      ontologyType: poolColumn.ontology_type,
+      currentValue: poolColumn.value,
+      context: 'pool',
+      tableId: table.id,
+      poolId: pool.id
+    };
+
+    const modalRef = this.modalService.open(MetadataValueEditModal, {
+      size: 'lg',
+      backdrop: 'static'
+    });
+
+    modalRef.componentInstance.config = config;
+    modalRef.componentInstance.valueSaved.subscribe((newValue: string) => {
+      // Update the pool's metadata column value locally
+      const currentTable = this.table();
+      if (currentTable && currentTable.sample_pools) {
+        const updatedPools = currentTable.sample_pools.map(p => {
+          if (p.id === pool.id) {
+            const updatedMetadataColumns = p.metadata_columns.map(mc =>
+              mc.id === poolColumn.id ? { ...mc, value: newValue } : mc
+            );
+            return { ...p, metadata_columns: updatedMetadataColumns };
+          }
+          return p;
+        });
+        this.table.set({ ...currentTable, sample_pools: updatedPools });
+      }
+      
+      this.toastService.success('Pool column value updated successfully!');
+      modalRef.componentInstance.onClose();
+    });
+  }
+
+  // Sample-specific metadata value editing method
+  editSampleColumnValue(column: MetadataColumn, sampleIndex: number): void {
+    const table = this.table();
+    if (!table || !table.can_edit || !column.id) return;
+
+    // Get current value for this sample (could be default or modified)
+    const currentValue = this.getSampleColumnValue(column, sampleIndex);
+
+    const config: MetadataValueEditConfig = {
+      columnId: column.id,
+      columnName: column.name,
+      columnType: column.type,
+      ontologyType: column.ontology_type,
+      currentValue: currentValue,
+      context: 'table',
+      tableId: table.id
+    };
+
+    const modalRef = this.modalService.open(MetadataValueEditModal, {
+      size: 'lg',
+      backdrop: 'static'
+    });
+
+    modalRef.componentInstance.config = config;
+    modalRef.componentInstance.valueSaved.subscribe((newValue: string) => {
+      // Use the API to update the sample-specific value
+      this.apiService.updateMetadataColumnValue(column.id!, {
+        value: newValue,
+        sample_indices: [sampleIndex],
+        value_type: 'sample_specific'
+      }).subscribe({
+        next: (updatedColumn) => {
+          // Update the local column data
+          const currentTable = this.table();
+          if (currentTable) {
+            const updatedColumns = currentTable.columns.map(col => 
+              col.id === column.id ? updatedColumn : col
+            );
+            this.table.set({ ...currentTable, columns: updatedColumns });
+          }
+          this.toastService.success(`Sample ${sampleIndex} value updated successfully!`);
+          modalRef.componentInstance.onClose();
+        },
+        error: (error) => {
+          console.error('Error updating sample value:', error);
+          this.toastService.error(`Failed to update sample ${sampleIndex} value`);
+        }
+      });
+    });
+  }
+
+  // Helper method to get current value for a specific sample
+  private getSampleColumnValue(column: MetadataColumn, sampleIndex: number): string {
+    // Check if this sample has a specific modifier
+    if (column.modifiers && column.modifiers.length > 0) {
+      for (const modifier of column.modifiers) {
+        if (modifier?.samples) {
+          const sampleRanges = modifier.samples.split(',').map(s => s.trim()).filter(s => s.length > 0);
+          for (const range of sampleRanges) {
+            if (range.includes('-')) {
+              const parts = range.split('-').map(n => n.trim());
+              if (parts.length === 2) {
+                const start = parseInt(parts[0]);
+                const end = parseInt(parts[1]);
+                if (!isNaN(start) && !isNaN(end) && sampleIndex >= start && sampleIndex <= end) {
+                  return modifier.value || '';
+                }
+              }
+            } else {
+              const sampleNum = parseInt(range);
+              if (!isNaN(sampleNum) && sampleNum === sampleIndex) {
+                return modifier.value || '';
+              }
+            }
+          }
+        }
+      }
+    }
+    // Return default value if no modifier found
+    return column.value || '';
+  }
+
+
+  // Remove column method
+  removeColumn(column: MetadataColumn): void {
+    const table = this.table();
+    if (!table || !table.can_edit || !column.id) return;
+
+    const confirmMessage = `Are you sure you want to remove the column "${column.name}"?\n\nThis action cannot be undone and will remove all data in this column.`;
+    
+    if (confirm(confirmMessage)) {
+      this.apiService.deleteMetadataColumn(column.id).subscribe({
+        next: () => {
+          // Remove the column from the local table data
+          const currentTable = this.table();
+          if (currentTable) {
+            const updatedColumns = currentTable.columns.filter(col => col.id !== column.id);
+            this.table.set({ ...currentTable, columns: updatedColumns });
+          }
+          this.toastService.success(`Column "${column.name}" removed successfully!`);
+        },
+        error: (error) => {
+          console.error('Error removing column:', error);
+          this.toastService.error(`Failed to remove column "${column.name}"`);
+        }
+      });
+    }
   }
 }

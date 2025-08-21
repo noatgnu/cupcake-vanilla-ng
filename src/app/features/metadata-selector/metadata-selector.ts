@@ -19,6 +19,8 @@ export class MetadataSelector implements OnInit {
   recommendation: 'table' | 'template' = 'table';
   hasTables = false;
   hasTemplates = false;
+  tablesCount = 0;
+  templatesCount = 0;
 
   ngOnInit(): void {
     this.checkUserData();
@@ -33,6 +35,8 @@ export class MetadataSelector implements OnInit {
         this.hasTables = response.has_tables;
         this.hasTemplates = response.has_templates;
         this.recommendation = response.recommended;
+        this.tablesCount = response.tables_count || 0;
+        this.templatesCount = response.templates_count || 0;
         this.loading = false;
 
         // Don't auto-navigate - let user choose
@@ -70,10 +74,14 @@ export class MetadataSelector implements OnInit {
       return 'You haven\'t created any metadata tables or templates yet. We recommend starting with templates to set up reusable configurations.';
     }
     
-    if (this.recommendation === 'template') {
-      return 'We recommend starting with templates since you don\'t have any metadata tables yet.';
+    if (!this.hasTables && this.hasTemplates) {
+      return `You have ${this.templatesCount} ${this.templatesCount === 1 ? 'template' : 'templates'} but no metadata tables yet. We recommend starting with templates to create your first table.`;
+    }
+
+    if (this.hasTables && !this.hasTemplates) {
+      return `You have ${this.tablesCount} ${this.tablesCount === 1 ? 'table' : 'tables'}. You can work with existing tables or create templates for reusable configurations.`;
     }
     
-    return 'You can work with your existing metadata tables or create new ones from templates.';
+    return `You have ${this.tablesCount} ${this.tablesCount === 1 ? 'table' : 'tables'} and ${this.templatesCount} ${this.templatesCount === 1 ? 'template' : 'templates'}. Choose where you'd like to continue working.`;
   }
 }

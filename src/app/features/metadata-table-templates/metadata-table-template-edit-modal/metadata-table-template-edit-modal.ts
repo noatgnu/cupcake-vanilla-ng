@@ -195,6 +195,7 @@ export class MetadataTableTemplateEditModal implements OnInit {
     });
 
     modalRef.componentInstance.column = column;
+    modalRef.componentInstance.templateId = this.template?.id || null;
     modalRef.componentInstance.isEdit = isEdit;
 
     modalRef.componentInstance.columnSaved.subscribe((columnData: Partial<MetadataColumn>) => {

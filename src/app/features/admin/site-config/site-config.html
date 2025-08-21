@@ -1,16 +1,50 @@
-<div class="container-fluid">
-  <div class="row">
-    <div class="col-lg-8">
-      <div class="card">
-        <div class="card-header">
-          <h4 class="card-title mb-0">
-            <i class="bi bi-gear me-2"></i>
-            Site Configuration
+<div class="site-config-container">
+  <!-- Header Section -->
+  <nav class="navbar navbar-expand-lg bg-body-tertiary shadow-sm">
+    <div class="container-fluid">
+      <div class="d-flex align-items-center justify-content-between w-100">
+        <div class="d-flex align-items-center">
+          <h4 class="navbar-brand m-0 fw-bold">
+            <i class="bi bi-gear me-2"></i>Site Configuration
           </h4>
-          <p class="text-muted small mb-0">
-            Configure site branding and appearance
-          </p>
         </div>
+        <div class="d-flex gap-2">
+          <button 
+            type="submit" 
+            form="configForm"
+            class="btn btn-primary btn-sm"
+            [disabled]="configForm.invalid || loading">
+            @if (loading) {
+              <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
+            } @else {
+              <i class="bi bi-check-lg me-1"></i>
+            }
+            Save Configuration
+          </button>
+          
+          <button 
+            type="button" 
+            class="btn btn-outline-secondary btn-sm"
+            (click)="resetForm()"
+            [disabled]="loading">
+            <i class="bi bi-arrow-clockwise me-1"></i>
+            Reset
+          </button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="config-content p-4">
+    <div class="row">
+      <div class="col-lg-8">
+        <!-- Site Branding Card -->
+        <div class="card mb-4">
+          <div class="card-header">
+            <h5 class="mb-0">
+              <i class="bi bi-brush me-2"></i>Site Branding
+            </h5>
+          </div>
         <div class="card-body">
           <!-- Success Alert -->
           @if (success) {
@@ -26,16 +60,7 @@
             </ngb-alert>
           }
 
-          <form [formGroup]="configForm" (ngSubmit)="onSubmit()">
-            <!-- Site Branding Section -->
-            <div class="row">
-              <div class="col-12">
-                <h5 class="text-primary mb-3">
-                  <i class="bi bi-brush me-2"></i>Site Branding
-                </h5>
-              </div>
-            </div>
-
+          <form id="configForm" [formGroup]="configForm" (ngSubmit)="onSubmit()">
             <!-- Site Name -->
             <div class="mb-3">
               <label for="site_name" class="form-label">
@@ -118,19 +143,12 @@
                 <i class="bi bi-palette me-1"></i>
                 Primary Color
               </label>
-              <div class="input-group">
-                <input 
-                  type="color" 
-                  class="form-control form-control-color" 
-                  id="primary_color"
-                  formControlName="primary_color"
-                  style="max-width: 60px;">
-                <input 
-                  type="text" 
-                  class="form-control" 
-                  formControlName="primary_color"
-                  [class.is-invalid]="configForm.get('primary_color')?.invalid && configForm.get('primary_color')?.touched"
-                  placeholder="#1976d2">
+              <div class="color-picker-wrapper">
+                <color-sketch
+                  [color]="configForm.get('primary_color')?.value"
+                  (onChange)="onColorChange($event)"
+                  [presetColors]="presetColors">
+                </color-sketch>
               </div>
               @if (configForm.get('primary_color')?.invalid && configForm.get('primary_color')?.touched) {
                 <div class="invalid-feedback">
@@ -162,78 +180,56 @@
               </div>
             </div>
 
-            <!-- Form Actions -->
-            <div class="d-flex gap-2">
-              <button 
-                type="submit" 
-                class="btn btn-primary"
-                [disabled]="configForm.invalid || loading">
-                @if (loading) {
-                  <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
-                } @else {
-                  <i class="bi bi-check-lg me-2"></i>
-                }
-                Save Configuration
-              </button>
-              
-              <button 
-                type="button" 
-                class="btn btn-outline-secondary"
-                (click)="resetForm()"
-                [disabled]="loading">
-                <i class="bi bi-arrow-clockwise me-2"></i>
-                Reset
-              </button>
-            </div>
           </form>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- Preview Panel -->
-    <div class="col-lg-4">
-      <div class="card">
-        <div class="card-header">
-          <h5 class="card-title mb-0">
-            <i class="bi bi-eye me-2"></i>
-            Preview
-          </h5>
-        </div>
+      <div class="col-lg-4">
+        <!-- Preview Panel -->
+        <div class="card mb-4">
+          <div class="card-header">
+            <h5 class="mb-0">
+              <i class="bi bi-eye me-2"></i>Preview
+            </h5>
+          </div>
         <div class="card-body">
-          <div class="preview-navbar mb-3">
+          <div class="preview-navbar mb-3" 
+               [style.background]="'linear-gradient(135deg, ' + (configForm.get('primary_color')?.value || '#1976d2') + ' 0%, ' + getDarkerColor(configForm.get('primary_color')?.value || '#1976d2') + ' 100%)'">
             <div class="preview-nav">
               <span class="preview-brand">
-                @if (getPreviewConfig().logo_url) {
-                  <img [src]="getPreviewConfig().logo_url" alt="Logo" style="height: 20px; width: auto;" class="me-2">
+                @if (configForm.get('logo_url')?.value) {
+                  <img [src]="configForm.get('logo_url')?.value" alt="Logo" style="height: 20px; width: auto;" class="me-2">
                 } @else {
                   <i class="bi bi-flask me-2"></i>
                 }
-                {{ getPreviewConfig().site_name }}
+                {{ configForm.get('site_name')?.value || 'Your Site Name' }}
               </span>
             </div>
           </div>
           
           <div class="preview-login-card">
             <h6 class="text-center mb-3">
-              @if (getPreviewConfig().logo_url) {
-                <img [src]="getPreviewConfig().logo_url" alt="Logo" style="height: 24px; width: auto;" class="me-2">
+              @if (configForm.get('logo_url')?.value) {
+                <img [src]="configForm.get('logo_url')?.value" alt="Logo" style="height: 24px; width: auto;" class="me-2">
               } @else {
                 <i class="bi bi-flask me-2"></i>
               }
-              {{ getPreviewConfig().site_name }}
+              {{ configForm.get('site_name')?.value || 'Your Site Name' }}
             </h6>
-            <div class="preview-button mb-2">
+            <div class="preview-button mb-2"
+                 [style.background]="'linear-gradient(135deg, ' + (configForm.get('primary_color')?.value || '#1976d2') + ' 0%, ' + getDarkerColor(configForm.get('primary_color')?.value || '#1976d2') + ' 100%)'">
               <i class="bi bi-person-badge me-2"></i>
               Login with ORCID
             </div>
             <div class="text-center">
               <small class="text-muted">
-                {{ getPreviewConfig().site_name }} - Scientific Metadata Management
+                {{ configForm.get('site_name')?.value || 'Your Site Name' }} - Scientific Metadata Management
               </small>
             </div>
           </div>
 
-          @if (getPreviewConfig().show_powered_by) {
+          @if (configForm.get('show_powered_by')?.value) {
             <div class="mt-3">
               <small class="text-muted">
                 <i class="bi bi-lightning-charge me-1"></i>
@@ -241,6 +237,7 @@
               </small>
             </div>
           }
+          </div>
         </div>
       </div>
     </div>

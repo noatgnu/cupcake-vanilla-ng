@@ -1,4 +1,5 @@
 import { MetadataColumn } from './metadata-column';
+import { SamplePool } from './sample-pool';
 
 export interface MetadataTable {
   id: number;
@@ -14,6 +15,7 @@ export interface MetadataTable {
   is_published: boolean;
   can_edit: boolean;
   columns: MetadataColumn[];
+  sample_pools?: SamplePool[];
   created_at: string;
   updated_at: string;
 }

@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, BehaviorSubject, tap, throwError, catchError } from 'rxjs';
+import { Observable, BehaviorSubject, tap, throwError, catchError, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
 export interface User {
@@ -9,6 +9,10 @@ export interface User {
   email: string;
   first_name: string;
   last_name: string;
+  is_staff: boolean;
+  is_superuser: boolean;
+  date_joined: string;
+  last_login: string | null;
   orcid_id?: string;
 }
 
@@ -141,6 +145,10 @@ export class AuthService {
         email: payload.email || '',
         first_name: payload.first_name || '',
         last_name: payload.last_name || '',
+        is_staff: payload.is_staff || false,
+        is_superuser: payload.is_superuser || false,
+        date_joined: payload.date_joined || '',
+        last_login: payload.last_login || null,
         orcid_id: payload.orcid_id
       };
     } catch {
@@ -217,6 +225,20 @@ export class AuthService {
             this.clearAuthData();
           }
         })
+      );
+  }
+
+  /**
+   * Get complete user profile from backend
+   */
+  fetchUserProfile(): Observable<User> {
+    return this.http.get<{user: User}>(`${this.apiUrl}/auth/profile/`)
+      .pipe(
+        tap(response => {
+          this.currentUserSubject.next(response.user);
+          this.isAuthenticatedSubject.next(true);
+        }),
+        map(response => response.user)
       );
   }
 

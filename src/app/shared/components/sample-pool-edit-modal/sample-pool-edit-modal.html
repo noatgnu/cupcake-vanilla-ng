@@ -1,0 +1,147 @@
+<div class="modal-header">
+  <h4 class="modal-title">
+    <i class="bi bi-collection me-2"></i>{{ title }}
+  </h4>
+  <button type="button" class="btn-close" (click)="onCancel()"></button>
+</div>
+
+<div class="modal-body">
+  <form [formGroup]="editForm" (ngSubmit)="onSubmit()">
+    
+    <!-- Pool Name -->
+    <div class="mb-3">
+      <label for="poolName" class="form-label">Pool Name *</label>
+      <input 
+        type="text" 
+        class="form-control"
+        id="poolName"
+        formControlName="pool_name"
+        [class.is-invalid]="isFieldInvalid('pool_name')"
+        placeholder="Enter pool name">
+      <div class="invalid-feedback" *ngIf="isFieldInvalid('pool_name')">
+        {{ getFieldError('pool_name') }}
+      </div>
+    </div>
+
+    <!-- Description -->
+    <div class="mb-3">
+      <label for="poolDescription" class="form-label">Description</label>
+      <textarea 
+        class="form-control"
+        id="poolDescription"
+        formControlName="pool_description"
+        rows="2"
+        placeholder="Optional pool description"></textarea>
+    </div>
+
+    <!-- Pool Type and Template Sample -->
+    <div class="row">
+      <div class="col-md-6 mb-3">
+        <div class="form-check">
+          <input 
+            class="form-check-input" 
+            type="checkbox" 
+            id="isReference" 
+            formControlName="is_reference">
+          <label class="form-check-label" for="isReference">
+            <strong>Reference Pool</strong>
+            <div class="form-text">Check if this is a reference pool</div>
+          </label>
+        </div>
+      </div>
+      <div class="col-md-6 mb-3">
+        <label for="templateSample" class="form-label">Template Sample</label>
+        <input 
+          type="number" 
+          class="form-control"
+          id="templateSample"
+          formControlName="template_sample"
+          min="1"
+          [max]="maxSampleCount"
+          placeholder="Optional template sample number">
+      </div>
+    </div>
+
+    <!-- Sample Configuration -->
+    <div class="mb-4">
+      <h6 class="text-muted mb-3">Sample Configuration</h6>
+      
+      <!-- Pooled Only Samples -->
+      <div class="mb-3">
+        <label for="pooledOnlySamples" class="form-label">
+          Pooled Only Samples
+          <span class="badge bg-primary ms-2">{{ pooledOnlySamplesCount }} samples</span>
+        </label>
+        <input 
+          type="text" 
+          class="form-control"
+          id="pooledOnlySamples"
+          formControlName="pooled_only_samples_text"
+          placeholder="e.g., 1, 2, 3, 5-8">
+        <div class="form-text">
+          Enter sample numbers separated by commas. Ranges like "5-8" are supported.
+        </div>
+      </div>
+
+      <!-- Pooled and Independent Samples -->
+      <div class="mb-3">
+        <label for="pooledAndIndependentSamples" class="form-label">
+          Pooled & Independent Samples
+          <span class="badge bg-success ms-2">{{ pooledAndIndependentSamplesCount }} samples</span>
+        </label>
+        <input 
+          type="text" 
+          class="form-control"
+          id="pooledAndIndependentSamples"
+          formControlName="pooled_and_independent_samples_text"
+          placeholder="e.g., 4, 9, 10-15">
+        <div class="form-text">
+          Enter sample numbers that are both pooled and run independently.
+        </div>
+      </div>
+
+      <!-- Total Count Display -->
+      <div class="alert alert-info">
+        <i class="bi bi-info-circle me-2"></i>
+        <strong>Total Samples:</strong> {{ totalSamplesCount }}
+        @if (totalSamplesCount > maxSampleCount) {
+          <span class="text-danger ms-2">
+            (Exceeds maximum of {{ maxSampleCount }})
+          </span>
+        }
+      </div>
+    </div>
+
+    <!-- Character Count -->
+    <div class="mb-2">
+      <div class="d-flex justify-content-between align-items-center">
+        <small class="text-muted">
+          Name: {{ editForm.get('pool_name')?.value?.length || 0 }}/255 characters
+        </small>
+        @if (hasChanges) {
+          <small class="text-info">
+            <i class="bi bi-info-circle me-1"></i>Changes detected
+          </small>
+        }
+      </div>
+    </div>
+
+  </form>
+</div>
+
+<div class="modal-footer">
+  <button type="button" class="btn btn-outline-secondary" (click)="onCancel()">
+    <i class="bi bi-x-circle me-1"></i>Cancel
+  </button>
+  <button 
+    type="button" 
+    class="btn btn-primary" 
+    (click)="onSubmit()"
+    [disabled]="editForm.invalid || isLoading() || !hasChanges">
+    @if (isLoading()) {
+      <span class="spinner-border spinner-border-sm me-2"></span>
+    }
+    <i class="bi bi-check-circle me-1"></i>
+    Save Pool
+  </button>
+</div>

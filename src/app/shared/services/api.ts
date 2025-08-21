@@ -16,7 +16,10 @@ import {
   MetadataTableQueryResponse,
   MetadataTableCreateRequest,
   MetadataTableTemplate,
-  MetadataTableTemplateQueryResponse
+  MetadataTableTemplateQueryResponse,
+  OntologySuggestion,
+  OntologySuggestionResponse,
+  SamplePool
 } from '../models';
 import { environment } from '../../../environments/environment';
 
@@ -27,6 +30,11 @@ export class ApiService {
   private apiUrl = environment.apiUrl || 'http://localhost:8000/api/v1';
 
   constructor(private http: HttpClient) {}
+
+  // User Profile
+  getUserProfile(): Observable<{user: any}> {
+    return this.http.get<{user: any}>(`${this.apiUrl}/auth/profile/`);
+  }
 
   // Lab Groups
   getLabGroups(params?: {
@@ -278,6 +286,19 @@ export class ApiService {
     return this.http.delete<void>(`${this.apiUrl}/metadata-tables/${id}/`);
   }
 
+  // Sample Pool Management
+  getSamplePool(id: number): Observable<SamplePool> {
+    return this.http.get<SamplePool>(`${this.apiUrl}/sample-pools/${id}/`);
+  }
+
+  updateSamplePool(id: number, pool: Partial<SamplePool>): Observable<SamplePool> {
+    return this.http.patch<SamplePool>(`${this.apiUrl}/sample-pools/${id}/`, pool);
+  }
+
+  deleteSamplePool(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/sample-pools/${id}/`);
+  }
+
   // Create metadata table from template
   createMetadataTableFromTemplate(data: {
     name: string;
@@ -316,7 +337,7 @@ export class ApiService {
     if (data.create_pools !== undefined) formData.append('create_pools', data.create_pools.toString());
     if (data.replace_existing !== undefined) formData.append('replace_existing', data.replace_existing.toString());
 
-    return this.http.post(`${this.apiUrl}/metadata-tables/import_sdrf_file/`, formData);
+    return this.http.post(`${this.apiUrl}/metadata-management/import_sdrf_file/`, formData);
   }
 
   exportSdrfFile(data: {
@@ -327,8 +348,88 @@ export class ApiService {
     pool_ids?: number[];
     lab_group_id?: number;
   }): Observable<Blob> {
-    return this.http.post(`${this.apiUrl}/metadata-tables/export_sdrf_file/`, data, {
+    return this.http.post(`${this.apiUrl}/metadata-management/export_sdrf_file/`, data, {
       responseType: 'blob'
     });
+  }
+
+  // Ontology Suggestions for existing metadata columns
+  getMetadataColumnOntologySuggestions(columnId: number, params?: {
+    search?: string;
+    limit?: number;
+    search_type?: 'icontains' | 'istartswith' | 'exact';
+  }): Observable<any> {
+    let httpParams = new HttpParams();
+    httpParams = httpParams.set('column_id', columnId.toString());
+    if (params?.search) httpParams = httpParams.set('search', params.search);
+    if (params?.limit) httpParams = httpParams.set('limit', params.limit.toString());
+    if (params?.search_type) httpParams = httpParams.set('search_type', params.search_type);
+
+    return this.http.get<any>(`${this.apiUrl}/metadata-columns/ontology_suggestions/`, 
+      { params: httpParams });
+  }
+
+  // Delete metadata column
+  deleteMetadataColumn(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/metadata-columns/${id}/`);
+  }
+
+  // Ontology Suggestions for metadata column templates (for the modal)
+  getColumnTemplateOntologySuggestions(templateId: number, params?: {
+    search?: string;
+    limit?: number;
+    search_type?: 'icontains' | 'istartswith';
+  }): Observable<any> {
+    let httpParams = new HttpParams();
+    httpParams = httpParams.set('template_id', templateId.toString());
+    if (params?.search) httpParams = httpParams.set('search', params.search);
+    if (params?.limit) httpParams = httpParams.set('limit', params.limit.toString());
+    if (params?.search_type) httpParams = httpParams.set('search_type', params.search_type);
+
+    return this.http.get<any>(`${this.apiUrl}/column-templates/ontology_suggestions/`, 
+      { params: httpParams });
+  }
+
+  // Favourite Metadata Options
+  getFavouriteMetadataOptions(params?: {
+    name?: string;
+    type?: string;
+    user_id?: number;
+    lab_group_id?: number;
+    is_global?: boolean;
+    limit?: number;
+    offset?: number;
+  }): Observable<{count: number, results: FavouriteMetadataOption[]}> {
+    let httpParams = new HttpParams();
+    if (params) {
+      Object.keys(params).forEach(key => {
+        const value = params[key as keyof typeof params];
+        if (value !== undefined && value !== null) {
+          httpParams = httpParams.set(key, value.toString());
+        }
+      });
+    }
+    return this.http.get<{count: number, results: FavouriteMetadataOption[]}>(`${this.apiUrl}/favourite-options/`, { params: httpParams });
+  }
+
+  createFavouriteMetadataOption(option: Partial<FavouriteMetadataOption>): Observable<FavouriteMetadataOption> {
+    return this.http.post<FavouriteMetadataOption>(`${this.apiUrl}/favourite-options/`, option);
+  }
+
+  updateFavouriteMetadataOption(id: number, option: Partial<FavouriteMetadataOption>): Observable<FavouriteMetadataOption> {
+    return this.http.patch<FavouriteMetadataOption>(`${this.apiUrl}/favourite-options/${id}/`, option);
+  }
+
+  deleteFavouriteMetadataOption(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/favourite-options/${id}/`);
+  }
+
+  // Update metadata column value with automatic modifier calculation
+  updateMetadataColumnValue(columnId: number, data: {
+    value: string;
+    sample_indices?: number[];
+    value_type?: 'default' | 'sample_specific' | 'replace_all';
+  }): Observable<MetadataColumn> {
+    return this.http.post<MetadataColumn>(`${this.apiUrl}/metadata-columns/${columnId}/update_column_value/`, data);
   }
 }

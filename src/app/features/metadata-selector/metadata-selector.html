@@ -66,7 +66,7 @@
                       <small class="text-muted">
                         @if (hasTables) {
                           <i class="bi bi-check-circle text-success me-1"></i>
-                          You have existing tables
+                          {{ tablesCount }} {{ tablesCount === 1 ? 'table' : 'tables' }}
                         } @else {
                           <i class="bi bi-circle text-muted me-1"></i>
                           No tables yet
@@ -102,7 +102,7 @@
                       <small class="text-muted">
                         @if (hasTemplates) {
                           <i class="bi bi-check-circle text-success me-1"></i>
-                          You have existing templates
+                          {{ templatesCount }} {{ templatesCount === 1 ? 'template' : 'templates' }}
                         } @else {
                           <i class="bi bi-circle text-muted me-1"></i>
                           No templates yet
