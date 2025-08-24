@@ -1,0 +1,63 @@
+// =============================================================================
+// CUPCAKE CORE - Light Theme
+// =============================================================================
+// Light theme configuration for cupcake applications
+
+:root {
+  // Primary Brand Colors
+  --cupcake-primary: #1976d2;
+  --cupcake-primary-rgb: 25, 118, 210;
+  --cupcake-primary-dark: #1565c0;
+  --cupcake-primary-light: #42a5f5;
+  
+  // Secondary Colors
+  --cupcake-secondary: #424242;
+  --cupcake-secondary-rgb: 66, 66, 66;
+  --cupcake-accent: #ff4081;
+  --cupcake-accent-rgb: 255, 64, 129;
+  
+  // Background Colors
+  --cupcake-bg: #ffffff;
+  --cupcake-bg-secondary: #f8f9fa;
+  --cupcake-bg-tertiary: #e9ecef;
+  
+  // Text Colors
+  --cupcake-text: #212529;
+  --cupcake-text-muted: #6c757d;
+  --cupcake-text-light: #868e96;
+  
+  // Border and Shadow
+  --cupcake-border: rgba(0, 0, 0, 0.125);
+  --cupcake-border-light: rgba(0, 0, 0, 0.05);
+  --cupcake-shadow: rgba(0, 0, 0, 0.075);
+  --cupcake-shadow-lg: rgba(0, 0, 0, 0.15);
+  
+  // Card Colors
+  --cupcake-card-bg: #ffffff;
+  --cupcake-card-header-bg: rgba(0, 0, 0, 0.03);
+  --cupcake-card-border: rgba(0, 0, 0, 0.125);
+  
+  // Table Colors
+  --cupcake-table-striped: rgba(0, 0, 0, 0.025);
+  --cupcake-table-hover: rgba(0, 0, 0, 0.075);
+  --cupcake-table-border: rgba(0, 0, 0, 0.125);
+  
+  // Form Colors
+  --cupcake-input-border: #ced4da;
+  --cupcake-input-focus: var(--cupcake-primary);
+  --cupcake-input-bg: #ffffff;
+  --cupcake-input-disabled-bg: #e9ecef;
+  
+  // Loading Overlay
+  --cupcake-loading-overlay: rgba(255, 255, 255, 0.9);
+  
+  // Status Colors (light theme optimized)
+  --cupcake-success: #198754;
+  --cupcake-success-rgb: 25, 135, 84;
+  --cupcake-warning: #ffc107;
+  --cupcake-warning-rgb: 255, 193, 7;
+  --cupcake-danger: #dc3545;
+  --cupcake-danger-rgb: 220, 53, 69;
+  --cupcake-info: #0dcaf0;
+  --cupcake-info-rgb: 13, 202, 240;
+}

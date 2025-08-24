@@ -17,13 +17,13 @@
               <i class="bi bi-plus me-1"></i>New Template
             </button>
             <div class="dropdown-menu dropdown-menu-end" ngbDropdownMenu>
-              <a class="dropdown-item" href="#" (click)="createTemplateWithCustomSchemas(); $event.preventDefault()" 
+              <a class="dropdown-item" href="#" (click)="createTemplateWithCustomSchemas(); $event.preventDefault()"
                  title="Select one or multiple schemas to create template">
                 <i class="bi bi-file-earmark-text me-2"></i>
                 <strong>Create from Schemas</strong>
               </a>
               <div class="dropdown-divider"></div>
-              <a class="dropdown-item" href="#" (click)="createTemplate(); $event.preventDefault()" 
+              <a class="dropdown-item" href="#" (click)="createTemplate(); $event.preventDefault()"
                  title="Create from scratch">
                 <i class="bi bi-wrench me-2"></i>
                 <strong>Manual Configuration</strong>
@@ -47,10 +47,10 @@
         <form [formGroup]="searchForm" class="row g-3">
           <div class="col-md-3">
             <div class="form-floating">
-              <input 
-                type="search" 
-                class="form-control" 
-                id="templateSearch" 
+              <input
+                type="search"
+                class="form-control"
+                id="templateSearch"
                 formControlName="search"
                 placeholder="Search templates...">
               <label for="templateSearch">
@@ -60,9 +60,9 @@
           </div>
           <div class="col-md-3">
             <div class="form-floating">
-              <select 
-                class="form-select" 
-                id="labGroupSelect" 
+              <select
+                class="form-select"
+                id="labGroupSelect"
                 formControlName="lab_group_id"
                 (change)="onLabGroupChange($event)">
                 <option [ngValue]="null">All Lab Groups</option>
@@ -74,7 +74,7 @@
               </select>
               <label for="labGroupSelect">Lab Group</label>
             </div>
-            
+
             <!-- Lab Groups Pagination -->
             @if (showLabGroupsPagination()) {
               <div class="d-flex justify-content-center mt-2">
@@ -93,22 +93,22 @@
           </div>
           <div class="col-md-3">
             <div class="form-check form-switch mt-3">
-              <input 
-                class="form-check-input" 
-                type="checkbox" 
-                id="publicTemplates" 
-                formControlName="is_public">
-              <label class="form-check-label" for="publicTemplates">
-                <i class="bi bi-globe me-1"></i>Public Templates Only
+              <input
+                class="form-check-input"
+                type="checkbox"
+                id="defaultTemplates"
+                formControlName="is_default">
+              <label class="form-check-label" for="defaultTemplates">
+                <i class="bi bi-star me-1"></i>Default Templates Only
               </label>
             </div>
           </div>
           <div class="col-md-3">
             <div class="form-check form-switch mt-3">
-              <input 
-                class="form-check-input" 
-                type="checkbox" 
-                id="defaultTemplates" 
+              <input
+                class="form-check-input"
+                type="checkbox"
+                id="defaultTemplates"
                 formControlName="is_default">
               <label class="form-check-label" for="defaultTemplates">
                 <i class="bi bi-star me-1"></i>Default Templates Only
@@ -136,7 +136,7 @@
         @if (hasTemplates()) {
           <div class="table-responsive">
             <table class="table table-hover mb-0">
-              <thead class="table-light">
+              <thead>
                 <tr>
                   <th><i class="bi bi-tag me-1"></i>Template Name</th>
                   <th><i class="bi bi-person me-1"></i>Creator</th>
@@ -156,7 +156,7 @@
                           <br><small class="text-muted">{{ template.description }}</small>
                         }
                       </td>
-                      <td>{{ template.user || 'System' }}</td>
+                      <td>{{ template.owner_username || 'System' }}</td>
                       <td>
                         @if (template.lab_group) {
                           <span class="badge bg-info">{{ typeof template.lab_group === 'object' ? template.lab_group.name : template.lab_group }}</span>
@@ -168,10 +168,19 @@
                         <span class="badge bg-secondary">{{ template.column_count || 0 }}</span>
                       </td>
                       <td>
-                        @if (template.is_public) {
-                          <span class="badge bg-success">Public</span>
-                        } @else {
-                          <span class="badge bg-warning">Private</span>
+                        @switch (template.visibility) {
+                          @case ('public') {
+                            <span class="badge bg-success">Public</span>
+                          }
+                          @case ('group') {
+                            <span class="badge bg-info">Lab Group</span>
+                          }
+                          @case ('private') {
+                            <span class="badge bg-warning">Private</span>
+                          }
+                          @default {
+                            <span class="badge bg-secondary">{{ template.visibility }}</span>
+                          }
                         }
                       </td>
                       <td>
@@ -183,26 +192,26 @@
                       </td>
                       <td>
                         <div class="btn-group btn-group-sm" role="group">
-                          <button 
-                            class="btn btn-outline-success" 
+                          <button
+                            class="btn btn-outline-success"
                             (click)="createTableFromTemplate(template)"
                             title="Create metadata table from this template">
                             <i class="bi bi-table"></i>
                           </button>
-                          <button 
-                            class="btn btn-outline-primary" 
+                          <button
+                            class="btn btn-outline-primary"
                             (click)="editTemplate(template)"
                             title="Edit template">
                             <i class="bi bi-pencil"></i>
                           </button>
-                          <button 
-                            class="btn btn-outline-info" 
+                          <button
+                            class="btn btn-outline-info"
                             (click)="duplicateTemplate(template)"
                             title="Duplicate template">
                             <i class="bi bi-copy"></i>
                           </button>
-                          <button 
-                            class="btn btn-outline-danger" 
+                          <button
+                            class="btn btn-outline-danger"
                             (click)="deleteTemplate(template)"
                             title="Delete template">
                             <i class="bi bi-trash"></i>

@@ -1,0 +1,134 @@
+.notification-panel-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.notification-panel {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  width: 400px;
+  max-height: 600px;
+  z-index: 1050;
+  
+  .card-body {
+    max-height: 400px;
+    overflow-y: auto;
+  }
+  
+  .notification-list {
+    .notification-item {
+      transition: background-color 0.2s ease;
+      
+      &:hover {
+        background-color: var(--bs-light) !important;
+      }
+      
+      &.unread {
+        border-left: 3px solid var(--bs-primary);
+        
+        .notification-title {
+          font-weight: 600;
+        }
+      }
+      
+      &:last-child {
+        .border-bottom {
+          border-bottom: none !important;
+        }
+      }
+    }
+    
+    .notification-content {
+      min-width: 0; // Allows text truncation to work
+    }
+  }
+  
+  .alert-sm {
+    padding: 0.5rem;
+    font-size: 0.875rem;
+  }
+  
+  .btn-group-sm .btn {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+  }
+  
+  .badge.rounded-pill {
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    i {
+      font-size: 0.875rem;
+    }
+  }
+}
+
+.notification-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: transparent;
+  z-index: 1040;
+}
+
+// Button active state
+.btn.active {
+  box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.25);
+}
+
+// Responsive adjustments
+@media (max-width: 576px) {
+  .notification-panel {
+    width: 320px;
+    right: -60px; // Adjust positioning on small screens
+  }
+}
+
+// Dark mode support (if using Bootstrap's dark mode utilities)
+[data-bs-theme="dark"] {
+  .notification-panel {
+    .card-header.bg-light {
+      background-color: var(--bs-dark) !important;
+      border-color: var(--bs-border-color);
+    }
+    
+    .alert-warning {
+      --bs-alert-color: var(--bs-warning-text);
+      --bs-alert-bg: var(--bs-warning-bg-subtle);
+      --bs-alert-border-color: var(--bs-warning-border-subtle);
+    }
+  }
+}
+
+// Animation for panel appearance
+.notification-panel {
+  animation: slideIn 0.2s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Notification count badge positioning
+.position-relative .badge {
+  font-size: 0.7rem;
+  min-width: 1.2rem;
+  height: 1.2rem;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

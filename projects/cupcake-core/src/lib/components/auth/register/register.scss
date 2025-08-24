@@ -1,0 +1,120 @@
+// Registration Page Styles (matching login page)
+.container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+}
+
+.register-wrapper {
+  width: 100%;
+  max-width: 500px;
+}
+
+.card {
+  border: none;
+  border-radius: 1rem;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.card-body {
+  padding: 3rem;
+}
+
+.card-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--bs-primary);
+}
+
+.form-control {
+  border-radius: 0.5rem;
+  border: 1px solid var(--bs-border-color);
+  padding: 0.75rem 1rem;
+  
+  &:focus {
+    border-color: var(--bs-primary);
+    box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.25);
+  }
+}
+
+.input-group-text {
+  border-radius: 0.5rem 0 0 0.5rem;
+  background: var(--bs-light);
+  border: 1px solid var(--bs-border-color);
+  
+  i {
+    color: var(--bs-secondary);
+  }
+}
+
+.input-group .form-control {
+  border-radius: 0 0.5rem 0.5rem 0;
+}
+
+.btn {
+  border-radius: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  font-weight: 500;
+  transition: all 0.2s ease-in-out;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--bs-primary) 0%, color-mix(in srgb, var(--bs-primary) 80%, black) 100%);
+  border: none;
+  
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 0.25rem 0.5rem rgba(var(--bs-primary-rgb), 0.3);
+  }
+  
+  &:disabled {
+    transform: none;
+    box-shadow: none;
+  }
+}
+
+.alert {
+  border-radius: 0.75rem;
+  border: none;
+  
+  &.alert-success {
+    background: rgba(var(--bs-success-rgb), 0.1);
+    color: var(--bs-success);
+    border-left: 4px solid var(--bs-success);
+  }
+  
+  &.alert-danger {
+    background: rgba(var(--bs-danger-rgb), 0.1);
+    color: var(--bs-danger);
+    border-left: 4px solid var(--bs-danger);
+  }
+  
+  &.alert-warning {
+    background: rgba(var(--bs-warning-rgb), 0.1);
+    color: var(--bs-warning-emphasis);
+    border-left: 4px solid var(--bs-warning);
+  }
+}
+
+.invalid-feedback {
+  font-size: 0.875rem;
+  color: var(--bs-danger);
+}
+
+.form-text {
+  font-size: 0.8rem;
+  color: var(--bs-secondary);
+}
+
+// Responsive design
+@media (max-width: 576px) {
+  .card-body {
+    padding: 2rem 1.5rem;
+  }
+  
+  .card-title {
+    font-size: 1.25rem;
+  }
+}

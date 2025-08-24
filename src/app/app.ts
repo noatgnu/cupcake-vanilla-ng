@@ -4,10 +4,10 @@ import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { CommonModule } from '@angular/common';
 import { NavbarComponent } from './shared/components/navbar/navbar';
 import { PoweredByFooterComponent } from './shared/components/powered-by-footer/powered-by-footer';
-import { ToastContainerComponent } from './shared/components/toast-container/toast-container';
-import { SiteConfigService } from './shared/services/site-config';
-import { ThemeService } from './shared/services/theme';
+import { ToastContainerComponent, SiteConfigService } from 'cupcake-core';
+
 import { BehaviorSubject } from 'rxjs';
+import {ThemeService} from './shared/services/theme';
 
 @Component({
   selector: 'app-root',
@@ -18,7 +18,7 @@ import { BehaviorSubject } from 'rxjs';
 })
 export class App implements OnInit {
   protected readonly title = signal('cupcake-vanilla-ng');
-  
+
   private document = inject(DOCUMENT);
   private siteConfigService = inject(SiteConfigService);
   private themeService = inject(ThemeService);
@@ -68,20 +68,20 @@ export class App implements OnInit {
   private updatePrimaryColorTheme(primaryColor: string): void {
     const root = this.document.documentElement;
     const isDark = this.themeService.isDark();
-    
+
     // Adjust primary color for dark mode - make it lighter for better contrast
     let adjustedPrimary = primaryColor;
     if (isDark) {
       adjustedPrimary = this.adjustColorForDarkMode(primaryColor);
     }
-    
+
     // Convert hex to RGB values for rgba usage
     const rgbValues = this.hexToRgb(adjustedPrimary);
-    
+
     // Calculate darker and lighter variants
     const darkerColor = this.adjustColorBrightness(adjustedPrimary, isDark ? -15 : -20);
     const lighterColor = this.adjustColorBrightness(adjustedPrimary, isDark ? 15 : 20);
-    
+
     // Update CSS custom properties
     root.style.setProperty('--cupcake-primary', adjustedPrimary);
     root.style.setProperty('--cupcake-primary-rgb', rgbValues);
@@ -95,11 +95,11 @@ export class App implements OnInit {
   private hexToRgb(hex: string): string {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
     if (!result) return '25, 118, 210'; // fallback
-    
+
     const r = parseInt(result[1], 16);
     const g = parseInt(result[2], 16);
     const b = parseInt(result[3], 16);
-    
+
     return `${r}, ${g}, ${b}`;
   }
 
@@ -112,7 +112,7 @@ export class App implements OnInit {
     const R = (num >> 16) + amt;
     const G = (num >> 8 & 0x00FF) + amt;
     const B = (num & 0x0000FF) + amt;
-    
+
     return '#' + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
       (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
       (B < 255 ? B < 1 ? 0 : B : 255)).toString(16).slice(1);
@@ -124,17 +124,17 @@ export class App implements OnInit {
   private adjustColorForDarkMode(hex: string): string {
     const rgb = this.hexToRgb(hex).split(', ').map(Number);
     const [r, g, b] = rgb;
-    
+
     // Calculate luminance to determine if color is too dark
     const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-    
+
     // If the color is too dark (low luminance), make it lighter for dark mode
     if (luminance < 0.5) {
       // Increase brightness by 40-60% depending on how dark it is
       const brightnessIncrease = Math.max(40, 80 * (0.5 - luminance));
       return this.adjustColorBrightness(hex, brightnessIncrease);
     }
-    
+
     // If color is already bright enough, use it as-is or make it slightly lighter
     return this.adjustColorBrightness(hex, 10);
   }

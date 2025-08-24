@@ -31,18 +31,24 @@ export class ColumnEditModal implements OnInit {
 
   ontologyTypes = [
     { value: '', label: 'None' },
-    { value: 'species', label: 'Species' },
-    { value: 'tissue', label: 'Tissue' },
-    { value: 'human_disease', label: 'Human Disease' },
-    { value: 'subcellular_location', label: 'Subcellular Location' },
-    { value: 'ms_unique_vocabularies', label: 'MS Unique Vocabularies' },
-    { value: 'unimod', label: 'Unimod Modifications' },
+    { value: 'species', label: 'Species (UniProt)' },
     { value: 'ncbi_taxonomy', label: 'NCBI Taxonomy' },
+    { value: 'tissue', label: 'Tissue (UniProt)' },
+    { value: 'human_disease', label: 'Human Disease (UniProt)' },
     { value: 'mondo', label: 'MONDO Disease' },
-    { value: 'uberon', label: 'UBERON Anatomy' },
-    { value: 'chebi', label: 'ChEBI' },
+    { value: 'ms_unique_vocabularies', label: 'Sample Attribute (MS)' },
+    { value: 'ms_unique_vocabularies', label: 'MS2 Analyzer Type (MS)' },
+    { value: 'ms_unique_vocabularies', label: 'Cleavage Agent (MS)' },
+    { value: 'ms_unique_vocabularies', label: 'Ancestry category (MS)' },
+    { value: 'ms_unique_vocabularies', label: 'Developmental stage (MS)' },
+    { value: 'ms_unique_vocabularies', label: 'Sex (MS)' },
+    { value: 'unimod', label: 'Modification (Unimod)' },
+    { value: 'uberon', label: 'Uberon Anatomy' },
+    { value: 'subcellular_location', label: 'Subcellular Location (UniProt)' },
+    { value: 'chebi', label: 'ChEbi' },
     { value: 'cell_ontology', label: 'Cell Ontology' },
-    { value: 'psi_ms', label: 'PSI-MS Controlled Vocabulary' }
+    { value: 'go', label: 'Gene Ontology' },
+    { value: 'instrument', label: 'Instrument' }
   ];
 
   

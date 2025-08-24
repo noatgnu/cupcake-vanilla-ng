@@ -1,0 +1,494 @@
+// =============================================================================
+// CUPCAKE CORE - Component Styles
+// =============================================================================
+// Pre-built component styles that can be used across cupcake applications
+
+@import './variables';
+@import './mixins';
+
+// =============================================================================
+// GLOBAL CUPCAKE STYLES
+// =============================================================================
+
+body {
+  font-family: $cupcake-font-family-base;
+  line-height: 1.6;
+  color: var(--cupcake-text);
+  background-color: var(--cupcake-bg-secondary);
+  transition: var(--cupcake-transition);
+}
+
+// =============================================================================
+// NAVIGATION COMPONENTS
+// =============================================================================
+
+.cupcake-navbar {
+  background-color: var(--cupcake-card-bg);
+  border-bottom: 1px solid var(--cupcake-border);
+  box-shadow: 0 1px 3px var(--cupcake-shadow);
+
+  .navbar-brand {
+    font-weight: map-get($cupcake-font-weights, semibold);
+    font-size: map-get($cupcake-font-sizes, lg);
+    color: var(--cupcake-primary);
+  }
+
+  .nav-link {
+    color: var(--cupcake-text);
+    transition: var(--cupcake-transition-fast);
+
+    &:hover,
+    &:focus {
+      color: var(--cupcake-primary);
+    }
+
+    &.active {
+      color: var(--cupcake-primary);
+      font-weight: map-get($cupcake-font-weights, medium);
+    }
+  }
+}
+
+.cupcake-breadcrumb {
+  background-color: var(--cupcake-bg-secondary);
+  border-radius: var(--cupcake-border-radius);
+  padding: var(--cupcake-spacing-sm) var(--cupcake-spacing-md);
+  
+  .breadcrumb-item {
+    + .breadcrumb-item::before {
+      color: var(--cupcake-text-muted);
+    }
+    
+    &.active {
+      color: var(--cupcake-text);
+      font-weight: map-get($cupcake-font-weights, medium);
+    }
+    
+    a {
+      color: var(--cupcake-primary);
+      text-decoration: none;
+      
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+  }
+}
+
+// =============================================================================
+// CARD COMPONENTS
+// =============================================================================
+
+.cupcake-card {
+  @include cupcake-card();
+  
+  .cupcake-card-header {
+    background-color: var(--cupcake-card-header-bg);
+    border-bottom: 1px solid var(--cupcake-card-border);
+    padding: var(--cupcake-spacing-md);
+    font-weight: map-get($cupcake-font-weights, semibold);
+    
+    h1, h2, h3, h4, h5, h6 {
+      margin-bottom: 0;
+    }
+  }
+  
+  .cupcake-card-body {
+    padding: var(--cupcake-spacing-md);
+  }
+  
+  .cupcake-card-footer {
+    background-color: var(--cupcake-card-header-bg);
+    border-top: 1px solid var(--cupcake-card-border);
+    padding: var(--cupcake-spacing-sm) var(--cupcake-spacing-md);
+    color: var(--cupcake-text-muted);
+    font-size: map-get($cupcake-font-sizes, sm);
+  }
+  
+  &.cupcake-card-hoverable {
+    @include cupcake-hover-lift();
+    cursor: pointer;
+  }
+}
+
+// =============================================================================
+// BUTTON COMPONENTS
+// =============================================================================
+
+.cupcake-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--cupcake-spacing-xs);
+  padding: var(--cupcake-spacing-sm) var(--cupcake-spacing-md);
+  font-size: map-get($cupcake-font-sizes, base);
+  font-weight: map-get($cupcake-font-weights, medium);
+  line-height: 1.5;
+  border-radius: var(--cupcake-border-radius);
+  border: 1px solid transparent;
+  transition: var(--cupcake-transition-fast);
+  cursor: pointer;
+  text-decoration: none;
+  @include cupcake-focus-ring();
+  
+  &:disabled,
+  &.disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+  
+  // Size variants
+  &.cupcake-btn-sm {
+    padding: var(--cupcake-spacing-xs) var(--cupcake-spacing-sm);
+    font-size: map-get($cupcake-font-sizes, sm);
+  }
+  
+  &.cupcake-btn-lg {
+    padding: var(--cupcake-spacing-sm) var(--cupcake-spacing-lg);
+    font-size: map-get($cupcake-font-sizes, lg);
+  }
+  
+  // Loading state
+  &.cupcake-btn-loading {
+    position: relative;
+    color: transparent;
+    
+    &::after {
+      content: '';
+      position: absolute;
+      @include cupcake-spinner();
+      color: currentColor;
+    }
+  }
+}
+
+.cupcake-btn-primary {
+  background-color: var(--cupcake-primary);
+  border-color: var(--cupcake-primary);
+  color: white;
+  
+  &:hover:not(:disabled) {
+    background-color: var(--cupcake-primary-dark);
+    border-color: var(--cupcake-primary-dark);
+    transform: translateY(-1px);
+  }
+}
+
+.cupcake-btn-outline-primary {
+  background-color: transparent;
+  border-color: var(--cupcake-primary);
+  color: var(--cupcake-primary);
+  
+  &:hover:not(:disabled) {
+    background-color: var(--cupcake-primary);
+    color: white;
+  }
+}
+
+.cupcake-btn-ghost {
+  background-color: transparent;
+  border-color: transparent;
+  color: var(--cupcake-text);
+  
+  &:hover:not(:disabled) {
+    background-color: var(--cupcake-bg-secondary);
+  }
+}
+
+// =============================================================================
+// FORM COMPONENTS
+// =============================================================================
+
+.cupcake-form-group {
+  margin-bottom: var(--cupcake-spacing-md);
+}
+
+.cupcake-form-label {
+  display: block;
+  font-weight: map-get($cupcake-font-weights, medium);
+  color: var(--cupcake-text);
+  margin-bottom: var(--cupcake-spacing-xs);
+}
+
+.cupcake-form-control {
+  display: block;
+  width: 100%;
+  padding: var(--cupcake-spacing-sm);
+  font-size: map-get($cupcake-font-sizes, base);
+  line-height: 1.5;
+  color: var(--cupcake-text);
+  background-color: var(--cupcake-input-bg);
+  border: 1px solid var(--cupcake-input-border);
+  border-radius: var(--cupcake-border-radius);
+  transition: var(--cupcake-transition-fast);
+  
+  &:focus {
+    @include cupcake-input-focus();
+  }
+  
+  &:disabled,
+  &[readonly] {
+    background-color: var(--cupcake-bg-secondary);
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  
+  &.is-invalid {
+    border-color: var(--cupcake-danger);
+    
+    &:focus {
+      border-color: var(--cupcake-danger);
+      box-shadow: 0 0 0 0.25rem rgba(var(--cupcake-danger-rgb), 0.25);
+    }
+  }
+  
+  &.is-valid {
+    border-color: var(--cupcake-success);
+    
+    &:focus {
+      border-color: var(--cupcake-success);
+      box-shadow: 0 0 0 0.25rem rgba(var(--cupcake-success-rgb), 0.25);
+    }
+  }
+}
+
+.cupcake-form-text {
+  font-size: map-get($cupcake-font-sizes, sm);
+  color: var(--cupcake-text-muted);
+  margin-top: var(--cupcake-spacing-xs);
+}
+
+.cupcake-invalid-feedback {
+  display: block;
+  font-size: map-get($cupcake-font-sizes, sm);
+  color: var(--cupcake-danger);
+  margin-top: var(--cupcake-spacing-xs);
+}
+
+.cupcake-valid-feedback {
+  display: block;
+  font-size: map-get($cupcake-font-sizes, sm);
+  color: var(--cupcake-success);
+  margin-top: var(--cupcake-spacing-xs);
+}
+
+// =============================================================================
+// TABLE COMPONENTS
+// =============================================================================
+
+.cupcake-table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: var(--cupcake-card-bg);
+  border: 1px solid var(--cupcake-table-border);
+  border-radius: var(--cupcake-border-radius);
+  overflow: hidden;
+  
+  th,
+  td {
+    padding: var(--cupcake-spacing-sm) var(--cupcake-spacing-md);
+    text-align: left;
+    border-bottom: 1px solid var(--cupcake-table-border);
+  }
+  
+  th {
+    background-color: var(--cupcake-card-header-bg);
+    font-weight: map-get($cupcake-font-weights, semibold);
+    color: var(--cupcake-text);
+  }
+  
+  tbody tr {
+    transition: var(--cupcake-transition-fast);
+    
+    &:hover {
+      background-color: var(--cupcake-table-hover);
+    }
+    
+    &:nth-child(even) {
+      background-color: var(--cupcake-table-striped);
+    }
+  }
+  
+  &.cupcake-table-sm {
+    th,
+    td {
+      padding: var(--cupcake-spacing-xs) var(--cupcake-spacing-sm);
+      font-size: map-get($cupcake-font-sizes, sm);
+    }
+  }
+}
+
+// =============================================================================
+// BADGE COMPONENTS
+// =============================================================================
+
+.cupcake-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25em 0.5em;
+  font-size: map-get($cupcake-font-sizes, xs);
+  font-weight: map-get($cupcake-font-weights, medium);
+  line-height: 1;
+  border-radius: var(--cupcake-border-radius-sm);
+  
+  &.cupcake-badge-primary {
+    @include cupcake-status-badge(--cupcake-primary);
+  }
+  
+  &.cupcake-badge-success {
+    @include cupcake-status-badge(--cupcake-success);
+  }
+  
+  &.cupcake-badge-warning {
+    @include cupcake-status-badge(--cupcake-warning);
+    color: var(--cupcake-text);
+  }
+  
+  &.cupcake-badge-danger {
+    @include cupcake-status-badge(--cupcake-danger);
+  }
+  
+  &.cupcake-badge-info {
+    @include cupcake-status-badge(--cupcake-info);
+  }
+  
+  &.cupcake-badge-secondary {
+    @include cupcake-status-badge(--cupcake-secondary);
+  }
+}
+
+// =============================================================================
+// ALERT COMPONENTS
+// =============================================================================
+
+.cupcake-alert {
+  padding: var(--cupcake-spacing-md);
+  border-radius: var(--cupcake-border-radius);
+  border: 1px solid transparent;
+  margin-bottom: var(--cupcake-spacing-md);
+  
+  &.cupcake-alert-primary {
+    background-color: rgba(var(--cupcake-primary-rgb), 0.1);
+    border-color: rgba(var(--cupcake-primary-rgb), 0.2);
+    color: var(--cupcake-primary-dark);
+  }
+  
+  &.cupcake-alert-success {
+    background-color: rgba(var(--cupcake-success-rgb), 0.1);
+    border-color: rgba(var(--cupcake-success-rgb), 0.2);
+    color: var(--cupcake-success);
+  }
+  
+  &.cupcake-alert-warning {
+    background-color: rgba(var(--cupcake-warning-rgb), 0.1);
+    border-color: rgba(var(--cupcake-warning-rgb), 0.2);
+    color: #856404;
+  }
+  
+  &.cupcake-alert-danger {
+    background-color: rgba(var(--cupcake-danger-rgb), 0.1);
+    border-color: rgba(var(--cupcake-danger-rgb), 0.2);
+    color: var(--cupcake-danger);
+  }
+  
+  &.cupcake-alert-info {
+    background-color: rgba(var(--cupcake-info-rgb), 0.1);
+    border-color: rgba(var(--cupcake-info-rgb), 0.2);
+    color: #055160;
+  }
+}
+
+// =============================================================================
+// UTILITY CLASSES
+// =============================================================================
+
+.cupcake-text-truncate {
+  @include cupcake-text-truncate();
+}
+
+.cupcake-sr-only {
+  @include cupcake-sr-only();
+}
+
+.cupcake-clearfix {
+  @include cupcake-clearfix();
+}
+
+.cupcake-flex-center {
+  @include cupcake-flex-center();
+}
+
+.cupcake-loading-overlay {
+  @include cupcake-loading-overlay();
+}
+
+.cupcake-spinner {
+  @include cupcake-spinner();
+}
+
+.cupcake-fade-in {
+  @include cupcake-fade-in();
+}
+
+.cupcake-slide-in-up {
+  @include cupcake-slide-in('up');
+}
+
+.cupcake-slide-in-down {
+  @include cupcake-slide-in('down');
+}
+
+.cupcake-slide-in-left {
+  @include cupcake-slide-in('left');
+}
+
+.cupcake-slide-in-right {
+  @include cupcake-slide-in('right');
+}
+
+.cupcake-hover-lift {
+  @include cupcake-hover-lift();
+}
+
+// Spacing utilities
+@each $prop, $abbrev in (margin: m, padding: p) {
+  @each $size, $value in (
+    0: 0,
+    1: var(--cupcake-spacing-xs),
+    2: var(--cupcake-spacing-sm),
+    3: var(--cupcake-spacing-md),
+    4: var(--cupcake-spacing-lg),
+    5: var(--cupcake-spacing-xl)
+  ) {
+    .cupcake-#{$abbrev}-#{$size} {
+      #{$prop}: #{$value} !important;
+    }
+    
+    .cupcake-#{$abbrev}t-#{$size} {
+      #{$prop}-top: #{$value} !important;
+    }
+    
+    .cupcake-#{$abbrev}r-#{$size} {
+      #{$prop}-right: #{$value} !important;
+    }
+    
+    .cupcake-#{$abbrev}b-#{$size} {
+      #{$prop}-bottom: #{$value} !important;
+    }
+    
+    .cupcake-#{$abbrev}l-#{$size} {
+      #{$prop}-left: #{$value} !important;
+    }
+    
+    .cupcake-#{$abbrev}x-#{$size} {
+      #{$prop}-right: #{$value} !important;
+      #{$prop}-left: #{$value} !important;
+    }
+    
+    .cupcake-#{$abbrev}y-#{$size} {
+      #{$prop}-top: #{$value} !important;
+      #{$prop}-bottom: #{$value} !important;
+    }
+  }
+}

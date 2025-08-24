@@ -10,7 +10,8 @@ import {
   MetadataTableTemplate,
   MetadataTableTemplateQueryResponse,
   LabGroup,
-  LabGroupQueryResponse
+  LabGroupQueryResponse,
+  ResourceVisibility
 } from '../../shared/models';
 import { ApiService } from '../../shared/services/api';
 import { ToastService } from '../../shared/services/toast';
@@ -28,7 +29,7 @@ export class MetadataTableTemplates implements OnInit {
   private searchParams = signal({
     search: '',
     lab_group_id: null as number | null,
-    is_public: false,
+    visibility: ResourceVisibility.PRIVATE,
     is_default: false,
     limit: 10,
     offset: 0
@@ -74,7 +75,7 @@ export class MetadataTableTemplates implements OnInit {
     this.searchForm = this.fb.group({
       search: [''],
       lab_group_id: [null],
-      is_public: [false],
+      visibility: [ResourceVisibility.PRIVATE],
       is_default: [false]
     });
 
@@ -107,7 +108,7 @@ export class MetadataTableTemplates implements OnInit {
     this.searchParams.set({
       search: '',
       lab_group_id: null,
-      is_public: false,
+      visibility: ResourceVisibility.PRIVATE,
       is_default: false,
       limit: this.pageSize(),
       offset: 0
@@ -140,7 +141,7 @@ export class MetadataTableTemplates implements OnInit {
       this.searchParams.set({
         search: formValue.search || '',
         lab_group_id: formValue.lab_group_id || null,
-        is_public: formValue.is_public || false,
+        visibility: formValue.visibility || ResourceVisibility.PRIVATE,
         is_default: formValue.is_default || false,
         limit: this.pageSize(),
         offset: 0 // Always start from first page when searching
@@ -154,7 +155,7 @@ export class MetadataTableTemplates implements OnInit {
     this.apiService.getMetadataTableTemplates({
       search: params.search || undefined,
       lab_group_id: params.lab_group_id || undefined,
-      is_public: params.is_public || undefined,
+      visibility: params.visibility || undefined,
       is_default: params.is_default || undefined,
       limit: params.limit,
       offset: params.offset
@@ -244,7 +245,7 @@ export class MetadataTableTemplates implements OnInit {
       description: template.description,
       user_columns: [...(template.user_columns || [])],
       field_mask_mapping: { ...template.field_mask_mapping },
-      is_public: false, // Always create as private
+      visibility: ResourceVisibility.PRIVATE, // Always create as private
       is_default: false, // Never default
       lab_group: template.lab_group || this.selectedLabGroup()?.id || undefined
     };
@@ -352,7 +353,7 @@ export class MetadataTableTemplates implements OnInit {
       schema_ids: result.schema_ids,
       description: result.description,
       lab_group_id: result.lab_group_id,
-      is_public: result.is_public,
+      visibility: result.visibility,
       is_default: result.is_default
     };
 

@@ -62,17 +62,15 @@
       <div class="col-12 mb-3">
         <div class="row">
           <div class="col-md-6">
-            <div class="form-check form-switch">
-              <input 
-                class="form-check-input" 
-                type="checkbox" 
-                id="isPublic"
-                formControlName="is_public">
-              <label class="form-check-label" for="isPublic">
-                <i class="bi bi-globe me-1"></i>Public Template
-              </label>
-              <small class="form-text text-muted d-block">Make this template accessible to all users</small>
-            </div>
+            <label for="visibility" class="form-label">Visibility</label>
+            <select 
+              class="form-select"
+              id="visibility"
+              formControlName="visibility">
+              @for (option of visibilityOptions; track option.value) {
+                <option [value]="option.value">{{ option.label }}</option>
+              }
+            </select>
           </div>
           <div class="col-md-6">
             <div class="form-check form-switch">

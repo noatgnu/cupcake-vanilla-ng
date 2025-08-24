@@ -1,0 +1,587 @@
+<div class="user-management-container">
+  <!-- Header Section -->
+  <nav class="navbar navbar-expand-lg bg-body-tertiary shadow-sm">
+    <div class="container-fluid">
+      <div class="d-flex align-items-center justify-content-between w-100">
+        <div class="d-flex align-items-center">
+          <h4 class="mb-0">
+            <i class="bi bi-people-fill me-2 text-primary"></i>User Management
+          </h4>
+          <span class="badge bg-primary ms-3">{{ totalUsers() }} users</span>
+        </div>
+
+        <div class="d-flex gap-2">
+          <button
+            type="button"
+            class="btn btn-primary btn-sm"
+            (click)="openCreateUserModal(createUserModal)"
+            [disabled]="isLoading()">
+            <i class="bi bi-person-plus me-1"></i>Create User
+          </button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="users-content p-4">
+    <!-- Search and Filters Section -->
+    <div class="card mb-4">
+      <div class="card-header">
+        <h5 class="mb-0">
+          <i class="bi bi-search me-2"></i>Search & Filters
+        </h5>
+      </div>
+      <div class="card-body">
+        <form [formGroup]="searchForm" class="row g-3">
+          <div class="col-md-4">
+            <label for="search" class="form-label">Search</label>
+            <div class="input-group">
+              <span class="input-group-text">
+                <i class="bi bi-search"></i>
+              </span>
+              <input
+                type="text"
+                class="form-control"
+                id="search"
+                formControlName="search"
+                placeholder="Search by username, email, or name">
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <label for="isStaff" class="form-label">Staff Status</label>
+            <select class="form-select" id="isStaff" formControlName="is_staff">
+              <option value="">All Users</option>
+              <option value="true">Staff Only</option>
+              <option value="false">Regular Users</option>
+            </select>
+          </div>
+
+          <div class="col-md-4">
+            <label for="isActive" class="form-label">Account Status</label>
+            <select class="form-select" id="isActive" formControlName="is_active">
+              <option value="">All Accounts</option>
+              <option value="true">Active Only</option>
+              <option value="false">Inactive Only</option>
+            </select>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Success/Error Messages -->
+    @if (successMessage()) {
+      <div class="alert alert-success alert-dismissible">
+        <i class="bi bi-check-circle me-2"></i>{{ successMessage() }}
+        <button type="button" class="btn-close" (click)="clearMessages()"></button>
+      </div>
+    }
+
+    @if (errorMessage()) {
+      <div class="alert alert-danger alert-dismissible">
+        <i class="bi bi-exclamation-triangle me-2"></i>{{ errorMessage() }}
+        <button type="button" class="btn-close" (click)="clearMessages()"></button>
+      </div>
+    }
+
+    <!-- Users Table -->
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+          <i class="bi bi-table me-2"></i>Users
+          <span class="badge bg-primary ms-2">{{ users().length }}</span>
+        </h5>
+        @if (isLoading()) {
+          <div class="spinner-border spinner-border-sm text-primary">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+        }
+      </div>
+      <div class="card-body p-0">
+        @if (users().length > 0) {
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>User</th>
+                  <th>Contact</th>
+                  <th>Status</th>
+                  <th>Joined</th>
+                  <th>Last Login</th>
+                  <th class="text-end">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (user of users(); track user.id) {
+                  <tr>
+                    <td>
+                      <div class="d-flex align-items-center">
+                        <div>
+                          <div class="fw-semibold">{{ getUserDisplayName(user) }}</div>
+                          <small class="text-muted">@{{ user.username }}</small>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <div>{{ user.email }}</div>
+                    </td>
+                    <td>
+                      <div class="d-flex gap-1 flex-wrap">
+                        @if (user.is_active) {
+                          <span class="badge bg-success">Active</span>
+                        } @else {
+                          <span class="badge bg-danger">Inactive</span>
+                        }
+                        @if (user.is_staff) {
+                          <span class="badge bg-warning">Staff</span>
+                        }
+                      </div>
+                    </td>
+                    <td>{{ formatDate(user.date_joined) }}</td>
+                    <td>{{ formatDate(user.last_login) }}</td>
+                    <td class="text-end">
+                      <div class="btn-group btn-group-sm" role="group">
+                        <button
+                          type="button"
+                          class="btn btn-outline-primary"
+                          (click)="openEditUserModal(editUserModal, user)"
+                          title="Edit user">
+                          <i class="bi bi-pencil"></i>
+                        </button>
+                        <button
+                          type="button"
+                          class="btn btn-outline-warning"
+                          (click)="openPasswordResetModal(passwordResetModal, user)"
+                          title="Reset password">
+                          <i class="bi bi-shield-lock"></i>
+                        </button>
+                        <button
+                          type="button"
+                          class="btn"
+                          [class]="user.is_active ? 'btn-outline-secondary' : 'btn-outline-success'"
+                          (click)="toggleUserStatus(user)"
+                          [title]="user.is_active ? 'Deactivate user' : 'Activate user'">
+                          <i class="bi" [class]="user.is_active ? 'bi-person-dash' : 'bi-person-check'"></i>
+                        </button>
+                        <button
+                          type="button"
+                          class="btn"
+                          [class]="user.is_staff ? 'btn-outline-secondary' : 'btn-outline-info'"
+                          (click)="toggleStaffStatus(user)"
+                          [title]="user.is_staff ? 'Remove staff privileges' : 'Grant staff privileges'">
+                          <i class="bi" [class]="user.is_staff ? 'bi-person-x' : 'bi-person-badge'"></i>
+                        </button>
+                        <button
+                          type="button"
+                          class="btn btn-outline-danger"
+                          (click)="deleteUser(user)"
+                          title="Delete user">
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination -->
+          @if (totalPages > 1) {
+            <div class="d-flex justify-content-between align-items-center p-3 border-top">
+              <div class="text-muted">
+                Showing {{ ((currentPage() - 1) * pageSize()) + 1 }} to {{ Math.min(currentPage() * pageSize(), totalUsers()) }} of {{ totalUsers() }} users
+              </div>
+              <nav>
+                <ul class="pagination pagination-sm mb-0">
+                  <li class="page-item" [class.disabled]="currentPage() === 1">
+                    <button class="page-link" (click)="onPageChange(currentPage() - 1)" [disabled]="currentPage() === 1">
+                      <i class="bi bi-chevron-left"></i>
+                    </button>
+                  </li>
+                  @for (page of pages; track page) {
+                    <li class="page-item" [class.active]="page === currentPage()">
+                      <button class="page-link" (click)="onPageChange(page)">{{ page }}</button>
+                    </li>
+                  }
+                  <li class="page-item" [class.disabled]="currentPage() === totalPages">
+                    <button class="page-link" (click)="onPageChange(currentPage() + 1)" [disabled]="currentPage() === totalPages">
+                      <i class="bi bi-chevron-right"></i>
+                    </button>
+                  </li>
+                </ul>
+              </nav>
+            </div>
+          }
+        } @else {
+          <div class="text-center p-4">
+            <i class="bi bi-people display-4 text-muted"></i>
+            <p class="text-muted mt-2">No users found</p>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Create User Modal -->
+<ng-template #createUserModal let-modal>
+  <div class="modal-header">
+    <h4 class="modal-title">
+      <i class="bi bi-person-plus me-2"></i>Create User
+    </h4>
+    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body">
+    <form #createForm="ngForm" (ngSubmit)="createUser(createForm.value)">
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label for="createUsername" class="form-label">Username</label>
+          <input
+            type="text"
+            class="form-control"
+            id="createUsername"
+            name="username"
+            ngModel
+            required
+            #usernameField="ngModel">
+          @if (usernameField.invalid && usernameField.touched) {
+            <div class="text-danger small">Username is required</div>
+          }
+        </div>
+        <div class="col-md-6">
+          <label for="createEmail" class="form-label">Email</label>
+          <input
+            type="email"
+            class="form-control"
+            id="createEmail"
+            name="email"
+            ngModel
+            required
+            email
+            #emailField="ngModel">
+          @if (emailField.invalid && emailField.touched) {
+            <div class="text-danger small">Valid email is required</div>
+          }
+        </div>
+      </div>
+      <div class="row g-3 mt-1">
+        <div class="col-md-6">
+          <label for="createFirstName" class="form-label">First Name</label>
+          <input
+            type="text"
+            class="form-control"
+            id="createFirstName"
+            name="first_name"
+            ngModel
+            required
+            #firstNameField="ngModel">
+          @if (firstNameField.invalid && firstNameField.touched) {
+            <div class="text-danger small">First name is required</div>
+          }
+        </div>
+        <div class="col-md-6">
+          <label for="createLastName" class="form-label">Last Name</label>
+          <input
+            type="text"
+            class="form-control"
+            id="createLastName"
+            name="last_name"
+            ngModel
+            required
+            #lastNameField="ngModel">
+          @if (lastNameField.invalid && lastNameField.touched) {
+            <div class="text-danger small">Last name is required</div>
+          }
+        </div>
+      </div>
+      <div class="row g-3 mt-1">
+        <div class="col-md-6">
+          <label for="createPassword" class="form-label">Password</label>
+          <input
+            type="password"
+            class="form-control"
+            id="createPassword"
+            name="password"
+            ngModel
+            required
+            minlength="8"
+            #passwordField="ngModel">
+          @if (passwordField.invalid && passwordField.touched) {
+            <div class="text-danger small">Password must be at least 8 characters</div>
+          }
+        </div>
+        <div class="col-md-6">
+          <label for="createPasswordConfirm" class="form-label">Confirm Password</label>
+          <input
+            type="password"
+            class="form-control"
+            id="createPasswordConfirm"
+            name="password_confirm"
+            ngModel
+            required
+            #passwordConfirmField="ngModel">
+          @if (passwordConfirmField.invalid && passwordConfirmField.touched) {
+            <div class="text-danger small">Password confirmation is required</div>
+          }
+        </div>
+      </div>
+      <div class="row g-3 mt-1">
+        <div class="col-md-6">
+          <div class="form-check">
+            <input
+              class="form-check-input"
+              type="checkbox"
+              id="createIsStaff"
+              name="is_staff"
+              ngModel>
+            <label class="form-check-label" for="createIsStaff">
+              Staff privileges
+            </label>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="form-check">
+            <input
+              class="form-check-input"
+              type="checkbox"
+              id="createIsActive"
+              name="is_active"
+              ngModel
+              checked>
+            <label class="form-check-label" for="createIsActive">
+              Active account
+            </label>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-outline-secondary" (click)="modal.dismiss()">
+      <i class="bi bi-x-circle me-1"></i>Cancel
+    </button>
+    <button
+      type="button"
+      class="btn btn-primary"
+      (click)="createUser(createForm.value)"
+      [disabled]="createForm.invalid || isCreatingUser()">
+      @if (isCreatingUser()) {
+        <span class="spinner-border spinner-border-sm me-2"></span>
+      }
+      <i class="bi bi-person-plus me-1"></i>Create User
+    </button>
+  </div>
+</ng-template>
+
+<!-- Edit User Modal -->
+<ng-template #editUserModal let-modal>
+  <div class="modal-header">
+    <h4 class="modal-title">
+      <i class="bi bi-pencil me-2"></i>Edit User
+    </h4>
+    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body">
+    @if (selectedUser()) {
+      <form #editForm="ngForm" id="editUserForm" (ngSubmit)="updateUser(selectedUser()!.id!, editForm.value)">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label for="editUsername" class="form-label">Username</label>
+            <input
+              type="text"
+              class="form-control"
+              id="editUsername"
+              name="username"
+              [ngModel]="selectedUser()!.username"
+              required
+              #editUsernameField="ngModel">
+            @if (editUsernameField.invalid && editUsernameField.touched) {
+              <div class="text-danger small">Username is required</div>
+            }
+          </div>
+          <div class="col-md-6">
+            <label for="editEmail" class="form-label">Email</label>
+            <input
+              type="email"
+              class="form-control"
+              id="editEmail"
+              name="email"
+              [ngModel]="selectedUser()!.email"
+              required
+              email
+              #editEmailField="ngModel">
+            @if (editEmailField.invalid && editEmailField.touched) {
+              <div class="text-danger small">Valid email is required</div>
+            }
+          </div>
+        </div>
+        <div class="row g-3 mt-1">
+          <div class="col-md-6">
+            <label for="editFirstName" class="form-label">First Name</label>
+            <input
+              type="text"
+              class="form-control"
+              id="editFirstName"
+              name="first_name"
+              [ngModel]="selectedUser()!.first_name"
+              required
+              #editFirstNameField="ngModel">
+            @if (editFirstNameField.invalid && editFirstNameField.touched) {
+              <div class="text-danger small">First name is required</div>
+            }
+          </div>
+          <div class="col-md-6">
+            <label for="editLastName" class="form-label">Last Name</label>
+            <input
+              type="text"
+              class="form-control"
+              id="editLastName"
+              name="last_name"
+              [ngModel]="selectedUser()!.last_name"
+              required
+              #editLastNameField="ngModel">
+            @if (editLastNameField.invalid && editLastNameField.touched) {
+              <div class="text-danger small">Last name is required</div>
+            }
+          </div>
+        </div>
+        <div class="row g-3 mt-1">
+          <div class="col-md-6">
+            <div class="form-check">
+              <input
+                class="form-check-input"
+                type="checkbox"
+                id="editIsStaff"
+                name="is_staff"
+                [ngModel]="selectedUser()!.is_staff">
+              <label class="form-check-label" for="editIsStaff">
+                Staff privileges
+              </label>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="form-check">
+              <input
+                class="form-check-input"
+                type="checkbox"
+                id="editIsActive"
+                name="is_active"
+                [ngModel]="selectedUser()!.is_active">
+              <label class="form-check-label" for="editIsActive">
+                Active account
+              </label>
+            </div>
+          </div>
+        </div>
+      </form>
+    }
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-outline-secondary" (click)="modal.dismiss()">
+      <i class="bi bi-x-circle me-1"></i>Cancel
+    </button>
+    @if (selectedUser()) {
+      <button
+        type="submit"
+        class="btn btn-primary"
+        form="editUserForm"
+        [disabled]="isUpdatingUser()">
+        @if (isUpdatingUser()) {
+          <span class="spinner-border spinner-border-sm me-2"></span>
+        }
+        <i class="bi bi-check-circle me-1"></i>Update User
+      </button>
+    }
+  </div>
+</ng-template>
+
+<!-- Password Reset Modal -->
+<ng-template #passwordResetModal let-modal>
+  <div class="modal-header">
+    <h4 class="modal-title">
+      <i class="bi bi-shield-lock me-2"></i>Reset Password
+    </h4>
+    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body">
+    @if (selectedUser()) {
+      <div class="alert alert-warning">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        You are about to reset the password for user <strong>{{ selectedUser()!.username }}</strong>.
+      </div>
+      
+      <form #resetForm="ngForm" id="resetPasswordForm" (ngSubmit)="resetUserPassword(selectedUser()!.id!, resetForm.value)">
+        <div class="mb-3">
+          <label for="resetNewPassword" class="form-label">New Password</label>
+          <input
+            type="password"
+            class="form-control"
+            id="resetNewPassword"
+            name="new_password"
+            ngModel
+            required
+            minlength="8"
+            #resetPasswordField="ngModel">
+          @if (resetPasswordField.invalid && resetPasswordField.touched) {
+            <div class="text-danger small">Password must be at least 8 characters</div>
+          }
+        </div>
+        <div class="mb-3">
+          <label for="resetConfirmPassword" class="form-label">Confirm Password</label>
+          <input
+            type="password"
+            class="form-control"
+            id="resetConfirmPassword"
+            name="confirm_password"
+            ngModel
+            required
+            #resetConfirmField="ngModel">
+          @if (resetConfirmField.invalid && resetConfirmField.touched) {
+            <div class="text-danger small">Password confirmation is required</div>
+          }
+        </div>
+        <div class="mb-3">
+          <div class="form-check">
+            <input
+              class="form-check-input"
+              type="checkbox"
+              id="forcePasswordChange"
+              name="force_password_change"
+              ngModel>
+            <label class="form-check-label" for="forcePasswordChange">
+              Force user to change password on next login
+            </label>
+          </div>
+        </div>
+        <div class="mb-3">
+          <label for="resetReason" class="form-label">Reason (optional)</label>
+          <textarea
+            class="form-control"
+            id="resetReason"
+            name="reason"
+            ngModel
+            rows="2"
+            placeholder="Optional reason for password reset"></textarea>
+        </div>
+      </form>
+    }
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-outline-secondary" (click)="modal.dismiss()">
+      <i class="bi bi-x-circle me-1"></i>Cancel
+    </button>
+    @if (selectedUser()) {
+      <button
+        type="submit"
+        class="btn btn-warning"
+        form="resetPasswordForm"
+        [disabled]="isResettingPassword()">
+        @if (isResettingPassword()) {
+          <span class="spinner-border spinner-border-sm me-2"></span>
+        }
+        <i class="bi bi-shield-lock me-1"></i>Reset Password
+      </button>
+    }
+  </div>
+</ng-template>

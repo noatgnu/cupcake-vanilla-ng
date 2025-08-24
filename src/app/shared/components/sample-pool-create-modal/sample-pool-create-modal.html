@@ -1,0 +1,320 @@
+<div class="modal-header">
+  <h4 class="modal-title">
+    <i class="bi bi-plus-circle me-2"></i>Create Sample Pool
+  </h4>
+  <button type="button" class="btn-close" (click)="onCancel()"></button>
+</div>
+
+<div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+  <form [formGroup]="createForm" (ngSubmit)="onSubmit()">
+    
+    <!-- Pool Basic Info -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <h6 class="text-primary mb-3">
+          <i class="bi bi-info-circle me-2"></i>Pool Information
+        </h6>
+      </div>
+      
+      <!-- Pool Name -->
+      <div class="col-md-6 mb-3">
+        <label for="poolName" class="form-label">Pool Name *</label>
+        <input 
+          type="text" 
+          class="form-control"
+          id="poolName"
+          formControlName="pool_name"
+          [class.is-invalid]="isFieldInvalid('pool_name')"
+          placeholder="Enter pool name">
+        <div class="invalid-feedback" *ngIf="isFieldInvalid('pool_name')">
+          {{ getFieldError('pool_name') }}
+        </div>
+      </div>
+
+      <!-- Template Sample -->
+      <div class="col-md-6 mb-3">
+        <label for="templateSample" class="form-label">Template Sample</label>
+        <input 
+          type="number" 
+          class="form-control"
+          id="templateSample"
+          formControlName="template_sample"
+          min="1"
+          [max]="metadataTable.sample_count"
+          placeholder="Optional template sample number">
+      </div>
+
+      <!-- Description -->
+      <div class="col-12 mb-3">
+        <label for="poolDescription" class="form-label">Description</label>
+        <textarea 
+          class="form-control"
+          id="poolDescription"
+          formControlName="pool_description"
+          rows="2"
+          placeholder="Optional pool description"></textarea>
+      </div>
+
+      <!-- Reference Pool Checkbox -->
+      <div class="col-12 mb-3">
+        <div class="form-check">
+          <input 
+            class="form-check-input" 
+            type="checkbox" 
+            id="isReference" 
+            formControlName="is_reference">
+          <label class="form-check-label" for="isReference">
+            <strong>Reference Pool</strong>
+            <div class="form-text">Check if this is a reference pool</div>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sample Selection Methods -->
+    <div class="mb-4">
+      <h6 class="text-primary mb-3">
+        <i class="bi bi-check2-square me-2"></i>Sample Selection
+      </h6>
+
+      <!-- Selection Mode Tabs -->
+      <div class="btn-group mb-3" role="group">
+        <input type="radio" class="btn-check" id="manualMode" [value]="'manual'" 
+               [checked]="selectionMode() === 'manual'" (click)="selectionMode.set('manual')">
+        <label class="btn btn-outline-primary" for="manualMode">
+          <i class="bi bi-hand-index me-1"></i>Manual Selection
+        </label>
+
+        <input type="radio" class="btn-check" id="rangeMode" [value]="'range'" 
+               [checked]="selectionMode() === 'range'" (click)="selectionMode.set('range')">
+        <label class="btn btn-outline-primary" for="rangeMode">
+          <i class="bi bi-sliders me-1"></i>Range Selection
+        </label>
+      </div>
+
+      <!-- Range Selection Controls -->
+      @if (selectionMode() === 'range') {
+        <div class="card mb-3">
+          <div class="card-body">
+            <div class="row align-items-end">
+              <div class="col-md-4">
+                <label for="rangeStart" class="form-label">Start Sample</label>
+                <input 
+                  type="number" 
+                  class="form-control"
+                  id="rangeStart"
+                  formControlName="range_start"
+                  min="1"
+                  [max]="metadataTable.sample_count"
+                  [class.is-invalid]="isFieldInvalid('range_start')">
+                <div class="invalid-feedback" *ngIf="isFieldInvalid('range_start')">
+                  {{ getFieldError('range_start') }}
+                </div>
+              </div>
+              <div class="col-md-4">
+                <label for="rangeEnd" class="form-label">End Sample</label>
+                <input 
+                  type="number" 
+                  class="form-control"
+                  id="rangeEnd"
+                  formControlName="range_end"
+                  min="1"
+                  [max]="metadataTable.sample_count"
+                  [class.is-invalid]="isFieldInvalid('range_end')">
+                <div class="invalid-feedback" *ngIf="isFieldInvalid('range_end')">
+                  {{ getFieldError('range_end') }}
+                </div>
+              </div>
+              <div class="col-md-4">
+                <button type="button" class="btn btn-success w-100" (click)="selectSamplesInRange()">
+                  <i class="bi bi-plus-square me-1"></i>Select Range
+                </button>
+              </div>
+            </div>
+            <div class="form-text mt-2">
+              Select samples from {{ createForm.get('range_start')?.value || 1 }} 
+              to {{ createForm.get('range_end')?.value || 1 }} 
+              ({{ Math.abs((createForm.get('range_end')?.value || 1) - (createForm.get('range_start')?.value || 1)) + 1 }} samples)
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Sample Grid for Manual Selection -->
+      @if (selectionMode() === 'manual') {
+        <div class="card mb-3">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <span>
+              <i class="bi bi-grid me-2"></i>Select Samples 
+              <span class="badge bg-info ms-2">{{ selectedSamplesCount }} selected</span>
+            </span>
+            <button type="button" class="btn btn-sm btn-outline-danger" (click)="clearAllSelections()">
+              <i class="bi bi-x-circle me-1"></i>Clear All
+            </button>
+          </div>
+          <div class="card-body" style="max-height: 300px; overflow-y: auto;">
+            <!-- Sample Grid -->
+            <div class="row g-1 mb-3">
+              @for (sample of paginatedSamples; track sample.sampleNumber) {
+                <div class="col-2">
+                  <button 
+                    type="button" 
+                    class="btn btn-sm w-100"
+                    [class.btn-primary]="sample.selected && !sample.pooled"
+                    [class.btn-success]="sample.selected && sample.pooled"
+                    [class.btn-outline-secondary]="!sample.selected && !sample.pooled"
+                    [class.btn-outline-warning]="!sample.selected && sample.pooled"
+                    [disabled]="sample.pooled"
+                    (click)="toggleSampleSelection(sample.sampleNumber)"
+                    [title]="sample.pooled ? 'Sample already in another pool' : 'Click to select/deselect'">
+                    {{ sample.sampleNumber }}
+                    @if (sample.pooled) {
+                      <i class="bi bi-lock-fill ms-1"></i>
+                    }
+                  </button>
+                </div>
+              }
+            </div>
+
+            <!-- Pagination -->
+            @if (totalPages > 1) {
+              <nav>
+                <ul class="pagination pagination-sm justify-content-center">
+                  <li class="page-item" [class.disabled]="currentPage() === 1">
+                    <button class="page-link" type="button" (click)="previousPage()">Previous</button>
+                  </li>
+                  @for (page of [].constructor(Math.min(5, totalPages)); track $index) {
+                    @let pageNum = $index + Math.max(1, currentPage() - 2);
+                    @if (pageNum <= totalPages) {
+                      <li class="page-item" [class.active]="pageNum === currentPage()">
+                        <button class="page-link" type="button" (click)="goToPage(pageNum)">{{ pageNum }}</button>
+                      </li>
+                    }
+                  }
+                  <li class="page-item" [class.disabled]="currentPage() === totalPages">
+                    <button class="page-link" type="button" (click)="nextPage()">Next</button>
+                  </li>
+                </ul>
+              </nav>
+            }
+
+            <div class="form-text text-center">
+              Showing {{ ((currentPage() - 1) * samplesPerPage) + 1 }} - 
+              {{ Math.min(currentPage() * samplesPerPage, samples().length) }} 
+              of {{ samples().length }} samples
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Selection Summary -->
+      @if (selectedSamplesCount > 0) {
+        <div class="alert alert-info">
+          <div class="d-flex justify-content-between align-items-center">
+            <span>
+              <i class="bi bi-info-circle me-2"></i>
+              <strong>{{ selectedSamplesCount }}</strong> samples selected
+            </span>
+            <div class="btn-group btn-group-sm">
+              <button type="button" class="btn btn-outline-primary" (click)="assignToPooledOnly()">
+                <i class="bi bi-arrow-right me-1"></i>Pooled Only
+              </button>
+              <button type="button" class="btn btn-outline-success" (click)="assignToPooledAndIndependent()">
+                <i class="bi bi-arrow-right me-1"></i>Pooled & Independent
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Sample Configuration -->
+    <div class="mb-4">
+      <h6 class="text-primary mb-3">
+        <i class="bi bi-gear me-2"></i>Sample Configuration
+      </h6>
+      
+      <!-- Pooled Only Samples -->
+      <div class="mb-3">
+        <label for="pooledOnlySamples" class="form-label">
+          Pooled Only Samples
+          <span class="badge bg-primary ms-2">{{ parseSampleNumbers(createForm.get('pooled_only_samples_text')?.value || '').length }} samples</span>
+        </label>
+        <input 
+          type="text" 
+          class="form-control"
+          id="pooledOnlySamples"
+          formControlName="pooled_only_samples_text"
+          placeholder="e.g., 1, 2, 3, 5-8">
+        <div class="form-text">
+          Enter sample numbers separated by commas. Ranges like "5-8" are supported.
+        </div>
+      </div>
+
+      <!-- Pooled and Independent Samples -->
+      <div class="mb-3">
+        <label for="pooledAndIndependentSamples" class="form-label">
+          Pooled & Independent Samples
+          <span class="badge bg-success ms-2">{{ parseSampleNumbers(createForm.get('pooled_and_independent_samples_text')?.value || '').length }} samples</span>
+        </label>
+        <input 
+          type="text" 
+          class="form-control"
+          id="pooledAndIndependentSamples"
+          formControlName="pooled_and_independent_samples_text"
+          placeholder="e.g., 4, 9, 10-15">
+        <div class="form-text">
+          Enter sample numbers that are both pooled and run independently.
+        </div>
+      </div>
+
+      <!-- Total Count Display -->
+      <div class="alert" 
+           [class.alert-success]="totalPooledSamplesCount > 0 && totalPooledSamplesCount <= metadataTable.sample_count"
+           [class.alert-warning]="totalPooledSamplesCount === 0"
+           [class.alert-danger]="totalPooledSamplesCount > metadataTable.sample_count">
+        <i class="bi bi-info-circle me-2"></i>
+        <strong>Total Samples:</strong> {{ totalPooledSamplesCount }}
+        @if (totalPooledSamplesCount > metadataTable.sample_count) {
+          <span class="text-danger ms-2">
+            (Exceeds maximum of {{ metadataTable.sample_count }})
+          </span>
+        } @else if (totalPooledSamplesCount === 0) {
+          <span class="text-warning ms-2">
+            (Please select at least one sample)
+          </span>
+        }
+      </div>
+    </div>
+
+    <!-- Form Status -->
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <small class="text-muted">
+        Name: {{ createForm.get('pool_name')?.value?.length || 0 }}/255 characters
+      </small>
+      @if (totalPooledSamplesCount > 0) {
+        <small class="text-success">
+          <i class="bi bi-check-circle me-1"></i>Ready to create
+        </small>
+      }
+    </div>
+
+  </form>
+</div>
+
+<div class="modal-footer">
+  <button type="button" class="btn btn-outline-secondary" (click)="onCancel()">
+    <i class="bi bi-x-circle me-1"></i>Cancel
+  </button>
+  <button 
+    type="button" 
+    class="btn btn-primary" 
+    (click)="onSubmit()"
+    [disabled]="createForm.invalid || isLoading() || totalPooledSamplesCount === 0 || totalPooledSamplesCount > metadataTable.sample_count">
+    @if (isLoading()) {
+      <span class="spinner-border spinner-border-sm me-2"></span>
+    }
+    <i class="bi bi-plus-circle me-1"></i>
+    Create Pool
+  </button>
+</div>

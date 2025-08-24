@@ -1,9 +1,10 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
-import { 
-  MetadataColumn, 
-  MetadataColumnTemplate, 
+import { Observable, map } from 'rxjs';
+import { ResourceService } from './resource';
+import {
+  MetadataColumn,
+  MetadataColumnTemplate,
   FavouriteMetadataOption,
   LabGroup,
   LabGroupQueryResponse,
@@ -20,6 +21,7 @@ import {
   OntologySuggestion,
   OntologySuggestionResponse,
   SamplePool,
+  SamplePoolCreateRequest,
   SiteConfig,
   AuthConfig,
   RegistrationStatus,
@@ -27,7 +29,15 @@ import {
   UserCreateRequest,
   UserRegistrationRequest,
   UserResponse,
-  UserListResponse
+  UserListResponse,
+  PasswordChangeRequest,
+  PasswordChangeResponse,
+  AdminPasswordResetRequest,
+  PasswordResetRequest,
+  PasswordResetConfirm,
+  UserProfileUpdateRequest,
+  EmailChangeRequest,
+  EmailChangeConfirm
 } from '../models';
 import { environment } from '../../../environments/environment';
 
@@ -36,6 +46,7 @@ import { environment } from '../../../environments/environment';
 })
 export class ApiService {
   private apiUrl = environment.apiUrl || 'http://localhost:8000/api/v1';
+  private resourceService = inject(ResourceService);
 
   constructor(private http: HttpClient) {}
 
@@ -59,7 +70,12 @@ export class ApiService {
         }
       });
     }
-    return this.http.get<LabGroupQueryResponse>(`${this.apiUrl}/lab-groups/`, { params: httpParams });
+    return this.http.get<any>(`${this.apiUrl}/lab-groups/`, { params: httpParams }).pipe(
+      map(response => ({
+        ...response,
+        results: response.results.map((labGroup: any) => this.resourceService.transformLegacyResource(labGroup))
+      }))
+    );
   }
 
   // Get lab groups that the current user is a member of
@@ -77,15 +93,25 @@ export class ApiService {
         }
       });
     }
-    return this.http.get<LabGroupQueryResponse>(`${this.apiUrl}/lab-groups/my_groups/`, { params: httpParams });
+    return this.http.get<any>(`${this.apiUrl}/lab-groups/my_groups/`, { params: httpParams }).pipe(
+      map(response => ({
+        ...response,
+        results: response.results.map((labGroup: any) => this.resourceService.transformLegacyResource(labGroup))
+      }))
+    );
   }
 
   createLabGroup(labGroup: LabGroupCreateRequest): Observable<LabGroup> {
-    return this.http.post<LabGroup>(`${this.apiUrl}/lab-groups/`, labGroup);
+    return this.http.post<any>(`${this.apiUrl}/lab-groups/`, labGroup).pipe(
+      map(response => this.resourceService.transformLegacyResource(response))
+    );
   }
 
   updateLabGroup(id: number, labGroup: Partial<LabGroup>): Observable<LabGroup> {
-    return this.http.patch<LabGroup>(`${this.apiUrl}/lab-groups/${id}/`, labGroup);
+    const preparedData = this.resourceService.prepareForAPI(labGroup);
+    return this.http.patch<any>(`${this.apiUrl}/lab-groups/${id}/`, preparedData).pipe(
+      map(response => this.resourceService.transformLegacyResource(response))
+    );
   }
 
   deleteLabGroup(id: number): Observable<void> {
@@ -148,7 +174,7 @@ export class ApiService {
     search?: string;
     lab_group_id?: number;
     user_id?: number;
-    is_public?: boolean;
+    visibility?: string;
     is_default?: boolean;
     limit?: number;
     offset?: number;
@@ -162,19 +188,32 @@ export class ApiService {
         }
       });
     }
-    return this.http.get<MetadataTableTemplateQueryResponse>(`${this.apiUrl}/metadata-table-templates/`, { params: httpParams });
+    return this.http.get<any>(`${this.apiUrl}/metadata-table-templates/`, { params: httpParams }).pipe(
+      map(response => ({
+        ...response,
+        results: response.results.map((template: any) => this.resourceService.transformLegacyResource(template))
+      }))
+    );
   }
 
   getMetadataTableTemplate(id: number): Observable<MetadataTableTemplate> {
-    return this.http.get<MetadataTableTemplate>(`${this.apiUrl}/metadata-table-templates/${id}/`);
+    return this.http.get<any>(`${this.apiUrl}/metadata-table-templates/${id}/`).pipe(
+      map(response => this.resourceService.transformLegacyResource(response))
+    );
   }
 
   createMetadataTableTemplate(template: Partial<MetadataTableTemplate>): Observable<MetadataTableTemplate> {
-    return this.http.post<MetadataTableTemplate>(`${this.apiUrl}/metadata-table-templates/`, template);
+    const preparedData = this.resourceService.prepareForAPI(template);
+    return this.http.post<any>(`${this.apiUrl}/metadata-table-templates/`, preparedData).pipe(
+      map(response => this.resourceService.transformLegacyResource(response))
+    );
   }
 
   updateMetadataTableTemplate(id: number, template: Partial<MetadataTableTemplate>): Observable<MetadataTableTemplate> {
-    return this.http.patch<MetadataTableTemplate>(`${this.apiUrl}/metadata-table-templates/${id}/`, template);
+    const preparedData = this.resourceService.prepareForAPI(template);
+    return this.http.patch<any>(`${this.apiUrl}/metadata-table-templates/${id}/`, preparedData).pipe(
+      map(response => this.resourceService.transformLegacyResource(response))
+    );
   }
 
   deleteMetadataTableTemplate(id: number): Observable<void> {
@@ -260,7 +299,7 @@ export class ApiService {
   getMetadataTables(params?: {
     search?: string;
     lab_group_id?: number;
-    creator_id?: number;
+    owner_id?: number;
     is_locked?: boolean;
     is_published?: boolean;
     limit?: number;
@@ -275,19 +314,32 @@ export class ApiService {
         }
       });
     }
-    return this.http.get<MetadataTableQueryResponse>(`${this.apiUrl}/metadata-tables/`, { params: httpParams });
+    return this.http.get<any>(`${this.apiUrl}/metadata-tables/`, { params: httpParams }).pipe(
+      map(response => ({
+        ...response,
+        results: response.results.map((table: any) => this.resourceService.transformLegacyResource(table))
+      }))
+    );
   }
 
   getMetadataTable(id: number): Observable<MetadataTable> {
-    return this.http.get<MetadataTable>(`${this.apiUrl}/metadata-tables/${id}/`);
+    return this.http.get<any>(`${this.apiUrl}/metadata-tables/${id}/`).pipe(
+      map(response => this.resourceService.transformLegacyResource(response))
+    );
   }
 
   createMetadataTable(table: MetadataTableCreateRequest): Observable<MetadataTable> {
-    return this.http.post<MetadataTable>(`${this.apiUrl}/metadata-tables/`, table);
+    const preparedData = this.resourceService.prepareForAPI(table);
+    return this.http.post<any>(`${this.apiUrl}/metadata-tables/`, preparedData).pipe(
+      map(response => this.resourceService.transformLegacyResource(response))
+    );
   }
 
   updateMetadataTable(id: number, table: Partial<MetadataTable>): Observable<MetadataTable> {
-    return this.http.patch<MetadataTable>(`${this.apiUrl}/metadata-tables/${id}/`, table);
+    const preparedData = this.resourceService.prepareForAPI(table);
+    return this.http.patch<any>(`${this.apiUrl}/metadata-tables/${id}/`, preparedData).pipe(
+      map(response => this.resourceService.transformLegacyResource(response))
+    );
   }
 
   deleteMetadataTable(id: number): Observable<void> {
@@ -297,6 +349,10 @@ export class ApiService {
   // Sample Pool Management
   getSamplePool(id: number): Observable<SamplePool> {
     return this.http.get<SamplePool>(`${this.apiUrl}/sample-pools/${id}/`);
+  }
+
+  createSamplePool(data: SamplePoolCreateRequest): Observable<SamplePool> {
+    return this.http.post<SamplePool>(`${this.apiUrl}/sample-pools/`, data);
   }
 
   updateSamplePool(id: number, pool: Partial<SamplePool>): Observable<SamplePool> {
@@ -373,7 +429,7 @@ export class ApiService {
     if (params?.limit) httpParams = httpParams.set('limit', params.limit.toString());
     if (params?.search_type) httpParams = httpParams.set('search_type', params.search_type);
 
-    return this.http.get<any>(`${this.apiUrl}/metadata-columns/ontology_suggestions/`, 
+    return this.http.get<any>(`${this.apiUrl}/metadata-columns/ontology_suggestions/`,
       { params: httpParams });
   }
 
@@ -394,7 +450,7 @@ export class ApiService {
     if (params?.limit) httpParams = httpParams.set('limit', params.limit.toString());
     if (params?.search_type) httpParams = httpParams.set('search_type', params.search_type);
 
-    return this.http.get<any>(`${this.apiUrl}/column-templates/ontology_suggestions/`, 
+    return this.http.get<any>(`${this.apiUrl}/column-templates/ontology_suggestions/`,
       { params: httpParams });
   }
 
@@ -446,11 +502,11 @@ export class ApiService {
   // ===================================================================
 
   getSiteConfig(): Observable<SiteConfig[]> {
-    return this.http.get<SiteConfig[]>(`${this.apiUrl}/site-config/`);
+    return this.http.get<SiteConfig[]>(`${this.apiUrl}/site_config/`);
   }
 
   updateSiteConfig(id: number, config: Partial<SiteConfig>): Observable<SiteConfig> {
-    return this.http.patch<SiteConfig>(`${this.apiUrl}/site-config/${id}/`, config);
+    return this.http.patch<SiteConfig>(`${this.apiUrl}/site_config/${id}/`, config);
   }
 
   // ===================================================================
@@ -471,7 +527,7 @@ export class ApiService {
     if (params?.search) httpParams = httpParams.set('search', params.search);
     if (params?.page) httpParams = httpParams.set('page', params.page.toString());
     if (params?.page_size) httpParams = httpParams.set('page_size', params.page_size.toString());
-    
+
     return this.http.get<UserListResponse>(`${this.apiUrl}/users/`, { params: httpParams });
   }
 
@@ -480,7 +536,7 @@ export class ApiService {
   }
 
   createUser(userData: UserCreateRequest): Observable<UserResponse> {
-    return this.http.post<UserResponse>(`${this.apiUrl}/users/admin-create/`, userData);
+    return this.http.post<UserResponse>(`${this.apiUrl}/users/admin_create/`, userData);
   }
 
   updateUser(id: number, userData: Partial<User>): Observable<User> {
@@ -498,10 +554,80 @@ export class ApiService {
 
   // Authentication configuration
   getAuthConfig(): Observable<AuthConfig> {
-    return this.http.get<AuthConfig>(`${this.apiUrl}/users/auth-config/`);
+    return this.http.get<AuthConfig>(`${this.apiUrl}/users/auth_config/`);
   }
 
   getRegistrationStatus(): Observable<RegistrationStatus> {
-    return this.http.get<RegistrationStatus>(`${this.apiUrl}/users/registration-status/`);
+    return this.http.get<RegistrationStatus>(`${this.apiUrl}/users/registration_status/`);
+  }
+
+  // ===================================================================
+  // PASSWORD MANAGEMENT METHODS
+  // ===================================================================
+
+  // User password change (authenticated user)
+  changePassword(passwordData: PasswordChangeRequest): Observable<PasswordChangeResponse> {
+    return this.http.post<PasswordChangeResponse>(`${this.apiUrl}/users/change_password/`, passwordData);
+  }
+
+  // User profile update
+  updateProfile(profileData: UserProfileUpdateRequest): Observable<UserResponse> {
+    return this.http.post<UserResponse>(`${this.apiUrl}/users/update_profile/`, profileData);
+  }
+
+  // Email change with verification
+  requestEmailChange(emailData: EmailChangeRequest): Observable<{message: string, new_email: string}> {
+    return this.http.post<{message: string, new_email: string}>(`${this.apiUrl}/users/request_email_change/`, emailData);
+  }
+
+  confirmEmailChange(confirmData: EmailChangeConfirm): Observable<{message: string}> {
+    return this.http.post<{message: string}>(`${this.apiUrl}/users/confirm_email_change/`, confirmData);
+  }
+
+  // Admin password reset
+  resetUserPassword(userId: number, passwordData: AdminPasswordResetRequest): Observable<PasswordChangeResponse> {
+    return this.http.post<PasswordChangeResponse>(`${this.apiUrl}/users/${userId}/reset_password/`, passwordData);
+  }
+
+  // Password reset request (forgot password)
+  requestPasswordReset(resetData: PasswordResetRequest): Observable<PasswordChangeResponse> {
+    return this.http.post<PasswordChangeResponse>(`${this.apiUrl}/users/request_password_reset/`, resetData);
+  }
+
+  // Confirm password reset with token
+  confirmPasswordReset(confirmData: PasswordResetConfirm): Observable<PasswordChangeResponse> {
+    return this.http.post<PasswordChangeResponse>(`${this.apiUrl}/users/confirm_password_reset/`, confirmData);
+  }
+
+  // ===================================================================
+  // ACCOUNT LINKING METHODS
+  // ===================================================================
+
+  // Link ORCID to current user account
+  linkOrcid(orcidData: { orcid_id: string; verification_code?: string }): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/users/link_orcid/`, orcidData);
+  }
+
+  // Unlink ORCID from current user account
+  unlinkOrcid(): Observable<PasswordChangeResponse> {
+    return this.http.delete<PasswordChangeResponse>(`${this.apiUrl}/users/unlink_orcid/`);
+  }
+
+  // Detect duplicate accounts
+  detectDuplicateAccounts(searchData: {
+    email?: string;
+    orcid_id?: string;
+    first_name?: string;
+    last_name?: string;
+  }): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/users/detect_duplicates/`, searchData);
+  }
+
+  // Request account merge
+  requestAccountMerge(mergeData: {
+    duplicate_user_id: number;
+    reason: string;
+  }): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/users/request_merge/`, mergeData);
   }
 }

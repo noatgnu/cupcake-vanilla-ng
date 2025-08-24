@@ -116,6 +116,18 @@
             </button>
           }
 
+          <!-- Create Pool Button -->
+          @if (table() && table()!.can_edit && hasColumns()) {
+            <button
+              type="button"
+              class="btn btn-success btn-sm"
+              (click)="createPool()"
+              [disabled]="isLoading()"
+              title="Create Sample Pool">
+              <i class="bi bi-plus-circle me-1"></i>Create Pool
+            </button>
+          }
+
           <!-- More Actions Dropdown -->
           @if (table() && table()!.can_edit) {
             <div class="btn-group" ngbDropdown>
@@ -184,11 +196,11 @@
                   </div>
                 </div>
                 <div class="col-md-6">
-                  @if (table()!.creator_username) {
+                  @if (table()!.owner_username) {
                     <div class="d-flex align-items-center mb-2">
                       <i class="bi bi-person text-muted me-2"></i>
-                      <span class="fw-semibold me-2">Creator:</span>
-                      <span>{{ table()!.creator_username }}</span>
+                      <span class="fw-semibold me-2">Owner:</span>
+                      <span>{{ table()!.owner_username }}</span>
                     </div>
                   }
                   @if (table()!.lab_group_name) {
@@ -257,7 +269,7 @@
           @if (viewMode() === 'list') {
             <div class="table-responsive">
               <table class="table table-hover mb-0">
-                <thead class="table-light">
+                <thead>
                   <tr>
                     <th scope="col" style="width: 60px;">#</th>
                     <th scope="col">Column Name</th>
@@ -376,7 +388,7 @@
                             <i class="bi bi-layers me-2"></i>{{ poolRow._poolName }}
                           </td>
                           @for (column of sortedColumns(); track column.id) {
-                            <td 
+                            <td
                               class="pool-cell"
                               (click)="table()!.can_edit ? editPoolColumnValue(poolRow._poolData, column) : null"
                               [title]="table()!.can_edit ? 'Click to edit ' + column.name + ' for pool ' + poolRow._poolName : ''">
@@ -396,20 +408,21 @@
                 <thead class="table-light">
                   <tr>
                     <th scope="col" style="width: 80px;" class="bg-secondary bg-opacity-10 text-secondary">#</th>
+                    <th scope="col" style="width: 120px;" class="bg-info bg-opacity-10 text-info">Pool Status</th>
                     @for (column of sortedColumns(); track column.id) {
                       <th scope="col" [class]="getColumnHeaderClass(column)" [title]="column.name">
                         <div class="header-cell d-flex justify-content-between align-items-center">
                           <span>{{ getShortColumnName(column) }}</span>
                           @if (table()!.can_edit) {
                             <div class="header-actions">
-                              <button 
+                              <button
                                 type="button"
                                 class="btn btn-sm btn-outline-primary header-edit-btn me-1"
                                 (click)="editColumnValue(column)"
                                 [title]="'Edit default value for ' + column.name">
                                 <i class="bi bi-pencil"></i>
                               </button>
-                              <button 
+                              <button
                                 type="button"
                                 class="btn btn-sm btn-outline-danger header-edit-btn"
                                 (click)="removeColumn(column)"
@@ -427,8 +440,9 @@
                   @for (row of paginatedRows(); track row._sampleIndex) {
                     <tr class="sample-row" [class.editable]="table()!.can_edit">
                       <td class="text-muted fw-semibold">{{ row._sampleIndex }}</td>
+                      <td class="text-center" [innerHTML]="getSamplePoolStatus(row._sampleIndex)"></td>
                       @for (column of sortedColumns(); track column.id) {
-                        <td 
+                        <td
                           class="sample-cell"
                           [attr.data-sample-index]="row._sampleIndex"
                           [attr.data-column-id]="column.id"

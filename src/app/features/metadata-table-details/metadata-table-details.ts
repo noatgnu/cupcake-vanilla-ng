@@ -9,6 +9,7 @@ import { MetadataValueEditModal, MetadataValueEditConfig } from '../../shared/co
 import { MetadataTableEditModal } from '../../shared/components/metadata-table-edit-modal/metadata-table-edit-modal';
 import { SamplePoolDetailsModal } from '../../shared/components/sample-pool-details-modal/sample-pool-details-modal';
 import { SamplePoolEditModal } from '../../shared/components/sample-pool-edit-modal/sample-pool-edit-modal';
+import { SamplePoolCreateModal } from '../../shared/components/sample-pool-create-modal/sample-pool-create-modal';
 
 @Component({
   selector: 'app-metadata-table-details',
@@ -510,6 +511,32 @@ export class MetadataTableDetailsComponent implements OnInit {
       }
       this.toastService.success(`Pool "${updatedPool.pool_name}" updated successfully!`);
     });
+  }
+
+  createPool(): void {
+    const table = this.table();
+    if (!table || !table.can_edit) return;
+
+    const modalRef = this.modalService.open(SamplePoolCreateModal, {
+      size: 'xl',
+      centered: true,
+      backdrop: 'static'
+    });
+
+    modalRef.componentInstance.metadataTable = table;
+
+    modalRef.componentInstance.poolCreated.subscribe((createdPool: SamplePool) => {
+      // Add the new pool to the table's sample_pools array
+      const currentTable = this.table();
+      if (currentTable) {
+        if (!currentTable.sample_pools) {
+          currentTable.sample_pools = [];
+        }
+        currentTable.sample_pools.push(createdPool);
+        this.table.set({ ...currentTable }); // Trigger reactivity
+      }
+      this.toastService.success(`Pool "${createdPool.pool_name}" created successfully!`);
+    });
 
     modalRef.result.catch(() => {
       // Modal was dismissed - no action needed
@@ -717,6 +744,40 @@ export class MetadataTableDetailsComponent implements OnInit {
     return column.value || '';
   }
 
+  // Helper method to get pool status for a specific sample
+  getSamplePoolStatus(sampleIndex: number): string {
+    const table = this.table();
+    if (!table || !table.sample_pools || table.sample_pools.length === 0) {
+      return '<span class="badge bg-light text-dark">Not Pooled</span>';
+    }
+
+    const pooledInfo: { poolName: string; type: 'pooled_only' | 'pooled_and_independent' }[] = [];
+
+    for (const pool of table.sample_pools) {
+      // Check pooled_only_samples
+      if (pool.pooled_only_samples && pool.pooled_only_samples.includes(sampleIndex)) {
+        pooledInfo.push({ poolName: pool.pool_name, type: 'pooled_only' });
+      }
+      
+      // Check pooled_and_independent_samples
+      if (pool.pooled_and_independent_samples && pool.pooled_and_independent_samples.includes(sampleIndex)) {
+        pooledInfo.push({ poolName: pool.pool_name, type: 'pooled_and_independent' });
+      }
+    }
+
+    if (pooledInfo.length === 0) {
+      return '<span class="badge bg-light text-dark">Not Pooled</span>';
+    }
+
+    // Create badges for each pool the sample is in
+    const badges = pooledInfo.map(info => {
+      const badgeClass = info.type === 'pooled_only' ? 'bg-primary' : 'bg-success';
+      const title = info.type === 'pooled_only' ? 'Pooled Only' : 'Pooled & Independent';
+      return `<span class="badge ${badgeClass} me-1" title="${title}">${info.poolName}</span>`;
+    });
+
+    return badges.join('');
+  }
 
   // Remove column method
   removeColumn(column: MetadataColumn): void {

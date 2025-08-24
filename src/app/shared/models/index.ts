@@ -5,3 +5,4 @@ export * from './lab-group';
 export * from './metadata-template';
 export * from './site-config';
 export * from './user';
+export * from './resource';

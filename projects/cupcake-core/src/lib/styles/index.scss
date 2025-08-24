@@ -1,0 +1,42 @@
+// =============================================================================
+// CUPCAKE CORE - Styles Index
+// =============================================================================
+// Entry point for all cupcake-core styles
+
+// Import all themes
+@import './themes/light';
+@import './themes/dark';
+
+// Import main stylesheet
+@import './cupcake-core';
+
+// =============================================================================
+// QUICK START GUIDE
+// =============================================================================
+/*
+
+OPTION 1 - Full Import:
+```scss
+@import 'cupcake-core/styles';
+```
+
+OPTION 2 - With Bootstrap:
+```scss
+@import 'bootstrap/scss/bootstrap';
+@import 'bootstrap-icons/font/bootstrap-icons.css';
+@import 'cupcake-core/styles/cupcake-core';
+@import 'cupcake-core/styles/bootstrap-integration';
+```
+
+OPTION 3 - Custom Theme:
+```scss
+// Override variables first
+:root {
+  --cupcake-primary: #your-brand-color;
+  --cupcake-primary-rgb: r, g, b;
+}
+
+@import 'cupcake-core/styles';
+```
+
+*/

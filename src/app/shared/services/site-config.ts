@@ -13,7 +13,9 @@ export class SiteConfigService {
   private readonly defaultConfig: SiteConfig = {
     site_name: 'CUPCAKE Vanilla',
     show_powered_by: true,
-    primary_color: '#1976d2'
+    primary_color: '#1976d2',
+    allow_user_registration: false,
+    enable_orcid_login: false
   };
 
   private configSubject = new BehaviorSubject<SiteConfig>(this.defaultConfig);
@@ -100,5 +102,19 @@ export class SiteConfigService {
    */
   getPrimaryColor(): string {
     return this.configSubject.value.primary_color || '#1976d2';
+  }
+
+  /**
+   * Check if user registration is enabled
+   */
+  isRegistrationEnabled(): boolean {
+    return this.configSubject.value.allow_user_registration === true;
+  }
+
+  /**
+   * Check if ORCID login is enabled
+   */
+  isOrcidLoginEnabled(): boolean {
+    return this.configSubject.value.enable_orcid_login === true;
   }
 }

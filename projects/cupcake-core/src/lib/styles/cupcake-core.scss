@@ -1,0 +1,74 @@
+// =============================================================================
+// CUPCAKE CORE - Main Stylesheet
+// =============================================================================
+// Complete styling system for cupcake applications
+// Import this file in your application to get all cupcake styles
+
+// Core foundation
+@import './variables';
+@import './mixins';
+
+// Component styles
+@import './components';
+
+// Bootstrap integration (only if using Bootstrap)
+// @import './bootstrap-integration';
+
+// =============================================================================
+// USAGE INSTRUCTIONS
+// =============================================================================
+/*
+
+To use cupcake-core styles in your Angular application:
+
+1. FULL IMPORT (includes all styles):
+   In your styles.scss:
+   ```scss
+   @import 'cupcake-core/lib/styles/cupcake-core';
+   ```
+
+2. SELECTIVE IMPORT (only what you need):
+   ```scss
+   // Just variables and mixins
+   @import 'cupcake-core/lib/styles/variables';
+   @import 'cupcake-core/lib/styles/mixins';
+   
+   // Add specific components
+   @import 'cupcake-core/lib/styles/components';
+   ```
+
+3. WITH BOOTSTRAP:
+   ```scss
+   // Import Bootstrap first
+   @import 'bootstrap/scss/bootstrap';
+   
+   // Then import cupcake styles
+   @import 'cupcake-core/lib/styles/variables';
+   @import 'cupcake-core/lib/styles/mixins';
+   @import 'cupcake-core/lib/styles/bootstrap-integration';
+   ```
+
+4. CUSTOM THEMING:
+   Override CSS custom properties in your styles.scss:
+   ```scss
+   :root {
+     --cupcake-primary: #your-color;
+     --cupcake-primary-rgb: r, g, b;
+     --cupcake-primary-dark: #your-darker-color;
+     --cupcake-primary-light: #your-lighter-color;
+   }
+   
+   @import 'cupcake-core/lib/styles/cupcake-core';
+   ```
+
+*/
+
+// Export SCSS variables for use in applications
+:export {
+  // Make SCSS variables available to TypeScript/JavaScript
+  breakpointSm: map-get($cupcake-breakpoints, sm);
+  breakpointMd: map-get($cupcake-breakpoints, md);
+  breakpointLg: map-get($cupcake-breakpoints, lg);
+  breakpointXl: map-get($cupcake-breakpoints, xl);
+  breakpointXxl: map-get($cupcake-breakpoints, xxl);
+}

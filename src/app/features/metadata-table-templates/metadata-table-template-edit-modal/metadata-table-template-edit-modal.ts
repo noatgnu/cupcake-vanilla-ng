@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgbActiveModal, NgbModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
-import { MetadataTableTemplate, LabGroup, MetadataColumn } from '../../../shared/models';
+import { MetadataTableTemplate, LabGroup, MetadataColumn, ResourceVisibility } from '../../../shared/models';
 import { ColumnEditModal } from '../column-edit-modal/column-edit-modal';
 
 @Component({
@@ -38,8 +38,9 @@ export class MetadataTableTemplateEditModal implements OnInit {
 
   // Available options for dropdowns
   visibilityOptions = [
-    { value: false, label: 'Private' },
-    { value: true, label: 'Public' }
+    { value: ResourceVisibility.PRIVATE, label: 'Private' },
+    { value: ResourceVisibility.GROUP, label: 'Lab Group' },
+    { value: ResourceVisibility.PUBLIC, label: 'Public' }
   ];
 
   constructor(
@@ -50,7 +51,7 @@ export class MetadataTableTemplateEditModal implements OnInit {
     this.editForm = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(3)]],
       description: [''],
-      is_public: [false],
+      visibility: [ResourceVisibility.PRIVATE],
       is_default: [false],
       lab_group: [null]
     });
@@ -71,7 +72,7 @@ export class MetadataTableTemplateEditModal implements OnInit {
       this.editForm.patchValue({
         name: this.template.name,
         description: this.template.description || '',
-        is_public: this.template.is_public || false,
+        visibility: this.template.visibility || ResourceVisibility.PRIVATE,
         is_default: this.template.is_default || false,
         lab_group: labGroupId || null
       });
@@ -92,7 +93,7 @@ export class MetadataTableTemplateEditModal implements OnInit {
       const templateData: Partial<MetadataTableTemplate> = {
         name: formValue.name,
         description: formValue.description || '',
-        is_public: formValue.is_public || false,
+        visibility: formValue.visibility || ResourceVisibility.PRIVATE,
         is_default: formValue.is_default || false,
         lab_group: formValue.lab_group || null,
         // Include updated columns

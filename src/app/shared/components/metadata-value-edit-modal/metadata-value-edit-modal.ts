@@ -5,7 +5,7 @@ import { NgbActiveModal, NgbModule, NgbNavModule } from '@ng-bootstrap/ng-bootst
 import { Observable, of, catchError, debounceTime, distinctUntilChanged, tap, switchMap } from 'rxjs';
 import { MetadataColumn, OntologySuggestion, FavouriteMetadataOption } from '../../models';
 import { ApiService } from '../../services/api';
-import { AuthService, User } from '../../services/auth';
+import { AuthService, User } from 'cupcake-core';
 import { SdrfSyntaxService, SyntaxType } from '../../services/sdrf-syntax';
 import { SdrfAgeInput } from '../sdrf-age-input/sdrf-age-input';
 import { SdrfModificationInput } from '../sdrf-modification-input/sdrf-modification-input';

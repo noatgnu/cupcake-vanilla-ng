@@ -1,0 +1,182 @@
+<div class="container">
+  <div class="register-wrapper">
+    <div class="card">
+      <div class="card-body">
+        <h3 class="card-title text-center mb-4" *ngIf="siteConfig$ | async as config">
+          <i class="bi bi-person-plus me-2"></i>Create Account - {{ config.site_name }}
+        </h3>
+
+        <!-- Success Alert -->
+        <ngb-alert *ngIf="success" type="success" (closed)="clearSuccess()" [dismissible]="true">
+          <i class="bi bi-check-circle me-2"></i>{{ success }}
+        </ngb-alert>
+
+        <!-- Error Alert -->
+        <ngb-alert *ngIf="error" type="danger" (closed)="clearError()" [dismissible]="true">
+          <i class="bi bi-exclamation-triangle me-2"></i>
+          <span [innerHTML]="error.replace('\n', '<br>')"></span>
+        </ngb-alert>
+
+        <!-- Registration Disabled Message -->
+        <div *ngIf="!registrationEnabled && !loading" class="alert alert-warning text-center">
+          <i class="bi bi-info-circle me-2"></i>
+          <strong>Registration Unavailable</strong>
+          <div class="mt-2">
+            {{ registrationStatus?.message || 'Registration is currently disabled' }}
+          </div>
+          <div class="mt-3">
+            <button type="button" class="btn btn-outline-primary" (click)="goToLogin()">
+              <i class="bi bi-arrow-left me-1"></i>Back to Login
+            </button>
+          </div>
+        </div>
+
+        <!-- Registration Form -->
+        <form [formGroup]="registrationForm" (ngSubmit)="onSubmit()" *ngIf="registrationEnabled">
+          <!-- Username -->
+          <div class="mb-3">
+            <label for="username" class="form-label">Username <span class="text-danger">*</span></label>
+            <div class="input-group">
+              <span class="input-group-text">
+                <i class="bi bi-person"></i>
+              </span>
+              <input 
+                type="text" 
+                class="form-control" 
+                id="username"
+                formControlName="username"
+                [class.is-invalid]="hasFieldError('username')"
+                placeholder="Choose a username">
+            </div>
+            <div *ngIf="getFieldErrorMessage('username')" class="invalid-feedback d-block">
+              {{ getFieldErrorMessage('username') }}
+            </div>
+            <div class="form-text">
+              Username must be 3-150 characters. Only letters, numbers, and @/./+/-/_ allowed.
+            </div>
+          </div>
+
+          <!-- Email -->
+          <div class="mb-3">
+            <label for="email" class="form-label">Email Address <span class="text-danger">*</span></label>
+            <div class="input-group">
+              <span class="input-group-text">
+                <i class="bi bi-envelope"></i>
+              </span>
+              <input 
+                type="email" 
+                class="form-control" 
+                id="email"
+                formControlName="email"
+                [class.is-invalid]="hasFieldError('email')"
+                placeholder="Enter your email address">
+            </div>
+            <div *ngIf="getFieldErrorMessage('email')" class="invalid-feedback d-block">
+              {{ getFieldErrorMessage('email') }}
+            </div>
+          </div>
+
+          <!-- First Name and Last Name -->
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="first_name" class="form-label">First Name <span class="text-danger">*</span></label>
+              <input 
+                type="text" 
+                class="form-control" 
+                id="first_name"
+                formControlName="first_name"
+                [class.is-invalid]="hasFieldError('first_name')"
+                placeholder="First name">
+              <div *ngIf="getFieldErrorMessage('first_name')" class="invalid-feedback d-block">
+                {{ getFieldErrorMessage('first_name') }}
+              </div>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="last_name" class="form-label">Last Name <span class="text-danger">*</span></label>
+              <input 
+                type="text" 
+                class="form-control" 
+                id="last_name"
+                formControlName="last_name"
+                [class.is-invalid]="hasFieldError('last_name')"
+                placeholder="Last name">
+              <div *ngIf="getFieldErrorMessage('last_name')" class="invalid-feedback d-block">
+                {{ getFieldErrorMessage('last_name') }}
+              </div>
+            </div>
+          </div>
+
+          <!-- Password -->
+          <div class="mb-3">
+            <label for="password" class="form-label">Password <span class="text-danger">*</span></label>
+            <div class="input-group">
+              <span class="input-group-text">
+                <i class="bi bi-lock"></i>
+              </span>
+              <input 
+                type="password" 
+                class="form-control" 
+                id="password"
+                formControlName="password"
+                [class.is-invalid]="hasFieldError('password')"
+                placeholder="Create a password">
+            </div>
+            <div *ngIf="getFieldErrorMessage('password')" class="invalid-feedback d-block">
+              {{ getFieldErrorMessage('password') }}
+            </div>
+            <div class="form-text">
+              Password must be at least 8 characters long.
+            </div>
+          </div>
+
+          <!-- Confirm Password -->
+          <div class="mb-4">
+            <label for="confirm_password" class="form-label">Confirm Password <span class="text-danger">*</span></label>
+            <div class="input-group">
+              <span class="input-group-text">
+                <i class="bi bi-lock-fill"></i>
+              </span>
+              <input 
+                type="password" 
+                class="form-control" 
+                id="confirm_password"
+                formControlName="confirm_password"
+                [class.is-invalid]="hasFieldError('confirm_password')"
+                placeholder="Confirm your password">
+            </div>
+            <div *ngIf="getFieldErrorMessage('confirm_password')" class="invalid-feedback d-block">
+              {{ getFieldErrorMessage('confirm_password') }}
+            </div>
+          </div>
+
+          <!-- Submit Button -->
+          <div class="d-grid gap-2 mb-3">
+            <button 
+              type="submit" 
+              class="btn btn-primary"
+              [disabled]="registrationForm.invalid || loading || !registrationEnabled">
+              <span *ngIf="loading" class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+              <i class="bi bi-person-plus me-2" *ngIf="!loading"></i>
+              Create Account
+            </button>
+          </div>
+
+          <!-- Back to Login -->
+          <div class="text-center">
+            <p class="text-muted small mb-2">Already have an account?</p>
+            <button type="button" class="btn btn-outline-secondary" (click)="goToLogin()">
+              <i class="bi bi-arrow-left me-1"></i>Back to Login
+            </button>
+          </div>
+        </form>
+
+        <!-- Additional Information -->
+        <div class="mt-4 text-center" *ngIf="siteConfig$ | async as config">
+          <p class="text-muted small">
+            {{ config.site_name }} - Scientific Metadata Management
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,228 @@
+<div class="notification-panel-wrapper">
+  <!-- Notification Bell Button -->
+  <div class="position-relative">
+    <button 
+      type="button" 
+      class="btn btn-outline-secondary position-relative"
+      (click)="togglePanel()"
+      [class.active]="isOpen()"
+      title="Notifications">
+      <i class="bi bi-bell"></i>
+      @if (hasUnreadNotifications()) {
+        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+          {{ notificationService.unreadCount() }}
+          <span class="visually-hidden">unread notifications</span>
+        </span>
+      }
+      @if (!connectionStatus()) {
+        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning">
+          <i class="bi bi-wifi-off"></i>
+          <span class="visually-hidden">disconnected</span>
+        </span>
+      }
+    </button>
+  </div>
+
+  <!-- Notification Panel -->
+  @if (isOpen()) {
+    <div class="notification-panel card shadow-lg position-absolute">
+      <!-- Header -->
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="mb-0">
+          <i class="bi bi-bell me-2"></i>Notifications
+          @if (notificationService.unreadCount() > 0) {
+            <span class="badge bg-primary ms-2">{{ notificationService.unreadCount() }}</span>
+          }
+        </h6>
+        <div class="d-flex gap-1">
+          @if (!connectionStatus()) {
+            <button 
+              type="button" 
+              class="btn btn-sm btn-outline-warning" 
+              (click)="reconnectWebSocket()"
+              title="Reconnect WebSocket">
+              <i class="bi bi-wifi-off"></i>
+            </button>
+          }
+          <button 
+            type="button" 
+            class="btn btn-sm btn-outline-secondary" 
+            (click)="closePanel()"
+            title="Close">
+            <i class="bi bi-x"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Connection Status -->
+      @if (!connectionStatus()) {
+        <div class="alert alert-warning alert-sm mb-0 rounded-0">
+          <i class="bi bi-wifi-off me-2"></i>
+          Real-time notifications disconnected
+          <button 
+            type="button" 
+            class="btn btn-sm btn-warning ms-2"
+            (click)="reconnectWebSocket()">
+            Reconnect
+          </button>
+        </div>
+      }
+
+      <!-- Filter Tabs -->
+      <div class="card-header bg-light border-top p-2">
+        <div class="btn-group btn-group-sm w-100" role="group">
+          <input 
+            type="radio" 
+            class="btn-check" 
+            id="filter-all" 
+            autocomplete="off"
+            [checked]="selectedFilter() === 'all'"
+            (change)="setFilter('all')">
+          <label class="btn btn-outline-primary" for="filter-all">
+            All ({{ notificationService.allNotifications().length }})
+          </label>
+
+          <input 
+            type="radio" 
+            class="btn-check" 
+            id="filter-system" 
+            autocomplete="off"
+            [checked]="selectedFilter() === NotificationType.SYSTEM"
+            (change)="setFilter(NotificationType.SYSTEM)">
+          <label class="btn btn-outline-primary" for="filter-system">
+            <i class="bi bi-gear"></i>
+          </label>
+
+          <input 
+            type="radio" 
+            class="btn-check" 
+            id="filter-table" 
+            autocomplete="off"
+            [checked]="selectedFilter() === NotificationType.METADATA_TABLE"
+            (change)="setFilter(NotificationType.METADATA_TABLE)">
+          <label class="btn btn-outline-primary" for="filter-table">
+            <i class="bi bi-table"></i>
+          </label>
+
+          <input 
+            type="radio" 
+            class="btn-check" 
+            id="filter-group" 
+            autocomplete="off"
+            [checked]="selectedFilter() === NotificationType.LAB_GROUP"
+            (change)="setFilter(NotificationType.LAB_GROUP)">
+          <label class="btn btn-outline-primary" for="filter-group">
+            <i class="bi bi-people"></i>
+          </label>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      @if (filteredNotifications().length > 0) {
+        <div class="card-header bg-light border-top p-2">
+          <div class="d-flex gap-1 justify-content-center">
+            <button 
+              type="button" 
+              class="btn btn-sm btn-outline-primary"
+              (click)="markAllAsRead()"
+              [disabled]="notificationService.unreadCount() === 0">
+              <i class="bi bi-check-all me-1"></i>Mark All Read
+            </button>
+            <button 
+              type="button" 
+              class="btn btn-sm btn-outline-secondary"
+              (click)="clearReadNotifications()">
+              <i class="bi bi-trash me-1"></i>Clear Read
+            </button>
+            <button 
+              type="button" 
+              class="btn btn-sm btn-outline-danger"
+              (click)="clearAllNotifications()">
+              <i class="bi bi-trash-fill me-1"></i>Clear All
+            </button>
+          </div>
+        </div>
+      }
+
+      <!-- Notification List -->
+      <div class="card-body p-0">
+        @if (filteredNotifications().length === 0) {
+          <div class="text-center py-4 text-muted">
+            <i class="bi bi-bell-slash fs-1 mb-2"></i>
+            <p class="mb-0">No notifications</p>
+          </div>
+        } @else {
+          <div class="notification-list">
+            @for (notification of filteredNotifications(); track notification.id) {
+              <div 
+                class="notification-item"
+                [class.unread]="!notification.read"
+                [class.bg-light]="!notification.read">
+                
+                <div class="d-flex align-items-start p-3 border-bottom">
+                  <!-- Icon -->
+                  <div class="flex-shrink-0 me-3">
+                    <span 
+                      class="badge rounded-pill p-2"
+                      [class]="getNotificationBadgeClass(notification)">
+                      <i [class]="getNotificationIcon(notification)"></i>
+                    </span>
+                  </div>
+
+                  <!-- Content -->
+                  <div class="flex-grow-1 min-w-0">
+                    <div class="d-flex justify-content-between align-items-start mb-1">
+                      <h6 class="mb-0 text-truncate">{{ notification.title }}</h6>
+                      <small class="text-muted ms-2">{{ formatTimestamp(notification.timestamp) }}</small>
+                    </div>
+                    
+                    <p class="mb-1 text-muted small">{{ notification.message }}</p>
+                    
+                    @if (notification.data?.table_name) {
+                      <div class="d-flex align-items-center gap-2 mt-1">
+                        <span class="badge bg-secondary">{{ notification.data.table_name }}</span>
+                      </div>
+                    }
+                    
+                    @if (notification.data?.lab_group_name) {
+                      <div class="d-flex align-items-center gap-2 mt-1">
+                        <span class="badge bg-info">{{ notification.data.lab_group_name }}</span>
+                      </div>
+                    }
+                  </div>
+
+                  <!-- Actions -->
+                  <div class="flex-shrink-0 ms-2">
+                    <div class="btn-group btn-group-sm">
+                      @if (!notification.read) {
+                        <button 
+                          type="button"
+                          class="btn btn-outline-primary btn-sm"
+                          (click)="markAsRead(notification)"
+                          title="Mark as read">
+                          <i class="bi bi-check"></i>
+                        </button>
+                      }
+                      <button 
+                        type="button"
+                        class="btn btn-outline-danger btn-sm"
+                        (click)="removeNotification(notification)"
+                        title="Remove">
+                        <i class="bi bi-x"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Backdrop -->
+  @if (isOpen()) {
+    <div class="notification-backdrop" (click)="closePanel()"></div>
+  }
+</div>

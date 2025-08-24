@@ -68,7 +68,7 @@
               placeholder="All Lab Groups"
               [ngbTypeahead]="searchLabGroups"
               [resultFormatter]="formatLabGroup"
-              [inputFormatter]="formatLabGroup"
+              [inputFormatter]="inputLabGroupFormatter"
               (selectItem)="onLabGroupSelected($event)"
               [editable]="true"
               [showHint]="true"
@@ -127,7 +127,7 @@
               <div class="card-body p-0">
                 <div class="table-responsive">
                   <table class="table table-hover mb-0">
-                    <thead class="table-secondary">
+                    <thead>
                     <tr>
                       <th scope="col" style="width: 200px;">Column</th>
                       <th scope="col" style="width: 200px;">Display Name</th>
@@ -472,7 +472,7 @@
                   placeholder="Type to search ontology suggestions..."
                   [ngbTypeahead]="searchTemplateValues"
                   [resultFormatter]="formatValueSuggestion"
-                  [inputFormatter]="formatValueSuggestion"
+                  [inputFormatter]="inputValueFormatter"
                   (selectItem)="onValueSuggestionSelected($event)"
                   [editable]="true"
                   [showHint]="true"

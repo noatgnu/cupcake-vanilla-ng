@@ -3,6 +3,11 @@
 {
   "compileOnSave": false,
   "compilerOptions": {
+    "paths": {
+      "cupcake-core": [
+        "./dist/cupcake-core",
+      ],
+    },
     "strict": true,
     "noImplicitOverride": true,
     "noPropertyAccessFromIndexSignature": true,
@@ -29,6 +34,24 @@
     },
     {
       "path": "./tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/cupcake-core/tsconfig.lib.json"
+    },
+    {
+      "path": "./projects/cupcake-core/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/cupcake-core/tsconfig.lib.json"
+    },
+    {
+      "path": "./projects/cupcake-core/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/cupcake-vanilla/tsconfig.lib.json"
+    },
+    {
+      "path": "./projects/cupcake-vanilla/tsconfig.spec.json"
     }
   ]
 }

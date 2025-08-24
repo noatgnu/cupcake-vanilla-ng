@@ -1,0 +1,231 @@
+// =============================================================================
+// CUPCAKE CORE - Mixins
+// =============================================================================
+// Reusable SCSS mixins for common UI patterns in cupcake applications
+
+@import './variables';
+
+// Responsive breakpoint mixin
+@mixin cupcake-media-breakpoint-up($name) {
+  $min: map-get($cupcake-breakpoints, $name);
+  @if $min != 0 {
+    @media (min-width: $min) {
+      @content;
+    }
+  } @else {
+    @content;
+  }
+}
+
+@mixin cupcake-media-breakpoint-down($name) {
+  $max: map-get($cupcake-breakpoints, $name);
+  @if $max != 0 {
+    @media (max-width: $max - 1px) {
+      @content;
+    }
+  }
+}
+
+// Card styling mixin
+@mixin cupcake-card() {
+  background-color: var(--cupcake-card-bg);
+  border: 1px solid var(--cupcake-card-border);
+  border-radius: var(--cupcake-border-radius);
+  box-shadow: 0 0.125rem 0.25rem var(--cupcake-shadow);
+  transition: var(--cupcake-transition);
+  
+  &:hover {
+    box-shadow: 0 0.25rem 0.5rem var(--cupcake-shadow-lg);
+  }
+}
+
+// Button reset mixin
+@mixin cupcake-button-reset() {
+  appearance: none;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  outline: none;
+  
+  &:focus-visible {
+    outline: 2px solid var(--cupcake-primary);
+    outline-offset: 2px;
+  }
+}
+
+// Input focus mixin
+@mixin cupcake-input-focus() {
+  border-color: var(--cupcake-input-focus);
+  box-shadow: 0 0 0 0.25rem rgba(var(--cupcake-primary-rgb), 0.25);
+  outline: none;
+}
+
+// Loading state mixin
+@mixin cupcake-loading-overlay() {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--cupcake-loading-overlay);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: map-get($cupcake-z-indices, modal);
+}
+
+// Truncate text mixin
+@mixin cupcake-text-truncate() {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// Visually hidden mixin (for accessibility)
+@mixin cupcake-sr-only() {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+// Clearfix mixin
+@mixin cupcake-clearfix() {
+  &::after {
+    display: block;
+    clear: both;
+    content: "";
+  }
+}
+
+// Flex center mixin
+@mixin cupcake-flex-center() {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+// Status badge mixin
+@mixin cupcake-status-badge($color-var) {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25em 0.6em;
+  font-size: 0.75em;
+  font-weight: map-get($cupcake-font-weights, medium);
+  line-height: 1;
+  color: white;
+  background-color: var(#{$color-var});
+  border-radius: var(--cupcake-border-radius-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+// Hover lift effect
+@mixin cupcake-hover-lift() {
+  transition: var(--cupcake-transition);
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px var(--cupcake-shadow-lg);
+  }
+}
+
+// Focus ring mixin
+@mixin cupcake-focus-ring($color: var(--cupcake-primary)) {
+  &:focus-visible {
+    outline: 2px solid $color;
+    outline-offset: 2px;
+    border-radius: var(--cupcake-border-radius-sm);
+  }
+}
+
+// Spinner animation mixin
+@mixin cupcake-spinner() {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  border: 0.125em solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: cupcake-spin 0.75s linear infinite;
+}
+
+@keyframes cupcake-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// Fade in animation mixin
+@mixin cupcake-fade-in($duration: 0.3s) {
+  opacity: 0;
+  animation: cupcake-fade-in $duration ease-out forwards;
+}
+
+@keyframes cupcake-fade-in {
+  to {
+    opacity: 1;
+  }
+}
+
+// Slide in animation mixin
+@mixin cupcake-slide-in($direction: 'up', $distance: 20px, $duration: 0.3s) {
+  opacity: 0;
+  
+  @if $direction == 'up' {
+    transform: translateY($distance);
+  } @else if $direction == 'down' {
+    transform: translateY(-$distance);
+  } @else if $direction == 'left' {
+    transform: translateX($distance);
+  } @else if $direction == 'right' {
+    transform: translateX(-$distance);
+  }
+  
+  animation: cupcake-slide-in-#{$direction} $duration ease-out forwards;
+}
+
+@keyframes cupcake-slide-in-up {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes cupcake-slide-in-down {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes cupcake-slide-in-left {
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes cupcake-slide-in-right {
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+// Dark mode mixin
+@mixin cupcake-dark-mode() {
+  :root[data-bs-theme="dark"] &,
+  .dark-mode & {
+    @content;
+  }
+}

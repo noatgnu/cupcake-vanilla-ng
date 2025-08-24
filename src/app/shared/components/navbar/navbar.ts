@@ -1,23 +1,29 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { NgbDropdownModule } from '@ng-bootstrap/ng-bootstrap';
-import { AuthService, User } from '../../services/auth';
-import { SiteConfigService } from '../../services/site-config';
+import { AuthService, User, SiteConfigService, UserManagementService } from 'cupcake-core';
 import { ThemeService } from '../../services/theme';
+import { NotificationPanel } from '../notification-panel/notification-panel';
+import { Notification } from '../../services/notification';
+import { Websocket } from '../../services/websocket';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  imports: [CommonModule, RouterModule, NgbDropdownModule],
+  imports: [CommonModule, RouterModule, NgbDropdownModule, NotificationPanel],
   templateUrl: './navbar.html',
   styleUrl: './navbar.scss'
 })
-export class NavbarComponent {
+export class NavbarComponent implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private router = inject(Router);
   private siteConfigService = inject(SiteConfigService);
+  private userManagementService = inject(UserManagementService);
   private themeService = inject(ThemeService);
+  private notificationService = inject(Notification);
+  private webSocketService = inject(Websocket);
 
   // Observable for authentication state
   isAuthenticated$ = this.authService.isAuthenticated$;
@@ -25,29 +31,62 @@ export class NavbarComponent {
   
   // Observable for site configuration
   siteConfig$ = this.siteConfigService.config$;
+  
+  // Notification state
+  unreadCount = this.notificationService.unreadCount;
+  
+  private subscriptions = new Subscription();
+
+  ngOnInit(): void {
+    // Initialize WebSocket connection when user is authenticated
+    this.subscriptions.add(
+      this.isAuthenticated$.subscribe(isAuthenticated => {
+        if (isAuthenticated && this.webSocketService.shouldConnect()) {
+          // Only connect if we should connect and are not already connected/connecting
+          const currentState = this.webSocketService.connectionState$();
+          if (currentState === 'disconnected' || currentState === 'error') {
+            console.log('Navbar: Initiating WebSocket connection');
+            this.webSocketService.connect();
+          }
+        } else if (!isAuthenticated) {
+          console.log('Navbar: User not authenticated, disconnecting WebSocket');
+          this.webSocketService.disconnect();
+        }
+      })
+    );
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.unsubscribe();
+    this.webSocketService.disconnect();
+  }
 
   /**
    * Logout user and redirect to login page
    */
   logout(): void {
+    console.log('NavbarComponent: logout() called');
     this.authService.logout().subscribe({
+      next: (response) => {
+        console.log('NavbarComponent: logout success response:', response);
+      },
+      error: (error) => {
+        console.error('NavbarComponent: logout error:', error);
+        // Still navigate to login even if logout API fails
+        this.router.navigate(['/login']);
+      },
       complete: () => {
+        console.log('NavbarComponent: logout completed, navigating to login');
         this.router.navigate(['/login']);
       }
     });
   }
 
   /**
-   * Get user display name
+   * Get user display name using the service method
    */
   getUserDisplayName(user: User | null): string {
-    if (!user) return '';
-    
-    if (user.first_name || user.last_name) {
-      return `${user.first_name} ${user.last_name}`.trim();
-    }
-    
-    return user.username || user.email || 'User';
+    return this.userManagementService.getUserDisplayName(user);
   }
 
   /**

@@ -7,7 +7,8 @@ import { ColumnTemplateEditModal } from './column-template-edit-modal/column-tem
 import { 
   MetadataColumnTemplate, 
   LabGroup, 
-  LabGroupQueryResponse 
+  LabGroupQueryResponse,
+  ResourceVisibility
 } from '../../shared/models';
 import { ApiService } from '../../shared/services/api';
 
@@ -269,7 +270,7 @@ export class ColumnTemplatesComponent implements OnInit {
       column_type: template.column_type,
       default_value: template.default_value,
       ontology_type: template.ontology_type,
-      visibility: 'private', // Always create as private
+      visibility: ResourceVisibility.PRIVATE, // Always create as private
       lab_group: template.lab_group || this.selectedLabGroup()?.id || undefined,
       is_active: true
     };

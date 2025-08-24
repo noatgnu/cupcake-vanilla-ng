@@ -69,27 +69,37 @@
             </li>
           </ul>
         </li>
-        <li class="nav-item dropdown" ngbDropdown>
-          <a class="nav-link dropdown-toggle" 
-             id="adminDropdown" 
-             ngbDropdownToggle
-             role="button"
-             aria-expanded="false">
-            <i class="bi bi-gear me-1"></i>
-            Admin
-          </a>
-          <ul class="dropdown-menu" ngbDropdownMenu aria-labelledby="adminDropdown">
-            <li>
-              <a class="dropdown-item" routerLink="/admin/site-config">
-                <i class="bi bi-building me-2"></i>
-                Site Configuration
+        @if (currentUser$ | async; as user) {
+          @if (user.is_staff) {
+            <li class="nav-item dropdown" ngbDropdown>
+              <a class="nav-link dropdown-toggle" 
+                 id="adminDropdown" 
+                 ngbDropdownToggle
+                 role="button"
+                 aria-expanded="false">
+                <i class="bi bi-gear me-1"></i>
+                Admin
               </a>
+              <ul class="dropdown-menu" ngbDropdownMenu aria-labelledby="adminDropdown">
+                <li>
+                  <a class="dropdown-item" routerLink="/admin/users">
+                    <i class="bi bi-people-fill me-2"></i>
+                    User Management
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item" routerLink="/admin/site-config">
+                    <i class="bi bi-building me-2"></i>
+                    Site Configuration
+                  </a>
+                </li>
+              </ul>
             </li>
-          </ul>
-        </li>
+          }
+        }
       </ul>
 
-      <!-- Theme toggle and User menu -->
+      <!-- Theme toggle, Notifications and User menu -->
       <ul class="navbar-nav">
         <!-- Theme Toggle -->
         <li class="nav-item">
@@ -100,6 +110,26 @@
             style="border: none; background: none; color: inherit;">
             <i [class]="getThemeIcon()"></i>
           </button>
+        </li>
+        
+        <!-- Notifications -->
+        <li class="nav-item dropdown" ngbDropdown>
+          <button
+            class="nav-link btn btn-link position-relative"
+            ngbDropdownToggle
+            [title]="'Notifications (' + unreadCount() + ' unread)'"
+            style="border: none; background: none; color: inherit;">
+            <i class="bi bi-bell"></i>
+            @if (unreadCount() > 0) {
+              <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                    style="font-size: 0.6rem; min-width: 1.2rem; height: 1.2rem;">
+                {{ unreadCount() > 99 ? '99+' : unreadCount() }}
+              </span>
+            }
+          </button>
+          <div class="dropdown-menu dropdown-menu-end p-0" ngbDropdownMenu style="width: 400px; max-height: 500px;">
+            <app-notification-panel></app-notification-panel>
+          </div>
         </li>
         
         @if (currentUser$ | async; as user) {
@@ -140,15 +170,15 @@
             }
             <li><hr class="dropdown-divider"></li>
             <li>
-              <a class="dropdown-item" routerLink="/lab-groups">
-                <i class="bi bi-people me-1"></i>
-                Lab Groups
+              <a class="dropdown-item" routerLink="/users/profile">
+                <i class="bi bi-person-circle me-1"></i>
+                Profile Settings
               </a>
             </li>
             <li>
-              <a class="dropdown-item" routerLink="/admin">
-                <i class="bi bi-gear-fill me-1"></i>
-                Admin Panel
+              <a class="dropdown-item" routerLink="/lab-groups">
+                <i class="bi bi-people me-1"></i>
+                Lab Groups
               </a>
             </li>
             <li>

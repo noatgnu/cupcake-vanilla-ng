@@ -1,0 +1,28 @@
+// Lab Groups Component Styles
+.lab-groups-container {
+  .groups-content {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  // Responsive adjustments
+  @media (max-width: 768px) {
+    .groups-content {
+      padding: 1rem !important;
+    }
+
+    .btn-group {
+      flex-direction: column;
+      width: 100%;
+
+      .btn {
+        border-radius: 0.25rem !important;
+        margin-bottom: 0.25rem;
+      }
+    }
+
+    .modal-dialog {
+      margin: 0.5rem;
+    }
+  }
+}

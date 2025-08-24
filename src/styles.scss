@@ -1,62 +1,11 @@
 /* You can add global styles to this file, and also import other style files */
 
-/* CSS Custom Properties for dynamic theming */
-:root {
-  --cupcake-primary: #1976d2;
-  --cupcake-primary-rgb: 25, 118, 210;
-  --cupcake-primary-dark: #1565c0;
-  --cupcake-primary-light: #42a5f5;
-  
-  /* Light theme colors */
-  --cupcake-bg: #ffffff;
-  --cupcake-bg-secondary: #f8f9fa;
-  --cupcake-bg-tertiary: #e9ecef;
-  --cupcake-text: #212529;
-  --cupcake-text-muted: #6c757d;
-  --cupcake-border: rgba(0, 0, 0, 0.125);
-  --cupcake-shadow: rgba(0, 0, 0, 0.075);
-  
-  /* Card colors */
-  --cupcake-card-bg: #ffffff;
-  --cupcake-card-header-bg: rgba(0, 0, 0, 0.03);
-  --cupcake-card-border: rgba(0, 0, 0, 0.125);
-  
-  /* Table colors */
-  --cupcake-table-striped: rgba(0, 0, 0, 0.025);
-  --cupcake-table-hover: rgba(0, 0, 0, 0.075);
-  
-  /* Loading overlay */
-  --cupcake-loading-overlay: rgba(255, 255, 255, 0.9);
-}
-
-/* Dark theme overrides */
-:root[data-bs-theme="dark"], .dark-mode {
-  --cupcake-bg: #121212;
-  --cupcake-bg-secondary: #1e1e1e;
-  --cupcake-bg-tertiary: #2d2d2d;
-  --cupcake-text: #ffffff;
-  --cupcake-text-muted: #adb5bd;
-  --cupcake-border: rgba(255, 255, 255, 0.125);
-  --cupcake-shadow: rgba(0, 0, 0, 0.3);
-  
-  /* Adjust primary colors for dark mode - make them lighter for better contrast */
-  --cupcake-primary: #42a5f5;
-  --cupcake-primary-rgb: 66, 165, 245;
-  --cupcake-primary-dark: #1976d2;
-  --cupcake-primary-light: #90caf9;
-  
-  /* Card colors for dark mode */
-  --cupcake-card-bg: #1e1e1e;
-  --cupcake-card-header-bg: rgba(255, 255, 255, 0.03);
-  --cupcake-card-border: rgba(255, 255, 255, 0.125);
-  
-  /* Table colors for dark mode */
-  --cupcake-table-striped: rgba(255, 255, 255, 0.05);
-  --cupcake-table-hover: rgba(255, 255, 255, 0.075);
-  
-  /* Loading overlay for dark mode */
-  --cupcake-loading-overlay: rgba(18, 18, 18, 0.9);
-}
+/* Import cupcake-core styling system */
+// Note: In a real application, this path would be from node_modules
+// @import 'cupcake-core/lib/styles';
+// For now, we'll import from the local library build
+@import '../dist/cupcake-core/src/lib/styles/variables';
+@import '../dist/cupcake-core/src/lib/styles/mixins';
 
 /* Importing Bootstrap SCSS file. */
 @import 'bootstrap/scss/bootstrap';
@@ -64,101 +13,11 @@
 /* Import Bootstrap Icons */
 @import 'bootstrap-icons/font/bootstrap-icons.css';
 
-// Override Bootstrap primary colors with CSS custom properties
-.btn-primary {
-  --bs-btn-bg: var(--cupcake-primary);
-  --bs-btn-border-color: var(--cupcake-primary);
-  --bs-btn-hover-bg: var(--cupcake-primary-dark);
-  --bs-btn-hover-border-color: var(--cupcake-primary-dark);
-  --bs-btn-focus-shadow-rgb: var(--cupcake-primary-rgb);
-  --bs-btn-active-bg: var(--cupcake-primary-dark);
-  --bs-btn-active-border-color: var(--cupcake-primary-dark);
-}
+/* Import cupcake-core Bootstrap integration */
+@import '../dist/cupcake-core/src/lib/styles/bootstrap-integration';
 
-.btn-outline-primary {
-  --bs-btn-color: var(--cupcake-primary);
-  --bs-btn-border-color: var(--cupcake-primary);
-  --bs-btn-hover-bg: var(--cupcake-primary);
-  --bs-btn-hover-border-color: var(--cupcake-primary);
-  --bs-btn-focus-shadow-rgb: var(--cupcake-primary-rgb);
-  --bs-btn-active-bg: var(--cupcake-primary);
-  --bs-btn-active-border-color: var(--cupcake-primary);
-}
-
-.bg-primary {
-  background-color: var(--cupcake-primary) !important;
-}
-
-.text-primary {
-  color: var(--cupcake-primary) !important;
-}
-
-.border-primary {
-  border-color: var(--cupcake-primary) !important;
-}
-
-.alert-primary {
-  --bs-alert-color: var(--cupcake-primary);
-  --bs-alert-bg: rgba(var(--cupcake-primary-rgb), 0.1);
-  --bs-alert-border-color: rgba(var(--cupcake-primary-rgb), 0.2);
-}
-
-.badge.bg-primary {
-  background-color: var(--cupcake-primary) !important;
-}
-
-.spinner-border.text-primary {
-  color: var(--cupcake-primary) !important;
-}
-
-.form-control:focus {
-  border-color: var(--cupcake-primary);
-  box-shadow: 0 0 0 0.25rem rgba(var(--cupcake-primary-rgb), 0.25);
-}
-
-.form-check-input:checked {
-  background-color: var(--cupcake-primary);
-  border-color: var(--cupcake-primary);
-}
-
-.nav-link.active {
-  color: var(--cupcake-primary) !important;
-}
-
-// Global CUPCAKE Vanilla styles
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  line-height: 1.6;
-}
-
-// Navigation
-.navbar-brand {
-  font-weight: 600;
-  font-size: 1.25rem;
-}
-
-// Cards
-.card {
-  background-color: var(--cupcake-card-bg);
-  border: 1px solid var(--cupcake-card-border);
-  box-shadow: 0 0.125rem 0.25rem var(--cupcake-shadow);
-}
-
-.card-header {
-  background-color: var(--cupcake-card-header-bg);
-  border-bottom: 1px solid var(--cupcake-card-border);
-}
-
-// Tables
-.table {
-  --bs-table-striped-bg: var(--cupcake-table-striped);
-  --bs-table-hover-bg: var(--cupcake-table-hover);
-}
-
-.table th {
-  font-weight: 600;
-  border-bottom: 2px solid #dee2e6;
-}
+/* Import cupcake-core component styles */
+@import '../dist/cupcake-core/src/lib/styles/components';
 
 // Empty states
 .empty-state {

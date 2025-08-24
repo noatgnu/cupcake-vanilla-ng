@@ -2,13 +2,14 @@ import { Component, EventEmitter, Input, Output, signal, computed } from '@angul
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgbActiveModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
+import { ResourceVisibility } from '../../../shared/models';
 
 export interface SchemaSelectionResult {
   name: string;
   description: string;
   schema_ids: number[];
   lab_group_id?: number;
-  is_public: boolean;
+  visibility: ResourceVisibility;
   is_default: boolean;
 }
 
@@ -37,7 +38,7 @@ export class SchemaSelectionModal {
       name: ['', [Validators.required, Validators.minLength(1)]],
       description: [''],
       lab_group_id: [null],
-      is_public: [false],
+      visibility: [ResourceVisibility.PRIVATE],
       is_default: [false]
     });
   }
@@ -110,7 +111,7 @@ export class SchemaSelectionModal {
       description: formValue.description || '',
       schema_ids: this.getSelectedSchemas(),
       lab_group_id: formValue.lab_group_id || undefined,
-      is_public: formValue.is_public || false,
+      visibility: formValue.visibility || ResourceVisibility.PRIVATE,
       is_default: formValue.is_default || false
     };
 

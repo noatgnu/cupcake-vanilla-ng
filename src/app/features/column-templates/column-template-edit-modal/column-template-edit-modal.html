@@ -107,12 +107,27 @@
         <select
           class="form-select"
           id="ontologyType"
-          formControlName="ontology_type">
-          @for (ontology of ontologyTypes; track ontology.value) {
+          formControlName="ontology_type"
+          (change)="onOntologyTypeChange()">
+          @for (ontology of ontologyTypes; track $index) {
             <option [value]="ontology.value">{{ ontology.label }}</option>
           }
         </select>
       </div>
+
+      @if (editForm.get('ontology_type')?.value && editForm.get('custom_ontology_filters')?.value && Object.keys(editForm.get('custom_ontology_filters')?.value || {}).length > 0) {
+        <div class="col-12 mb-3">
+          <div class="alert alert-info">
+            <h6 class="alert-heading">
+              <i class="bi bi-filter me-2"></i>Custom Ontology Filters Applied
+            </h6>
+            <small class="mb-0">
+              The following custom filters will be automatically applied for this ontology type:
+              <code class="ms-1">{{ editForm.get('custom_ontology_filters')?.value | json }}</code>
+            </small>
+          </div>
+        </div>
+      }
 
       <!-- Visibility and Access -->
       <div class="col-12 mb-3">

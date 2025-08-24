@@ -95,6 +95,36 @@
           }
         }
       }
+    },
+    "cupcake-core": {
+      "projectType": "library",
+      "root": "projects/cupcake-core",
+      "sourceRoot": "projects/cupcake-core/src",
+      "prefix": "ccc",
+      "architect": {
+        "build": {
+          "builder": "@angular/build:ng-packagr",
+          "configurations": {
+            "production": {
+              "tsConfig": "projects/cupcake-core/tsconfig.lib.prod.json"
+            },
+            "development": {
+              "tsConfig": "projects/cupcake-core/tsconfig.lib.json"
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "test": {
+          "builder": "@angular/build:karma",
+          "options": {
+            "tsConfig": "projects/cupcake-core/tsconfig.spec.json",
+            "polyfills": [
+              "zone.js",
+              "zone.js/testing"
+            ]
+          }
+        }
+      }
     }
   },
   "cli": {

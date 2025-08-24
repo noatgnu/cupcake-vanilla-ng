@@ -3,8 +3,12 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve",
+    "start": "npm run build:libs && ng serve",
     "build": "ng build",
+    "build:libs": "ng build cupcake-core && ng build cupcake-vanilla",
+    "build:all": "./build-all.sh",
+    "build:core": "ng build cupcake-core",
+    "build:vanilla": "ng build cupcake-vanilla",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },
@@ -50,6 +54,7 @@
     "karma-coverage": "~2.2.0",
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
+    "ng-packagr": "^20.1.0",
     "typescript": "~5.8.2"
   }
 }

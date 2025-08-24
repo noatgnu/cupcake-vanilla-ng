@@ -7,7 +7,7 @@ import { Observable, OperatorFunction, debounceTime, distinctUntilChanged, filte
 import {FavouriteMetadataOption, MetadataColumn, MetadataColumnTemplate, OntologySuggestion} from '../../shared/models';
 import { ApiService } from '../../shared/services/api';
 import { ToastService } from '../../shared/services/toast';
-import { AuthService, User } from '../../shared/services/auth';
+import { AuthService, User } from 'cupcake-core';
 import { SdrfSyntaxService, SyntaxType } from '../../shared/services/sdrf-syntax';
 import { SdrfAgeInput } from '../../shared/components/sdrf-age-input/sdrf-age-input';
 import { SdrfModificationInput } from '../../shared/components/sdrf-modification-input/sdrf-modification-input';
@@ -124,6 +124,9 @@ export class FavoriteManagementComponent implements OnInit {
   userLabGroups = signal<number[]>([]);
   userLabGroupsLoaded = signal(false);
 
+  // Ontology value storage (decoupled from display)
+  selectedOntologyValue: string | null = null;
+
   // Lab groups for filtering
   availableLabGroups = signal<{id: number, name: string}[]>([]);
   allLabGroups = signal<{id: number, name: string}[]>([]); // For typeahead search
@@ -163,6 +166,18 @@ export class FavoriteManagementComponent implements OnInit {
       display_value: ['', [Validators.maxLength(500)]],
       scope: ['personal', Validators.required],
       template_id: [null] // Store the selected template ID for value autocompletion
+    });
+
+    // Watch for manual input changes (clear ontology value when user types)
+    this.editForm.get('value')?.valueChanges.subscribe(value => {
+      // Only clear selectedOntologyValue if user is manually typing a different string
+      // Don't interfere with objects (typeahead suggestions) - let them be handled naturally
+      if (typeof value === 'string' && value !== this.selectedOntologyValue) {
+        // User typed something different than the stored ontology value
+        console.log('Manual input detected, clearing stored ontology value');
+        this.selectedOntologyValue = null;
+      }
+      // Objects from typeahead are handled by inputFormatter automatically
     });
   }
 
@@ -250,6 +265,7 @@ export class FavoriteManagementComponent implements OnInit {
     this.isEditMode.set(false);
     this.editingFavorite.set(null);
     this.showEditModal.set(true);
+    this.selectedOntologyValue = null; // Clear stored ontology value
     this.editForm.reset({
       name: '',
       type: '',
@@ -266,6 +282,7 @@ export class FavoriteManagementComponent implements OnInit {
     this.isEditMode.set(true);
     this.editingFavorite.set(favorite);
     this.showEditModal.set(true);
+    this.selectedOntologyValue = favorite.value; // Store the original value
 
     // Determine scope
     let scope = 'personal';
@@ -317,12 +334,22 @@ export class FavoriteManagementComponent implements OnInit {
     if (this.editForm.invalid) return;
 
     const formValue = this.editForm.value;
+    
+    // Use the stored ontology value if available, otherwise use form value
+    let value = this.selectedOntologyValue || formValue.value;
+    
+    // Ensure value is always a string, not an object
+    if (typeof value === 'object' && value !== null) {
+      // If somehow an object got into the form, extract the value property
+      value = value.value || value.display_name || String(value);
+    }
+    
     const favoriteData: Partial<FavouriteMetadataOption> = {
       name: formValue.name,
       type: formValue.type,
       column_template: formValue.template_id || undefined,
-      value: formValue.value,
-      display_value: formValue.display_value || formValue.value,
+      value: value,
+      display_value: formValue.display_value || value,
       is_global: formValue.scope === 'global',
       user: formValue.scope === 'personal' ? this.currentUserId() || undefined : undefined,
       lab_group: formValue.scope === 'lab_group' ? this.userLabGroups()[0] || undefined : undefined
@@ -370,6 +397,7 @@ export class FavoriteManagementComponent implements OnInit {
     this.isEditMode.set(false);
     this.editingFavorite.set(null);
     this.showEditModal.set(false);
+    this.selectedOntologyValue = null; // Clear stored ontology value
   }
 
   onPageChange(page: number): void {
@@ -671,16 +699,27 @@ export class FavoriteManagementComponent implements OnInit {
     return suggestion.display_name || suggestion.value;
   };
 
-  onValueSuggestionSelected = (event: any): void => {
-    if (event.item && event.item.value) {
-      this.editForm.get('value')?.setValue(event.item.value);
-      this.editForm.get('value')?.markAsTouched();
+  // Input formatter should return the display name for better UX
+  inputValueFormatter = (suggestion: OntologySuggestion): string => {
+    return suggestion.display_name || suggestion.value;
+  };
 
-      // If display_value is empty, suggest the display name from the ontology
+  onValueSuggestionSelected = (event: any): void => {
+    const suggestion = event.item || event;
+    
+    if (suggestion && typeof suggestion === 'object' && suggestion.value) {
+      console.log('Ontology suggestion selected:', suggestion);
+      
+      // Store the actual value for form submission
+      this.selectedOntologyValue = suggestion.value;
+      
+      // Update display_value if it's empty
       const currentDisplayValue = this.editForm.get('display_value')?.value;
-      if (!currentDisplayValue && event.item.display_name && event.item.display_name !== event.item.value) {
-        this.editForm.get('display_value')?.setValue(event.item.display_name);
+      if (!currentDisplayValue && suggestion.display_name && suggestion.display_name !== suggestion.value) {
+        this.editForm.get('display_value')?.setValue(suggestion.display_name);
       }
+      
+      console.log('Stored ontology value:', this.selectedOntologyValue);
     }
   };
 
@@ -734,10 +773,18 @@ export class FavoriteManagementComponent implements OnInit {
     return group.name;
   };
 
+  // Input formatter for lab group should return the name for display in the input field
+  inputLabGroupFormatter = (group: {id: number, name: string}): string => {
+    return group.name;
+  };
+
   onLabGroupSelected = (event: any): void => {
     const selectedGroup = event.item;
     if (selectedGroup && selectedGroup.id) {
+      // Set both the form value (ID) and update the input display (name)
       this.searchForm.patchValue({ labGroup: selectedGroup.id.toString() });
+      
+      // The input formatter will handle displaying the name correctly
     }
   };
 
@@ -832,6 +879,8 @@ export class FavoriteManagementComponent implements OnInit {
         this.showSpecialInput.set(true);
         const currentValue = this.editForm.get('value')?.value;
         this.specialInputValue.set(currentValue || '');
+        // Clear ontology value when switching to enhanced editor
+        this.selectedOntologyValue = null;
       } else {
         this.showSpecialInput.set(false);
         this.specialInputValue.set('');
@@ -845,6 +894,9 @@ export class FavoriteManagementComponent implements OnInit {
 
   onSpecialInputChange(value: string): void {
     this.specialInputValue.set(value);
+    // When enhanced editor provides a value, clear the ontology value storage
+    // because the enhanced editor is providing the final string value
+    this.selectedOntologyValue = null;
     this.editForm.patchValue({ value });
   }
 
@@ -853,7 +905,12 @@ export class FavoriteManagementComponent implements OnInit {
 
     if (!this.showSpecialInput()) {
       // Switching to normal input, sync the current value
+      // Clear ontology value when switching back to regular input
+      this.selectedOntologyValue = null;
       this.editForm.patchValue({ value: this.specialInputValue() });
+    } else {
+      // Switching to special input, clear ontology value
+      this.selectedOntologyValue = null;
     }
   }
 

@@ -1,0 +1,151 @@
+// =============================================================================
+// CUPCAKE CORE - CSS Custom Properties & Variables
+// =============================================================================
+// This file contains all the CSS custom properties (CSS variables) used in
+// cupcake-core components. Import this file to access the cupcake design system.
+
+/* CSS Custom Properties for dynamic theming */
+:root {
+  // Primary Brand Colors
+  --cupcake-primary: #1976d2;
+  --cupcake-primary-rgb: 25, 118, 210;
+  --cupcake-primary-dark: #1565c0;
+  --cupcake-primary-light: #42a5f5;
+  
+  // Secondary Colors
+  --cupcake-secondary: #424242;
+  --cupcake-secondary-rgb: 66, 66, 66;
+  --cupcake-accent: #ff4081;
+  --cupcake-accent-rgb: 255, 64, 129;
+  
+  // Light theme colors
+  --cupcake-bg: #ffffff;
+  --cupcake-bg-secondary: #f8f9fa;
+  --cupcake-bg-tertiary: #e9ecef;
+  --cupcake-text: #212529;
+  --cupcake-text-muted: #6c757d;
+  --cupcake-border: rgba(0, 0, 0, 0.125);
+  --cupcake-shadow: rgba(0, 0, 0, 0.075);
+  --cupcake-shadow-lg: rgba(0, 0, 0, 0.15);
+  
+  // Card colors
+  --cupcake-card-bg: #ffffff;
+  --cupcake-card-header-bg: rgba(0, 0, 0, 0.03);
+  --cupcake-card-border: rgba(0, 0, 0, 0.125);
+  
+  // Table colors
+  --cupcake-table-striped: rgba(0, 0, 0, 0.025);
+  --cupcake-table-hover: rgba(0, 0, 0, 0.075);
+  --cupcake-table-border: rgba(0, 0, 0, 0.125);
+  
+  // Form colors
+  --cupcake-input-border: #ced4da;
+  --cupcake-input-focus: var(--cupcake-primary);
+  --cupcake-input-bg: #ffffff;
+  
+  // Loading overlay
+  --cupcake-loading-overlay: rgba(255, 255, 255, 0.9);
+  
+  // Status colors (aligned with Bootstrap)
+  --cupcake-success: #198754;
+  --cupcake-success-rgb: 25, 135, 84;
+  --cupcake-warning: #ffc107;
+  --cupcake-warning-rgb: 255, 193, 7;
+  --cupcake-danger: #dc3545;
+  --cupcake-danger-rgb: 220, 53, 69;
+  --cupcake-info: #0dcaf0;
+  --cupcake-info-rgb: 13, 202, 240;
+  
+  // Spacing (can be used with calc())
+  --cupcake-spacing-xs: 0.25rem;
+  --cupcake-spacing-sm: 0.5rem;
+  --cupcake-spacing-md: 1rem;
+  --cupcake-spacing-lg: 1.5rem;
+  --cupcake-spacing-xl: 3rem;
+  
+  // Border radius
+  --cupcake-border-radius: 0.375rem;
+  --cupcake-border-radius-sm: 0.25rem;
+  --cupcake-border-radius-lg: 0.5rem;
+  
+  // Transitions
+  --cupcake-transition: all 0.2s ease-in-out;
+  --cupcake-transition-fast: all 0.15s ease-in-out;
+  --cupcake-transition-slow: all 0.3s ease-in-out;
+}
+
+/* Dark theme overrides */
+:root[data-bs-theme="dark"], 
+.dark-mode {
+  --cupcake-bg: #121212;
+  --cupcake-bg-secondary: #1e1e1e;
+  --cupcake-bg-tertiary: #2d2d2d;
+  --cupcake-text: #ffffff;
+  --cupcake-text-muted: #adb5bd;
+  --cupcake-border: rgba(255, 255, 255, 0.125);
+  --cupcake-shadow: rgba(0, 0, 0, 0.3);
+  --cupcake-shadow-lg: rgba(0, 0, 0, 0.5);
+  
+  // Adjust primary colors for dark mode - make them lighter for better contrast
+  --cupcake-primary: #42a5f5;
+  --cupcake-primary-rgb: 66, 165, 245;
+  --cupcake-primary-dark: #1976d2;
+  --cupcake-primary-light: #90caf9;
+  
+  // Card colors for dark mode
+  --cupcake-card-bg: #1e1e1e;
+  --cupcake-card-header-bg: rgba(255, 255, 255, 0.03);
+  --cupcake-card-border: rgba(255, 255, 255, 0.125);
+  
+  // Table colors for dark mode
+  --cupcake-table-striped: rgba(255, 255, 255, 0.05);
+  --cupcake-table-hover: rgba(255, 255, 255, 0.075);
+  --cupcake-table-border: rgba(255, 255, 255, 0.125);
+  
+  // Form colors for dark mode
+  --cupcake-input-border: #495057;
+  --cupcake-input-bg: #2d2d2d;
+  
+  // Loading overlay for dark mode
+  --cupcake-loading-overlay: rgba(18, 18, 18, 0.9);
+}
+
+// SCSS Variables for use in calculations and mixins
+$cupcake-breakpoints: (
+  xs: 0,
+  sm: 576px,
+  md: 768px,
+  lg: 992px,
+  xl: 1200px,
+  xxl: 1400px
+) !default;
+
+$cupcake-font-family-base: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !default;
+$cupcake-font-family-monospace: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !default;
+
+$cupcake-font-sizes: (
+  xs: 0.75rem,
+  sm: 0.875rem,
+  base: 1rem,
+  lg: 1.125rem,
+  xl: 1.25rem,
+  xxl: 1.5rem
+) !default;
+
+$cupcake-font-weights: (
+  light: 300,
+  normal: 400,
+  medium: 500,
+  semibold: 600,
+  bold: 700
+) !default;
+
+$cupcake-z-indices: (
+  dropdown: 1000,
+  sticky: 1020,
+  fixed: 1030,
+  modal-backdrop: 1040,
+  modal: 1050,
+  popover: 1060,
+  tooltip: 1070
+) !default;
