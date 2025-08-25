@@ -42,7 +42,9 @@ export class MetadataTableDetailsComponent implements OnInit {
   });
   sortedColumns = computed(() => {
     const columns = this.table()?.columns || [];
-    return [...columns].sort((a, b) => (a.column_position || 0) - (b.column_position || 0));
+    return [...columns]
+      .filter(col => col && col.name) // Ensure column has valid data
+      .sort((a, b) => (a.column_position || 0) - (b.column_position || 0));
   });
   sortedPools = computed(() => {
     const pools = this.table()?.sample_pools || [];
@@ -90,7 +92,7 @@ export class MetadataTableDetailsComponent implements OnInit {
         
         // Find the corresponding metadata column in this pool by matching column IDs if available
         // or fall back to name matching for compatibility
-        const poolColumn = pool.metadata_columns.find(pc => 
+        const poolColumn = pool.metadata_columns?.find(pc => 
           (pc.id && column.id && pc.id === column.id) || pc.name === column.name
         );
         if (poolColumn) {
@@ -472,13 +474,21 @@ export class MetadataTableDetailsComponent implements OnInit {
   }
 
   getColumnHeaderClass(column: MetadataColumn): string {
+    let baseClass = '';
     const type = column.type?.toLowerCase() || '';
-    if (type.includes('characteristics')) return 'bg-primary-subtle text-primary-emphasis';
-    if (type.includes('factor')) return 'bg-success-subtle text-success-emphasis';
-    if (type.includes('comment')) return 'bg-info-subtle text-info-emphasis';
-    if (type.includes('source')) return 'bg-warning-subtle text-warning-emphasis';
-    if (type === 'special') return 'bg-danger-subtle text-danger-emphasis';
-    return 'bg-body-secondary text-body';
+    if (type.includes('characteristics')) baseClass = 'bg-primary-subtle text-primary-emphasis';
+    else if (type.includes('factor')) baseClass = 'bg-success-subtle text-success-emphasis';
+    else if (type.includes('comment')) baseClass = 'bg-info-subtle text-info-emphasis';
+    else if (type.includes('source')) baseClass = 'bg-warning-subtle text-warning-emphasis';
+    else if (type === 'special') baseClass = 'bg-danger-subtle text-danger-emphasis';
+    else baseClass = 'bg-body-secondary text-body';
+    
+    // Add hidden column styling
+    if (column.hidden) {
+      baseClass += ' opacity-50 text-decoration-line-through';
+    }
+    
+    return baseClass;
   }
 
   getShortColumnName(column: MetadataColumn): string {
@@ -605,15 +615,8 @@ export class MetadataTableDetailsComponent implements OnInit {
     modalRef.componentInstance.maxSampleCount = table.sample_count;
 
     modalRef.componentInstance.poolSaved.subscribe((updatedPool: SamplePool) => {
-      // Update the pool in the table's sample_pools array
-      const currentTable = this.table();
-      if (currentTable && currentTable.sample_pools) {
-        const poolIndex = currentTable.sample_pools.findIndex(p => p.id === updatedPool.id);
-        if (poolIndex !== -1) {
-          currentTable.sample_pools[poolIndex] = updatedPool;
-          this.table.set({ ...currentTable }); // Trigger reactivity
-        }
-      }
+      // Reload the entire table to sync all pool-related changes
+      this.loadTable(table.id);
       this.toastService.success(`Pool "${updatedPool.pool_name}" updated successfully!`);
     });
   }
@@ -631,15 +634,8 @@ export class MetadataTableDetailsComponent implements OnInit {
     modalRef.componentInstance.metadataTable = table;
 
     modalRef.componentInstance.poolCreated.subscribe((createdPool: SamplePool) => {
-      // Add the new pool to the table's sample_pools array
-      const currentTable = this.table();
-      if (currentTable) {
-        if (!currentTable.sample_pools) {
-          currentTable.sample_pools = [];
-        }
-        currentTable.sample_pools.push(createdPool);
-        this.table.set({ ...currentTable }); // Trigger reactivity
-      }
+      // Reload the entire table to sync all pool-related changes
+      this.loadTable(table.id);
       this.toastService.success(`Pool "${createdPool.pool_name}" created successfully!`);
     });
 
@@ -657,12 +653,8 @@ export class MetadataTableDetailsComponent implements OnInit {
     if (confirm(confirmMessage)) {
       this.apiService.deleteSamplePool(pool.id).subscribe({
         next: () => {
-          // Remove the pool from the table's sample_pools array
-          const currentTable = this.table();
-          if (currentTable && currentTable.sample_pools) {
-            currentTable.sample_pools = currentTable.sample_pools.filter(p => p.id !== pool.id);
-            this.table.set({ ...currentTable }); // Trigger reactivity
-          }
+          // Reload the entire table to sync all pool-related changes
+          this.loadTable(table.id);
           this.toastService.success(`Pool "${pool.pool_name}" deleted successfully!`);
         },
         error: (error) => {
@@ -683,6 +675,7 @@ export class MetadataTableDetailsComponent implements OnInit {
       columnName: column.name,
       columnType: column.type,
       ontologyType: column.ontology_type,
+      enableTypeahead: true,
       currentValue: column.value,
       context: 'table',
       tableId: table.id
@@ -700,12 +693,12 @@ export class MetadataTableDetailsComponent implements OnInit {
         value: newValue,
         value_type: 'default'
       }).subscribe({
-        next: (updatedColumn) => {
-          // Update the local column data
+        next: (response) => {
+          // Update the local column data with the returned column
           const currentTable = this.table();
-          if (currentTable) {
+          if (currentTable && response.column) {
             const updatedColumns = currentTable.columns.map(col => 
-              col.id === column.id ? updatedColumn : col
+              col.id === column.id ? response.column : col
             );
             this.table.set({ ...currentTable, columns: updatedColumns });
           }
@@ -717,6 +710,35 @@ export class MetadataTableDetailsComponent implements OnInit {
           this.toastService.error('Failed to update column value');
         }
       });
+    });
+  }
+
+  // Toggle column hidden property
+  toggleColumnHidden(column: MetadataColumn): void {
+    const table = this.table();
+    if (!table || !table.can_edit || !column.id) return;
+
+    const newHiddenValue = !column.hidden;
+    
+    this.apiService.updateMetadataColumn(column.id, { hidden: newHiddenValue }).subscribe({
+      next: (updatedColumn) => {
+        // Update the local column data
+        const currentTable = this.table();
+        if (currentTable) {
+          const updatedColumns = currentTable.columns.map(col => 
+            col.id === column.id ? updatedColumn : col
+          );
+          this.table.set({ ...currentTable, columns: updatedColumns });
+          
+          // Reload the table data to sync pool columns
+          this.loadTable(table.id);
+        }
+        this.toastService.success(`Column "${column.name}" visibility updated successfully!`);
+      },
+      error: (error) => {
+        console.error('Error updating column hidden property:', error);
+        this.toastService.error('Failed to update column visibility');
+      }
     });
   }
 
@@ -734,6 +756,7 @@ export class MetadataTableDetailsComponent implements OnInit {
       columnName: poolColumn.name,
       columnType: poolColumn.type,
       ontologyType: poolColumn.ontology_type,
+      enableTypeahead: true,
       currentValue: poolColumn.value,
       context: 'pool',
       tableId: table.id,
@@ -780,6 +803,7 @@ export class MetadataTableDetailsComponent implements OnInit {
       columnName: column.name,
       columnType: column.type,
       ontologyType: column.ontology_type,
+      enableTypeahead: true,
       currentValue: currentValue,
       context: 'table',
       tableId: table.id
@@ -798,12 +822,12 @@ export class MetadataTableDetailsComponent implements OnInit {
         sample_indices: [sampleIndex],
         value_type: 'sample_specific'
       }).subscribe({
-        next: (updatedColumn) => {
-          // Update the local column data
+        next: (response) => {
+          // Update the local column data with the returned column
           const currentTable = this.table();
-          if (currentTable) {
+          if (currentTable && response.column) {
             const updatedColumns = currentTable.columns.map(col => 
-              col.id === column.id ? updatedColumn : col
+              col.id === column.id ? response.column : col
             );
             this.table.set({ ...currentTable, columns: updatedColumns });
           }
@@ -849,40 +873,6 @@ export class MetadataTableDetailsComponent implements OnInit {
     return column.value || '';
   }
 
-  // Helper method to get pool status for a specific sample
-  getSamplePoolStatus(sampleIndex: number): string {
-    const table = this.table();
-    if (!table || !table.sample_pools || table.sample_pools.length === 0) {
-      return '<span class="badge bg-light text-dark">Not Pooled</span>';
-    }
-
-    const pooledInfo: { poolName: string; type: 'pooled_only' | 'pooled_and_independent' }[] = [];
-
-    for (const pool of table.sample_pools) {
-      // Check pooled_only_samples
-      if (pool.pooled_only_samples && pool.pooled_only_samples.includes(sampleIndex)) {
-        pooledInfo.push({ poolName: pool.pool_name, type: 'pooled_only' });
-      }
-      
-      // Check pooled_and_independent_samples
-      if (pool.pooled_and_independent_samples && pool.pooled_and_independent_samples.includes(sampleIndex)) {
-        pooledInfo.push({ poolName: pool.pool_name, type: 'pooled_and_independent' });
-      }
-    }
-
-    if (pooledInfo.length === 0) {
-      return '<span class="badge bg-light text-dark">Not Pooled</span>';
-    }
-
-    // Create badges for each pool the sample is in
-    const badges = pooledInfo.map(info => {
-      const badgeClass = info.type === 'pooled_only' ? 'bg-primary' : 'bg-success';
-      const title = info.type === 'pooled_only' ? 'Pooled Only' : 'Pooled & Independent';
-      return `<span class="badge ${badgeClass} me-1" title="${title}">${info.poolName}</span>`;
-    });
-
-    return badges.join('');
-  }
 
   // Remove column method
   removeColumn(column: MetadataColumn): void {

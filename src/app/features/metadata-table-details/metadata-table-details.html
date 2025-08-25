@@ -61,40 +61,39 @@
               </button>
             </div>
           }
-          <!-- Import Buttons -->
+          <!-- Import Dropdown -->
           @if (table() && table()!.can_edit) {
-            <div class="btn-group" role="group">
-              <!-- Import SDRF -->
+            <div class="btn-group" ngbDropdown>
+              <!-- Hidden file inputs -->
               <input
                 #fileInput
                 type="file"
                 accept=".txt,.tsv"
                 style="display: none;"
                 (change)="importSdrf($event)">
-              <button
-                type="button"
-                class="btn btn-outline-success btn-sm"
-                (click)="triggerFileInput()"
-                [disabled]="isLoading()"
-                title="Import SDRF File">
-                <i class="bi bi-upload me-1"></i>Import SDRF
-              </button>
-
-              <!-- Import Excel -->
               <input
                 #excelInput
                 type="file"
                 accept=".xlsx,.xls"
                 style="display: none;"
                 (change)="importExcel($event)">
+              
               <button
                 type="button"
-                class="btn btn-outline-primary btn-sm"
-                (click)="triggerExcelInput()"
+                class="btn btn-outline-success btn-sm dropdown-toggle"
+                ngbDropdownToggle
                 [disabled]="isLoading()"
-                title="Import Excel File">
-                <i class="bi bi-file-earmark-spreadsheet me-1"></i>Import Excel
+                title="Import Data">
+                <i class="bi bi-upload me-1"></i>Import
               </button>
+              <div class="dropdown-menu" ngbDropdownMenu>
+                <a class="dropdown-item" href="#" (click)="triggerFileInput(); $event.preventDefault()">
+                  <i class="bi bi-file-earmark-text me-2"></i>Import SDRF File
+                </a>
+                <a class="dropdown-item" href="#" (click)="triggerExcelInput(); $event.preventDefault()">
+                  <i class="bi bi-file-earmark-spreadsheet me-2"></i>Import Excel Template
+                </a>
+              </div>
             </div>
           }
 
@@ -252,6 +251,73 @@
         </div>
       </div>
 
+      <!-- Sample Pool Table -->
+      @if (viewMode() === 'table' && hasPools()) {
+        <div class="card mb-4">
+          <div class="card-header">
+            <h5 class="mb-0">
+              <i class="bi bi-layers me-2"></i>Sample Pool Table
+              <span class="badge bg-warning ms-2">{{ sortedPools().length }} pools</span>
+            </h5>
+          </div>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-hover mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th scope="col" style="width: 80px;" class="bg-secondary bg-opacity-10 text-secondary">Pool</th>
+                    @for (column of sortedColumns(); track column.id) {
+                      <th scope="col" [class]="getColumnHeaderClass(column)" [title]="column.name">
+                        <div class="header-cell d-flex justify-content-between align-items-center">
+                          <span>{{ getShortColumnName(column) }}</span>
+                          @if (table()!.can_edit) {
+                            <div class="header-actions">
+                              <button
+                                type="button"
+                                class="btn btn-sm btn-outline-primary header-edit-btn me-1"
+                                (click)="editColumnValue(column)"
+                                [title]="'Edit default value for ' + column.name">
+                                <i class="bi bi-pencil"></i>
+                              </button>
+                            </div>
+                          }
+                        </div>
+                      </th>
+                    }
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (poolRow of poolTableRows(); track poolRow._poolId) {
+                    <tr class="pool-row" [class.editable]="table()!.can_edit">
+                      <td class="text-muted fw-semibold" 
+                          [class.clickable]="table()!.can_edit"
+                          (click)="table()!.can_edit ? editPool(poolRow._poolData) : null"
+                          [title]="table()!.can_edit ? 'Click to edit pool: ' + poolRow._poolName : poolRow._poolName">
+                        <i class="bi bi-layers me-2"></i>{{ poolRow._poolName }}
+                        @if (table()!.can_edit) {
+                          <i class="bi bi-pencil-square ms-1 text-primary" style="font-size: 0.8em;"></i>
+                        }
+                      </td>
+                      @for (column of sortedColumns(); track column.id) {
+                        <td
+                          class="pool-cell"
+                          [class.opacity-50]="column.hidden"
+                          [attr.data-pool-id]="poolRow._poolId"
+                          [attr.data-column-id]="column.id"
+                          (click)="table()!.can_edit ? editPoolColumnValue(poolRow._poolData, column) : null"
+                          [title]="table()!.can_edit ? 'Click to edit ' + column.name + ' for pool ' + poolRow._poolName : ''">
+                          {{ poolRow['col_' + column.id] || '-' }}
+                        </td>
+                      }
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      }
+
       <!-- Columns/Table Section -->
       <div class="card">
         <div class="card-header">
@@ -357,6 +423,13 @@
                             <i class="bi bi-eye"></i>
                           </button>
                           @if (table()!.can_edit) {
+                            <button type="button" 
+                                    class="btn"
+                                    [class]="column.hidden ? 'btn-outline-warning' : 'btn-outline-success'"
+                                    (click)="toggleColumnHidden(column)"
+                                    [title]="column.hidden ? 'Show column' : 'Hide column'">
+                              <i class="bi" [class]="column.hidden ? 'bi-eye-slash' : 'bi-eye'"></i>
+                            </button>
                             <button type="button" class="btn btn-outline-success"
                                     (click)="editColumnValue(column)"
                                     title="Edit default value">
@@ -376,133 +449,101 @@
             </div>
           }
 
-          <!-- Table Mode: Actual Data -->
+          <!-- Table Data -->
           @if (viewMode() === 'table') {
-            <!-- Sample Pools Section -->
-            @if (hasPools()) {
-              <div class="mb-4">
-                <h6 class="mb-3">
-                  <i class="bi bi-layers me-2 text-warning"></i>Sample Pools
-                  <span class="badge bg-warning ms-2">{{ sortedPools().length }}</span>
-                </h6>
-                <div class="table-responsive">
-                  <table class="table table-hover mb-0 table-sm">
-                    <thead class="table-warning">
-                      <tr>
-                        <th scope="col" style="width: 200px;" class="text-warning-emphasis">Pool Name</th>
-                        @for (column of sortedColumns(); track column.id) {
-                          <th scope="col" [class]="getColumnHeaderClass(column)" [title]="column.name">
-                            {{ getShortColumnName(column) }}
-                          </th>
-                        }
-                      </tr>
-                    </thead>
-                    <tbody>
-                      @for (poolRow of poolTableRows(); track poolRow._poolId) {
-                        <tr class="table-warning pool-row" [class.editable]="table()!.can_edit">
-                          <td class="fw-bold text-warning-emphasis">
-                            <i class="bi bi-layers me-2"></i>{{ poolRow._poolName }}
-                          </td>
-                          @for (column of sortedColumns(); track column.id) {
-                            <td
-                              class="pool-cell"
-                              (click)="table()!.can_edit ? editPoolColumnValue(poolRow._poolData, column) : null"
-                              [title]="table()!.can_edit ? 'Click to edit ' + column.name + ' for pool ' + poolRow._poolName : ''">
-                              {{ poolRow['col_' + column.id] || '-' }}
-                            </td>
-                          }
-                        </tr>
-                      }
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            }
-            <!-- Sample Table -->
-            <div class="table-responsive">
-              <table class="table table-hover mb-0">
-                <thead class="table-light">
-                  <tr>
-                    <th scope="col" style="width: 80px;" class="bg-secondary bg-opacity-10 text-secondary">#</th>
-                    <th scope="col" style="width: 120px;" class="bg-info bg-opacity-10 text-info">Pool Status</th>
-                    @for (column of sortedColumns(); track column.id) {
-                      <th scope="col" [class]="getColumnHeaderClass(column)" [title]="column.name">
-                        <div class="header-cell d-flex justify-content-between align-items-center">
-                          <span>{{ getShortColumnName(column) }}</span>
-                          @if (table()!.can_edit) {
-                            <div class="header-actions">
-                              <button
-                                type="button"
-                                class="btn btn-sm btn-outline-primary header-edit-btn me-1"
-                                (click)="editColumnValue(column)"
-                                [title]="'Edit default value for ' + column.name">
-                                <i class="bi bi-pencil"></i>
-                              </button>
-                              <button
-                                type="button"
-                                class="btn btn-sm btn-outline-danger header-edit-btn"
-                                (click)="removeColumn(column)"
-                                [title]="'Remove ' + column.name + ' column'">
-                                <i class="bi bi-trash"></i>
-                              </button>
-                            </div>
-                          }
-                        </div>
-                      </th>
-                    }
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (row of paginatedRows(); track row._sampleIndex) {
-                    <tr class="sample-row" [class.editable]="table()!.can_edit">
-                      <td class="text-muted fw-semibold">{{ row._sampleIndex }}</td>
-                      <td class="text-center" [innerHTML]="getSamplePoolStatus(row._sampleIndex)"></td>
+            <div class="card-body p-0">
+              <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                  <thead class="table-light">
+                    <tr>
+                      <th scope="col" style="width: 80px;" class="bg-secondary bg-opacity-10 text-secondary">#</th>
                       @for (column of sortedColumns(); track column.id) {
-                        <td
-                          class="sample-cell"
-                          [attr.data-sample-index]="row._sampleIndex"
-                          [attr.data-column-id]="column.id"
-                          (click)="table()!.can_edit ? editSampleColumnValue(column, row._sampleIndex) : null"
-                          [title]="table()!.can_edit ? 'Click to edit ' + column.name + ' for sample ' + row._sampleIndex : ''">
-                          {{ row['col_' + column.id] || '-' }}
-                        </td>
+                        <th scope="col" [class]="getColumnHeaderClass(column)" [title]="column.name">
+                          <div class="header-cell d-flex justify-content-between align-items-center">
+                            <span>{{ getShortColumnName(column) }}</span>
+                            @if (table()!.can_edit) {
+                              <div class="header-actions">
+                                <button
+                                  type="button"
+                                  class="btn btn-sm header-edit-btn me-1"
+                                  [class]="column.hidden ? 'btn-outline-warning' : 'btn-outline-success'"
+                                  (click)="toggleColumnHidden(column)"
+                                  [title]="column.hidden ? 'Show column' : 'Hide column'">
+                                  <i class="bi" [class]="column.hidden ? 'bi-eye-slash' : 'bi-eye'"></i>
+                                </button>
+                                <button
+                                  type="button"
+                                  class="btn btn-sm btn-outline-primary header-edit-btn me-1"
+                                  (click)="editColumnValue(column)"
+                                  [title]="'Edit default value for ' + column.name">
+                                  <i class="bi bi-pencil"></i>
+                                </button>
+                                <button
+                                  type="button"
+                                  class="btn btn-sm btn-outline-danger header-edit-btn"
+                                  (click)="removeColumn(column)"
+                                  [title]="'Remove ' + column.name + ' column'">
+                                  <i class="bi bi-trash"></i>
+                                </button>
+                              </div>
+                            }
+                          </div>
+                        </th>
                       }
                     </tr>
-                  }
-                </tbody>
-              </table>
-            </div>
-
-            <!-- Table Mode Pagination -->
-            @if (viewMode() === 'table' && totalPages() > 1) {
-              <div class="d-flex justify-content-between align-items-center p-3">
-                <div class="d-flex align-items-center gap-2">
-                  <span class="text-muted">Rows per page:</span>
-                  <select class="form-select form-select-sm" style="width: auto;"
-                          [value]="pageSize()"
-                          (change)="onPageSizeChange(+($any($event.target).value))">
-                    <option value="10">10</option>
-                    <option value="25">25</option>
-                    <option value="50">50</option>
-                    <option value="100">100</option>
-                  </select>
-                </div>
-                <ngb-pagination
-                  [collectionSize]="tableRows().length"
-                  [page]="currentPage()"
-                  [pageSize]="pageSize()"
-                  [maxSize]="5"
-                  [boundaryLinks]="true"
-                  [rotate]="true"
-                  (pageChange)="onPageChange($event)"
-                  class="pagination-sm mb-0">
-                </ngb-pagination>
-                <span class="text-muted">
-                  Showing {{ (currentPage() - 1) * pageSize() + 1 }}-{{ Math.min(currentPage() * pageSize(), tableRows().length) }}
-                  of {{ tableRows().length }} samples
-                </span>
+                  </thead>
+                  <tbody>
+                    @for (row of paginatedRows(); track row._sampleIndex) {
+                      <tr class="sample-row" [class.editable]="table()!.can_edit">
+                        <td class="text-muted fw-semibold">{{ row._sampleIndex }}</td>
+                        @for (column of sortedColumns(); track column.id) {
+                          <td
+                            class="sample-cell"
+                            [class.opacity-50]="column.hidden"
+                            [attr.data-sample-index]="row._sampleIndex"
+                            [attr.data-column-id]="column.id"
+                            (click)="table()!.can_edit ? editSampleColumnValue(column, row._sampleIndex) : null"
+                            [title]="table()!.can_edit ? 'Click to edit ' + column.name + ' for sample ' + row._sampleIndex : ''">
+                            {{ row['col_' + column.id] || '-' }}
+                          </td>
+                        }
+                      </tr>
+                    }
+                  </tbody>
+                </table>
               </div>
-            }
+
+              <!-- Table Mode Pagination -->
+              @if (viewMode() === 'table' && totalPages() > 1) {
+                <div class="d-flex justify-content-between align-items-center p-3 border-top">
+                  <div class="d-flex align-items-center gap-2">
+                    <span class="text-muted">Rows per page:</span>
+                    <select class="form-select form-select-sm" style="width: auto;"
+                            [value]="pageSize()"
+                            (change)="onPageSizeChange(+($any($event.target).value))">
+                      <option value="10">10</option>
+                      <option value="25">25</option>
+                      <option value="50">50</option>
+                      <option value="100">100</option>
+                    </select>
+                  </div>
+                  <ngb-pagination
+                    [collectionSize]="tableRows().length"
+                    [page]="currentPage()"
+                    [pageSize]="pageSize()"
+                    [maxSize]="5"
+                    [boundaryLinks]="true"
+                    [rotate]="true"
+                    (pageChange)="onPageChange($event)"
+                    class="pagination-sm mb-0">
+                  </ngb-pagination>
+                  <span class="text-muted">
+                    Showing {{ (currentPage() - 1) * pageSize() + 1 }}-{{ Math.min(currentPage() * pageSize(), tableRows().length) }}
+                    of {{ tableRows().length }} samples
+                  </span>
+                </div>
+              }
+            </div>
           }
         } @else {
           <div class="card-body text-center py-5">

@@ -52,7 +52,7 @@ export class MetadataTableEditModal implements OnInit {
   loadLabGroups(): void {
     this.isLoadingLabGroups.set(true);
     
-    this.apiService.getMyLabGroups({ limit: 100 }).subscribe({
+    this.apiService.getMyLabGroups({ limit: 10 }).subscribe({
       next: (response) => {
         this.availableLabGroups.set(response.results);
         this.isLoadingLabGroups.set(false);

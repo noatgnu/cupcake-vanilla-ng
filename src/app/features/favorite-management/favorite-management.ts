@@ -83,21 +83,17 @@ export class FavoriteManagementComponent implements OnInit {
     });
   });
 
-  // Pagination
+  // Pagination (server-side)
   currentPage = signal(1);
-  pageSize = signal(25);
-  paginatedFavorites = computed(() => {
-    const filtered = this.filteredFavorites();
-    const page = this.currentPage();
-    const size = this.pageSize();
-    const start = (page - 1) * size;
-    return filtered.slice(start, start + size);
-  });
+  pageSize = signal(10);
+  
+  // With server-side pagination, filtered favorites are what we get from the server
+  paginatedFavorites = computed(() => this.filteredFavorites());
 
   totalPages = computed(() => {
-    const filtered = this.filteredFavorites();
+    const totalCount = this.totalFavoritesCount();
     const size = this.pageSize();
-    return Math.ceil(filtered.length / size);
+    return Math.ceil(totalCount / size);
   });
 
   // Forms
@@ -223,10 +219,14 @@ export class FavoriteManagementComponent implements OnInit {
   loadFavorites(): void {
     this.isLoading.set(true);
 
-    // Make a single API call - the backend will handle filtering based on user access
-    // The backend should return all favorites the user has access to (personal, lab group, global)
+    // Load favorites with proper pagination
+    const page = this.currentPage();
+    const size = this.pageSize();
+    const offset = (page - 1) * size;
+    
     this.apiService.getFavouriteMetadataOptions({
-      limit: 1000 // Get all accessible favorites, backend will handle access control
+      limit: size,
+      offset: offset
     }).subscribe({
       next: (response) => {
         this.favorites.set(response.results);
@@ -404,11 +404,13 @@ export class FavoriteManagementComponent implements OnInit {
 
   onPageChange(page: number): void {
     this.currentPage.set(page);
+    this.loadFavorites();
   }
 
   onPageSizeChange(size: number): void {
     this.pageSize.set(size);
     this.currentPage.set(1);
+    this.loadFavorites();
   }
 
   clearFilters(): void {

@@ -525,8 +525,34 @@ export class ApiService {
     value: string;
     sample_indices?: number[];
     value_type?: 'default' | 'sample_specific' | 'replace_all';
-  }): Observable<MetadataColumn> {
-    return this.http.post<MetadataColumn>(`${this.apiUrl}/metadata-columns/${columnId}/update_column_value/`, data);
+  }): Observable<{
+    message: string;
+    changes: {
+      old_default: string;
+      new_default: string;
+      old_modifiers: any[];
+      new_modifiers: any[];
+      updated_samples: number[];
+    };
+    column: MetadataColumn;
+    value_type: string;
+  }> {
+    return this.http.post<{
+      message: string;
+      changes: {
+        old_default: string;
+        new_default: string;
+        old_modifiers: any[];
+        new_modifiers: any[];
+        updated_samples: number[];
+      };
+      column: MetadataColumn;
+      value_type: string;
+    }>(`${this.apiUrl}/metadata-columns/${columnId}/update_column_value/`, data);
+  }
+
+  updateMetadataColumn(columnId: number, data: Partial<MetadataColumn>): Observable<MetadataColumn> {
+    return this.http.patch<MetadataColumn>(`${this.apiUrl}/metadata-columns/${columnId}/`, data);
   }
 
   // ===================================================================

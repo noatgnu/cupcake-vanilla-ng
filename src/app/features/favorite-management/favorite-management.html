@@ -247,7 +247,7 @@
                 </div>
 
                 <ngb-pagination
-                  [collectionSize]="filteredFavorites().length"
+                  [collectionSize]="totalFavoritesCount()"
                   [page]="currentPage()"
                   [pageSize]="pageSize()"
                   [maxSize]="5"
@@ -258,8 +258,8 @@
                 </ngb-pagination>
 
                 <span class="text-muted">
-            Showing {{ ((currentPage() - 1) * pageSize()) + 1 }}-{{ Math.min(currentPage() * pageSize(), filteredFavorites().length) }}
-                  of {{ filteredFavorites().length }} favorites
+            Showing {{ ((currentPage() - 1) * pageSize()) + 1 }}-{{ Math.min(currentPage() * pageSize(), totalFavoritesCount()) }}
+                  of {{ totalFavoritesCount() }} favorites
           </span>
               </div>
             }

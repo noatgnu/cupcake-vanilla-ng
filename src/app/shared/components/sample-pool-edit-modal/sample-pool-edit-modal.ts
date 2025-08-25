@@ -105,12 +105,38 @@ export class SamplePoolEditModal implements OnInit {
   private parseSampleNumbers(text: string): number[] {
     if (!text?.trim()) return [];
     
-    return text
+    const results: number[] = [];
+    
+    text
       .split(',')
       .map(s => s.trim())
       .filter(s => s.length > 0)
-      .map(s => parseInt(s, 10))
-      .filter(n => !isNaN(n) && n > 0 && n <= this.maxSampleCount);
+      .forEach(s => {
+        // Check if it's a range (e.g., "9-12")
+        if (s.includes('-')) {
+          const parts = s.split('-').map(p => p.trim());
+          if (parts.length === 2) {
+            const start = parseInt(parts[0], 10);
+            const end = parseInt(parts[1], 10);
+            
+            if (!isNaN(start) && !isNaN(end) && start > 0 && end > 0 && start <= end && end <= this.maxSampleCount) {
+              // Add all numbers in the range
+              for (let i = start; i <= end; i++) {
+                results.push(i);
+              }
+            }
+          }
+        } else {
+          // Single number
+          const num = parseInt(s, 10);
+          if (!isNaN(num) && num > 0 && num <= this.maxSampleCount) {
+            results.push(num);
+          }
+        }
+      });
+    
+    // Remove duplicates and sort
+    return [...new Set(results)].sort((a, b) => a - b);
   }
 
   // Form validation helpers

@@ -59,6 +59,27 @@ thead th:hover .header-actions {
 
 .pool-row {
   &.editable {
+    // Pool name cell (first cell) - for editing pool structure
+    td.clickable {
+      cursor: pointer;
+      transition: background-color 0.1s ease;
+      
+      &:hover {
+        background-color: rgba(13, 202, 240, 0.1);
+        color: var(--bs-info);
+        
+        .bi-pencil-square {
+          opacity: 0.8;
+        }
+      }
+      
+      .bi-pencil-square {
+        opacity: 0.4;
+        transition: opacity 0.1s ease;
+      }
+    }
+    
+    // Pool metadata cells - for editing values
     .pool-cell {
       cursor: pointer;
       transition: background-color 0.1s ease;
