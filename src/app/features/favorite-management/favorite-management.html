@@ -532,6 +532,23 @@
                 }
               </select>
             </div>
+
+            <!-- Lab Group Selection (shown when lab_group scope is selected) -->
+            @if (editForm.get('scope')?.value === 'lab_group' && userLabGroups().length > 1) {
+              <div class="mb-3">
+                <label for="favLabGroup" class="form-label">Lab Group *</label>
+                <select
+                  class="form-select"
+                  id="favLabGroup"
+                  formControlName="lab_group_id">
+                  <option value="">Select a lab group</option>
+                  @for (labGroup of userLabGroups(); track labGroup.id) {
+                    <option [value]="labGroup.id">{{ labGroup.name }}</option>
+                  }
+                </select>
+                <div class="form-text">Choose which lab group this favorite will be visible to</div>
+              </div>
+            }
           </form>
         </div>
 

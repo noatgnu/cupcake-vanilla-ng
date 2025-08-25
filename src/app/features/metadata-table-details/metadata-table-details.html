@@ -61,22 +61,41 @@
               </button>
             </div>
           }
-          <!-- Import SDRF Button -->
+          <!-- Import Buttons -->
           @if (table() && table()!.can_edit) {
-            <input
-              #fileInput
-              type="file"
-              accept=".txt,.tsv"
-              style="display: none;"
-              (change)="importSdrf($event)">
-            <button
-              type="button"
-              class="btn btn-outline-success btn-sm"
-              (click)="triggerFileInput()"
-              [disabled]="isLoading()"
-              title="Import SDRF File">
-              <i class="bi bi-upload me-1"></i>Import SDRF
-            </button>
+            <div class="btn-group" role="group">
+              <!-- Import SDRF -->
+              <input
+                #fileInput
+                type="file"
+                accept=".txt,.tsv"
+                style="display: none;"
+                (change)="importSdrf($event)">
+              <button
+                type="button"
+                class="btn btn-outline-success btn-sm"
+                (click)="triggerFileInput()"
+                [disabled]="isLoading()"
+                title="Import SDRF File">
+                <i class="bi bi-upload me-1"></i>Import SDRF
+              </button>
+
+              <!-- Import Excel -->
+              <input
+                #excelInput
+                type="file"
+                accept=".xlsx,.xls"
+                style="display: none;"
+                (change)="importExcel($event)">
+              <button
+                type="button"
+                class="btn btn-outline-primary btn-sm"
+                (click)="triggerExcelInput()"
+                [disabled]="isLoading()"
+                title="Import Excel File">
+                <i class="bi bi-file-earmark-spreadsheet me-1"></i>Import Excel
+              </button>
+            </div>
           }
 
           <!-- Export Dropdown -->
@@ -96,9 +115,6 @@
                 </a>
                 <a class="dropdown-item" href="#" (click)="exportToSdrf('excel'); $event.preventDefault()">
                   <i class="bi bi-file-earmark-spreadsheet me-2"></i>Export as Excel
-                </a>
-                <a class="dropdown-item" href="#" (click)="exportToSdrf('csv'); $event.preventDefault()">
-                  <i class="bi bi-filetype-csv me-2"></i>Export as CSV
                 </a>
               </div>
             </div>

@@ -4,7 +4,7 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
 import { RouterModule } from '@angular/router';
 import { NgbModule, NgbModal, NgbTypeahead } from '@ng-bootstrap/ng-bootstrap';
 import { Observable, OperatorFunction, debounceTime, distinctUntilChanged, filter, map, switchMap, of, catchError, forkJoin, firstValueFrom } from 'rxjs';
-import {FavouriteMetadataOption, MetadataColumn, MetadataColumnTemplate, OntologySuggestion} from '../../shared/models';
+import {FavouriteMetadataOption, MetadataColumn, MetadataColumnTemplate, OntologySuggestion, LabGroup} from '../../shared/models';
 import { ApiService } from '../../shared/services/api';
 import { ToastService } from '../../shared/services/toast';
 import { AuthService, User } from 'cupcake-core';
@@ -121,7 +121,7 @@ export class FavoriteManagementComponent implements OnInit {
     return user?.is_staff || user?.is_superuser || false;
   });
   currentUserId = computed(() => this.currentUser()?.id || null);
-  userLabGroups = signal<number[]>([]);
+  userLabGroups = signal<LabGroup[]>([]);
   userLabGroupsLoaded = signal(false);
 
   // Ontology value storage (decoupled from display)
@@ -165,6 +165,7 @@ export class FavoriteManagementComponent implements OnInit {
       value: ['', [Validators.maxLength(500)]],
       display_value: ['', [Validators.maxLength(500)]],
       scope: ['personal', Validators.required],
+      lab_group_id: [null],
       template_id: [null] // Store the selected template ID for value autocompletion
     });
 
@@ -298,6 +299,7 @@ export class FavoriteManagementComponent implements OnInit {
       value: favorite.value,
       display_value: favorite.display_value || '',
       scope: scope,
+      lab_group_id: favorite.lab_group || null,
       template_id: templateId
     });
 
@@ -352,7 +354,7 @@ export class FavoriteManagementComponent implements OnInit {
       display_value: formValue.display_value || value,
       is_global: formValue.scope === 'global',
       user: formValue.scope === 'personal' ? this.currentUserId() || undefined : undefined,
-      lab_group: formValue.scope === 'lab_group' ? this.userLabGroups()[0] || undefined : undefined
+      lab_group: formValue.scope === 'lab_group' ? formValue.lab_group_id || this.userLabGroups()[0]?.id : undefined
     };
 
     const operation = this.isEditMode()
@@ -441,8 +443,7 @@ export class FavoriteManagementComponent implements OnInit {
     // Load user's lab groups
     this.apiService.getMyLabGroups({ limit: 10 }).subscribe({
       next: (response) => {
-        const labGroupIds = response.results.map(group => group.id!);
-        this.userLabGroups.set(labGroupIds);
+        this.userLabGroups.set(response.results);
 
         // Store available lab groups for filtering
         const labGroups = response.results.map(group => ({

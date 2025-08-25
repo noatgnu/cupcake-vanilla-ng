@@ -10,6 +10,7 @@ import { MetadataTableEditModal } from '../../shared/components/metadata-table-e
 import { SamplePoolDetailsModal } from '../../shared/components/sample-pool-details-modal/sample-pool-details-modal';
 import { SamplePoolEditModal } from '../../shared/components/sample-pool-edit-modal/sample-pool-edit-modal';
 import { SamplePoolCreateModal } from '../../shared/components/sample-pool-create-modal/sample-pool-create-modal';
+import { ExcelExportModalComponent, ExcelExportOptions } from '../../shared/components/excel-export-modal/excel-export-modal';
 
 @Component({
   selector: 'app-metadata-table-details',
@@ -20,6 +21,7 @@ import { SamplePoolCreateModal } from '../../shared/components/sample-pool-creat
 })
 export class MetadataTableDetailsComponent implements OnInit {
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
+  @ViewChild('excelInput') excelInput!: ElementRef<HTMLInputElement>;
 
   // Expose Math to template
   Math = Math;
@@ -218,6 +220,10 @@ export class MetadataTableDetailsComponent implements OnInit {
     this.fileInput.nativeElement.click();
   }
 
+  triggerExcelInput(): void {
+    this.excelInput.nativeElement.click();
+  }
+
   importSdrf(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (!input.files || input.files.length === 0) return;
@@ -263,24 +269,122 @@ export class MetadataTableDetailsComponent implements OnInit {
     }
   }
 
-  exportToSdrf(format: 'sdrf' | 'excel' | 'csv' = 'sdrf'): void {
+  importExcel(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+
+    const file = input.files[0];
+    const table = this.table();
+    if (!table) return;
+
+    // Validate file type
+    if (!file.name.toLowerCase().endsWith('.xlsx') && !file.name.toLowerCase().endsWith('.xls')) {
+      this.toastService.error('Please select a valid Excel file (.xlsx or .xls)');
+      input.value = ''; // Reset input
+      return;
+    }
+
+    if (confirm(`Import Excel data into table "${table.name}"?\n\nThis will update existing columns and may modify data.`)) {
+      this.isLoading.set(true);
+
+      this.apiService.importExcelFile({
+        file,
+        metadata_table_id: table.id,
+        import_type: 'user_metadata',
+        create_pools: true,
+        replace_existing: false
+      }).subscribe({
+        next: (response) => {
+          this.isLoading.set(false);
+          this.toastService.success('Excel file imported successfully!');
+          // Reload table data to show updated columns
+          this.loadTable(table.id);
+          input.value = ''; // Reset input
+        },
+        error: (error) => {
+          this.isLoading.set(false);
+          console.error('Error importing Excel:', error);
+          const errorMsg = error?.error?.detail || error?.error?.message || 'Failed to import Excel file';
+          this.toastService.error(errorMsg);
+          input.value = ''; // Reset input
+        }
+      });
+    } else {
+      input.value = ''; // Reset input if cancelled
+    }
+  }
+
+  exportToSdrf(format: 'sdrf' | 'excel' = 'sdrf'): void {
     const table = this.table();
     if (!table || !table.columns || table.columns.length === 0) {
       this.toastService.error('No columns available for export');
       return;
     }
 
+    if (format === 'excel') {
+      // Show Excel export options modal
+      const modalRef = this.modalService.open(ExcelExportModalComponent, {
+        size: 'lg',
+        backdrop: 'static'
+      });
+
+      modalRef.result.then((options: ExcelExportOptions) => {
+        this.performExcelExport(table, options);
+      }).catch(() => {
+        // Modal was dismissed - no action needed
+      });
+    } else {
+      // Direct SDRF export
+      this.performSdrfExport(table);
+    }
+  }
+
+  private performExcelExport(table: MetadataTable, options: ExcelExportOptions): void {
     this.isLoading.set(true);
 
-    const columnIds = table.columns.map(col => col.id!);
+    const columnIds = table.columns!.map(col => col.id!);
+    
+    // Prepare lab group IDs based on options
+    let labGroupIds: number[] | undefined = undefined;
+    if (options.includeLabGroups === 'selected') {
+      labGroupIds = options.selectedLabGroupIds;
+    } else if (options.includeLabGroups === 'all') {
+      // Pass empty array to signal "include all lab groups"
+      labGroupIds = [];
+    }
+    // For 'none', labGroupIds stays undefined
 
-    this.apiService.exportSdrfFile({
+    const exportRequest = this.apiService.exportExcelTemplate({
+      metadata_table_id: table.id,
       metadata_column_ids: columnIds,
       sample_number: table.sample_count,
-      export_format: format,
-      include_pools: false
-    }).subscribe({
-      next: (blob) => {
+      export_format: 'excel',
+      include_pools: options.includePools,
+      lab_group_ids: labGroupIds
+    });
+
+    this.handleExportRequest(exportRequest, 'excel');
+  }
+
+  private performSdrfExport(table: MetadataTable): void {
+    this.isLoading.set(true);
+
+    const columnIds = table.columns!.map(col => col.id!);
+
+    const exportRequest = this.apiService.exportSdrfFile({
+          metadata_table_id: table.id,
+          metadata_column_ids: columnIds,
+          sample_number: table.sample_count,
+          export_format: 'sdrf',
+          include_pools: false
+        });
+
+    this.handleExportRequest(exportRequest, 'sdrf');
+  }
+
+  private handleExportRequest(exportRequest: any, format: 'excel' | 'sdrf'): void {
+    exportRequest.subscribe({
+      next: (blob: Blob) => {
         this.isLoading.set(false);
 
         // Create download link
@@ -288,7 +392,8 @@ export class MetadataTableDetailsComponent implements OnInit {
         const link = document.createElement('a');
         link.href = url;
 
-        const extension = format === 'excel' ? 'xlsx' : (format === 'csv' ? 'csv' : 'txt');
+        const extension = format === 'excel' ? 'xlsx' : 'txt';
+        const table = this.table()!;
         link.download = `${table.name}_exported.${extension}`;
 
         document.body.appendChild(link);
@@ -298,7 +403,7 @@ export class MetadataTableDetailsComponent implements OnInit {
 
         this.toastService.success(`Table exported as ${format.toUpperCase()} successfully!`);
       },
-      error: (error) => {
+      error: (error: any) => {
         this.isLoading.set(false);
         console.error('Error exporting table:', error);
         const errorMsg = error?.error?.detail || 'Failed to export table';

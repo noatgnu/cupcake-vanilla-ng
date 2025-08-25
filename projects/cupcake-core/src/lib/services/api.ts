@@ -40,6 +40,47 @@ import {
 } from '../models';
 import { CUPCAKE_CORE_CONFIG } from './auth';
 
+/**
+ * Core API service providing HTTP operations for cupcake-core library
+ * 
+ * This service handles all backend API communication including user management,
+ * metadata operations, lab groups, and site configuration.
+ * 
+ * @example Basic usage
+ * ```typescript
+ * constructor(private apiService: ApiService) {}
+ * 
+ * // Get user list
+ * this.apiService.getUsers({ limit: 10 }).subscribe(response => {
+ *   console.log('Users:', response.results);
+ * });
+ * 
+ * // Create a lab group
+ * this.apiService.createLabGroup({
+ *   name: 'Research Lab',
+ *   description: 'Main research laboratory'
+ * }).subscribe(group => {
+ *   console.log('Created lab group:', group.name);
+ * });
+ * ```
+ * 
+ * @example Metadata operations
+ * ```typescript
+ * // Get metadata tables
+ * this.apiService.getMetadataTables({ page: 1, limit: 20 }).subscribe(response => {
+ *   console.log('Tables:', response.results);
+ * });
+ * 
+ * // Create metadata column
+ * this.apiService.createMetadataColumn({
+ *   name: 'organism',
+ *   metadata_table: tableId,
+ *   required: true
+ * }).subscribe(column => {
+ *   console.log('Created column:', column.name);
+ * });
+ * ```
+ */
 @Injectable({
   providedIn: 'root'
 })
@@ -50,12 +91,48 @@ export class ApiService {
 
   constructor(private http: HttpClient) {}
 
-  // User Profile
+  /**
+   * Get the current user's profile information
+   * @returns Observable containing user profile data
+   * @example
+   * ```typescript
+   * this.apiService.getUserProfile().subscribe({
+   *   next: (response) => {
+   *     console.log('User profile:', response.user);
+   *     this.userProfile = response.user;
+   *   },
+   *   error: (error) => console.error('Failed to load profile:', error)
+   * });
+   * ```
+   */
   getUserProfile(): Observable<{user: any}> {
     return this.http.get<{user: any}>(`${this.apiUrl}/auth/profile/`);
   }
 
-  // Lab Groups
+  /**
+   * Retrieve lab groups with optional filtering and pagination
+   * @param params - Optional query parameters
+   * @param params.search - Search term for lab group names/descriptions
+   * @param params.limit - Maximum number of results to return
+   * @param params.offset - Number of results to skip for pagination
+   * @returns Observable containing paginated lab groups
+   * @example
+   * ```typescript
+   * // Get all lab groups
+   * this.apiService.getLabGroups().subscribe(response => {
+   *   console.log('Lab groups:', response.results);
+   * });
+   * 
+   * // Search and paginate
+   * this.apiService.getLabGroups({
+   *   search: 'research',
+   *   limit: 10,
+   *   offset: 0
+   * }).subscribe(response => {
+   *   console.log(`Found ${response.count} lab groups`);
+   * });
+   * ```
+   */
   getLabGroups(params?: {
     search?: string;
     limit?: number;
@@ -401,9 +478,10 @@ export class ApiService {
   }
 
   exportSdrfFile(data: {
+    metadata_table_id: number;
     metadata_column_ids: number[];
     sample_number: number;
-    export_format?: 'excel' | 'csv' | 'sdrf';
+    export_format?: 'excel' | 'sdrf';
     include_pools?: boolean;
     pool_ids?: number[];
     lab_group_id?: number;

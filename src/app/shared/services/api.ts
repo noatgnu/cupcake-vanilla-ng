@@ -404,10 +404,42 @@ export class ApiService {
     return this.http.post(`${this.apiUrl}/metadata-management/import_sdrf_file/`, formData);
   }
 
-  exportSdrfFile(data: {
+  importExcelFile(data: {
+    file: File;
+    metadata_table_id: number;
+    import_type?: 'user_metadata' | 'staff_metadata' | 'both';
+    create_pools?: boolean;
+    replace_existing?: boolean;
+  }): Observable<any> {
+    const formData = new FormData();
+    formData.append('file', data.file);
+    formData.append('metadata_table_id', data.metadata_table_id.toString());
+    if (data.import_type) formData.append('import_type', data.import_type);
+    if (data.create_pools !== undefined) formData.append('create_pools', data.create_pools.toString());
+    if (data.replace_existing !== undefined) formData.append('replace_existing', data.replace_existing.toString());
+
+    return this.http.post(`${this.apiUrl}/metadata-management/import_excel_file/`, formData);
+  }
+
+  exportExcelTemplate(data: {
+    metadata_table_id: number;
     metadata_column_ids: number[];
     sample_number: number;
-    export_format?: 'excel' | 'csv' | 'sdrf';
+    export_format?: 'excel' | 'sdrf';
+    include_pools?: boolean;
+    pool_ids?: number[];
+    lab_group_ids?: number[];
+  }): Observable<Blob> {
+    return this.http.post(`${this.apiUrl}/metadata-management/export_excel_template/`, data, {
+      responseType: 'blob'
+    });
+  }
+
+  exportSdrfFile(data: {
+    metadata_table_id: number;
+    metadata_column_ids: number[];
+    sample_number: number;
+    export_format?: 'excel' | 'sdrf';
     include_pools?: boolean;
     pool_ids?: number[];
     lab_group_id?: number;

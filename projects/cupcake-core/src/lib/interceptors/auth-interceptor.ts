@@ -4,15 +4,67 @@ import { Router } from '@angular/router';
 import { catchError, throwError, switchMap, BehaviorSubject, filter, take, Observable } from 'rxjs';
 import { CUPCAKE_CORE_CONFIG } from '../services/auth';
 
+/** Global flag to prevent multiple simultaneous token refresh attempts */
 let isRefreshing = false;
+/** Subject to coordinate requests waiting for token refresh */
 const refreshTokenSubject: BehaviorSubject<string | null> = new BehaviorSubject<string | null>(null);
 
+/**
+ * HTTP interceptor that handles JWT authentication and automatic token refresh
+ * 
+ * This interceptor automatically:
+ * - Adds JWT tokens to outgoing requests
+ * - Handles 401 responses with automatic token refresh
+ * - Coordinates multiple requests during token refresh
+ * - Redirects to login on authentication failure
+ * 
+ * @param req - The outgoing HTTP request
+ * @param next - The next handler in the interceptor chain
+ * @returns Observable of the HTTP event
+ * 
+ * @example Interceptor registration
+ * ```typescript
+ * // In app.config.ts or main.ts
+ * import { authInterceptor } from 'cupcake-core';
+ * 
+ * export const appConfig: ApplicationConfig = {
+ *   providers: [
+ *     provideHttpClient(
+ *       withInterceptors([authInterceptor])
+ *     )
+ *   ]
+ * };
+ * ```
+ * 
+ * @example Automatic token handling
+ * ```typescript
+ * // The interceptor automatically handles authentication for you
+ * this.http.get('/api/protected-resource').subscribe({
+ *   next: (data) => {
+ *     // Data received successfully
+ *     // If token was expired, it was refreshed automatically
+ *   },
+ *   error: (error) => {
+ *     // If refresh failed, user is redirected to login
+ *   }
+ * });
+ * ```
+ * 
+ * @example Excluded endpoints
+ * ```typescript
+ * // These endpoints bypass the interceptor:
+ * // - /auth/login/
+ * // - /auth/token/
+ * // - /auth/orcid/
+ * // - /auth/register/
+ * // - /site-config/public/
+ * ```
+ */
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const router = inject(Router);
   const http = inject(HttpClient);
   const config = inject(CUPCAKE_CORE_CONFIG);
 
-  // Skip auth for login/registration endpoints only, but allow profile and other authenticated endpoints
   if (req.url.includes('/auth/login/') || 
       req.url.includes('/auth/token/') || 
       req.url.includes('/auth/orcid/') || 
@@ -21,29 +73,36 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     return next(req);
   }
 
-  // Get the access token directly from localStorage
   const token = localStorage.getItem('ccv_access_token');
 
-  // Clone the request and add the authorization header if token exists
   let authReq = req;
   if (token) {
     authReq = addTokenToRequest(req, token);
   }
 
-  // Handle the request
   return next(authReq).pipe(
     catchError((error: HttpErrorResponse) => {
-      // Handle 401 Unauthorized responses
       if (error.status === 401) {
         return handle401Error(authReq, next, http, router, config);
       }
       
-      // Re-throw other errors
       return throwError(() => error);
     })
   );
 };
 
+/**
+ * Add JWT token to the Authorization header of an HTTP request
+ * @param request - The HTTP request to modify
+ * @param token - The JWT token to add
+ * @returns Cloned request with Authorization header
+ * @example
+ * ```typescript
+ * const token = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...';
+ * const authenticatedRequest = addTokenToRequest(originalRequest, token);
+ * // Results in header: Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...
+ * ```
+ */
 function addTokenToRequest(request: HttpRequest<any>, token: string): HttpRequest<any> {
   return request.clone({
     setHeaders: {
@@ -52,6 +111,29 @@ function addTokenToRequest(request: HttpRequest<any>, token: string): HttpReques
   });
 }
 
+/**
+ * Handle 401 Unauthorized errors with automatic token refresh
+ * 
+ * This function coordinates token refresh to prevent race conditions when
+ * multiple requests fail simultaneously due to expired tokens.
+ * 
+ * @param request - The original HTTP request that failed
+ * @param next - The HTTP handler to retry the request
+ * @param http - HTTP client for making refresh requests
+ * @param router - Router for navigation on auth failure
+ * @param config - Configuration containing API URL
+ * @returns Observable of the HTTP event after refresh attempt
+ * 
+ * @example Token refresh flow
+ * ```typescript
+ * // When a request returns 401:
+ * // 1. Check if refresh is already in progress
+ * // 2. If not, start refresh with stored refresh token
+ * // 3. On success: update tokens, retry original request
+ * // 4. On failure: clear tokens, redirect to login
+ * // 5. Other requests wait for refresh to complete
+ * ```
+ */
 function handle401Error(request: HttpRequest<any>, next: HttpHandlerFn, http: HttpClient, router: Router, config: any): Observable<HttpEvent<unknown>> {
   if (!isRefreshing) {
     isRefreshing = true;
