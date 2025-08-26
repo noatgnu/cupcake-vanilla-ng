@@ -10,7 +10,6 @@ import { Notification, NotificationItem, NotificationType } from '../../services
   styleUrl: './notification-panel.scss'
 })
 export class NotificationPanel {
-  isOpen = signal(false);
   selectedFilter = signal<NotificationType | 'all'>('all');
   
   // Expose enum to template
@@ -37,14 +36,6 @@ export class NotificationPanel {
   connectionStatus = computed(() => 
     this.notificationService.isWebSocketConnected()
   );
-
-  togglePanel(): void {
-    this.isOpen.update(open => !open);
-  }
-
-  closePanel(): void {
-    this.isOpen.set(false);
-  }
 
   setFilter(filter: NotificationType | 'all'): void {
     this.selectedFilter.set(filter);
@@ -82,6 +73,8 @@ export class NotificationPanel {
         return 'bi-cloud-upload';
       case NotificationType.DATA_PROCESSING:
         return 'bi-cpu';
+      case NotificationType.ASYNC_TASK:
+        return 'bi-hourglass-split';
       case NotificationType.USER:
         return 'bi-person';
       default:

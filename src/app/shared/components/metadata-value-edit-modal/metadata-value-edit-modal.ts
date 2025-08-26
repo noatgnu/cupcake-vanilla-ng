@@ -23,6 +23,10 @@ export interface MetadataValueEditConfig {
   templateId?: number;
   tableId?: number;
   poolId?: number;
+  // Multi-sample editing support
+  enableMultiSampleEdit?: boolean;
+  sampleData?: { index: number; value: string; sourceName?: string }[];
+  maxSampleCount?: number;
 }
 
 @Component({
@@ -43,7 +47,7 @@ export interface MetadataValueEditConfig {
 })
 export class MetadataValueEditModal implements OnInit {
   @Input() config!: MetadataValueEditConfig;
-  @Output() valueSaved = new EventEmitter<string>();
+  @Output() valueSaved = new EventEmitter<string | { value: string; sampleIndices: number[] }>();
 
   editForm: FormGroup;
   isLoading = signal(false);
@@ -69,6 +73,10 @@ export class MetadataValueEditModal implements OnInit {
   specialSyntaxType = signal<SyntaxType | null>(null);
   showSpecialInput = signal(false);
   specialInputValue = signal('');
+
+  // Multi-sample editing support
+  selectedSampleIndices = signal<Set<number>>(new Set());
+  showSamplePanel = signal(false);
 
   constructor(
     private fb: FormBuilder,
@@ -111,6 +119,18 @@ export class MetadataValueEditModal implements OnInit {
     // Load favorite options
     this.loadFavoriteOptions();
 
+    // Initialize multi-sample editing if enabled
+    if (this.config?.enableMultiSampleEdit && this.config?.sampleData) {
+      this.showSamplePanel.set(true);
+      console.log('Multi-sample editing enabled with', this.config.sampleData.length, 'samples');
+    } else {
+      console.log('Multi-sample editing not enabled:', {
+        enableMultiSampleEdit: this.config?.enableMultiSampleEdit,
+        hasSampleData: !!this.config?.sampleData,
+        sampleDataLength: this.config?.sampleData?.length
+      });
+    }
+
     // Clear selected favorite when value is manually changed
     this.editForm.get('value')?.valueChanges.subscribe((newValue) => {
       const selected = this.selectedFavorite();
@@ -120,13 +140,6 @@ export class MetadataValueEditModal implements OnInit {
     });
   }
 
-  onSubmit() {
-    if (this.editForm.valid) {
-      this.isLoading.set(true);
-      const value = this.editForm.get('value')?.value || '';
-      this.valueSaved.emit(value);
-    }
-  }
 
   onCancel() {
     this.activeModal.dismiss();
@@ -437,6 +450,62 @@ export class MetadataValueEditModal implements OnInit {
       case 'cleavage': return 'Cleavage Agent Editor';
       case 'spiked_compound': return 'Spiked Compound Editor';
       default: return 'Special Format Editor';
+    }
+  }
+
+  // Multi-sample editing methods
+  get hasMultiSampleEdit(): boolean {
+    return !!(this.config?.enableMultiSampleEdit && this.config?.sampleData && this.config.sampleData.length > 0);
+  }
+
+  get sampleData(): { index: number; value: string; sourceName?: string }[] {
+    return this.config?.sampleData || [];
+  }
+
+  toggleSampleSelection(sampleIndex: number): void {
+    const current = new Set(this.selectedSampleIndices());
+    if (current.has(sampleIndex)) {
+      current.delete(sampleIndex);
+    } else {
+      current.add(sampleIndex);
+    }
+    this.selectedSampleIndices.set(current);
+  }
+
+  selectAllSamples(): void {
+    const allIndices = new Set(this.sampleData.map(s => s.index));
+    this.selectedSampleIndices.set(allIndices);
+  }
+
+  clearSampleSelection(): void {
+    this.selectedSampleIndices.set(new Set());
+  }
+
+  get selectedSampleCount(): number {
+    return this.selectedSampleIndices().size;
+  }
+
+  get totalSampleCount(): number {
+    return this.sampleData.length;
+  }
+
+  isSampleSelected(sampleIndex: number): boolean {
+    return this.selectedSampleIndices().has(sampleIndex);
+  }
+
+  // Override the onSubmit method to handle multi-sample editing
+  onSubmit() {
+    if (this.editForm.valid) {
+      this.isLoading.set(true);
+      const value = this.editForm.get('value')?.value || '';
+      
+      // If multi-sample editing is enabled and samples are selected, include the sample indices
+      if (this.hasMultiSampleEdit && this.selectedSampleCount > 0) {
+        const selectedIndices = Array.from(this.selectedSampleIndices());
+        this.valueSaved.emit({ value, sampleIndices: selectedIndices });
+      } else {
+        this.valueSaved.emit(value);
+      }
     }
   }
 }

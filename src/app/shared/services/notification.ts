@@ -28,6 +28,7 @@ export enum NotificationType {
   LAB_GROUP = 'lab_group',
   FILE_UPLOAD = 'file_upload',
   DATA_PROCESSING = 'data_processing',
+  ASYNC_TASK = 'async_task',
   USER = 'user'
 }
 
@@ -104,6 +105,12 @@ export class Notification {
       const notification = this.createNotificationFromWebSocket(message, NotificationType.LAB_GROUP);
       this.addNotification(notification);
     });
+
+    // Async task updates
+    this.websocketService.filterMessages('async_task.update').subscribe(message => {
+      const notification = this.createNotificationFromWebSocket(message, NotificationType.ASYNC_TASK);
+      this.addNotification(notification);
+    });
   }
 
   private handleWebSocketMessage(message: WebSocketMessage): void {
@@ -164,6 +171,10 @@ export class Notification {
         title = 'Data Processing';
         level = message.type.includes('failed') ? 'error' : 'success';
         break;
+      case NotificationType.ASYNC_TASK:
+        title = this.getAsyncTaskTitle(message);
+        level = this.getAsyncTaskLevel(message);
+        break;
       default:
         title = 'Notification';
     }
@@ -183,6 +194,54 @@ export class Notification {
 
   private generateNotificationId(): string {
     return `notification_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  private getAsyncTaskTitle(message: WebSocketMessage): string {
+    const taskType = message['task_type'];
+    const status = message['status'];
+    
+    let operation = 'Task';
+    if (taskType === 'EXPORT_EXCEL') {
+      operation = 'Excel Export';
+    } else if (taskType === 'EXPORT_SDRF') {
+      operation = 'SDRF Export';
+    } else if (taskType === 'IMPORT_SDRF') {
+      operation = 'SDRF Import';
+    } else if (taskType === 'IMPORT_EXCEL') {
+      operation = 'Excel Import';
+    }
+    
+    switch (status) {
+      case 'QUEUED':
+        return `${operation} Queued`;
+      case 'STARTED':
+        return `${operation} In Progress`;
+      case 'SUCCESS':
+        return `${operation} Completed`;
+      case 'FAILURE':
+        return `${operation} Failed`;
+      case 'CANCELLED':
+        return `${operation} Cancelled`;
+      default:
+        return `${operation} Update`;
+    }
+  }
+
+  private getAsyncTaskLevel(message: WebSocketMessage): 'info' | 'success' | 'warning' | 'error' {
+    const status = message['status'];
+    
+    switch (status) {
+      case 'SUCCESS':
+        return 'success';
+      case 'FAILURE':
+        return 'error';
+      case 'CANCELLED':
+        return 'warning';
+      case 'STARTED':
+      case 'QUEUED':
+      default:
+        return 'info';
+    }
   }
 
   private addNotification(notification: NotificationItem): void {

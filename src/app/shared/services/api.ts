@@ -50,6 +50,10 @@ export class ApiService {
 
   constructor(private http: HttpClient) {}
 
+  get baseUrl(): string {
+    return this.apiUrl;
+  }
+
   // User Profile
   getUserProfile(): Observable<{user: any}> {
     return this.http.get<{user: any}>(`${this.apiUrl}/auth/profile/`);

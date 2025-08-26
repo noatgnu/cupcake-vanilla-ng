@@ -94,14 +94,47 @@
 
     <!-- Templates Table -->
     <div class="card">
-      <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">
-          <i class="bi bi-table me-2"></i>Column Templates
-          <span class="badge bg-primary ms-2">{{ templatesData().count }}</span>
-        </h5>
-        @if (isLoading()) {
-          <div class="spinner-border spinner-border-sm text-primary" role="status">
-            <span class="visually-hidden">Loading...</span>
+      <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="mb-0">
+            <i class="bi bi-table me-2"></i>Column Templates
+            <span class="badge bg-primary ms-2">{{ templatesData().count }}</span>
+          </h5>
+          @if (isLoading()) {
+            <div class="spinner-border spinner-border-sm text-primary" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+          }
+        </div>
+        
+        <!-- Column Filter -->
+        @if (hasTemplates()) {
+          <div class="d-flex align-items-center">
+            <div class="input-group input-group-sm me-3" style="width: 300px;">
+              <span class="input-group-text">
+                <i class="bi bi-funnel text-muted"></i>
+              </span>
+              <input
+                type="text"
+                class="form-control"
+                placeholder="Filter by column name or template..."
+                [value]="columnFilter()"
+                (input)="onColumnFilterChange($any($event.target).value)">
+              @if (columnFilter()) {
+                <button
+                  type="button"
+                  class="btn btn-outline-secondary"
+                  (click)="clearColumnFilter()"
+                  title="Clear filter">
+                  <i class="bi bi-x"></i>
+                </button>
+              }
+            </div>
+            @if (columnFilter()) {
+              <small class="text-muted">
+                {{ filteredTemplatesCount }}/{{ totalTemplatesCount }} templates
+              </small>
+            }
           </div>
         }
       </div>
@@ -111,17 +144,52 @@
               <table class="table table-hover mb-0">
                 <thead>
                   <tr>
-                    <th><i class="bi bi-tag me-1"></i>Template Name</th>
-                    <th><i class="bi bi-list me-1"></i>Column Name</th>
-                    <th><i class="bi bi-layers me-1"></i>Type</th>
-                    <th><i class="bi bi-diagram-3 me-1"></i>Ontology</th>
-                    <th><i class="bi bi-globe me-1"></i>Visibility</th>
+                    <th class="sortable" 
+                        (click)="sortBy('name')"
+                        [class.sorted]="isSorted('name')">
+                      <div class="d-flex align-items-center justify-content-between">
+                        <span><i class="bi bi-tag me-1"></i>Template Name</span>
+                        <i class="bi ms-1" [class]="getSortIcon('name')"></i>
+                      </div>
+                    </th>
+                    <th class="sortable" 
+                        (click)="sortBy('column_name')"
+                        [class.sorted]="isSorted('column_name')">
+                      <div class="d-flex align-items-center justify-content-between">
+                        <span><i class="bi bi-list me-1"></i>Column Name</span>
+                        <i class="bi ms-1" [class]="getSortIcon('column_name')"></i>
+                      </div>
+                    </th>
+                    <th class="sortable" 
+                        (click)="sortBy('column_type')"
+                        [class.sorted]="isSorted('column_type')">
+                      <div class="d-flex align-items-center justify-content-between">
+                        <span><i class="bi bi-layers me-1"></i>Type</span>
+                        <i class="bi ms-1" [class]="getSortIcon('column_type')"></i>
+                      </div>
+                    </th>
+                    <th class="sortable" 
+                        (click)="sortBy('ontology_type')"
+                        [class.sorted]="isSorted('ontology_type')">
+                      <div class="d-flex align-items-center justify-content-between">
+                        <span><i class="bi bi-diagram-3 me-1"></i>Ontology</span>
+                        <i class="bi ms-1" [class]="getSortIcon('ontology_type')"></i>
+                      </div>
+                    </th>
+                    <th class="sortable" 
+                        (click)="sortBy('visibility')"
+                        [class.sorted]="isSorted('visibility')">
+                      <div class="d-flex align-items-center justify-content-between">
+                        <span><i class="bi bi-globe me-1"></i>Visibility</span>
+                        <i class="bi ms-1" [class]="getSortIcon('visibility')"></i>
+                      </div>
+                    </th>
                     <th><i class="bi bi-folder me-1"></i>Category</th>
                     <th><i class="bi bi-gear me-1"></i>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  @for (template of templatesData().results; track template.id) {
+                  @for (template of filteredTemplates(); track template.id) {
                     <tr>
                       <td>
                         <strong>{{ template.name }}</strong>

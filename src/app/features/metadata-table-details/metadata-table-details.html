@@ -329,6 +329,38 @@
                 <i class="bi bi-table me-2"></i>Table Data
               }
             </h5>
+            
+            <!-- Column Filter -->
+            @if (hasColumns()) {
+              <div class="d-flex align-items-center me-3">
+                <div class="input-group input-group-sm" style="width: 250px;">
+                  <span class="input-group-text">
+                    <i class="bi bi-funnel text-muted"></i>
+                  </span>
+                  <input
+                    type="text"
+                    class="form-control"
+                    placeholder="Filter columns..."
+                    [value]="columnFilter()"
+                    (input)="onColumnFilterChange($any($event.target).value)">
+                  @if (columnFilter()) {
+                    <button
+                      type="button"
+                      class="btn btn-outline-secondary"
+                      (click)="clearColumnFilter()"
+                      title="Clear filter">
+                      <i class="bi bi-x"></i>
+                    </button>
+                  }
+                </div>
+                @if (columnFilter()) {
+                  <small class="text-muted ms-2">
+                    {{ filteredColumnCount }}/{{ totalColumnCount }}
+                  </small>
+                }
+              </div>
+            }
+            
             <div class="d-flex gap-2 align-items-center">
               @if (viewMode() === 'list') {
                 <span class="badge bg-primary">{{ sortedColumns().length }} columns</span>
@@ -353,10 +385,42 @@
               <table class="table table-hover mb-0">
                 <thead>
                   <tr>
-                    <th scope="col" style="width: 60px;">#</th>
-                    <th scope="col">Column Name</th>
-                    <th scope="col">Type</th>
-                    <th scope="col">Value</th>
+                    <th scope="col" style="width: 60px;" 
+                        class="sortable" 
+                        (click)="sortBy('position')"
+                        [class.sorted]="isSorted('position')">
+                      <div class="d-flex align-items-center justify-content-between">
+                        <span>#</span>
+                        <i class="bi ms-1" [class]="getSortIcon('position')"></i>
+                      </div>
+                    </th>
+                    <th scope="col" 
+                        class="sortable" 
+                        (click)="sortBy('name')"
+                        [class.sorted]="isSorted('name')">
+                      <div class="d-flex align-items-center justify-content-between">
+                        <span>Column Name</span>
+                        <i class="bi ms-1" [class]="getSortIcon('name')"></i>
+                      </div>
+                    </th>
+                    <th scope="col" 
+                        class="sortable" 
+                        (click)="sortBy('type')"
+                        [class.sorted]="isSorted('type')">
+                      <div class="d-flex align-items-center justify-content-between">
+                        <span>Type</span>
+                        <i class="bi ms-1" [class]="getSortIcon('type')"></i>
+                      </div>
+                    </th>
+                    <th scope="col" 
+                        class="sortable" 
+                        (click)="sortBy('value')"
+                        [class.sorted]="isSorted('value')">
+                      <div class="d-flex align-items-center justify-content-between">
+                        <span>Value</span>
+                        <i class="bi ms-1" [class]="getSortIcon('value')"></i>
+                      </div>
+                    </th>
                     <th scope="col">Properties</th>
                     <th scope="col" style="width: 100px;">Actions</th>
                   </tr>

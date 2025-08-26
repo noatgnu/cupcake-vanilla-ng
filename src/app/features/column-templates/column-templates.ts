@@ -46,6 +46,13 @@ export class ColumnTemplatesComponent implements OnInit {
   labGroupsCurrentPage = signal(1);
   labGroupsPageSize = signal(10);
   labGroupsTotalItems = signal(0);
+  
+  // Column filter
+  columnFilter = signal('');
+  
+  // Sorting
+  sortField = signal<string>('');
+  sortDirection = signal<'asc' | 'desc'>('asc');
 
   // Direct signal-based data management
   templatesData = signal<{count: number, results: MetadataColumnTemplate[]}>({ count: 0, results: [] });
@@ -56,6 +63,60 @@ export class ColumnTemplatesComponent implements OnInit {
   hasLabGroups = computed(() => this.labGroupsData().results.length > 0);
   showTemplatesPagination = computed(() => this.templatesData().count > this.pageSize());
   showLabGroupsPagination = computed(() => this.labGroupsData().count > this.labGroupsPageSize());
+  
+  // Filtered and sorted templates
+  filteredTemplates = computed(() => {
+    const templates = this.templatesData().results;
+    const filter = this.columnFilter().toLowerCase();
+    const sortField = this.sortField();
+    const sortDirection = this.sortDirection();
+    
+    // Apply filter
+    let filtered = filter ? 
+      templates.filter(template => 
+        template.column_name.toLowerCase().includes(filter) ||
+        template.name.toLowerCase().includes(filter)
+      ) : templates;
+    
+    // Apply sorting
+    if (sortField) {
+      filtered = [...filtered].sort((a, b) => {
+        let aValue: any = '';
+        let bValue: any = '';
+        
+        switch (sortField) {
+          case 'name':
+            aValue = a.name?.toLowerCase() || '';
+            bValue = b.name?.toLowerCase() || '';
+            break;
+          case 'column_name':
+            aValue = a.column_name?.toLowerCase() || '';
+            bValue = b.column_name?.toLowerCase() || '';
+            break;
+          case 'column_type':
+            aValue = a.column_type?.toLowerCase() || '';
+            bValue = b.column_type?.toLowerCase() || '';
+            break;
+          case 'ontology_type':
+            aValue = a.ontology_type?.toLowerCase() || '';
+            bValue = b.ontology_type?.toLowerCase() || '';
+            break;
+          case 'visibility':
+            aValue = a.visibility?.toLowerCase() || '';
+            bValue = b.visibility?.toLowerCase() || '';
+            break;
+          default:
+            return 0;
+        }
+        
+        if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+        if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+    
+    return filtered;
+  });
 
   constructor(
     private fb: FormBuilder,
@@ -193,6 +254,53 @@ export class ColumnTemplatesComponent implements OnInit {
       limit: this.labGroupsPageSize(),
       offset: (page - 1) * this.labGroupsPageSize()
     });
+  }
+
+  // Column filter methods
+  onColumnFilterChange(value: string): void {
+    this.columnFilter.set(value);
+  }
+
+  clearColumnFilter(): void {
+    this.columnFilter.set('');
+  }
+
+  get filteredTemplatesCount(): number {
+    return this.filteredTemplates().length;
+  }
+
+  get totalTemplatesCount(): number {
+    return this.templatesData().results.length;
+  }
+
+  // Sorting methods
+  sortBy(field: string): void {
+    const currentField = this.sortField();
+    const currentDirection = this.sortDirection();
+    
+    if (currentField === field) {
+      // Toggle direction if same field
+      this.sortDirection.set(currentDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      // New field, default to ascending
+      this.sortField.set(field);
+      this.sortDirection.set('asc');
+    }
+  }
+
+  getSortIcon(field: string): string {
+    const currentField = this.sortField();
+    const currentDirection = this.sortDirection();
+    
+    if (currentField !== field) {
+      return 'bi-arrow-down-up'; // Default unsorted icon
+    }
+    
+    return currentDirection === 'asc' ? 'bi-sort-alpha-down' : 'bi-sort-alpha-up';
+  }
+
+  isSorted(field: string): boolean {
+    return this.sortField() === field;
   }
 
   createTemplate() {

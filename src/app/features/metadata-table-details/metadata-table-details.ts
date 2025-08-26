@@ -26,6 +26,54 @@ export class MetadataTableDetailsComponent implements OnInit {
   // Expose Math to template
   Math = Math;
 
+  // Column filter methods
+  onColumnFilterChange(value: string): void {
+    this.columnFilter.set(value);
+  }
+
+  clearColumnFilter(): void {
+    this.columnFilter.set('');
+  }
+
+  get filteredColumnCount(): number {
+    return this.sortedColumns().length;
+  }
+
+  get totalColumnCount(): number {
+    const columns = this.table()?.columns || [];
+    return columns.filter(col => col && col.name).length;
+  }
+
+  // Sorting methods
+  sortBy(field: string): void {
+    const currentField = this.sortField();
+    const currentDirection = this.sortDirection();
+    
+    if (currentField === field) {
+      // Toggle direction if same field
+      this.sortDirection.set(currentDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      // New field, default to ascending
+      this.sortField.set(field);
+      this.sortDirection.set('asc');
+    }
+  }
+
+  getSortIcon(field: string): string {
+    const currentField = this.sortField();
+    const currentDirection = this.sortDirection();
+    
+    if (currentField !== field) {
+      return 'bi-arrow-down-up'; // Default unsorted icon
+    }
+    
+    return currentDirection === 'asc' ? 'bi-sort-alpha-down' : 'bi-sort-alpha-up';
+  }
+
+  isSorted(field: string): boolean {
+    return this.sortField() === field;
+  }
+
   // State signals
   isLoading = signal(false);
   table = signal<MetadataTable | null>(null);
@@ -33,6 +81,11 @@ export class MetadataTableDetailsComponent implements OnInit {
   viewMode = signal<'list' | 'table'>('table');
   currentPage = signal(1);
   pageSize = signal(10);
+  columnFilter = signal('');
+  
+  // Sorting
+  sortField = signal<string>('');
+  sortDirection = signal<'asc' | 'desc'>('asc');
 
   // Computed values
   hasColumns = computed(() => this.table()?.columns && this.table()!.columns.length > 0);
@@ -42,9 +95,55 @@ export class MetadataTableDetailsComponent implements OnInit {
   });
   sortedColumns = computed(() => {
     const columns = this.table()?.columns || [];
-    return [...columns]
+    const filter = this.columnFilter().toLowerCase();
+    const sortField = this.sortField();
+    const sortDirection = this.sortDirection();
+    
+    let filtered = [...columns]
       .filter(col => col && col.name) // Ensure column has valid data
-      .sort((a, b) => (a.column_position || 0) - (b.column_position || 0));
+      .filter(col => !filter || col.name.toLowerCase().includes(filter)); // Apply filter
+    
+    // Apply sorting
+    if (sortField) {
+      filtered.sort((a, b) => {
+        let aValue: any = '';
+        let bValue: any = '';
+        
+        switch (sortField) {
+          case 'name':
+            aValue = a.name?.toLowerCase() || '';
+            bValue = b.name?.toLowerCase() || '';
+            break;
+          case 'type':
+            aValue = a.type?.toLowerCase() || '';
+            bValue = b.type?.toLowerCase() || '';
+            break;
+          case 'position':
+            aValue = a.column_position || 0;
+            bValue = b.column_position || 0;
+            break;
+          case 'value':
+            aValue = a.value?.toLowerCase() || '';
+            bValue = b.value?.toLowerCase() || '';
+            break;
+          case 'ontology_type':
+            aValue = a.ontology_type?.toLowerCase() || '';
+            bValue = b.ontology_type?.toLowerCase() || '';
+            break;
+          default:
+            return 0;
+        }
+        
+        if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+        if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+        return 0;
+      });
+    } else {
+      // Default sort by position
+      filtered.sort((a, b) => (a.column_position || 0) - (b.column_position || 0));
+    }
+    
+    return filtered;
   });
   sortedPools = computed(() => {
     const pools = this.table()?.sample_pools || [];
@@ -670,6 +769,13 @@ export class MetadataTableDetailsComponent implements OnInit {
     const table = this.table();
     if (!table || !table.can_edit || !column.id) return;
 
+    // Prepare sample data for multi-sample editing
+    const sampleData = this.tableRows().map(row => ({
+      index: row._sampleIndex,
+      value: row[`col_${column.id}`] || column.value || '',
+      sourceName: row.source_name || `Sample ${row._sampleIndex}`
+    }));
+
     const config: MetadataValueEditConfig = {
       columnId: column.id,
       columnName: column.name,
@@ -678,21 +784,46 @@ export class MetadataTableDetailsComponent implements OnInit {
       enableTypeahead: true,
       currentValue: column.value,
       context: 'table',
-      tableId: table.id
+      tableId: table.id,
+      enableMultiSampleEdit: true,
+      sampleData: sampleData,
+      maxSampleCount: table.sample_count
     };
 
     const modalRef = this.modalService.open(MetadataValueEditModal, {
-      size: 'lg',
+      size: 'xl',
       backdrop: 'static'
     });
 
     modalRef.componentInstance.config = config;
-    modalRef.componentInstance.valueSaved.subscribe((newValue: string) => {
-      // Use the API to update the default value
-      this.apiService.updateMetadataColumnValue(column.id!, {
-        value: newValue,
-        value_type: 'default'
-      }).subscribe({
+    
+    // Debug log to check if multi-sample editing is enabled
+    console.log('Multi-sample editing config:', {
+      enableMultiSampleEdit: config.enableMultiSampleEdit,
+      sampleDataLength: config.sampleData?.length,
+      hasMultiSampleEdit: config.enableMultiSampleEdit && config.sampleData && config.sampleData.length > 0
+    });
+
+    modalRef.componentInstance.valueSaved.subscribe((result: string | { value: string; sampleIndices: number[] }) => {
+      let apiData: any;
+      
+      if (typeof result === 'string') {
+        // Simple string value - update default
+        apiData = {
+          value: result,
+          value_type: 'default'
+        };
+      } else {
+        // Multi-sample edit - update specific samples
+        apiData = {
+          value: result.value,
+          sample_indices: result.sampleIndices,
+          value_type: 'sample_specific'
+        };
+      }
+
+      // Use the API to update the column value
+      this.apiService.updateMetadataColumnValue(column.id!, apiData).subscribe({
         next: (response) => {
           // Update the local column data with the returned column
           const currentTable = this.table();

@@ -1,30 +1,41 @@
-.notification-panel-wrapper {
-  position: relative;
-  display: inline-block;
-}
-
-.notification-panel {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  width: 400px;
-  max-height: 600px;
-  z-index: 1050;
+// Notification Panel Content - Embedded in navbar dropdown
+.notification-panel-content {
+  width: 100%;
+  max-height: 400px;
   
-  .card-body {
-    max-height: 400px;
-    overflow-y: auto;
+  // Notification header styling
+  .notification-header {
+    background-color: var(--bs-light) !important;
+    border-bottom: 1px solid var(--bs-border-color);
   }
-  
+
+  // Filter tabs styling
+  .notification-filters {
+    .d-flex.overflow-auto {
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      
+      &::-webkit-scrollbar {
+        display: none;
+      }
+    }
+  }
+
+  // Notification list styling
   .notification-list {
+    max-height: 300px;
+    overflow-y: auto;
+    
     .notification-item {
-      transition: background-color 0.2s ease;
+      transition: all 0.2s ease;
+      border-bottom: 1px solid var(--bs-border-color);
       
       &:hover {
-        background-color: var(--bs-light) !important;
+        background-color: rgba(var(--bs-primary-rgb), 0.05);
       }
       
       &.unread {
+        background-color: rgba(var(--bs-info-rgb), 0.05);
         border-left: 3px solid var(--bs-primary);
         
         .notification-title {
@@ -33,102 +44,123 @@
       }
       
       &:last-child {
-        .border-bottom {
-          border-bottom: none !important;
-        }
+        border-bottom: none;
       }
     }
-    
-    .notification-content {
-      min-width: 0; // Allows text truncation to work
-    }
   }
   
-  .alert-sm {
-    padding: 0.5rem;
-    font-size: 0.875rem;
-  }
-  
-  .btn-group-sm .btn {
-    font-size: 0.75rem;
-    padding: 0.25rem 0.5rem;
-  }
-  
-  .badge.rounded-pill {
-    width: 2rem;
-    height: 2rem;
+  // Notification icon styling
+  .notification-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
+    color: white;
     
     i {
-      font-size: 0.875rem;
+      font-size: 1rem;
     }
   }
-}
-
-.notification-backdrop {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background-color: transparent;
-  z-index: 1040;
-}
-
-// Button active state
-.btn.active {
-  box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.25);
-}
-
-// Responsive adjustments
-@media (max-width: 576px) {
-  .notification-panel {
-    width: 320px;
-    right: -60px; // Adjust positioning on small screens
+  
+  // Unread indicator dot
+  .unread-dot {
+    width: 0.75rem;
+    height: 0.75rem;
+    background-color: var(--bs-primary);
+    border: 2px solid white;
+    border-radius: 50%;
   }
+  
+  // Item actions (initially hidden, shown on hover)
+  .item-actions {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    display: flex;
+    gap: 0.25rem;
+    
+    .btn {
+      padding: 0.25rem 0.5rem;
+      font-size: 0.75rem;
+    }
+  }
+  
+  .notification-item:hover .item-actions {
+    opacity: 1;
+  }
+  
+  // Metadata badges
+  .notification-metadata {
+    margin-top: 0.5rem;
+    
+    .badge {
+      font-size: 0.7rem;
+      padding: 0.25rem 0.5rem;
+      
+      i {
+        font-size: 0.6rem;
+      }
+    }
+  }
+  
 }
 
-// Dark mode support (if using Bootstrap's dark mode utilities)
-[data-bs-theme="dark"] {
-  .notification-panel {
-    .card-header.bg-light {
-      background-color: var(--bs-dark) !important;
-      border-color: var(--bs-border-color);
+// Empty state styling
+.empty-state {
+  color: var(--bs-secondary);
+}
+
+// Responsive adjustments for mobile
+@media (max-width: 576px) {
+  .notification-panel-content {
+    .item-actions {
+      opacity: 1; // Always show actions on mobile
     }
     
-    .alert-warning {
-      --bs-alert-color: var(--bs-warning-text);
-      --bs-alert-bg: var(--bs-warning-bg-subtle);
-      --bs-alert-border-color: var(--bs-warning-border-subtle);
+    .notification-filters .btn {
+      font-size: 0.75rem;
+      padding: 0.375rem 0.5rem;
     }
   }
 }
 
-// Animation for panel appearance
-.notification-panel {
-  animation: slideIn 0.2s ease-out;
+// Dark mode support
+@media (prefers-color-scheme: dark) {
+  .notification-panel-content {
+    .notification-item {
+      border-color: rgba(255, 255, 255, 0.125);
+      
+      &:hover {
+        background-color: rgba(255, 255, 255, 0.05);
+      }
+      
+      &.unread {
+        background-color: rgba(var(--bs-info-rgb), 0.1);
+      }
+    }
+  }
 }
 
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
+// Additional scroll styling for the notification list (inside the component)
+.notification-panel-content .notification-list {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(var(--bs-secondary-rgb), 0.5) transparent;
+  
+  &::-webkit-scrollbar {
+    width: 4px;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+  
+  &::-webkit-scrollbar-track {
+    background: transparent;
   }
-}
-
-// Notification count badge positioning
-.position-relative .badge {
-  font-size: 0.7rem;
-  min-width: 1.2rem;
-  height: 1.2rem;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  
+  &::-webkit-scrollbar-thumb {
+    background-color: rgba(var(--bs-secondary-rgb), 0.5);
+    border-radius: 2px;
+  }
+  
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(var(--bs-secondary-rgb), 0.7);
+  }
 }

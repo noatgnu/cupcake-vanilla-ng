@@ -1,0 +1,110 @@
+// Async Task Monitor consistent with application styling
+.async-task-monitor-container {
+  // Progress bar styling
+  .progress {
+    height: 6px;
+    border-radius: 3px;
+    
+    .progress-bar {
+      border-radius: 3px;
+      transition: width 0.6s ease;
+    }
+  }
+
+  // Status badge colors
+  .badge {
+    font-size: 0.75rem;
+    font-weight: 500;
+    
+    &.bg-primary {
+      animation: pulse 2s infinite;
+    }
+  }
+
+  // Table row status colors (subtle backgrounds)
+  .table {
+    tbody tr {
+      &.table-primary {
+        background-color: rgba(var(--bs-primary-rgb), 0.05);
+      }
+      
+      &.table-success {
+        background-color: rgba(var(--bs-success-rgb), 0.05);
+      }
+      
+      &.table-danger {
+        background-color: rgba(var(--bs-danger-rgb), 0.05);
+      }
+      
+      &.table-warning {
+        background-color: rgba(var(--bs-warning-rgb), 0.05);
+      }
+    }
+  }
+
+  // Empty state styling
+  .empty-state {
+    i {
+      opacity: 0.3;
+    }
+  }
+
+  // Button group styling for actions
+  .btn-group-sm .btn {
+    padding: 0.25rem 0.5rem;
+    
+    i {
+      font-size: 0.875rem;
+    }
+  }
+
+  // Text truncation for long table names
+  .text-truncate {
+    display: inline-block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  // Badge animation for active tasks
+  @keyframes pulse {
+    0% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.7;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+}
+
+// Mobile responsiveness
+@media (max-width: 768px) {
+  .async-task-monitor-container {
+    // Stack table headers on mobile
+    .table-responsive {
+      font-size: 0.875rem;
+    }
+    
+    // Adjust progress bar width on mobile
+    .progress {
+      min-width: 80px;
+    }
+    
+    // Stack action buttons on mobile
+    .btn-group {
+      flex-direction: column;
+      width: auto;
+      
+      .btn {
+        margin-bottom: 0.25rem;
+        
+        &:last-child {
+          margin-bottom: 0;
+        }
+      }
+    }
+  }
+}
