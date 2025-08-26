@@ -46,12 +46,6 @@
     },
     {
       "path": "./projects/cupcake-core/tsconfig.spec.json"
-    },
-    {
-      "path": "./projects/cupcake-vanilla/tsconfig.lib.json"
-    },
-    {
-      "path": "./projects/cupcake-vanilla/tsconfig.spec.json"
     }
   ]
 }

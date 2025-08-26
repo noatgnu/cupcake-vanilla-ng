@@ -5,10 +5,9 @@
     "ng": "ng",
     "start": "npm run build:libs && ng serve",
     "build": "ng build",
-    "build:libs": "ng build cupcake-core && ng build cupcake-vanilla",
+    "build:libs": "ng build cupcake-core",
     "build:all": "./build-all.sh",
     "build:core": "ng build cupcake-core",
-    "build:vanilla": "ng build cupcake-vanilla",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },
