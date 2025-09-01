@@ -1,0 +1,19 @@
+.validation-issues {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.validation-issues .alert {
+  font-size: 0.875rem;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.card {
+  height: 100%;
+}
+
+.modal-body {
+  max-height: 70vh;
+  overflow-y: auto;
+}

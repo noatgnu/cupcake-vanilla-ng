@@ -4,15 +4,20 @@ import { Router, RouterModule } from '@angular/router';
 import { NgbDropdownModule } from '@ng-bootstrap/ng-bootstrap';
 import { AuthService, User, SiteConfigService, UserManagementService } from 'cupcake-core';
 import { ThemeService } from '../../services/theme';
+import { AsyncTaskService } from '../../services/async-task';
 import { NotificationPanel } from '../notification-panel/notification-panel';
+import { AsyncTaskMonitorComponent } from '../async-task-monitor/async-task-monitor';
 import { Notification } from '../../services/notification';
 import { Websocket } from '../../services/websocket';
-import { Subscription } from 'rxjs';
+import { Subscription, Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
+import { TaskListItem, TaskType, TaskStatus } from '../../models/async-task';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  imports: [CommonModule, RouterModule, NgbDropdownModule, NotificationPanel],
+  imports: [CommonModule, RouterModule, NgbDropdownModule, NotificationPanel, AsyncTaskMonitorComponent],
   templateUrl: './navbar.html',
   styleUrl: './navbar.scss'
 })
@@ -24,6 +29,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
   private themeService = inject(ThemeService);
   private notificationService = inject(Notification);
   private webSocketService = inject(Websocket);
+  private asyncTaskService = inject(AsyncTaskService);
 
   // Observable for authentication state
   isAuthenticated$ = this.authService.isAuthenticated$;
@@ -31,6 +37,15 @@ export class NavbarComponent implements OnInit, OnDestroy {
   
   // Observable for site configuration
   siteConfig$ = this.siteConfigService.config$;
+  
+  // Async task observables
+  activeTasks$ = this.asyncTaskService.activeTasks$;
+  activeTaskCount$ = this.activeTasks$.pipe(
+    map(tasks => tasks.length)
+  );
+  
+  // Environment for template access
+  protected readonly environment = environment;
   
   // Notification state
   unreadCount = this.notificationService.unreadCount;
@@ -108,5 +123,26 @@ export class NavbarComponent implements OnInit, OnDestroy {
    */
   getThemeLabel(): string {
     return this.themeService.getThemeLabel();
+  }
+
+  /**
+   * Get display name for task type
+   */
+  getTaskDisplayName(taskType: TaskType): string {
+    return this.asyncTaskService.getTaskDisplayName(taskType);
+  }
+
+  /**
+   * Get progress bar class based on status
+   */
+  getProgressBarClass(status: TaskStatus): string {
+    const colorMap: Record<TaskStatus, string> = {
+      'QUEUED': 'bg-secondary',
+      'STARTED': 'bg-primary',
+      'SUCCESS': 'bg-success',
+      'FAILURE': 'bg-danger',
+      'CANCELLED': 'bg-warning',
+    };
+    return colorMap[status] || 'bg-secondary';
   }
 }

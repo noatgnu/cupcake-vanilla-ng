@@ -209,6 +209,12 @@ export class Notification {
       operation = 'SDRF Import';
     } else if (taskType === 'IMPORT_EXCEL') {
       operation = 'Excel Import';
+    } else if (taskType === 'EXPORT_MULTIPLE_SDRF') {
+      operation = 'Bulk SDRF Export';
+    } else if (taskType === 'EXPORT_MULTIPLE_EXCEL') {
+      operation = 'Bulk Excel Export';
+    } else if (taskType === 'VALIDATE_TABLE') {
+      operation = 'Table Validation';
     }
     
     switch (status) {

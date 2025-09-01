@@ -1,10 +1,10 @@
 <!-- Notification Panel Content -->
 <div class="notification-panel-content">
   <!-- Header -->
-  <div class="notification-header p-3 bg-light border-bottom">
+  <div class="notification-header p-3 bg-body border-bottom">
     <div class="d-flex justify-content-between align-items-center">
       <div class="d-flex align-items-center">
-        <h6 class="mb-0 fw-bold text-dark">
+        <h6 class="mb-0 fw-bold text-body">
           <i class="bi bi-bell-fill me-2"></i>Notifications
         </h6>
         @if (notificationService.unreadCount() > 0) {
@@ -35,7 +35,7 @@
 
   <!-- Filter Tabs -->
   <div class="notification-filters border-bottom">
-    <div class="d-flex overflow-auto p-2 bg-light">
+    <div class="d-flex overflow-auto p-2 bg-body-secondary">
       <button 
         type="button"
         class="btn btn-sm flex-shrink-0 me-1"
@@ -84,7 +84,7 @@
 
   <!-- Actions Bar -->
   @if (filteredNotifications().length > 0) {
-    <div class="notification-actions p-2 border-bottom bg-light">
+    <div class="notification-actions p-2 border-bottom bg-body-secondary">
       <div class="d-flex justify-content-between align-items-center">
         <span class="small text-muted">
           {{ filteredNotifications().length }} notification{{ filteredNotifications().length !== 1 ? 's' : '' }}

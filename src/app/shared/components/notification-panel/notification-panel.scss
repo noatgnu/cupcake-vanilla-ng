@@ -5,7 +5,7 @@
   
   // Notification header styling
   .notification-header {
-    background-color: var(--bs-light) !important;
+    background-color: var(--bs-body-bg);
     border-bottom: 1px solid var(--bs-border-color);
   }
 
@@ -17,6 +17,18 @@
       
       &::-webkit-scrollbar {
         display: none;
+      }
+    }
+    
+    // Improve outline button visibility
+    .btn-outline-secondary {
+      border-color: var(--bs-border-color);
+      color: var(--bs-body-color);
+      
+      &:hover {
+        background-color: var(--bs-secondary);
+        border-color: var(--bs-secondary);
+        color: var(--bs-white);
       }
     }
   }
@@ -57,7 +69,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    color: white;
+    color: var(--bs-body-bg);
     
     i {
       font-size: 1rem;
@@ -69,7 +81,7 @@
     width: 0.75rem;
     height: 0.75rem;
     background-color: var(--bs-primary);
-    border: 2px solid white;
+    border: 2px solid var(--bs-body-bg);
     border-radius: 50%;
   }
   
@@ -84,10 +96,44 @@
       padding: 0.25rem 0.5rem;
       font-size: 0.75rem;
     }
+    
+    // Improve outline button visibility
+    .btn-outline-primary {
+      border-color: var(--bs-primary);
+      color: var(--bs-primary);
+    }
+    
+    .btn-outline-danger {
+      border-color: var(--bs-danger);
+      color: var(--bs-danger);
+    }
+    
+    .btn-outline-secondary {
+      border-color: var(--bs-border-color);
+      color: var(--bs-body-color);
+    }
   }
   
   .notification-item:hover .item-actions {
     opacity: 1;
+  }
+  
+  // Action bar button styling
+  .notification-actions {
+    .btn-outline-primary {
+      border-color: var(--bs-primary);
+      color: var(--bs-primary);
+    }
+    
+    .btn-outline-secondary {
+      border-color: var(--bs-border-color);
+      color: var(--bs-body-color);
+    }
+    
+    .btn-outline-danger {
+      border-color: var(--bs-danger);
+      color: var(--bs-danger);
+    }
   }
   
   // Metadata badges
@@ -108,7 +154,7 @@
 
 // Empty state styling
 .empty-state {
-  color: var(--bs-secondary);
+  color: var(--bs-secondary-color);
 }
 
 // Responsive adjustments for mobile
@@ -125,22 +171,7 @@
   }
 }
 
-// Dark mode support
-@media (prefers-color-scheme: dark) {
-  .notification-panel-content {
-    .notification-item {
-      border-color: rgba(255, 255, 255, 0.125);
-      
-      &:hover {
-        background-color: rgba(255, 255, 255, 0.05);
-      }
-      
-      &.unread {
-        background-color: rgba(var(--bs-info-rgb), 0.1);
-      }
-    }
-  }
-}
+// Remove fixed dark mode styles since we're now using theme-aware variables
 
 // Additional scroll styling for the notification list (inside the component)
 .notification-panel-content .notification-list {

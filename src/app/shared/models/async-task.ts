@@ -4,7 +4,7 @@
 
 export type TaskStatus = 'QUEUED' | 'STARTED' | 'SUCCESS' | 'FAILURE' | 'CANCELLED';
 
-export type TaskType = 'EXPORT_EXCEL' | 'EXPORT_SDRF' | 'IMPORT_SDRF' | 'IMPORT_EXCEL';
+export type TaskType = 'EXPORT_EXCEL' | 'EXPORT_SDRF' | 'IMPORT_SDRF' | 'IMPORT_EXCEL' | 'EXPORT_MULTIPLE_SDRF' | 'EXPORT_MULTIPLE_EXCEL' | 'VALIDATE_TABLE';
 
 export interface AsyncTask {
   id: string;
@@ -44,6 +44,9 @@ export interface TaskCreateRequest {
   metadata_table_id: number;
   include_pools?: boolean;
   metadata_column_ids?: number[];
+  sample_number?: number;
+  export_format?: string;
+  lab_group_ids?: number[];
 }
 
 export interface TaskCreateResponse {
@@ -56,6 +59,29 @@ export interface ImportTaskCreateRequest {
   file: File;
   replace_existing?: boolean;
   validate_ontologies?: boolean;
+}
+
+export interface BulkExportTaskCreateRequest {
+  metadata_table_ids: number[];
+  include_pools?: boolean;
+  validate_sdrf?: boolean;
+}
+
+export interface BulkExcelExportTaskCreateRequest {
+  metadata_table_ids: number[];
+  metadata_column_ids?: number[];
+  include_pools?: boolean;
+  lab_group_ids?: number[];
+}
+
+export interface ValidationTaskCreateRequest {
+  metadata_table_id: number;
+  validate_sdrf_format?: boolean;
+}
+
+export interface MetadataValidationConfig {
+  metadata_table_id: number;
+  metadata_table_name: string;
 }
 
 export interface TaskProgressEvent {
@@ -71,6 +97,9 @@ export const TASK_TYPE_LABELS: Record<TaskType, string> = {
   'EXPORT_SDRF': 'Export SDRF File',
   'IMPORT_SDRF': 'Import SDRF File',
   'IMPORT_EXCEL': 'Import Excel File',
+  'EXPORT_MULTIPLE_SDRF': 'Bulk Export SDRF Files',
+  'EXPORT_MULTIPLE_EXCEL': 'Bulk Export Excel Templates',
+  'VALIDATE_TABLE': 'Validate Metadata Table',
 };
 
 export const TASK_STATUS_LABELS: Record<TaskStatus, string> = {

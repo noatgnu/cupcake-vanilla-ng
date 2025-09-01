@@ -98,12 +98,42 @@
         <h5 class="mb-0">
           <i class="bi bi-table me-2"></i>Metadata Tables
           <span class="badge bg-primary ms-2">{{ tablesData().count }}</span>
+          @if (hasSelectedTables()) {
+            <span class="badge bg-info ms-2">{{ selectedTablesCount() }} selected</span>
+          }
         </h5>
-        @if (isLoading()) {
-          <div class="spinner-border spinner-border-sm text-primary" role="status">
-            <span class="visually-hidden">Loading...</span>
-          </div>
-        }
+        <div class="d-flex align-items-center gap-2">
+          @if (hasSelectedTables()) {
+            <div class="btn-group btn-group-sm" role="group">
+              <button 
+                type="button" 
+                class="btn btn-outline-success"
+                (click)="bulkExportSdrf()"
+                title="Export selected tables as SDRF files">
+                <i class="bi bi-download me-1"></i>Bulk Export SDRF
+              </button>
+              <button 
+                type="button" 
+                class="btn btn-outline-primary"
+                (click)="bulkExportExcel()"
+                title="Export selected tables as Excel templates">
+                <i class="bi bi-file-earmark-excel me-1"></i>Bulk Export Excel
+              </button>
+              <button 
+                type="button" 
+                class="btn btn-outline-secondary"
+                (click)="clearSelection()"
+                title="Clear selection">
+                <i class="bi bi-x-circle me-1"></i>Clear
+              </button>
+            </div>
+          }
+          @if (isLoading()) {
+            <div class="spinner-border spinner-border-sm text-primary" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+          }
+        </div>
       </div>
       <div class="card-body p-0">
         @if (hasTables()) {
@@ -111,6 +141,15 @@
             <table class="table table-hover mb-0">
               <thead>
                 <tr>
+                  <th class="text-center" style="width: 50px;">
+                    <input 
+                      type="checkbox" 
+                      class="form-check-input"
+                      [checked]="selectAllChecked()"
+                      [indeterminate]="selectAllIndeterminate()"
+                      (change)="toggleSelectAll($event)"
+                      title="Select all visible tables">
+                  </th>
                   <th><i class="bi bi-table me-1"></i>Table Name</th>
                   <th><i class="bi bi-person me-1"></i>Owner</th>
                   <th><i class="bi bi-people me-1"></i>Lab Group</th>
@@ -124,7 +163,15 @@
               </thead>
               <tbody>
                 @for (table of tablesData().results; track table.id) {
-                  <tr>
+                  <tr [class.table-active]="isTableSelected(table)">
+                    <td class="text-center">
+                      <input 
+                        type="checkbox" 
+                        class="form-check-input"
+                        [checked]="isTableSelected(table)"
+                        (change)="toggleTableSelection(table, $event)"
+                        title="Select this table">
+                    </td>
                     <td>
                       <strong>{{ table.name }}</strong>
                       @if (table.description) {
@@ -174,28 +221,50 @@
                       <br><small class="text-muted">v{{ table.version }}</small>
                     </td>
                     <td>
-                      <div class="btn-group btn-group-sm" role="group">
+                      <div class="d-flex gap-2">
                         <button
-                          class="btn btn-outline-primary"
+                          type="button"
+                          class="btn btn-outline-primary btn-sm"
                           title="View table"
                           [routerLink]="['/metadata-tables', table.id]">
-                          <i class="bi bi-eye"></i>
+                          <i class="bi bi-eye me-1"></i>View
                         </button>
                         <button
-                          class="btn btn-outline-secondary"
+                          type="button"
+                          class="btn btn-outline-secondary btn-sm"
                           title="Edit table">
-                          <i class="bi bi-pencil"></i>
+                          <i class="bi bi-pencil me-1"></i>Edit
                         </button>
                         <button
-                          class="btn btn-outline-info"
-                          title="Export table">
-                          <i class="bi bi-download"></i>
+                          type="button"
+                          class="btn btn-outline-success btn-sm"
+                          title="Validate table"
+                          (click)="validateTable(table)">
+                          <i class="bi bi-check-circle me-1"></i>Validate
                         </button>
+                        <div class="btn-group" ngbDropdown container="body">
+                          <button
+                            type="button"
+                            class="btn btn-outline-info btn-sm dropdown-toggle"
+                            ngbDropdownToggle
+                            title="Export table">
+                            <i class="bi bi-download me-1"></i>Export
+                          </button>
+                          <div class="dropdown-menu dropdown-menu-end" ngbDropdownMenu>
+                            <a class="dropdown-item" href="#" (click)="exportTable(table, 'sdrf'); $event.preventDefault()">
+                              <i class="bi bi-file-earmark-text me-2"></i>Export as SDRF
+                            </a>
+                            <a class="dropdown-item" href="#" (click)="exportTable(table, 'excel'); $event.preventDefault()">
+                              <i class="bi bi-file-earmark-spreadsheet me-2"></i>Export as Excel
+                            </a>
+                          </div>
+                        </div>
                         <button
-                          class="btn btn-outline-danger"
+                          type="button"
+                          class="btn btn-outline-danger btn-sm"
                           (click)="deleteTable(table)"
                           title="Delete table">
-                          <i class="bi bi-trash"></i>
+                          <i class="bi bi-trash me-1"></i>Delete
                         </button>
                       </div>
                     </td>

@@ -1,175 +1,247 @@
-<div class="async-task-monitor-container">
-  <!-- Header Section -->
-  <nav class="navbar navbar-expand-lg bg-body-tertiary shadow-sm">
-    <div class="container-fluid">
-      <div class="d-flex align-items-center justify-content-between w-100">
-        <div class="d-flex align-items-center">
-          <h4 class="navbar-brand m-0 fw-bold">
-            <i class="bi bi-list-task me-2"></i>Background Tasks
-          </h4>
-          @if ((activeTasks$ | async)?.length; as activeCount) {
-            <span class="badge bg-primary ms-3">{{ activeCount }} active</span>
-          }
-        </div>
-        <div class="d-flex gap-2">
+<!-- Async Task Monitor Content -->
+<div class="async-task-monitor-content">
+  <!-- Header -->
+  <div class="task-monitor-header p-3 bg-body border-bottom">
+    <div class="d-flex justify-content-between align-items-center">
+      <div class="d-flex align-items-center">
+        <h6 class="mb-0 fw-bold text-body">
+          <i class="bi bi-list-task me-2"></i>Background Tasks
+        </h6>
+        @if ((activeTasks$ | async)?.length; as activeCount) {
+          <span class="badge bg-primary ms-2">{{ activeCount }} active</span>
+        }
+      </div>
+      <button 
+        type="button" 
+        class="btn btn-sm btn-outline-secondary"
+        (click)="refreshTasks()"
+        title="Refresh tasks">
+        <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+      </button>
+    </div>
+  </div>
+
+  <!-- Filter Tabs -->
+  <div class="task-filters border-bottom">
+    <div class="d-flex overflow-auto p-2 bg-body-secondary">
+      <button 
+        type="button"
+        class="btn btn-sm flex-shrink-0 me-1"
+        [class]="selectedFilter() === 'all' ? 'btn-primary' : 'btn-outline-secondary'"
+        (click)="setFilter('all')">
+        All ({{ (tasks$ | async)?.length || 0 }})
+      </button>
+
+      <button 
+        type="button"
+        class="btn btn-sm flex-shrink-0 me-1"
+        [class]="selectedFilter() === 'active' ? 'btn-primary' : 'btn-outline-secondary'"
+        (click)="setFilter('active')"
+        title="Running and Queued Tasks">
+        <i class="bi bi-hourglass-split me-1"></i>Active
+      </button>
+
+      <button 
+        type="button"
+        class="btn btn-sm flex-shrink-0 me-1"
+        [class]="selectedFilter() === 'completed' ? 'btn-primary' : 'btn-outline-secondary'"
+        (click)="setFilter('completed')"
+        title="Successful Tasks">
+        <i class="bi bi-check-circle me-1"></i>Completed
+      </button>
+
+      <button 
+        type="button"
+        class="btn btn-sm flex-shrink-0"
+        [class]="selectedFilter() === 'failed' ? 'btn-primary' : 'btn-outline-secondary'"
+        (click)="setFilter('failed')"
+        title="Failed Tasks">
+        <i class="bi bi-exclamation-triangle me-1"></i>Failed
+      </button>
+    </div>
+  </div>
+
+  <!-- Actions Bar -->
+  @if (filteredTasks().length > 0) {
+    <div class="task-actions p-2 border-bottom bg-body-secondary">
+      <div class="d-flex justify-content-between align-items-center">
+        <span class="small text-muted">
+          {{ filteredTasks().length }} task{{ filteredTasks().length !== 1 ? 's' : '' }}
+        </span>
+        <div class="btn-group btn-group-sm" role="group">
           <button 
             type="button" 
-            class="btn btn-outline-secondary btn-sm"
+            class="btn btn-outline-primary"
             (click)="refreshTasks()"
-            title="Refresh tasks">
-            <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+            title="Refresh Tasks">
+            <i class="bi bi-arrow-clockwise"></i>
+          </button>
+          <button 
+            type="button" 
+            class="btn btn-outline-secondary"
+            (click)="clearCompletedTasks()"
+            title="Clear Completed">
+            <i class="bi bi-trash"></i>
           </button>
         </div>
       </div>
     </div>
-  </nav>
+  }
 
-  <div class="tasks-content p-4">
-    <!-- Tasks Card -->
-    <div class="card">
-      <div class="card-header">
-        <h5 class="mb-0">
-          <i class="bi bi-clock-history me-2"></i>Task History
-        </h5>
-      </div>
-
-      <div class="card-body p-0">
-        @if (tasks$ | async; as tasks) {
-          @if (tasks.length > 0) {
-            <div class="table-responsive">
-              <table class="table table-hover mb-0">
-                <thead>
-                  <tr>
-                    <th><i class="bi bi-gear me-1"></i>Type</th>
-                    <th><i class="bi bi-info-circle me-1"></i>Status</th>
-                    <th><i class="bi bi-table me-1"></i>Table</th>
-                    <th><i class="bi bi-bar-chart me-1"></i>Progress</th>
-                    <th><i class="bi bi-clock me-1"></i>Time</th>
-                    <th><i class="bi bi-tools me-1"></i>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (task of tasks | slice:0:maxTasks; track trackByTaskId($index, task)) {
-                    <tr [class.table-primary]="task.status === 'QUEUED' || task.status === 'STARTED'"
-                        [class.table-success]="task.status === 'SUCCESS'"
-                        [class.table-danger]="task.status === 'FAILURE'"
-                        [class.table-warning]="task.status === 'CANCELLED'">
-                      
-                      <!-- Task Type -->
-                      <td>
-                        <div class="d-flex align-items-center">
-                          <i class="bi bi-file-earmark me-2 text-muted"></i>
-                          <span class="fw-medium">{{ taskTypeLabels[task.task_type] }}</span>
-                        </div>
-                      </td>
-                      
-                      <!-- Status -->
-                      <td>
-                        <span class="badge" [class]="getStatusBadgeClass(task.status)">
-                          {{ taskStatusLabels[task.status] }}
-                        </span>
-                      </td>
-                      
-                      <!-- Table Name -->
-                      <td>
-                        @if (task.metadata_table_name) {
-                          <span class="text-truncate" style="max-width: 150px;">{{ task.metadata_table_name }}</span>
-                        } @else {
-                          <span class="text-muted">-</span>
-                        }
-                      </td>
-                      
-                      <!-- Progress -->
-                      <td>
-                        <div class="d-flex align-items-center" style="width: 120px;">
-                          <div class="progress flex-grow-1 me-2" style="height: 6px;">
-                            <div class="progress-bar" 
-                                 [class]="getProgressBarClass(task.status)"
-                                 [style.width.%]="task.progress_percentage"
-                                 role="progressbar">
-                            </div>
-                          </div>
-                          @if (task.progress_percentage > 0 && task.status === 'STARTED') {
-                            <small class="text-muted">{{ task.progress_percentage }}%</small>
-                          }
-                        </div>
-                        @if (task.progress_description) {
-                          <small class="text-muted d-block">{{ task.progress_description }}</small>
-                        }
-                      </td>
-                      
-                      <!-- Time -->
-                      <td>
-                        <div class="small">
-                          <div class="text-muted">{{ getRelativeTime(task.created_at) }}</div>
-                          @if (task.duration) {
-                            <div class="text-muted">({{ formatDuration(task.duration) }})</div>
-                          }
-                        </div>
-                      </td>
-                      
-                      <!-- Actions -->
-                      <td>
-                        <div class="btn-group btn-group-sm" role="group">
-                          @if (canDownloadResult(task)) {
-                            <button type="button"
-                                    class="btn btn-outline-primary"
-                                    (click)="downloadResult(task)"
-                                    title="Download result">
-                              <i class="bi bi-download"></i>
-                            </button>
-                          }
-                          @if (canCancelTask(task)) {
-                            <button type="button"
-                                    class="btn btn-outline-danger"
-                                    (click)="cancelTask(task.id)"
-                                    title="Cancel task">
-                              <i class="bi bi-x-circle"></i>
-                            </button>
-                          }
-                        </div>
-                      </td>
-                    </tr>
-                    
-                    <!-- Error Row -->
-                    @if (task.error_message && task.status === 'FAILURE') {
-                      <tr>
-                        <td colspan="6" class="p-0">
-                          <div class="alert alert-danger mb-0 mx-3 my-2">
-                            <i class="bi bi-exclamation-triangle me-2"></i>
-                            {{ task.error_message }}
-                          </div>
-                        </td>
-                      </tr>
-                    }
-                  }
-                </tbody>
-              </table>
-            </div>
-            
-            <!-- Show More Tasks Info -->
-            @if (tasks.length > maxTasks) {
-              <div class="card-footer text-center">
-                <small class="text-muted">
-                  Showing {{ maxTasks }} of {{ tasks.length }} tasks
-                </small>
-              </div>
-            }
+  <!-- Task List -->
+  <div class="task-list">
+    @if (filteredTasks().length === 0) {
+      <div class="empty-state text-center py-4">
+        <i class="bi bi-list-task fs-1 text-muted mb-3 opacity-50"></i>
+        <h6 class="text-muted mb-2">No tasks found</h6>
+        <p class="text-muted small mb-0">
+          @if (selectedFilter() === 'all') {
+            Background tasks will appear here when they run.
           } @else {
-            <div class="empty-state text-center py-5">
-              <i class="bi bi-list-task fs-1 text-muted mb-3"></i>
-              <h5 class="text-muted">No Background Tasks</h5>
-              <p class="text-muted">Export and import operations will appear here when running.</p>
-            </div>
+            No tasks for this category.
           }
-        } @else {
-          <div class="text-center p-4">
-            <div class="spinner-border text-primary" role="status">
-              <span class="visually-hidden">Loading tasks...</span>
+        </p>
+      </div>
+    } @else {
+      @for (task of filteredTasks() | slice:0:maxTasks; track trackByTaskId($index, task)) {
+        <div class="task-item" [class.active]="task.status === 'QUEUED' || task.status === 'STARTED'">
+          <div class="d-flex p-3">
+            <!-- Status Indicator & Icon -->
+            <div class="flex-shrink-0 me-3 position-relative">
+              <div class="task-icon" [class]="getTaskBadgeClass(task)">
+                <i [class]="getTaskIcon(task)"></i>
+              </div>
+              @if (task.status === 'STARTED') {
+                <span class="active-dot position-absolute top-0 start-100 translate-middle"></span>
+              }
+            </div>
+
+            <!-- Content -->
+            <div class="flex-grow-1 min-w-0">
+              <div class="d-flex justify-content-between align-items-start mb-1">
+                <h6 class="task-title mb-0 text-truncate" [class.fw-bold]="task.status === 'STARTED'">
+                  {{ taskTypeLabels[task.task_type] || task.task_type }}
+                </h6>
+                <small class="text-muted ms-2 flex-shrink-0">{{ getRelativeTime(task.created_at) }}</small>
+              </div>
+              
+              <div class="d-flex align-items-center mb-1">
+                <span class="badge me-2" [class]="getStatusBadgeClass(task.status)">
+                  {{ taskStatusLabels[task.status] || task.status }}
+                </span>
+                @if (task.progress_percentage > 0 && task.status === 'STARTED') {
+                  <div class="progress flex-grow-1 me-2" style="height: 4px;">
+                    <div class="progress-bar bg-primary" 
+                         [style.width.%]="task.progress_percentage"
+                         role="progressbar">
+                    </div>
+                  </div>
+                  <small class="text-muted">{{ task.progress_percentage }}%</small>
+                }
+              </div>
+
+              @if (task.progress_description) {
+                <p class="task-message mb-1 text-muted small">{{ task.progress_description }}</p>
+              }
+
+              @if (task.error_message && task.status === 'FAILURE') {
+                <div class="alert alert-danger small mb-1 py-1">
+                  <i class="bi bi-exclamation-triangle me-1"></i>{{ task.error_message }}
+                </div>
+              }
+              
+              <!-- Validation Results for VALIDATE_TABLE tasks -->
+              @if (task.task_type === 'VALIDATE_TABLE' && task.status === 'SUCCESS' && task.result) {
+                <div class="validation-results small mb-2">
+                  @if (task.result['success']) {
+                    <div class="alert alert-success small mb-1 py-1">
+                      <i class="bi bi-check-circle me-1"></i>Validation passed - no errors found
+                    </div>
+                  } @else {
+                    <div class="alert alert-danger small mb-1 py-1">
+                      <i class="bi bi-x-circle me-1"></i>Validation failed
+                    </div>
+                  }
+                  
+                  @if (task.result['errors'] && task.result['errors'].length > 0) {
+                    <div class="mt-2">
+                      <strong class="text-danger">Errors:</strong>
+                      <ul class="list-unstyled ms-3 mb-0">
+                        @for (error of task.result['errors']; track $index) {
+                          <li class="text-danger small">
+                            <i class="bi bi-dot me-1"></i>{{ error }}
+                          </li>
+                        }
+                      </ul>
+                    </div>
+                  }
+                  
+                  @if (task.result['warnings'] && task.result['warnings'].length > 0) {
+                    <div class="mt-2">
+                      <strong class="text-warning">Warnings:</strong>
+                      <ul class="list-unstyled ms-3 mb-0">
+                        @for (warning of task.result['warnings']; track $index) {
+                          <li class="text-warning small">
+                            <i class="bi bi-dot me-1"></i>{{ warning }}
+                          </li>
+                        }
+                      </ul>
+                    </div>
+                  }
+                </div>
+              }
+              
+              <!-- Metadata Tags -->
+              <div class="task-metadata">
+                @if (task.metadata_table_name) {
+                  <span class="badge bg-secondary me-1">
+                    <i class="bi bi-table me-1"></i>{{ task.metadata_table_name }}
+                  </span>
+                }
+                
+                @if (task.duration) {
+                  <span class="badge bg-info me-1">
+                    <i class="bi bi-clock me-1"></i>{{ formatDuration(task.duration) }}
+                  </span>
+                }
+              </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex-shrink-0 ms-2">
+              <div class="item-actions">
+                @if (canDownloadResult(task)) {
+                  <button 
+                    type="button"
+                    class="btn btn-sm btn-outline-primary"
+                    (click)="downloadResult(task); $event.stopPropagation()"
+                    title="Download result">
+                    <i class="bi bi-download"></i>
+                  </button>
+                }
+                @if (canCancelTask(task)) {
+                  <button 
+                    type="button"
+                    class="btn btn-sm btn-outline-danger"
+                    (click)="cancelTask(task.id); $event.stopPropagation()"
+                    title="Cancel task">
+                    <i class="bi bi-x-circle"></i>
+                  </button>
+                }
+              </div>
             </div>
           </div>
-        }
-      </div>
-    </div>
+        </div>
+      }
+      
+      <!-- Show More Tasks Info -->
+      @if ((tasks$ | async)?.length && (tasks$ | async)!.length > maxTasks) {
+        <div class="text-center p-2 border-top bg-body-secondary">
+          <small class="text-muted">
+            Showing {{ maxTasks }} of {{ (tasks$ | async)!.length }} tasks
+          </small>
+        </div>
+      }
+    }
   </div>
 </div>

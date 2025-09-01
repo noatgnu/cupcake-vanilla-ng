@@ -364,6 +364,16 @@
             <div class="d-flex gap-2 align-items-center">
               @if (viewMode() === 'list') {
                 <span class="badge bg-primary">{{ sortedColumns().length }} columns</span>
+                @if (table() && table()!.can_edit) {
+                  <button
+                    type="button"
+                    class="btn btn-success btn-sm"
+                    (click)="openAddColumnModal()"
+                    [disabled]="isLoading()"
+                    title="Add new column with automatic reordering">
+                    <i class="bi bi-plus-circle me-1"></i>Add Column
+                  </button>
+                }
                 @if (table() && table()!.can_edit && sortedColumns().length === 0) {
                   <small class="text-muted">Import SDRF to add columns</small>
                 }
@@ -373,6 +383,16 @@
                   <span class="badge bg-warning">{{ sortedPools().length }} pools</span>
                 }
                 <span class="badge bg-primary">{{ sortedColumns().length }} columns</span>
+                @if (table() && table()!.can_edit) {
+                  <button
+                    type="button"
+                    class="btn btn-success btn-sm"
+                    (click)="openAddColumnModal()"
+                    [disabled]="isLoading()"
+                    title="Add new column with automatic reordering">
+                    <i class="bi bi-plus-circle me-1"></i>Add Column
+                  </button>
+                }
               }
             </div>
           </div>
@@ -616,7 +636,7 @@
               <h5>No Columns Found</h5>
               <p>This table doesn't have any columns defined yet.</p>
               @if (table()!.can_edit) {
-                <button type="button" class="btn btn-primary">
+                <button type="button" class="btn btn-primary" (click)="openAddColumnModal()">
                   <i class="bi bi-plus me-1"></i>Add First Column
                 </button>
               }

@@ -4,24 +4,32 @@ import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { CommonModule } from '@angular/common';
 import { NavbarComponent } from './shared/components/navbar/navbar';
 import { PoweredByFooterComponent } from './shared/components/powered-by-footer/powered-by-footer';
-import { ToastContainerComponent, SiteConfigService } from 'cupcake-core';
+import { AsyncTaskMonitorComponent } from './shared/components/async-task-monitor/async-task-monitor';
+import { AsyncTaskService } from './shared/services/async-task';
+import { SiteConfigService } from 'cupcake-core';
+import { ToastContainerComponent } from './shared/components/toast-container/toast-container';
+import { ToastService } from './shared/services/toast';
 
 import { BehaviorSubject } from 'rxjs';
 import {ThemeService} from './shared/services/theme';
+import { environment } from '../environments/environment';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, NgbModule, CommonModule, NavbarComponent, PoweredByFooterComponent, ToastContainerComponent],
+  imports: [RouterOutlet, NgbModule, CommonModule, NavbarComponent, PoweredByFooterComponent, AsyncTaskMonitorComponent, ToastContainerComponent],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })
 export class App implements OnInit {
   protected readonly title = signal('cupcake-vanilla-ng');
+  protected readonly environment = environment;
 
   private document = inject(DOCUMENT);
   private siteConfigService = inject(SiteConfigService);
   private themeService = inject(ThemeService);
+  private asyncTaskService = inject(AsyncTaskService);
+  private toastService = inject(ToastService);
 
   // App initialization state
   private appInitializedSubject = new BehaviorSubject<boolean>(false);

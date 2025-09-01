@@ -13,7 +13,7 @@ export interface ToastMessage {
 })
 export class ToastService {
   private toastsSignal = signal<ToastMessage[]>([]);
-  
+
   // Public readonly signal for components to subscribe to
   readonly toasts = this.toastsSignal.asReadonly();
 
@@ -26,6 +26,7 @@ export class ToastService {
       duration,
       dismissible: true
     };
+
 
     this.toastsSignal.update(toasts => [...toasts, toast]);
 

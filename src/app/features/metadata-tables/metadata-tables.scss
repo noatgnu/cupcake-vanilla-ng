@@ -1,0 +1,15 @@
+.metadata-tables-container {
+  .table-active {
+    background-color: rgba(var(--bs-info-rgb), 0.1) !important;
+  }
+  
+  .btn-group-sm {
+    .btn {
+      border-radius: 0.25rem;
+    }
+    
+    .btn:not(:first-child) {
+      margin-left: 0.25rem;
+    }
+  }
+}

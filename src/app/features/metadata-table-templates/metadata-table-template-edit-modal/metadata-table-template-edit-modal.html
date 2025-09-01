@@ -95,6 +95,13 @@
           <button type="button" class="btn btn-sm btn-outline-primary ms-2" (click)="addColumn()">
             <i class="bi bi-plus me-1"></i>Add Column
           </button>
+          @if (isEdit && template?.id) {
+            <button type="button" class="btn btn-sm btn-success ms-2" (click)="addColumnWithAutoReorder()" 
+                    [disabled]="isLoading()"
+                    title="Add column with automatic schema-based reordering">
+              <i class="bi bi-plus-circle me-1"></i>Add Column (Auto-Reorder)
+            </button>
+          }
         </h6>
       </div>
 
@@ -189,9 +196,18 @@
           <div class="text-center py-4 text-muted">
             <i class="bi bi-columns-gap fs-1 mb-2"></i>
             <p>No columns in this template yet.</p>
-            <button type="button" class="btn btn-primary btn-sm" (click)="addColumn()">
-              <i class="bi bi-plus me-1"></i>Add First Column
-            </button>
+            <div class="d-flex gap-2 justify-content-center">
+              <button type="button" class="btn btn-primary btn-sm" (click)="addColumn()">
+                <i class="bi bi-plus me-1"></i>Add First Column
+              </button>
+              @if (isEdit && template?.id) {
+                <button type="button" class="btn btn-success btn-sm" (click)="addColumnWithAutoReorder()" 
+                        [disabled]="isLoading()"
+                        title="Add column with automatic schema-based reordering">
+                  <i class="bi bi-plus-circle me-1"></i>Add with Auto-Reorder
+                </button>
+              }
+            </div>
           </div>
         }
       </div>

@@ -112,6 +112,26 @@
           </button>
         </li>
         
+        <!-- Background Tasks Monitor -->
+        <li class="nav-item dropdown" ngbDropdown>
+          <button
+            class="nav-link btn btn-link position-relative"
+            ngbDropdownToggle
+            [title]="'Background Tasks (' + ((activeTaskCount$ | async) || 0) + ' active)'"
+            style="border: none; background: none; color: inherit;">
+            <i class="bi bi-list-task"></i>
+            @if ((activeTaskCount$ | async) && (activeTaskCount$ | async)! > 0) {
+              <span class="position-absolute badge rounded-pill bg-primary"
+                    style="font-size: 0.6rem; min-width: 1.2rem; height: 1.2rem; top: -2px; right: -8px;">
+                {{ (activeTaskCount$ | async)! > 99 ? '99+' : (activeTaskCount$ | async) }}
+              </span>
+            }
+          </button>
+          <div class="dropdown-menu dropdown-menu-end p-0" ngbDropdownMenu style="width: 450px; max-height: 600px;">
+            <app-async-task-monitor [maxTasks]="10" [autoRefresh]="true"></app-async-task-monitor>
+          </div>
+        </li>
+        
         <!-- Notifications -->
         <li class="nav-item dropdown" ngbDropdown>
           <button
@@ -121,8 +141,8 @@
             style="border: none; background: none; color: inherit;">
             <i class="bi bi-bell"></i>
             @if (unreadCount() > 0) {
-              <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-                    style="font-size: 0.6rem; min-width: 1.2rem; height: 1.2rem;">
+              <span class="position-absolute badge rounded-pill bg-danger"
+                    style="font-size: 0.6rem; min-width: 1.2rem; height: 1.2rem; top: -2px; right: -8px;">
                 {{ unreadCount() > 99 ? '99+' : unreadCount() }}
               </span>
             }

@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectorRef, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { ToastService, ToastMessage } from '../../services/toast';
@@ -12,8 +12,17 @@ import { ToastService, ToastMessage } from '../../services/toast';
 })
 export class ToastContainerComponent {
   private toastService = inject(ToastService);
-  
+  private cdr = inject(ChangeDetectorRef);
+
   toasts = this.toastService.toasts;
+
+  constructor() {
+    // Use effect to track signal changes and trigger change detection
+    effect(() => {
+      const currentToasts = this.toasts();
+      this.cdr.detectChanges(); // Manually trigger change detection
+    });
+  }
 
   remove(toast: ToastMessage) {
     this.toastService.remove(toast.id);

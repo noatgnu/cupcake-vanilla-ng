@@ -224,6 +224,25 @@ export class ApiService {
     return this.http.delete<void>(`${this.apiUrl}/metadata-table-templates/${id}/`);
   }
 
+  // Add column to template with automatic reordering
+  addColumnWithAutoReorderToTemplate(templateId: number, columnData: {
+    column_data: Partial<MetadataColumn>;
+    position?: number;
+    auto_reorder?: boolean;
+  }): Observable<{
+    message: string;
+    column: MetadataColumn;
+    reordered: boolean;
+    schema_ids_used: number[];
+  }> {
+    return this.http.post<{
+      message: string;
+      column: MetadataColumn;
+      reordered: boolean;
+      schema_ids_used: number[];
+    }>(`${this.apiUrl}/metadata-table-templates/${templateId}/add_column_with_auto_reorder/`, columnData);
+  }
+
   // Schema-based template creation
   getAvailableSchemas(): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/schemas/available/`);
@@ -348,6 +367,25 @@ export class ApiService {
 
   deleteMetadataTable(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/metadata-tables/${id}/`);
+  }
+
+  // Add column with automatic reordering
+  addColumnWithAutoReorder(tableId: number, columnData: {
+    column_data: Partial<MetadataColumn>;
+    position?: number;
+    auto_reorder?: boolean;
+  }): Observable<{
+    message: string;
+    column: MetadataColumn;
+    reordered: boolean;
+    schema_ids_used: number[];
+  }> {
+    return this.http.post<{
+      message: string;
+      column: MetadataColumn;
+      reordered: boolean;
+      schema_ids_used: number[];
+    }>(`${this.apiUrl}/metadata-tables/${tableId}/add_column_with_auto_reorder/`, columnData);
   }
 
   // Sample Pool Management

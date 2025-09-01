@@ -1,16 +1,21 @@
-import { Component, OnInit, signal, computed, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, computed, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { NgbModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs';
 import { MetadataTable, MetadataColumn, SamplePool } from '../../shared/models';
 import { ApiService } from '../../shared/services/api';
 import { ToastService } from '../../shared/services/toast';
+import { AsyncTaskService } from '../../shared/services/async-task';
 import { MetadataValueEditModal, MetadataValueEditConfig } from '../../shared/components/metadata-value-edit-modal/metadata-value-edit-modal';
 import { MetadataTableEditModal } from '../../shared/components/metadata-table-edit-modal/metadata-table-edit-modal';
 import { SamplePoolDetailsModal } from '../../shared/components/sample-pool-details-modal/sample-pool-details-modal';
 import { SamplePoolEditModal } from '../../shared/components/sample-pool-edit-modal/sample-pool-edit-modal';
 import { SamplePoolCreateModal } from '../../shared/components/sample-pool-create-modal/sample-pool-create-modal';
 import { ExcelExportModalComponent, ExcelExportOptions } from '../../shared/components/excel-export-modal/excel-export-modal';
+import { ColumnEditModal } from '../metadata-table-templates/column-edit-modal/column-edit-modal';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-metadata-table-details',
@@ -19,7 +24,8 @@ import { ExcelExportModalComponent, ExcelExportOptions } from '../../shared/comp
   templateUrl: './metadata-table-details.html',
   styleUrl: './metadata-table-details.scss'
 })
-export class MetadataTableDetailsComponent implements OnInit {
+export class MetadataTableDetailsComponent implements OnInit, OnDestroy {
+  private destroy$ = new Subject<void>();
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
   @ViewChild('excelInput') excelInput!: ElementRef<HTMLInputElement>;
 
@@ -48,7 +54,7 @@ export class MetadataTableDetailsComponent implements OnInit {
   sortBy(field: string): void {
     const currentField = this.sortField();
     const currentDirection = this.sortDirection();
-    
+
     if (currentField === field) {
       // Toggle direction if same field
       this.sortDirection.set(currentDirection === 'asc' ? 'desc' : 'asc');
@@ -62,11 +68,11 @@ export class MetadataTableDetailsComponent implements OnInit {
   getSortIcon(field: string): string {
     const currentField = this.sortField();
     const currentDirection = this.sortDirection();
-    
+
     if (currentField !== field) {
       return 'bi-arrow-down-up'; // Default unsorted icon
     }
-    
+
     return currentDirection === 'asc' ? 'bi-sort-alpha-down' : 'bi-sort-alpha-up';
   }
 
@@ -82,7 +88,7 @@ export class MetadataTableDetailsComponent implements OnInit {
   currentPage = signal(1);
   pageSize = signal(10);
   columnFilter = signal('');
-  
+
   // Sorting
   sortField = signal<string>('');
   sortDirection = signal<'asc' | 'desc'>('asc');
@@ -98,17 +104,17 @@ export class MetadataTableDetailsComponent implements OnInit {
     const filter = this.columnFilter().toLowerCase();
     const sortField = this.sortField();
     const sortDirection = this.sortDirection();
-    
+
     let filtered = [...columns]
       .filter(col => col && col.name) // Ensure column has valid data
       .filter(col => !filter || col.name.toLowerCase().includes(filter)); // Apply filter
-    
+
     // Apply sorting
     if (sortField) {
       filtered.sort((a, b) => {
         let aValue: any = '';
         let bValue: any = '';
-        
+
         switch (sortField) {
           case 'name':
             aValue = a.name?.toLowerCase() || '';
@@ -133,7 +139,7 @@ export class MetadataTableDetailsComponent implements OnInit {
           default:
             return 0;
         }
-        
+
         if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
         if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
         return 0;
@@ -142,7 +148,7 @@ export class MetadataTableDetailsComponent implements OnInit {
       // Default sort by position
       filtered.sort((a, b) => (a.column_position || 0) - (b.column_position || 0));
     }
-    
+
     return filtered;
   });
   sortedPools = computed(() => {
@@ -179,7 +185,7 @@ export class MetadataTableDetailsComponent implements OnInit {
 
     const rows: any[] = [];
     this.sortedPools().forEach(pool => {
-      const row: any = { 
+      const row: any = {
         _poolName: pool.pool_name,
         _poolId: pool.id,
         _poolData: pool
@@ -188,10 +194,10 @@ export class MetadataTableDetailsComponent implements OnInit {
       // For each column, get the value from the pool's metadata_columns
       this.sortedColumns().forEach(column => {
         let value = '';
-        
+
         // Find the corresponding metadata column in this pool by matching column IDs if available
         // or fall back to name matching for compatibility
-        const poolColumn = pool.metadata_columns?.find(pc => 
+        const poolColumn = pool.metadata_columns?.find(pc =>
           (pc.id && column.id && pc.id === column.id) || pc.name === column.name
         );
         if (poolColumn) {
@@ -229,6 +235,7 @@ export class MetadataTableDetailsComponent implements OnInit {
     private router: Router,
     private apiService: ApiService,
     private toastService: ToastService,
+    private asyncTaskService: AsyncTaskService,
     private modalService: NgbModal
   ) {}
 
@@ -241,9 +248,28 @@ export class MetadataTableDetailsComponent implements OnInit {
         this.tableId.set(id);
         this.viewMode.set(mode);
         this.loadTable(id);
+        this.setupAsyncTaskRefreshListener(id);
       } else {
         this.toastService.error('Invalid table ID');
         this.navigateBack();
+      }
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  private setupAsyncTaskRefreshListener(tableId: number): void {
+    // Listen for metadata table refresh events when import tasks complete for this specific table
+    this.asyncTaskService.metadataTableRefresh$.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe((refreshedTableId: number) => {
+      if (refreshedTableId === tableId) {
+        console.log(`Import task completed for table ${refreshedTableId}, refreshing table details`);
+        this.toastService.info('Refreshing table data after successful import');
+        this.loadTable(tableId);
       }
     });
   }
@@ -341,30 +367,52 @@ export class MetadataTableDetailsComponent implements OnInit {
     }
 
     if (confirm(`Import SDRF data into table "${table.name}"?\n\nThis will add new columns and may modify existing data.`)) {
-      this.isLoading.set(true);
+      input.value = ''; // Reset input early
 
-      this.apiService.importSdrfFile({
-        file,
-        metadata_table_id: table.id,
-        import_type: 'user_metadata',
-        create_pools: true,
-        replace_existing: false
-      }).subscribe({
-        next: (response) => {
-          this.isLoading.set(false);
-          this.toastService.success('SDRF file imported successfully!');
-          // Reload table data to show imported columns
-          this.loadTable(table.id);
-          input.value = ''; // Reset input
-        },
-        error: (error) => {
-          this.isLoading.set(false);
-          console.error('Error importing SDRF:', error);
-          const errorMsg = error?.error?.detail || error?.error?.message || 'Failed to import SDRF file';
-          this.toastService.error(errorMsg);
-          input.value = ''; // Reset input
-        }
-      });
+      // Use async import if enabled
+      if (environment.features?.asyncTasks) {
+        this.asyncTaskService.queueSdrfImport({
+          file,
+          metadata_table_id: table.id,
+          replace_existing: false,
+          validate_ontologies: true
+        }).subscribe({
+          next: (response) => {
+            this.toastService.success(`SDRF import queued successfully! Task ID: ${response.task_id}`);
+            // Start monitoring tasks if not already started
+            this.asyncTaskService.startRealtimeUpdates();
+          },
+          error: (error) => {
+            console.error('Error queuing SDRF import:', error);
+            const errorMsg = error?.error?.detail || error?.error?.message || 'Failed to queue SDRF import';
+            this.toastService.error(errorMsg);
+          }
+        });
+      } else {
+        // Use synchronous import
+        this.isLoading.set(true);
+
+        this.apiService.importSdrfFile({
+          file,
+          metadata_table_id: table.id,
+          import_type: 'user_metadata',
+          create_pools: true,
+          replace_existing: false
+        }).subscribe({
+          next: (response) => {
+            this.isLoading.set(false);
+            this.toastService.success('SDRF file imported successfully!');
+            // Reload table data to show imported columns
+            this.loadTable(table.id);
+          },
+          error: (error) => {
+            this.isLoading.set(false);
+            console.error('Error importing SDRF:', error);
+            const errorMsg = error?.error?.detail || error?.error?.message || 'Failed to import SDRF file';
+            this.toastService.error(errorMsg);
+          }
+        });
+      }
     } else {
       input.value = ''; // Reset input if cancelled
     }
@@ -386,30 +434,52 @@ export class MetadataTableDetailsComponent implements OnInit {
     }
 
     if (confirm(`Import Excel data into table "${table.name}"?\n\nThis will update existing columns and may modify data.`)) {
-      this.isLoading.set(true);
+      input.value = ''; // Reset input early
 
-      this.apiService.importExcelFile({
-        file,
-        metadata_table_id: table.id,
-        import_type: 'user_metadata',
-        create_pools: true,
-        replace_existing: false
-      }).subscribe({
-        next: (response) => {
-          this.isLoading.set(false);
-          this.toastService.success('Excel file imported successfully!');
-          // Reload table data to show updated columns
-          this.loadTable(table.id);
-          input.value = ''; // Reset input
-        },
-        error: (error) => {
-          this.isLoading.set(false);
-          console.error('Error importing Excel:', error);
-          const errorMsg = error?.error?.detail || error?.error?.message || 'Failed to import Excel file';
-          this.toastService.error(errorMsg);
-          input.value = ''; // Reset input
-        }
-      });
+      // Use async import if enabled
+      if (environment.features?.asyncTasks) {
+        this.asyncTaskService.queueExcelImport({
+          file,
+          metadata_table_id: table.id,
+          replace_existing: false,
+          validate_ontologies: true
+        }).subscribe({
+          next: (response) => {
+            this.toastService.success(`Excel import queued successfully! Task ID: ${response.task_id}`);
+            // Start monitoring tasks if not already started
+            this.asyncTaskService.startRealtimeUpdates();
+          },
+          error: (error) => {
+            console.error('Error queuing Excel import:', error);
+            const errorMsg = error?.error?.detail || error?.error?.message || 'Failed to queue Excel import';
+            this.toastService.error(errorMsg);
+          }
+        });
+      } else {
+        // Use synchronous import
+        this.isLoading.set(true);
+
+        this.apiService.importExcelFile({
+          file,
+          metadata_table_id: table.id,
+          import_type: 'user_metadata',
+          create_pools: true,
+          replace_existing: false
+        }).subscribe({
+          next: (response) => {
+            this.isLoading.set(false);
+            this.toastService.success('Excel file imported successfully!');
+            // Reload table data to show updated columns
+            this.loadTable(table.id);
+          },
+          error: (error) => {
+            this.isLoading.set(false);
+            console.error('Error importing Excel:', error);
+            const errorMsg = error?.error?.detail || error?.error?.message || 'Failed to import Excel file';
+            this.toastService.error(errorMsg);
+          }
+        });
+      }
     } else {
       input.value = ''; // Reset input if cancelled
     }
@@ -441,10 +511,8 @@ export class MetadataTableDetailsComponent implements OnInit {
   }
 
   private performExcelExport(table: MetadataTable, options: ExcelExportOptions): void {
-    this.isLoading.set(true);
-
     const columnIds = table.columns!.map(col => col.id!);
-    
+
     // Prepare lab group IDs based on options
     let labGroupIds: number[] | undefined = undefined;
     if (options.includeLabGroups === 'selected') {
@@ -455,32 +523,81 @@ export class MetadataTableDetailsComponent implements OnInit {
     }
     // For 'none', labGroupIds stays undefined
 
-    const exportRequest = this.apiService.exportExcelTemplate({
-      metadata_table_id: table.id,
-      metadata_column_ids: columnIds,
-      sample_number: table.sample_count,
-      export_format: 'excel',
-      include_pools: options.includePools,
-      lab_group_ids: labGroupIds
-    });
+    // Use async export if enabled
+    if (environment.features?.asyncTasks) {
+      this.asyncTaskService.queueExcelExport({
+        metadata_table_id: table.id,
+        metadata_column_ids: columnIds,
+        sample_number: table.sample_count,
+        export_format: 'excel',
+        include_pools: options.includePools,
+        lab_group_ids: labGroupIds
+      }).subscribe({
+        next: (response) => {
+          this.toastService.success(`Excel export queued successfully! Task ID: ${response.task_id}`);
+          // Start monitoring tasks if not already started
+          this.asyncTaskService.startRealtimeUpdates();
+        },
+        error: (error) => {
+          console.error('Error queuing Excel export:', error);
+          const errorMsg = error?.error?.detail || error?.error?.message || 'Failed to queue Excel export';
+          this.toastService.error(errorMsg);
+        }
+      });
+    } else {
+      // Use synchronous export
+      this.isLoading.set(true);
 
-    this.handleExportRequest(exportRequest, 'excel');
+      const exportRequest = this.apiService.exportExcelTemplate({
+        metadata_table_id: table.id,
+        metadata_column_ids: columnIds,
+        sample_number: table.sample_count,
+        export_format: 'excel',
+        include_pools: options.includePools,
+        lab_group_ids: labGroupIds
+      });
+
+      this.handleExportRequest(exportRequest, 'excel');
+    }
   }
 
   private performSdrfExport(table: MetadataTable): void {
-    this.isLoading.set(true);
-
     const columnIds = table.columns!.map(col => col.id!);
 
-    const exportRequest = this.apiService.exportSdrfFile({
-          metadata_table_id: table.id,
-          metadata_column_ids: columnIds,
-          sample_number: table.sample_count,
-          export_format: 'sdrf',
-          include_pools: false
-        });
+    // Use async export if enabled
+    if (environment.features?.asyncTasks) {
+      this.asyncTaskService.queueSdrfExport({
+        metadata_table_id: table.id,
+        metadata_column_ids: columnIds,
+        sample_number: table.sample_count,
+        export_format: 'sdrf',
+        include_pools: true
+      }).subscribe({
+        next: (response) => {
+          this.toastService.success(`SDRF export queued successfully! Task ID: ${response.task_id}`);
+          // Start monitoring tasks if not already started
+          this.asyncTaskService.startRealtimeUpdates();
+        },
+        error: (error) => {
+          console.error('Error queuing SDRF export:', error);
+          const errorMsg = error?.error?.detail || error?.error?.message || 'Failed to queue SDRF export';
+          this.toastService.error(errorMsg);
+        }
+      });
+    } else {
+      // Use synchronous export
+      this.isLoading.set(true);
 
-    this.handleExportRequest(exportRequest, 'sdrf');
+      const exportRequest = this.apiService.exportSdrfFile({
+        metadata_table_id: table.id,
+        metadata_column_ids: columnIds,
+        sample_number: table.sample_count,
+        export_format: 'sdrf',
+        include_pools: true
+      });
+
+      this.handleExportRequest(exportRequest, 'sdrf');
+    }
   }
 
   private handleExportRequest(exportRequest: any, format: 'excel' | 'sdrf'): void {
@@ -581,12 +698,12 @@ export class MetadataTableDetailsComponent implements OnInit {
     else if (type.includes('source')) baseClass = 'bg-warning-subtle text-warning-emphasis';
     else if (type === 'special') baseClass = 'bg-danger-subtle text-danger-emphasis';
     else baseClass = 'bg-body-secondary text-body';
-    
+
     // Add hidden column styling
     if (column.hidden) {
       baseClass += ' opacity-50 text-decoration-line-through';
     }
-    
+
     return baseClass;
   }
 
@@ -646,7 +763,7 @@ export class MetadataTableDetailsComponent implements OnInit {
     const pooledOnly = pool.pooled_only_samples.length;
     const pooledAndIndependent = pool.pooled_and_independent_samples.length;
     const total = pooledOnly + pooledAndIndependent;
-    
+
     if (pooledOnly > 0 && pooledAndIndependent > 0) {
       return `${total} samples (${pooledOnly} pool-only, ${pooledAndIndependent} shared)`;
     } else if (pooledOnly > 0) {
@@ -661,12 +778,12 @@ export class MetadataTableDetailsComponent implements OnInit {
   getPoolSamples(pool: SamplePool): string {
     const allSamples = [...pool.pooled_only_samples, ...pool.pooled_and_independent_samples].sort((a, b) => a - b);
     if (allSamples.length === 0) return 'None';
-    
+
     // Group consecutive numbers into ranges
     const ranges: string[] = [];
     let start = allSamples[0];
     let end = allSamples[0];
-    
+
     for (let i = 1; i < allSamples.length; i++) {
       if (allSamples[i] === end + 1) {
         end = allSamples[i];
@@ -676,7 +793,7 @@ export class MetadataTableDetailsComponent implements OnInit {
       }
     }
     ranges.push(start === end ? start.toString() : `${start}-${end}`);
-    
+
     return ranges.join(', ');
   }
 
@@ -748,7 +865,7 @@ export class MetadataTableDetailsComponent implements OnInit {
     if (!table || !pool.id) return;
 
     const confirmMessage = `Are you sure you want to delete the pool "${pool.pool_name}"?\n\nThis action cannot be undone.`;
-    
+
     if (confirm(confirmMessage)) {
       this.apiService.deleteSamplePool(pool.id).subscribe({
         next: () => {
@@ -796,7 +913,7 @@ export class MetadataTableDetailsComponent implements OnInit {
     });
 
     modalRef.componentInstance.config = config;
-    
+
     // Debug log to check if multi-sample editing is enabled
     console.log('Multi-sample editing config:', {
       enableMultiSampleEdit: config.enableMultiSampleEdit,
@@ -806,7 +923,7 @@ export class MetadataTableDetailsComponent implements OnInit {
 
     modalRef.componentInstance.valueSaved.subscribe((result: string | { value: string; sampleIndices: number[] }) => {
       let apiData: any;
-      
+
       if (typeof result === 'string') {
         // Simple string value - update default
         apiData = {
@@ -828,7 +945,7 @@ export class MetadataTableDetailsComponent implements OnInit {
           // Update the local column data with the returned column
           const currentTable = this.table();
           if (currentTable && response.column) {
-            const updatedColumns = currentTable.columns.map(col => 
+            const updatedColumns = currentTable.columns.map(col =>
               col.id === column.id ? response.column : col
             );
             this.table.set({ ...currentTable, columns: updatedColumns });
@@ -850,17 +967,17 @@ export class MetadataTableDetailsComponent implements OnInit {
     if (!table || !table.can_edit || !column.id) return;
 
     const newHiddenValue = !column.hidden;
-    
+
     this.apiService.updateMetadataColumn(column.id, { hidden: newHiddenValue }).subscribe({
       next: (updatedColumn) => {
         // Update the local column data
         const currentTable = this.table();
         if (currentTable) {
-          const updatedColumns = currentTable.columns.map(col => 
+          const updatedColumns = currentTable.columns.map(col =>
             col.id === column.id ? updatedColumn : col
           );
           this.table.set({ ...currentTable, columns: updatedColumns });
-          
+
           // Reload the table data to sync pool columns
           this.loadTable(table.id);
         }
@@ -915,7 +1032,7 @@ export class MetadataTableDetailsComponent implements OnInit {
         });
         this.table.set({ ...currentTable, sample_pools: updatedPools });
       }
-      
+
       this.toastService.success('Pool column value updated successfully!');
       modalRef.componentInstance.onClose();
     });
@@ -957,7 +1074,7 @@ export class MetadataTableDetailsComponent implements OnInit {
           // Update the local column data with the returned column
           const currentTable = this.table();
           if (currentTable && response.column) {
-            const updatedColumns = currentTable.columns.map(col => 
+            const updatedColumns = currentTable.columns.map(col =>
               col.id === column.id ? response.column : col
             );
             this.table.set({ ...currentTable, columns: updatedColumns });
@@ -1011,7 +1128,7 @@ export class MetadataTableDetailsComponent implements OnInit {
     if (!table || !table.can_edit || !column.id) return;
 
     const confirmMessage = `Are you sure you want to remove the column "${column.name}"?\n\nThis action cannot be undone and will remove all data in this column.`;
-    
+
     if (confirm(confirmMessage)) {
       this.apiService.deleteMetadataColumn(column.id).subscribe({
         next: () => {
@@ -1029,5 +1146,69 @@ export class MetadataTableDetailsComponent implements OnInit {
         }
       });
     }
+  }
+
+  /**
+   * Open modal to add a new column with automatic reordering
+   */
+  openAddColumnModal(): void {
+    const modalRef = this.modalService.open(ColumnEditModal, {
+      size: 'lg',
+      backdrop: 'static',
+      keyboard: false
+    });
+
+    // Configure modal for adding new column
+    modalRef.componentInstance.column = null;
+    modalRef.componentInstance.templateId = null;
+    modalRef.componentInstance.isEdit = false;
+
+    // Handle column save
+    modalRef.componentInstance.columnSaved.subscribe((columnData: Partial<MetadataColumn>) => {
+      this.addColumnWithAutoReorder(columnData);
+      modalRef.componentInstance.onClose();
+    });
+  }
+
+  /**
+   * Add a new column using the new API with automatic reordering
+   */
+  private addColumnWithAutoReorder(columnData: Partial<MetadataColumn>): void {
+    const currentTable = this.table();
+    if (!currentTable) {
+      this.toastService.error('No table selected');
+      return;
+    }
+
+    this.isLoading.set(true);
+
+    this.apiService.addColumnWithAutoReorder(currentTable.id, {
+      column_data: columnData,
+      auto_reorder: true
+    }).subscribe({
+      next: (response) => {
+        // Update the local table data with the new column
+        const updatedColumns = [...currentTable.columns, response.column];
+        this.table.set({ ...currentTable, columns: updatedColumns });
+
+        // Show success message with reordering info
+        let message = `Column "${response.column.name}" added successfully!`;
+        if (response.reordered) {
+          message += ` Columns reordered using ${response.schema_ids_used.length} schema(s).`;
+        }
+        
+        this.toastService.success(message);
+
+        // Refresh the table to get the latest column positions
+        this.loadTable(currentTable.id);
+      },
+      error: (error) => {
+        console.error('Error adding column:', error);
+        this.toastService.error('Failed to add column');
+      },
+      complete: () => {
+        this.isLoading.set(false);
+      }
+    });
   }
 }

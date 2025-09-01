@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, Input } from '@angular/core';
+import { Component, OnInit, OnDestroy, Input, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Observable, Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -21,6 +21,33 @@ export class AsyncTaskMonitorComponent implements OnInit, OnDestroy {
   tasks$!: Observable<TaskListItem[]>;
   activeTasks$!: Observable<TaskListItem[]>;
 
+  // Filter state using signals
+  selectedFilter = signal<'all' | 'active' | 'completed' | 'failed'>('all');
+  allTasks = signal<TaskListItem[]>([]);
+  
+  // Computed filtered tasks
+  filteredTasks = computed(() => {
+    const tasks = this.allTasks();
+    const filter = this.selectedFilter();
+    
+    // Ensure tasks is always an array
+    if (!Array.isArray(tasks)) {
+      console.warn('filteredTasks: tasks is not an array:', tasks);
+      return [];
+    }
+    
+    switch (filter) {
+      case 'active':
+        return tasks.filter(task => task.status === 'QUEUED' || task.status === 'STARTED');
+      case 'completed':
+        return tasks.filter(task => task.status === 'SUCCESS');
+      case 'failed':
+        return tasks.filter(task => task.status === 'FAILURE');
+      default:
+        return tasks;
+    }
+  });
+
   // Labels and colors for display
   readonly taskTypeLabels = TASK_TYPE_LABELS;
   readonly taskStatusLabels = TASK_STATUS_LABELS;
@@ -29,21 +56,22 @@ export class AsyncTaskMonitorComponent implements OnInit, OnDestroy {
   constructor(private asyncTaskService: AsyncTaskService) {}
 
   ngOnInit(): void {
+    console.log('AsyncTaskMonitorComponent ngOnInit');
     this.tasks$ = this.asyncTaskService.tasks$;
     this.activeTasks$ = this.asyncTaskService.activeTasks$;
     
-    if (this.autoRefresh) {
-      this.asyncTaskService.startRealtimeUpdates();
-    }
+    // Subscribe to tasks and update signal - component only displays data
+    this.tasks$.pipe(takeUntil(this.destroy$)).subscribe(tasks => {
+      // Ensure tasks is always an array
+      const taskArray = Array.isArray(tasks) ? tasks : [];
+      console.log('AsyncTaskMonitor received tasks:', taskArray.length);
+      this.allTasks.set(taskArray);
+    });
   }
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
-    
-    if (this.autoRefresh) {
-      this.asyncTaskService.stopRealtimeUpdates();
-    }
   }
 
   /**
@@ -141,6 +169,68 @@ export class AsyncTaskMonitorComponent implements OnInit, OnDestroy {
    */
   trackByTaskId(index: number, task: TaskListItem): string {
     return task.id;
+  }
+
+  /**
+   * Set filter for tasks
+   */
+  setFilter(filter: 'all' | 'active' | 'completed' | 'failed'): void {
+    this.selectedFilter.set(filter);
+  }
+
+  /**
+   * Clear completed tasks
+   */
+  clearCompletedTasks(): void {
+    // This would typically call a service method to clear completed tasks
+    console.log('Clear completed tasks - to be implemented');
+  }
+
+  /**
+   * Get task icon based on task type and status
+   */
+  getTaskIcon(task: TaskListItem): string {
+    if (task.status === 'STARTED') {
+      return 'bi bi-hourglass-split';
+    }
+    
+    switch (task.task_type) {
+      case 'EXPORT_EXCEL':
+        return 'bi bi-file-earmark-excel';
+      case 'EXPORT_SDRF':
+        return 'bi bi-file-earmark-text';
+      case 'EXPORT_MULTIPLE_SDRF':
+        return 'bi bi-collection';
+      case 'EXPORT_MULTIPLE_EXCEL':
+        return 'bi bi-files';
+      case 'IMPORT_SDRF':
+      case 'IMPORT_EXCEL':
+        return 'bi bi-upload';
+      default:
+        return 'bi bi-gear';
+    }
+  }
+
+  /**
+   * Get task badge class based on status
+   */
+  getTaskBadgeClass(task: TaskListItem): string {
+    const baseClass = 'task-icon';
+    
+    switch (task.status) {
+      case 'QUEUED':
+        return `${baseClass} bg-secondary`;
+      case 'STARTED':
+        return `${baseClass} bg-primary`;
+      case 'SUCCESS':
+        return `${baseClass} bg-success`;
+      case 'FAILURE':
+        return `${baseClass} bg-danger`;
+      case 'CANCELLED':
+        return `${baseClass} bg-warning`;
+      default:
+        return `${baseClass} bg-secondary`;
+    }
   }
 
   /**

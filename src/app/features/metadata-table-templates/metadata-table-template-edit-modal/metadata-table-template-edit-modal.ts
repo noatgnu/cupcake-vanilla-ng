@@ -5,6 +5,8 @@ import { NgbActiveModal, NgbModule, NgbModal } from '@ng-bootstrap/ng-bootstrap'
 import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { MetadataTableTemplate, LabGroup, MetadataColumn, ResourceVisibility } from '../../../shared/models';
 import { ColumnEditModal } from '../column-edit-modal/column-edit-modal';
+import { ApiService } from '../../../shared/services/api';
+import { ToastService } from '../../../shared/services/toast';
 
 @Component({
   selector: 'app-metadata-table-template-edit-modal',
@@ -46,7 +48,9 @@ export class MetadataTableTemplateEditModal implements OnInit {
   constructor(
     private fb: FormBuilder,
     private activeModal: NgbActiveModal,
-    private modalService: NgbModal
+    private modalService: NgbModal,
+    private apiService: ApiService,
+    private toastService: ToastService
   ) {
     this.editForm = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(3)]],
@@ -145,6 +149,15 @@ export class MetadataTableTemplateEditModal implements OnInit {
     this.openColumnModal(null, false);
   }
 
+  addColumnWithAutoReorder() {
+    // Only available for existing templates
+    if (!this.isEdit || !this.template?.id) {
+      this.toastService.error('Auto-reorder is only available for existing templates');
+      return;
+    }
+    this.openColumnModal(null, false, true);
+  }
+
   editColumn(column: MetadataColumn) {
     this.openColumnModal(column, true);
   }
@@ -188,7 +201,7 @@ export class MetadataTableTemplateEditModal implements OnInit {
     this._templateColumns.set(currentColumns);
   }
 
-  private openColumnModal(column: MetadataColumn | null, isEdit: boolean) {
+  private openColumnModal(column: MetadataColumn | null, isEdit: boolean, useAutoReorder: boolean = false) {
     const modalRef = this.modalService.open(ColumnEditModal, {
       size: 'lg',
       backdrop: 'static',
@@ -200,7 +213,11 @@ export class MetadataTableTemplateEditModal implements OnInit {
     modalRef.componentInstance.isEdit = isEdit;
 
     modalRef.componentInstance.columnSaved.subscribe((columnData: Partial<MetadataColumn>) => {
-      this.handleColumnSave(columnData, column, isEdit);
+      if (useAutoReorder && this.template?.id) {
+        this.handleColumnSaveWithAutoReorder(columnData);
+      } else {
+        this.handleColumnSave(columnData, column, isEdit);
+      }
       modalRef.componentInstance.onClose();
     });
   }
@@ -235,6 +252,52 @@ export class MetadataTableTemplateEditModal implements OnInit {
       this.enforceGrouping(updatedColumns);
       this.normalizeColumnPositions(updatedColumns);
       this._templateColumns.set(updatedColumns);
+    }
+  }
+
+  private handleColumnSaveWithAutoReorder(columnData: Partial<MetadataColumn>): void {
+    if (!this.template?.id) {
+      this.toastService.error('Template ID not found');
+      return;
+    }
+
+    this.isLoading.set(true);
+    this.apiService.addColumnWithAutoReorderToTemplate(this.template.id, {
+      column_data: columnData,
+      auto_reorder: true
+    }).subscribe({
+      next: (response) => {
+        this.isLoading.set(false);
+        
+        // Refresh the template data by reloading it
+        this.reloadTemplateColumns();
+        
+        // Show success message with reordering info
+        let message = `Column "${response.column.name}" added successfully!`;
+        if (response.reordered) {
+          message += ` Columns reordered using ${response.schema_ids_used.length} schema(s).`;
+        }
+        
+        this.toastService.success(message);
+      },
+      error: (error) => {
+        this.isLoading.set(false);
+        console.error('Error adding column with auto-reorder:', error);
+        this.toastService.error('Failed to add column with auto-reorder');
+      }
+    });
+  }
+
+  private reloadTemplateColumns(): void {
+    if (this.template?.id) {
+      this.apiService.getMetadataTableTemplate(this.template.id).subscribe({
+        next: (updatedTemplate) => {
+          this._templateColumns.set([...updatedTemplate.user_columns || []]);
+        },
+        error: (error) => {
+          console.error('Error reloading template columns:', error);
+        }
+      });
     }
   }
 

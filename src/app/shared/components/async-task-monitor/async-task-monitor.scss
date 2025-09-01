@@ -1,110 +1,220 @@
-// Async Task Monitor consistent with application styling
-.async-task-monitor-container {
-  // Progress bar styling
-  .progress {
-    height: 6px;
-    border-radius: 3px;
+// Async Task Monitor Content - Similar to notification panel
+.async-task-monitor-content {
+  width: 100%;
+  max-height: 600px;
+  
+  // Task header styling
+  .task-monitor-header {
+    background-color: var(--bs-body-bg);
+    border-bottom: 1px solid var(--bs-border-color);
+  }
+
+  // Filter tabs styling
+  .task-filters {
+    .d-flex.overflow-auto {
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      
+      &::-webkit-scrollbar {
+        display: none;
+      }
+    }
     
-    .progress-bar {
-      border-radius: 3px;
-      transition: width 0.6s ease;
+    // Improve outline button visibility
+    .btn-outline-secondary {
+      border-color: var(--bs-border-color);
+      color: var(--bs-body-color);
+      
+      &:hover {
+        background-color: var(--bs-secondary);
+        border-color: var(--bs-secondary);
+        color: var(--bs-white);
+      }
     }
   }
 
-  // Status badge colors
-  .badge {
-    font-size: 0.75rem;
-    font-weight: 500;
+  // Task list styling
+  .task-list {
+    max-height: 400px;
+    overflow-y: auto;
     
-    &.bg-primary {
-      animation: pulse 2s infinite;
-    }
-  }
-
-  // Table row status colors (subtle backgrounds)
-  .table {
-    tbody tr {
-      &.table-primary {
+    .task-item {
+      transition: all 0.2s ease;
+      border-bottom: 1px solid var(--bs-border-color);
+      
+      &:hover {
         background-color: rgba(var(--bs-primary-rgb), 0.05);
       }
       
-      &.table-success {
-        background-color: rgba(var(--bs-success-rgb), 0.05);
+      &.active {
+        background-color: rgba(var(--bs-info-rgb), 0.05);
+        border-left: 3px solid var(--bs-primary);
+        
+        .task-title {
+          font-weight: 600;
+        }
       }
       
-      &.table-danger {
-        background-color: rgba(var(--bs-danger-rgb), 0.05);
-      }
-      
-      &.table-warning {
-        background-color: rgba(var(--bs-warning-rgb), 0.05);
+      &:last-child {
+        border-bottom: none;
       }
     }
   }
-
-  // Empty state styling
-  .empty-state {
-    i {
-      opacity: 0.3;
-    }
-  }
-
-  // Button group styling for actions
-  .btn-group-sm .btn {
-    padding: 0.25rem 0.5rem;
+  
+  // Task icon styling
+  .task-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--bs-body-bg);
     
     i {
-      font-size: 0.875rem;
+      font-size: 1rem;
+    }
+  }
+  
+  // Active indicator dot
+  .active-dot {
+    width: 0.75rem;
+    height: 0.75rem;
+    background-color: var(--bs-primary);
+    border: 2px solid var(--bs-body-bg);
+    border-radius: 50%;
+  }
+  
+  // Item actions (initially hidden, shown on hover)
+  .item-actions {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    display: flex;
+    gap: 0.25rem;
+    
+    .btn {
+      padding: 0.25rem 0.5rem;
+      font-size: 0.75rem;
+    }
+    
+    // Improve outline button visibility
+    .btn-outline-primary {
+      border-color: var(--bs-primary);
+      color: var(--bs-primary);
+    }
+    
+    .btn-outline-danger {
+      border-color: var(--bs-danger);
+      color: var(--bs-danger);
+    }
+    
+    .btn-outline-secondary {
+      border-color: var(--bs-border-color);
+      color: var(--bs-body-color);
+    }
+  }
+  
+  .task-item:hover .item-actions {
+    opacity: 1;
+  }
+  
+  // Action bar button styling
+  .task-actions {
+    .btn-outline-primary {
+      border-color: var(--bs-primary);
+      color: var(--bs-primary);
+    }
+    
+    .btn-outline-secondary {
+      border-color: var(--bs-border-color);
+      color: var(--bs-body-color);
+    }
+  }
+  
+  // Metadata badges
+  .task-metadata {
+    margin-top: 0.5rem;
+    
+    .badge {
+      font-size: 0.7rem;
+      padding: 0.25rem 0.5rem;
+      
+      i {
+        font-size: 0.6rem;
+      }
     }
   }
 
-  // Text truncation for long table names
-  .text-truncate {
-    display: inline-block;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  // Progress bar styling
+  .progress {
+    height: 4px;
+    border-radius: 2px;
+    
+    .progress-bar {
+      border-radius: 2px;
+      transition: width 0.6s ease;
+    }
   }
+  
+  // Status badge animations
+  .badge.bg-primary {
+    animation: pulse 2s infinite;
+  }
+}
 
-  // Badge animation for active tasks
-  @keyframes pulse {
-    0% {
-      opacity: 1;
+// Empty state styling
+.empty-state {
+  color: var(--bs-secondary-color);
+}
+
+// Responsive adjustments for mobile
+@media (max-width: 576px) {
+  .async-task-monitor-content {
+    .item-actions {
+      opacity: 1; // Always show actions on mobile
     }
-    50% {
-      opacity: 0.7;
-    }
-    100% {
-      opacity: 1;
+    
+    .task-filters .btn {
+      font-size: 0.75rem;
+      padding: 0.375rem 0.5rem;
     }
   }
 }
 
-// Mobile responsiveness
-@media (max-width: 768px) {
-  .async-task-monitor-container {
-    // Stack table headers on mobile
-    .table-responsive {
-      font-size: 0.875rem;
-    }
-    
-    // Adjust progress bar width on mobile
-    .progress {
-      min-width: 80px;
-    }
-    
-    // Stack action buttons on mobile
-    .btn-group {
-      flex-direction: column;
-      width: auto;
-      
-      .btn {
-        margin-bottom: 0.25rem;
-        
-        &:last-child {
-          margin-bottom: 0;
-        }
-      }
-    }
+// Remove fixed dark mode styles since we're now using theme-aware variables
+
+// Additional scroll styling for the task list
+.async-task-monitor-content .task-list {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(var(--bs-secondary-rgb), 0.5) transparent;
+  
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background-color: rgba(var(--bs-secondary-rgb), 0.5);
+    border-radius: 2px;
+  }
+  
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(var(--bs-secondary-rgb), 0.7);
+  }
+}
+
+// Badge animation for active tasks
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 1;
   }
 }
