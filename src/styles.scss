@@ -1,8 +1,8 @@
 /* You can add global styles to this file, and also import other style files */
 
 /* Import cupcake-core styling system */
-@import '@cupcake/core/src/lib/styles/variables';
-@import '@cupcake/core/src/lib/styles/mixins';
+@import '@cupcake/core/styles/_variables';
+@import '@cupcake/core/styles/_mixins';
 
 /* Importing Bootstrap SCSS file. */
 @import 'bootstrap/scss/bootstrap';
@@ -11,10 +11,10 @@
 @import 'bootstrap-icons/font/bootstrap-icons.css';
 
 /* Import cupcake-core Bootstrap integration */
-@import '@cupcake/core/src/lib/styles/bootstrap-integration';
+@import '@cupcake/core/styles/_bootstrap-integration';
 
 /* Import cupcake-core component styles */
-@import '@cupcake/core/src/lib/styles/components';
+@import '@cupcake/core/styles/_components';
 
 // Empty states
 .empty-state {

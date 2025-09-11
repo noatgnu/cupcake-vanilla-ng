@@ -11,19 +11,9 @@ import {
   NotificationType,
   NotificationPriority,
   DeliveryStatus,
-  PaginatedResponse
+  PaginatedResponse,
+  NotificationQueryParams
 } from '../models';
-
-export interface NotificationQueryParams {
-  search?: string;
-  notificationType?: NotificationType;
-  priority?: NotificationPriority;
-  deliveryStatus?: DeliveryStatus;
-  sender?: number;
-  limit?: number;
-  offset?: number;
-  ordering?: string;
-}
 
 @Injectable({
   providedIn: 'root'

@@ -35,4 +35,8 @@ export interface NotificationQueryParams {
   isRead?: boolean;
   recipient?: number;
   includeExpired?: boolean;
+  sender?: number;
+  deliveryStatus?: string;
+  limit?: number;
+  offset?: number;
 }
