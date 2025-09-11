@@ -1,0 +1,39 @@
+{
+  "testEnvironment": "node",
+  "testMatch": [
+    "**/integration/**/*.spec.ts",
+    "**/e2e/**/*.test.ts"
+  ],
+  "setupFilesAfterEnv": [
+    "<rootDir>/src/test-setup/integration-setup.ts"
+  ],
+  "globalSetup": "<rootDir>/src/test-setup/global-setup.ts",
+  "globalTeardown": "<rootDir>/src/test-setup/global-teardown.ts",
+  "testTimeout": 30000,
+  "collectCoverageFrom": [
+    "projects/**/src/lib/services/**/*.ts",
+    "!projects/**/src/lib/services/**/*.spec.ts",
+    "!projects/**/src/lib/services/**/index.ts"
+  ],
+  "coverageDirectory": "coverage/integration",
+  "coverageReporters": [
+    "text",
+    "lcov",
+    "html",
+    "json-summary"
+  ],
+  "moduleNameMapping": {
+    "^@cupcake/core(.*)$": "<rootDir>/projects/cupcake-core/src/public-api$1",
+    "^@cupcake/vanilla(.*)$": "<rootDir>/projects/cupcake-vanilla/src/public-api$1"
+  },
+  "transform": {
+    "^.+\\.ts$": "ts-jest"
+  },
+  "preset": "ts-jest",
+  "roots": [
+    "<rootDir>/src/integration-tests"
+  ],
+  "testEnvironmentOptions": {
+    "url": "http://localhost"
+  }
+}
