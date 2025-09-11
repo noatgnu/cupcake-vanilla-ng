@@ -89,6 +89,43 @@
             </div>
           </div>
         </form>
+
+        <!-- Permission Controls -->
+        <div class="row g-3 mt-2 pt-3 border-top">
+          <div class="col-md-4">
+            <div class="form-check form-switch">
+              <input
+                class="form-check-input"
+                type="checkbox"
+                id="sharedTablesToggle"
+                [checked]="showSharedTables()"
+                (change)="toggleSharedTables()">
+              <label class="form-check-label" for="sharedTablesToggle">
+                <i class="bi bi-share me-1"></i>Show Shared Tables
+              </label>
+            </div>
+          </div>
+          @if (isStaff()) {
+            <div class="col-md-4">
+              <div class="form-check form-switch">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  id="adminViewToggle"
+                  [checked]="showAdminView()"
+                  (change)="toggleAdminView()">
+                <label class="form-check-label" for="adminViewToggle">
+                  <i class="bi bi-shield-check me-1"></i>Admin View (All Tables)
+                </label>
+              </div>
+            </div>
+          }
+          <div class="col-md-4">
+            <small class="text-muted d-block mt-2">
+              <i class="bi bi-info-circle me-1"></i>{{ getCurrentViewDescription() }}
+            </small>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -178,19 +215,19 @@
                         <br><small class="text-muted">{{ table.description }}</small>
                       }
                     </td>
-                    <td>{{ table.owner_username || 'Unknown' }}</td>
+                    <td>{{ table.ownerUsername || 'Unknown' }}</td>
                     <td>
-                      @if (table.lab_group) {
+                      @if (table.labGroup) {
                         <span class="badge bg-info">Lab Group</span>
                       } @else {
                         <span class="text-muted">-</span>
                       }
                     </td>
                     <td>
-                      <span class="badge bg-secondary">{{ table.sample_count }}</span>
+                      <span class="badge bg-secondary">{{ table.sampleCount }}</span>
                     </td>
                     <td>
-                      <span class="badge bg-info">{{ table.columns.length || 0 }}</span>
+                      <span class="badge bg-info">{{ table.columnCount || 0 }}</span>
                     </td>
                     <td>
                       @switch (table.visibility) {
@@ -212,12 +249,12 @@
                       <span class="badge" [class]="getTableStatusClass(table)">
                         {{ getTableStatusBadge(table) }}
                       </span>
-                      @if (table.is_locked) {
+                      @if (table.isLocked) {
                         <i class="bi bi-lock-fill ms-2 text-warning" title="Table is locked"></i>
                       }
                     </td>
                     <td>
-                      <small>{{ table.created_at | date:'short' }}</small>
+                      <small>{{ table.createdAt | date:'short' }}</small>
                       <br><small class="text-muted">v{{ table.version }}</small>
                     </td>
                     <td>

@@ -1,19 +1,16 @@
-// User-related models
-export * from './user';
+/**
+ * CUPCAKE Core (CCC) - Models barrel export
+ * User management, lab groups, and core functionality interfaces
+ */
 
-// Lab group models
-export * from './lab-group';
+// Base types and enums
+export * from './base';
+export * from './enums';
 
-// Site configuration models  
+// Core models
 export * from './site-config';
-
-// Resource models
-export * from './resource';
-
-// Metadata models
-export * from './metadata-column';
-export * from './metadata-table';
-export * from './metadata-template';
-
-// Sample pool models
-export * from './sample-pool';
+export * from './user';
+export * from './lab-group';
+export * from './annotation';
+export * from './resource-permission';
+export * from './remote-host';

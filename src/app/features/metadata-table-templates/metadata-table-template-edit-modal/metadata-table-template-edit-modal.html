@@ -51,7 +51,7 @@
         <select 
           class="form-select"
           id="labGroup"
-          formControlName="lab_group">
+          formControlName="labGroupId">
           <option [ngValue]="null">No Lab Group</option>
           @for (group of labGroups; track group.id) {
             <option [ngValue]="group.id">{{ group.name }}</option>
@@ -78,7 +78,7 @@
                 class="form-check-input" 
                 type="checkbox" 
                 id="isDefault"
-                formControlName="is_default">
+                formControlName="isDefault">
               <label class="form-check-label" for="isDefault">
                 <i class="bi bi-star me-1"></i>Default Template
               </label>
@@ -155,7 +155,7 @@
                             <i class="bi bi-lock"></i>
                           </span>
                         }
-                        @if (column.ontology_type) {
+                        @if (column.ontologyType) {
                           <span class="badge badge-pill bg-success" title="Has Ontology">
                             <i class="bi bi-tags"></i>
                           </span>

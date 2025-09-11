@@ -1,26 +1,20 @@
-/**
- * Service for managing async tasks
- */
-
-import { Injectable, OnDestroy } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { BehaviorSubject, Observable, Subject, interval } from 'rxjs';
-import { takeUntil, switchMap, filter, map, tap } from 'rxjs/operators';
+import { Injectable, OnDestroy, inject } from '@angular/core';
+import { BehaviorSubject, Observable, Subject } from 'rxjs';
+import { takeUntil, filter, map, tap } from 'rxjs/operators';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import {
-  AsyncTask,
-  TaskListItem,
-  TaskCreateRequest,
-  TaskCreateResponse,
-  ImportTaskCreateRequest,
-  BulkExportTaskCreateRequest,
-  BulkExcelExportTaskCreateRequest,
-  ValidationTaskCreateRequest,
-  TaskProgressEvent,
-  TaskStatus,
-  TaskType
-} from '../models/async-task';
-import { ApiService } from './api';
+  AsyncTaskStatus,
+  AsyncTaskCreateResponse,
+  MetadataImportRequest,
+  MetadataExportRequest,
+  BulkExportRequest,
+  BulkExcelExportRequest,
+  MetadataValidationRequest,
+  AsyncTaskService as LibraryAsyncTaskService,
+  AsyncExportService,
+  AsyncImportService,
+  AsyncValidationService
+} from '../models';
 import { ToastService } from './toast';
 import { Websocket } from './websocket';
 import { ValidationResultsModal, ValidationResults } from '../components/validation-results-modal/validation-results-modal';
@@ -30,42 +24,36 @@ import { ValidationResultsModal, ValidationResults } from '../components/validat
 })
 export class AsyncTaskService implements OnDestroy {
   private destroy$ = new Subject<void>();
-  private tasksSubject = new BehaviorSubject<TaskListItem[]>([]);
+  private tasksSubject = new BehaviorSubject<AsyncTaskStatus[]>([]);
   private isSubscribed = false;
   private metadataTableRefreshSubject = new Subject<number>();
-  private taskCompletedSubject = new Subject<TaskListItem>();
-  private exportTaskCompletedSubject = new Subject<TaskListItem>();
+  private taskCompletedSubject = new Subject<AsyncTaskStatus>();
+  private exportTaskCompletedSubject = new Subject<AsyncTaskStatus>();
 
-  // Track which tasks were initiated by this browser tab/session
   private readonly sessionId = this.generateSessionId();
   private initiatedTasks = new Set<string>();
+
+  private libraryAsyncTaskService = inject(LibraryAsyncTaskService);
+  private asyncExportService = inject(AsyncExportService);
+  private asyncImportService = inject(AsyncImportService);
+  private asyncValidationService = inject(AsyncValidationService);
+  private toastService = inject(ToastService);
+  private websocket = inject(Websocket);
+  private modalService = inject(NgbModal);
 
   public tasks$ = this.tasksSubject.asObservable();
   public activeTasks$ = this.tasks$.pipe(
     map(tasks => {
-      // Ensure tasks is always an array before filtering
       const taskArray = Array.isArray(tasks) ? tasks : [];
       return taskArray.filter(task => task.status === 'QUEUED' || task.status === 'STARTED');
     })
   );
 
-  // Observable for metadata table refresh events (emits table ID when import completes)
   public metadataTableRefresh$ = this.metadataTableRefreshSubject.asObservable();
-
-  // Observable for any task completion
   public taskCompleted$ = this.taskCompletedSubject.asObservable();
-
-  // Observable for export task completion (triggers download)
   public exportTaskCompleted$ = this.exportTaskCompletedSubject.asObservable();
 
-  constructor(
-    private http: HttpClient,
-    private api: ApiService,
-    private toastService: ToastService,
-    private websocket: Websocket,
-    private modalService: NgbModal
-  ) {
-    // Initialize the service immediately
+  constructor() {
     this.initializeService();
   }
 
@@ -74,16 +62,10 @@ export class AsyncTaskService implements OnDestroy {
     this.destroy$.complete();
   }
 
-  /**
-   * Initialize the service - called immediately in constructor
-   */
   private initializeService(): void {
     this.startRealtimeUpdates();
   }
 
-  /**
-   * Start subscribing to task status updates via WebSocket
-   */
   startRealtimeUpdates(): void {
     if (this.isSubscribed) {
       return;
@@ -91,12 +73,10 @@ export class AsyncTaskService implements OnDestroy {
 
     this.isSubscribed = true;
 
-    // Ensure WebSocket is connected
     if (!this.websocket.connectionState$() || this.websocket.connectionState$() === 'disconnected') {
       this.websocket.connect();
     }
 
-    // Subscribe to async task updates when WebSocket connects
     this.websocket.isConnected$.pipe(
       takeUntil(this.destroy$),
       filter(connected => connected)
@@ -104,17 +84,14 @@ export class AsyncTaskService implements OnDestroy {
       this.websocket.subscribe('async_task_updates');
     });
 
-
     this.websocket.filterMessages('async_task.update').pipe(
       takeUntil(this.destroy$)
     ).subscribe((message: any) => {
       this.handleTaskUpdate(message);
     });
 
-    // Initial load of tasks
     this.getTasks().subscribe({
       next: tasks => {
-        // Ensure tasks is always an array
         const taskArray = Array.isArray(tasks) ? tasks : [];
         this.tasksSubject.next(taskArray);
       },
@@ -124,164 +101,77 @@ export class AsyncTaskService implements OnDestroy {
     });
   }
 
-  /**
-   * Stop subscribing to task updates
-   */
   stopRealtimeUpdates(): void {
     this.isSubscribed = false;
     this.destroy$.next();
   }
 
-  /**
-   * Get list of user's tasks
-   */
-  getTasks(): Observable<TaskListItem[]> {
-    return this.http.get<{count: number; results: TaskListItem[]}>(`${this.api.baseUrl}/async-tasks/`).pipe(
+  getTasks(): Observable<AsyncTaskStatus[]> {
+    return this.libraryAsyncTaskService.getAsyncTasks().pipe(
       map(response => response.results || [])
     );
   }
 
-  /**
-   * Get specific task details
-   */
-  getTask(taskId: string): Observable<AsyncTask> {
-    return this.http.get<AsyncTask>(`${this.api.baseUrl}/async-tasks/${taskId}/`);
+  getTask(taskId: string): Observable<AsyncTaskStatus> {
+    return this.libraryAsyncTaskService.getAsyncTask(taskId);
   }
 
-  /**
-   * Cancel a task
-   */
   cancelTask(taskId: string): Observable<{message: string}> {
-    return this.http.delete<{message: string}>(`${this.api.baseUrl}/async-tasks/${taskId}/cancel/`);
+    return this.libraryAsyncTaskService.cancelTask(taskId);
   }
 
-  /**
-   * Generate a unique session ID for this browser tab
-   */
   private generateSessionId(): string {
     return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 
-  /**
-   * Check if a task was initiated by this browser tab/session
-   */
   private isTaskInitiatedByThisTab(taskId: string): boolean {
     return this.initiatedTasks.has(taskId);
   }
 
-  /**
-   * Queue async Excel export
-   */
-  queueExcelExport(request: TaskCreateRequest): Observable<TaskCreateResponse> {
-    return this.http.post<TaskCreateResponse>(
-      `${this.api.baseUrl}/async-export/excel_template/`,
-      request
-    ).pipe(
-      map(response => {
-        // Track that this task was initiated by this tab
-        this.initiatedTasks.add(response.task_id);
-        return response;
-      })
-    );
-  }
-
-  /**
-   * Queue async SDRF export
-   */
-  queueSdrfExport(request: TaskCreateRequest): Observable<TaskCreateResponse> {
-    return this.http.post<TaskCreateResponse>(
-      `${this.api.baseUrl}/async-export/sdrf_file/`,
-      request
-    ).pipe(
+  queueExcelExport(request: MetadataExportRequest): Observable<AsyncTaskCreateResponse> {
+    return this.asyncExportService.excelTemplate(request).pipe(
       tap(response => {
-        // Track that this task was initiated by this tab
-        this.initiatedTasks.add(response.task_id);
+        this.initiatedTasks.add(response.taskId);
       })
     );
   }
 
-  /**
-   * Queue async SDRF import
-   */
-  queueSdrfImport(request: ImportTaskCreateRequest): Observable<TaskCreateResponse> {
-    const formData = new FormData();
-    formData.append('metadata_table_id', request.metadata_table_id.toString());
-    formData.append('file', request.file);
-
-    if (request.replace_existing !== undefined) {
-      formData.append('replace_existing', request.replace_existing.toString());
-    }
-    if (request.validate_ontologies !== undefined) {
-      formData.append('validate_ontologies', request.validate_ontologies.toString());
-    }
-
-    return this.http.post<TaskCreateResponse>(
-      `${this.api.baseUrl}/async-import/sdrf_file/`,
-      formData
-    ).pipe(
+  queueSdrfExport(request: MetadataExportRequest): Observable<AsyncTaskCreateResponse> {
+    return this.asyncExportService.sdrfFile(request).pipe(
       tap(response => {
-        // Track that this task was initiated by this tab
-        this.initiatedTasks.add(response.task_id);
+        this.initiatedTasks.add(response.taskId);
       })
     );
   }
 
-  /**
-   * Queue async Excel import
-   */
-  queueExcelImport(request: ImportTaskCreateRequest): Observable<TaskCreateResponse> {
-    const formData = new FormData();
-    formData.append('metadata_table_id', request.metadata_table_id.toString());
-    formData.append('file', request.file);
-
-    if (request.replace_existing !== undefined) {
-      formData.append('replace_existing', request.replace_existing.toString());
-    }
-    if (request.validate_ontologies !== undefined) {
-      formData.append('validate_ontologies', request.validate_ontologies.toString());
-    }
-
-    return this.http.post<TaskCreateResponse>(
-      `${this.api.baseUrl}/async-import/excel_file/`,
-      formData
-    );
-  }
-
-  /**
-   * Queue async bulk SDRF export
-   */
-  queueBulkSdrfExport(request: BulkExportTaskCreateRequest): Observable<TaskCreateResponse> {
-    return this.http.post<TaskCreateResponse>(
-      `${this.api.baseUrl}/async-export/multiple_sdrf_files/`,
-      request
-    ).pipe(
+  queueSdrfImport(request: MetadataImportRequest): Observable<AsyncTaskCreateResponse> {
+    return this.asyncImportService.sdrfFile(request).pipe(
       tap(response => {
-        // Track that this task was initiated by this tab
-        this.initiatedTasks.add(response.task_id);
+        this.initiatedTasks.add(response.taskId);
       })
     );
   }
 
-  /**
-   * Queue async bulk Excel export
-   */
-  queueBulkExcelExport(request: BulkExcelExportTaskCreateRequest): Observable<TaskCreateResponse> {
-    return this.http.post<TaskCreateResponse>(
-      `${this.api.baseUrl}/async-export/multiple_excel_templates/`,
-      request
+  queueExcelImport(request: MetadataImportRequest): Observable<AsyncTaskCreateResponse> {
+    return this.asyncImportService.excelFile(request);
+  }
+
+  queueBulkSdrfExport(request: BulkExportRequest): Observable<AsyncTaskCreateResponse> {
+    return this.asyncExportService.multipleSdrfFiles(request).pipe(
+      tap(response => {
+        this.initiatedTasks.add(response.taskId);
+      })
     );
   }
 
-  /**
-   * Download task result file by opening signed URL
-   */
+  queueBulkExcelExport(request: BulkExcelExportRequest): Observable<AsyncTaskCreateResponse> {
+    return this.asyncExportService.multipleExcelTemplates(request);
+  }
+
   downloadTaskResult(taskId: string): void {
-    this.http.get<{download_url: string; filename: string}>(
-      `${this.api.baseUrl}/async-tasks/${taskId}/download_url/`
-    ).subscribe({
+    this.libraryAsyncTaskService.getDownloadUrl(taskId).subscribe({
       next: (response) => {
-        // Open signed URL in new tab - nginx handles X-Accel-Redirect
-        window.open(response.download_url, '_blank');
+        window.open(response.downloadUrl, '_blank');
       },
       error: (error) => {
         console.error('Error getting download URL:', error);
@@ -290,25 +180,29 @@ export class AsyncTaskService implements OnDestroy {
     });
   }
 
-  /**
-   * Handle WebSocket task update message
-   */
+  validateMetadataTable(validationRequest: MetadataValidationRequest): Observable<AsyncTaskCreateResponse> {
+    return this.asyncValidationService.metadataTable(validationRequest).pipe(
+      tap(response => {
+        this.initiatedTasks.add(response.taskId);
+      })
+    );
+  }
+
   private handleTaskUpdate(message: any): void {
     const taskId = message.task_id;
     const currentTasks = this.tasksSubject.value;
     const existingTaskIndex = currentTasks.findIndex(t => t.id === taskId);
 
     if (existingTaskIndex >= 0) {
-      // Update existing task
       const existingTask = currentTasks[existingTaskIndex];
       const wasRunning = existingTask.status === 'QUEUED' || existingTask.status === 'STARTED';
 
-      const updatedTask: TaskListItem = {
+      const updatedTask: AsyncTaskStatus = {
         ...existingTask,
         status: message.status,
-        progress_percentage: message.progress_percentage || existingTask.progress_percentage,
-        progress_description: message.progress_description || existingTask.progress_description,
-        error_message: message.error_message || existingTask.error_message,
+        progressPercentage: message.progress_percentage || existingTask.progressPercentage,
+        progressDescription: message.progress_description || existingTask.progressDescription,
+        errorMessage: message.error_message || existingTask.errorMessage,
         result: message.result || existingTask.result,
       };
 
@@ -316,87 +210,62 @@ export class AsyncTaskService implements OnDestroy {
       updatedTasks[existingTaskIndex] = updatedTask;
       this.tasksSubject.next(updatedTasks);
 
-      // Show progress notification for running tasks with significant progress
       if (message.status === 'STARTED') {
         this.showTaskProgressNotification(updatedTask, existingTask);
       }
 
-      // Show notification if task just completed
       if (wasRunning && (message.status === 'SUCCESS' || message.status === 'FAILURE' || message.status === 'CANCELLED')) {
-        // Always show notifications (user might want to know about all their tasks)
         this.showTaskCompletionNotification(updatedTask);
-
-        // Check if task was initiated by this tab for cleanup purposes
+        
         const isTaskFromThisTab = this.isTaskInitiatedByThisTab(updatedTask.id);
-
-        // Emit general task completion event
         this.taskCompletedSubject.next(updatedTask);
 
-        // Handle successful task completions
         if (message.status === 'SUCCESS') {
-          // Emit table refresh event for successful import tasks
-          if (this.isImportTask(updatedTask.task_type) && updatedTask.metadata_table_id) {
-            this.metadataTableRefreshSubject.next(updatedTask.metadata_table_id);
+          if (this.isImportTask(updatedTask.taskType) && updatedTask.metadataTable) {
+            this.metadataTableRefreshSubject.next(updatedTask.metadataTable);
           }
 
-          // Emit export completion event for successful export tasks (auto-download)
-          if (this.isExportTask(updatedTask.task_type)) {
+          if (this.isExportTask(updatedTask.taskType)) {
             this.exportTaskCompletedSubject.next(updatedTask);
-            // Auto-download export results
             this.handleExportTaskCompletion(updatedTask);
           }
 
-          // Emit table refresh event for validation tasks (to refresh validation status)
-          if (updatedTask.task_type === 'VALIDATE_TABLE' && updatedTask.metadata_table_id) {
-            this.metadataTableRefreshSubject.next(updatedTask.metadata_table_id);
+          if (updatedTask.taskType === 'VALIDATE_TABLE' && updatedTask.metadataTable) {
+            this.metadataTableRefreshSubject.next(updatedTask.metadataTable);
           }
         }
 
-        // Clean up tracking after task completion (only if task was from this tab)
         if (isTaskFromThisTab) {
           this.initiatedTasks.delete(updatedTask.id);
         }
       }
     } else {
-      // Task not found in current list, refresh the full list and then process the update
       this.getTasks().subscribe(tasks => {
-        // Ensure tasks is always an array
         const taskArray = Array.isArray(tasks) ? tasks : [];
         this.tasksSubject.next(taskArray);
 
-        // After refresh, check if this was a completion event and handle it
         const refreshedTask = taskArray.find(t => t.id === taskId);
         if (refreshedTask && (message.status === 'SUCCESS' || message.status === 'FAILURE' || message.status === 'CANCELLED')) {
-          // Show notification for completed task
           this.showTaskCompletionNotification(refreshedTask);
-
-          // Check if task was initiated by this tab for cleanup purposes
+          
           const isTaskFromThisTab = this.isTaskInitiatedByThisTab(refreshedTask.id);
-
-          // Emit general task completion event
           this.taskCompletedSubject.next(refreshedTask);
 
-          // Handle successful task completions
           if (message.status === 'SUCCESS') {
-            // Emit table refresh event for successful import tasks
-            if (this.isImportTask(refreshedTask.task_type) && refreshedTask.metadata_table_id) {
-              this.metadataTableRefreshSubject.next(refreshedTask.metadata_table_id);
+            if (this.isImportTask(refreshedTask.taskType) && refreshedTask.metadataTable) {
+              this.metadataTableRefreshSubject.next(refreshedTask.metadataTable);
             }
 
-            // Emit export completion event for successful export tasks (auto-download)
-            if (this.isExportTask(refreshedTask.task_type)) {
+            if (this.isExportTask(refreshedTask.taskType)) {
               this.exportTaskCompletedSubject.next(refreshedTask);
-              // Auto-download export results
               this.handleExportTaskCompletion(refreshedTask);
             }
 
-            // Emit table refresh event for validation tasks (to refresh validation status)
-            if (refreshedTask.task_type === 'VALIDATE_TABLE' && refreshedTask.metadata_table_id) {
-              this.metadataTableRefreshSubject.next(refreshedTask.metadata_table_id);
+            if (refreshedTask.taskType === 'VALIDATE_TABLE' && refreshedTask.metadataTable) {
+              this.metadataTableRefreshSubject.next(refreshedTask.metadataTable);
             }
           }
 
-          // Clean up tracking after task completion (only if task was from this tab)
           if (isTaskFromThisTab) {
             this.initiatedTasks.delete(refreshedTask.id);
           }
@@ -405,53 +274,42 @@ export class AsyncTaskService implements OnDestroy {
     }
   }
 
-  /**
-   * Show progress notification for running tasks
-   */
-  private showTaskProgressNotification(updatedTask: TaskListItem, previousTask: TaskListItem): void {
-    const taskName = this.getTaskDisplayName(updatedTask.task_type);
-    const tableName = updatedTask.metadata_table_name ? ` for "${updatedTask.metadata_table_name}"` : '';
+  private showTaskProgressNotification(updatedTask: AsyncTaskStatus, previousTask: AsyncTaskStatus): void {
+    const taskName = this.getTaskDisplayName(updatedTask.taskType);
+    const tableName = updatedTask.metadataTableName ? ` for "${updatedTask.metadataTableName}"` : '';
 
-    // Only show progress notifications for significant progress changes (every 25%)
-    // or if there's a new progress description
-    const progressChanged = Math.floor(updatedTask.progress_percentage / 25) !== Math.floor(previousTask.progress_percentage / 25);
-    const descriptionChanged = updatedTask.progress_description !== previousTask.progress_description;
+    const progressChanged = Math.floor(updatedTask.progressPercentage || 0 / 25) !== Math.floor(previousTask.progressPercentage || 0 / 25);
+    const descriptionChanged = updatedTask.progressDescription !== previousTask.progressDescription;
 
-    if (progressChanged || (descriptionChanged && updatedTask.progress_description)) {
+    if (progressChanged || (descriptionChanged && updatedTask.progressDescription)) {
       let message = `${taskName}${tableName}`;
-      if (updatedTask.progress_percentage > 0) {
-        message += ` (${updatedTask.progress_percentage}%)`;
+      if (updatedTask.progressPercentage && updatedTask.progressPercentage > 0) {
+        message += ` (${updatedTask.progressPercentage}%)`;
       }
-      if (updatedTask.progress_description) {
-        message += `: ${updatedTask.progress_description}`;
+      if (updatedTask.progressDescription) {
+        message += `: ${updatedTask.progressDescription}`;
       }
 
-      this.toastService.info(message, 3000); // Shorter duration for progress updates
+      this.toastService.info(message, 3000);
     }
   }
 
-  /**
-   * Show notification when a task completes
-   */
-  private showTaskCompletionNotification(task: TaskListItem): void {
-    const taskName = this.getTaskDisplayName(task.task_type);
-    const tableName = task.metadata_table_name ? ` for "${task.metadata_table_name}"` : '';
+  private showTaskCompletionNotification(task: AsyncTaskStatus): void {
+    const taskName = this.getTaskDisplayName(task.taskType);
+    const tableName = task.metadataTableName ? ` for "${task.metadataTableName}"` : '';
 
-    // Special handling for validation tasks
-    if (task.task_type === 'VALIDATE_TABLE') {
+    if (task.taskType === 'VALIDATE_TABLE') {
       this.handleValidationTaskCompletion(task);
       return;
     }
 
-    // Special handling for import tasks
-    if (task.task_type === 'IMPORT_SDRF' || task.task_type === 'IMPORT_EXCEL') {
+    if (task.taskType === 'IMPORT_SDRF' || task.taskType === 'IMPORT_EXCEL') {
       this.handleImportTaskCompletion(task);
       return;
     }
 
-    // Add progress information to completion messages
-    const progressInfo = task.progress_percentage > 0 ? ` (${task.progress_percentage}%)` : '';
-    const progressDesc = task.progress_description ? `: ${task.progress_description}` : '';
+    const progressInfo = task.progressPercentage && task.progressPercentage > 0 ? ` (${task.progressPercentage}%)` : '';
+    const progressDesc = task.progressDescription ? `: ${task.progressDescription}` : '';
 
     switch (task.status) {
       case 'SUCCESS':
@@ -461,7 +319,7 @@ export class AsyncTaskService implements OnDestroy {
         break;
       case 'FAILURE':
         this.toastService.error(
-          `Task Failed: ${taskName}${tableName}${progressInfo} failed: ${task.error_message || 'Unknown error'}${progressDesc}`
+          `Task Failed: ${taskName}${tableName}${progressInfo} failed: ${task.errorMessage || 'Unknown error'}${progressDesc}`
         );
         break;
       case 'CANCELLED':
@@ -472,11 +330,8 @@ export class AsyncTaskService implements OnDestroy {
     }
   }
 
-  /**
-   * Get display name for task type
-   */
-  getTaskDisplayName(taskType: TaskType): string {
-    const typeMap: Record<TaskType, string> = {
+  getTaskDisplayName(taskType: string): string {
+    const typeMap: Record<string, string> = {
       'EXPORT_EXCEL': 'Excel export',
       'EXPORT_SDRF': 'SDRF export',
       'IMPORT_SDRF': 'SDRF import',
@@ -488,11 +343,8 @@ export class AsyncTaskService implements OnDestroy {
     return typeMap[taskType] || taskType;
   }
 
-  /**
-   * Get task status badge class
-   */
-  getTaskStatusClass(status: TaskStatus): string {
-    const statusMap: Record<TaskStatus, string> = {
+  getTaskStatusClass(status: string): string {
+    const statusMap: Record<string, string> = {
       'QUEUED': 'badge-secondary',
       'STARTED': 'badge-primary',
       'SUCCESS': 'badge-success',
@@ -502,9 +354,6 @@ export class AsyncTaskService implements OnDestroy {
     return statusMap[status] || 'badge-secondary';
   }
 
-  /**
-   * Format task duration for display
-   */
   formatDuration(duration: number | null): string {
     if (!duration) {
       return '-';
@@ -521,76 +370,39 @@ export class AsyncTaskService implements OnDestroy {
     }
   }
 
-  /**
-   * Check if a task can be cancelled
-   */
-  canCancelTask(status: TaskStatus): boolean {
+  canCancelTask(status: string): boolean {
     return status === 'QUEUED' || status === 'STARTED';
   }
 
-  /**
-   * Check if a task result can be downloaded
-   */
-  canDownloadResult(task: TaskListItem): boolean {
+  canDownloadResult(task: AsyncTaskStatus): boolean {
     return task.status === 'SUCCESS' &&
-           (task.task_type === 'EXPORT_EXCEL' || task.task_type === 'EXPORT_SDRF' ||
-            task.task_type === 'EXPORT_MULTIPLE_SDRF' || task.task_type === 'EXPORT_MULTIPLE_EXCEL');
+           (task.taskType === 'EXPORT_EXCEL' || task.taskType === 'EXPORT_SDRF' ||
+            task.taskType === 'EXPORT_MULTIPLE_SDRF' || task.taskType === 'EXPORT_MULTIPLE_EXCEL');
   }
 
-  /**
-   * Check if a task type is an import task
-   */
-  private isImportTask(taskType: TaskType): boolean {
+  private isImportTask(taskType: string): boolean {
     return taskType === 'IMPORT_SDRF' || taskType === 'IMPORT_EXCEL';
   }
 
-  /**
-   * Check if a task type is an export task
-   */
-  private isExportTask(taskType: TaskType): boolean {
+  private isExportTask(taskType: string): boolean {
     return taskType === 'EXPORT_SDRF' || taskType === 'EXPORT_EXCEL' ||
            taskType === 'EXPORT_MULTIPLE_SDRF' || taskType === 'EXPORT_MULTIPLE_EXCEL';
   }
 
-  /**
-   * Validate a metadata table asynchronously
-   */
-  validateMetadataTable(validationRequest: ValidationTaskCreateRequest): Observable<TaskCreateResponse> {
-    const url = `${this.api.baseUrl}/async-validation/metadata_table/`;
+  private handleExportTaskCompletion(task: AsyncTaskStatus): void {
+    const taskName = this.getTaskDisplayName(task.taskType);
+    const tableName = task.metadataTableName ? ` for "${task.metadataTableName}"` : '';
 
-    const payload = {
-      ...validationRequest,
-      async_processing: true // Force async processing
-    };
-
-    return this.http.post<TaskCreateResponse>(url, payload).pipe(
-      tap(response => {
-        // Track that this task was initiated by this tab
-        this.initiatedTasks.add(response.task_id);
-      })
-    );
-  }
-
-  /**
-   * Handle export task completion for this tab (auto-download)
-   */
-  private handleExportTaskCompletion(task: TaskListItem): void {
-    const taskName = this.getTaskDisplayName(task.task_type);
-    const tableName = task.metadata_table_name ? ` for "${task.metadata_table_name}"` : '';
-
-    // Show enhanced notification with immediate download for single exports
-    if (task.task_type === 'EXPORT_SDRF' || task.task_type === 'EXPORT_EXCEL') {
-      // Auto-download single file exports after a short delay
+    if (task.taskType === 'EXPORT_SDRF' || task.taskType === 'EXPORT_EXCEL') {
       setTimeout(() => {
         this.downloadTaskResult(task.id);
-      }, 1500); // 1.5 second delay to let user see the completion notification
+      }, 1500);
 
       this.toastService.success(
         `${taskName}${tableName} completed! Starting download...`,
         4000
       );
     } else {
-      // Bulk exports - just notify, don't auto-download
       this.toastService.success(
         `${taskName}${tableName} completed! Check your downloads.`,
         6000
@@ -598,38 +410,30 @@ export class AsyncTaskService implements OnDestroy {
     }
   }
 
-  /**
-   * Handle validation task completion with special logic for validation results
-   */
-  private handleValidationTaskCompletion(task: TaskListItem): void {
-    const taskName = this.getTaskDisplayName(task.task_type);
-    const tableName = task.metadata_table_name ? ` for "${task.metadata_table_name}"` : '';
-    const progressInfo = task.progress_percentage > 0 ? ` (${task.progress_percentage}%)` : '';
-    const progressDesc = task.progress_description ? `: ${task.progress_description}` : '';
+  private handleValidationTaskCompletion(task: AsyncTaskStatus): void {
+    const taskName = this.getTaskDisplayName(task.taskType);
+    const tableName = task.metadataTableName ? ` for "${task.metadataTableName}"` : '';
+    const progressInfo = task.progressPercentage && task.progressPercentage > 0 ? ` (${task.progressPercentage}%)` : '';
+    const progressDesc = task.progressDescription ? `: ${task.progressDescription}` : '';
 
     switch (task.status) {
       case 'SUCCESS':
-        // Check if validation actually passed or failed
         const result = task.result as any;
         if (result && result.success === false) {
-          // Validation completed but found errors
           const errorCount = result.errors?.length || 0;
           const warningCount = result.warnings?.length || 0;
 
           this.toastService.error(
-            `Validation Failed${progressInfo}: Found ${errorCount} error(s) and ${warningCount} warning(s) in "${task.metadata_table_name}". Click to view details.${progressDesc}`,
-            10000 // Show for 10 seconds
+            `Validation Failed${progressInfo}: Found ${errorCount} error(s) and ${warningCount} warning(s) in "${task.metadataTableName}". Click to view details.${progressDesc}`,
+            10000
           );
 
-          // Show validation results modal
           this.showValidationResultsModal(result);
         } else {
-          // Validation passed successfully
           this.toastService.success(
-            `Validation Passed${progressInfo}: ${task.metadata_table_name} is valid and complies with SDRF format${progressDesc}`
+            `Validation Passed${progressInfo}: ${task.metadataTableName} is valid and complies with SDRF format${progressDesc}`
           );
 
-          // Show success modal as well
           if (result) {
             this.showValidationResultsModal(result);
           }
@@ -637,7 +441,7 @@ export class AsyncTaskService implements OnDestroy {
         break;
       case 'FAILURE':
         this.toastService.error(
-          `Validation Error: ${taskName}${tableName} failed: ${task.error_message || 'Unknown error'}`
+          `Validation Error: ${taskName}${tableName} failed: ${task.errorMessage || 'Unknown error'}`
         );
         break;
       case 'CANCELLED':
@@ -648,9 +452,6 @@ export class AsyncTaskService implements OnDestroy {
     }
   }
 
-  /**
-   * Show validation results modal
-   */
   private showValidationResultsModal(validationResults: ValidationResults): void {
     const modalRef = this.modalService.open(ValidationResultsModal, {
       size: 'lg',
@@ -662,7 +463,6 @@ export class AsyncTaskService implements OnDestroy {
 
     modalRef.result.then((result) => {
       if (result === 'edit') {
-        // User wants to fix issues - could navigate to table edit view
         console.log('User wants to edit table to fix validation issues');
       }
     }).catch(() => {
@@ -670,22 +470,17 @@ export class AsyncTaskService implements OnDestroy {
     });
   }
 
-  /**
-   * Handle import task completion with appropriate notifications
-   */
-  private handleImportTaskCompletion(task: TaskListItem): void {
-    const taskName = this.getTaskDisplayName(task.task_type);
-    const tableName = task.metadata_table_name ? ` for "${task.metadata_table_name}"` : '';
-    const progressInfo = task.progress_percentage > 0 ? ` (${task.progress_percentage}%)` : '';
-    const progressDesc = task.progress_description ? `: ${task.progress_description}` : '';
+  private handleImportTaskCompletion(task: AsyncTaskStatus): void {
+    const taskName = this.getTaskDisplayName(task.taskType);
+    const tableName = task.metadataTableName ? ` for "${task.metadataTableName}"` : '';
+    const progressInfo = task.progressPercentage && task.progressPercentage > 0 ? ` (${task.progressPercentage}%)` : '';
+    const progressDesc = task.progressDescription ? `: ${task.progressDescription}` : '';
 
     switch (task.status) {
       case 'SUCCESS':
-        // Import completed successfully
         const result = task.result as any;
         let message = `${taskName}${tableName} completed successfully!`;
 
-        // Add details if available in result
         if (result) {
           const details = [];
           if (result.columns_created || result.total_columns) {
@@ -710,7 +505,7 @@ export class AsyncTaskService implements OnDestroy {
 
       case 'FAILURE':
         this.toastService.error(
-          `${taskName} Failed${progressInfo}: ${task.error_message || 'Import failed due to an unknown error'}${progressDesc}`
+          `${taskName} Failed${progressInfo}: ${task.errorMessage || 'Import failed due to an unknown error'}${progressDesc}`
         );
         break;
 

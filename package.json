@@ -9,7 +9,11 @@
     "build:all": "./build-all.sh",
     "build:core": "ng build cupcake-core",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "test:integration": "jest --config integration-test.config.json --runInBand --detectOpenHandles",
+    "test:integration:coverage": "jest --config integration-test.config.json --runInBand --coverage --detectOpenHandles",
+    "test:integration:watch": "jest --config integration-test.config.json --runInBand --watch",
+    "test:integration:report": "jest --config integration-test.config.json --runInBand --reporters=default --reporters=jest-junit --outputFile=integration-test-results/junit.xml"
   },
   "prettier": {
     "printWidth": 100,
@@ -34,8 +38,10 @@
     "@angular/router": "^20.1.0",
     "@ng-bootstrap/ng-bootstrap": "^19.0.1",
     "@popperjs/core": "^2.11.8",
+    "@types/jssha": "^2.0.0",
     "bootstrap": "^5.3.6",
     "bootstrap-icons": "^1.13.1",
+    "jssha": "^3.3.1",
     "ngx-color": "^10.0.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",

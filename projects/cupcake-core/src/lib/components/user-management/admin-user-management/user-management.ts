@@ -1,7 +1,8 @@
-import { Component, OnInit, signal, inject } from '@angular/core';
+import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgbModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import { debounceTime } from 'rxjs';
 import { AuthService } from '../../../services/auth';
 import { UserManagementService } from '../../../services/user-management';
 import { 
@@ -31,6 +32,9 @@ export class UserManagementComponent implements OnInit {
   
   // Search and filters
   searchForm: FormGroup;
+  searchTerm = signal('');
+  staffFilter = signal('');
+  activeFilter = signal('');
   
   // Pagination
   currentPage = signal(1);
@@ -50,21 +54,75 @@ export class UserManagementComponent implements OnInit {
   // Make Math available in template
   Math = Math;
 
+  // Computed signals
+  totalPages = computed(() => Math.ceil(this.totalUsers() / this.pageSize()));
+  
+  pages = computed(() => {
+    const total = this.totalPages();
+    const current = this.currentPage();
+    const pages: number[] = [];
+    
+    // Show up to 5 pages around current page
+    const start = Math.max(1, current - 2);
+    const end = Math.min(total, current + 2);
+    
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+    
+    return pages;
+  });
+
+  showingFrom = computed(() => ((this.currentPage() - 1) * this.pageSize()) + 1);
+  
+  showingTo = computed(() => Math.min(this.currentPage() * this.pageSize(), this.totalUsers()));
+
+  hasResults = computed(() => this.users().length > 0);
+
+  canGoToPreviousPage = computed(() => this.currentPage() > 1);
+  
+  canGoToNextPage = computed(() => this.currentPage() < this.totalPages());
+
+  // Additional computed signals for UI state
+  isAnyActionInProgress = computed(() => 
+    this.isCreatingUser() || 
+    this.isUpdatingUser() || 
+    this.isDeletingUser() || 
+    this.isResettingPassword()
+  );
+
+  selectedUserDisplayName = computed(() => {
+    const user = this.selectedUser();
+    return user ? this.getUserDisplayName(user) : '';
+  });
+
+  // Computed signal for modal states
+  hasSelectedUser = computed(() => this.selectedUser() !== null);
+
+  // Computed signals for form states
+  canCreateUser = computed(() => !this.isCreatingUser());
+  canUpdateUser = computed(() => !this.isUpdatingUser());
+  canResetPassword = computed(() => !this.isResettingPassword());
+
   constructor() {
     this.searchForm = this.fb.group({
       search: [''],
-      is_staff: [''],
-      is_active: ['']
+      isStaff: [''],
+      isActive: ['']
     });
   }
 
   ngOnInit() {
     this.loadUsers();
     
-    // Subscribe to search form changes
-    this.searchForm.valueChanges.subscribe(() => {
+    // Subscribe to search form changes with debounce
+    this.searchForm.valueChanges.pipe(
+      debounceTime(300)
+    ).subscribe((values) => {
+      this.searchTerm.set(values.search || '');
+      this.staffFilter.set(values.isStaff || '');
+      this.activeFilter.set(values.isActive || '');
       this.currentPage.set(1);
-      this.loadUsers();
     });
   }
 
@@ -73,11 +131,11 @@ export class UserManagementComponent implements OnInit {
     this.errorMessage.set('');
 
     const searchParams = {
-      search: this.searchForm.get('search')?.value || undefined,
-      is_staff: this.searchForm.get('is_staff')?.value !== '' ? this.searchForm.get('is_staff')?.value === 'true' : undefined,
-      is_active: this.searchForm.get('is_active')?.value !== '' ? this.searchForm.get('is_active')?.value === 'true' : undefined,
+      search: this.searchTerm() || undefined,
+      isStaff: this.staffFilter() !== '' ? this.staffFilter() === 'true' : undefined,
+      isActive: this.activeFilter() !== '' ? this.activeFilter() === 'true' : undefined,
       page: this.currentPage(),
-      page_size: this.pageSize()
+      pageSize: this.pageSize()
     };
 
     this.userManagementService.getUsers(searchParams).subscribe({
@@ -185,22 +243,22 @@ export class UserManagementComponent implements OnInit {
   toggleUserStatus(user: User): void {
     if (!user.id) return;
     
-    const newStatus = !user.is_active;
+    const newStatus = !user.isActive;
     const action = newStatus ? 'activate' : 'deactivate';
     
     if (confirm(`Are you sure you want to ${action} user "${user.username}"?`)) {
-      this.updateUser(user.id, { is_active: newStatus });
+      this.updateUser(user.id, { isActive: newStatus });
     }
   }
 
   toggleStaffStatus(user: User): void {
     if (!user.id) return;
     
-    const newStatus = !user.is_staff;
+    const newStatus = !user.isStaff;
     const action = newStatus ? 'grant staff privileges to' : 'revoke staff privileges from';
     
     if (confirm(`Are you sure you want to ${action} user "${user.username}"?`)) {
-      this.updateUser(user.id, { is_staff: newStatus });
+      this.updateUser(user.id, { isStaff: newStatus });
     }
   }
 
@@ -214,25 +272,6 @@ export class UserManagementComponent implements OnInit {
     this.errorMessage.set('');
   }
 
-  get totalPages(): number {
-    return Math.ceil(this.totalUsers() / this.pageSize());
-  }
-
-  get pages(): number[] {
-    const total = this.totalPages;
-    const current = this.currentPage();
-    const pages: number[] = [];
-    
-    // Show up to 5 pages around current page
-    const start = Math.max(1, current - 2);
-    const end = Math.min(total, current + 2);
-    
-    for (let i = start; i <= end; i++) {
-      pages.push(i);
-    }
-    
-    return pages;
-  }
 
   formatDate(dateString?: string): string {
     return this.userManagementService.formatDate(dateString);

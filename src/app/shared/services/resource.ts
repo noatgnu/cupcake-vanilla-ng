@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { BaseResource, ResourceVisibility, ResourceRole } from '../models/resource';
+import { BaseResource, ResourceVisibility, ResourceRole } from '../models';
 
 /**
  * Service to help with resource-related operations and data transformation
@@ -63,16 +63,14 @@ export class ResourceService {
   /**
    * Check if user can perform action based on resource permissions
    */
-  canPerformAction(resource: BaseResource, action: 'view' | 'edit' | 'delete' | 'share'): boolean {
+  canPerformAction(resource: BaseResource, action: 'view' | 'edit' | 'delete'): boolean {
     switch (action) {
       case 'view':
-        return resource.can_view ?? true; // Default to true for backward compatibility
+        return resource.canView || false;
       case 'edit':
-        return resource.can_edit ?? false;
+        return resource.canEdit || false;
       case 'delete':
-        return resource.can_delete ?? false;
-      case 'share':
-        return resource.can_share ?? false;
+        return resource.canDelete || false;
       default:
         return false;
     }

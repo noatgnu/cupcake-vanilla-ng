@@ -1,7 +1,7 @@
 import { Injectable, signal, computed } from '@angular/core';
 import { BehaviorSubject, Subject, Observable, timer, EMPTY } from 'rxjs';
 import { takeUntil, switchMap, retry, tap } from 'rxjs/operators';
-import { AuthService } from 'cupcake-core';
+import { AuthService } from '@cupcake/core';
 import { environment } from '../../../environments/environment';
 
 export interface WebSocketMessage {

@@ -1,8 +1,27 @@
-export * from './metadata-column';
-export * from './metadata-table';
-export * from './sample-pool';
-export * from './lab-group';
-export * from './metadata-template';
-export * from './site-config';
-export * from './user';
-export * from './resource';
+export * from '@cupcake/vanilla';
+
+export { 
+  AuthService, 
+  UserManagementService, 
+  SiteConfigService, 
+  ToastService,
+  ResourceService,
+  BaseApiService,
+  ResourceVisibility,
+  ResourceRole,
+  ResourceType
+} from '@cupcake/core';
+
+export type {
+  BaseResource
+} from '@cupcake/core';
+
+export type { 
+  User,
+  LabGroup,
+  LabGroupQueryResponse,
+  LabGroupCreateRequest,
+  LabGroupUpdateRequest,
+  LabGroupMember,
+  LabGroupInvitation
+} from '@cupcake/core';

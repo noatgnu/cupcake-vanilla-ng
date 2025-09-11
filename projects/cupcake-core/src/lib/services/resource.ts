@@ -1,17 +1,11 @@
 import { Injectable } from '@angular/core';
-import { BaseResource, ResourceVisibility, ResourceRole } from '../models/resource';
+import { BaseResource, ResourceVisibility, ResourceRole } from '../models';
 
-/**
- * Service to help with resource-related operations and data transformation
- */
 @Injectable({
   providedIn: 'root'
 })
 export class ResourceService {
 
-  /**
-   * Convert legacy is_public field to new visibility enum
-   */
   convertLegacyVisibility(isPublic: boolean | undefined, isDefault: boolean = false): ResourceVisibility {
     if (isDefault || isPublic) {
       return ResourceVisibility.PUBLIC;
@@ -19,16 +13,10 @@ export class ResourceService {
     return ResourceVisibility.PRIVATE;
   }
 
-  /**
-   * Convert new visibility enum to legacy is_public for backward compatibility
-   */
   convertToLegacyVisibility(visibility: ResourceVisibility): boolean {
     return visibility === ResourceVisibility.PUBLIC;
   }
 
-  /**
-   * Get user-friendly visibility label
-   */
   getVisibilityLabel(visibility: ResourceVisibility): string {
     switch (visibility) {
       case ResourceVisibility.PRIVATE:
@@ -42,9 +30,6 @@ export class ResourceService {
     }
   }
 
-  /**
-   * Get user-friendly role label
-   */
   getRoleLabel(role: ResourceRole): string {
     switch (role) {
       case ResourceRole.OWNER:
@@ -60,27 +45,23 @@ export class ResourceService {
     }
   }
 
-  /**
-   * Check if user can perform action based on resource permissions
-   */
   canPerformAction(resource: BaseResource, action: 'view' | 'edit' | 'delete' | 'share'): boolean {
     switch (action) {
       case 'view':
-        return resource.can_view ?? true; // Default to true for backward compatibility
+        return resource.canView ?? true;
       case 'edit':
-        return resource.can_edit ?? false;
+        return resource.canEdit ?? false;
       case 'delete':
-        return resource.can_delete ?? false;
+        return resource.canDelete ?? false;
       case 'share':
-        return resource.can_share ?? false;
+        // Share permission is based on ownership or admin role
+        // This would typically require checking permissions via API
+        return resource.canEdit ?? false;
       default:
         return false;
     }
   }
 
-  /**
-   * Get visibility options for dropdowns
-   */
   getVisibilityOptions(): Array<{value: ResourceVisibility, label: string, description: string}> {
     return [
       {
@@ -101,9 +82,6 @@ export class ResourceService {
     ];
   }
 
-  /**
-   * Get role options for permission management
-   */
   getRoleOptions(): Array<{value: ResourceRole, label: string, description: string}> {
     return [
       {
@@ -129,60 +107,48 @@ export class ResourceService {
     ];
   }
 
-  /**
-   * Transform legacy API response to include new resource fields
-   * This helps during the transition period
-   */
   transformLegacyResource<T extends Partial<BaseResource>>(legacyData: any): T {
     const transformed = { ...legacyData };
 
-    // Transform creator fields to owner fields
     if (legacyData.creator !== undefined) {
       transformed.owner = legacyData.creator;
       delete transformed.creator;
     }
     if (legacyData.creator_username !== undefined) {
-      transformed.owner_username = legacyData.creator_username;
+      transformed.ownerUsername = legacyData.creator_username;
       delete transformed.creator_username;
     }
 
-    // Transform is_public to visibility
     if (legacyData.is_public !== undefined) {
       transformed.visibility = this.convertLegacyVisibility(legacyData.is_public, legacyData.is_default);
       delete transformed.is_public;
     }
 
-    // Set default values for new fields if not present
     if (transformed.visibility === undefined) {
       transformed.visibility = ResourceVisibility.PRIVATE;
     }
-    if (transformed.is_active === undefined) {
-      transformed.is_active = true;
+    if (transformed.isActive === undefined) {
+      transformed.isActive = true;
     }
-    if (transformed.is_locked === undefined) {
-      transformed.is_locked = false;
+    if (transformed.isLocked === undefined) {
+      transformed.isLocked = false;
     }
 
     return transformed as T;
   }
 
-  /**
-   * Prepare resource data for API submission (convert back to legacy format if needed)
-   */
-  prepareForAPI<T extends Partial<BaseResource>>(resourceData: T): any {
+  prepareForAPI<T extends Record<string, any>>(resourceData: T): any {
     const prepared: any = { ...resourceData };
 
-    // Convert owner fields back to creator fields for legacy API compatibility
     if (prepared.owner !== undefined) {
       prepared.creator = prepared.owner;
       delete prepared.owner;
     }
-    if (prepared.owner_username !== undefined) {
-      prepared.creator_username = prepared.owner_username;
-      delete prepared.owner_username;
+    if (prepared.ownerUsername !== undefined) {
+      prepared.creator_username = prepared.ownerUsername;
+      delete prepared.ownerUsername;
     }
 
-    // Convert visibility back to is_public for legacy API compatibility
     if (prepared.visibility !== undefined) {
       prepared.is_public = this.convertToLegacyVisibility(prepared.visibility);
       delete prepared.visibility;

@@ -20,34 +20,34 @@ export class SamplePoolDetailsModal {
   }
 
   get title(): string {
-    return this.pool?.pool_name || 'Sample Pool Details';
+    return this.pool?.poolName || 'Sample Pool Details';
   }
 
   get poolTypeLabel(): string {
-    return this.pool?.is_reference ? 'Reference Pool' : 'Sample Pool';
+    return this.pool?.isReference ? 'Reference Pool' : 'Sample Pool';
   }
 
   get poolTypeClass(): string {
-    return this.pool?.is_reference ? 'badge bg-info' : 'badge bg-primary';
+    return this.pool?.isReference ? 'badge bg-info' : 'badge bg-primary';
   }
 
   get pooledOnlySamplesText(): string {
-    if (!this.pool?.pooled_only_samples || this.pool.pooled_only_samples.length === 0) {
+    if (!this.pool?.pooledOnlySamples || this.pool.pooledOnlySamples.length === 0) {
       return 'None';
     }
-    return this.pool.pooled_only_samples.join(', ');
+    return this.pool.pooledOnlySamples.join(', ');
   }
 
   get pooledAndIndependentSamplesText(): string {
-    if (!this.pool?.pooled_and_independent_samples || this.pool.pooled_and_independent_samples.length === 0) {
+    if (!this.pool?.pooledAndIndependentSamples || this.pool.pooledAndIndependentSamples.length === 0) {
       return 'None';
     }
-    return this.pool.pooled_and_independent_samples.join(', ');
+    return this.pool.pooledAndIndependentSamples.join(', ');
   }
 
   get allSamplesCount(): number {
-    const pooledOnly = this.pool?.pooled_only_samples?.length || 0;
-    const pooledAndIndependent = this.pool?.pooled_and_independent_samples?.length || 0;
+    const pooledOnly = this.pool?.pooledOnlySamples?.length || 0;
+    const pooledAndIndependent = this.pool?.pooledAndIndependentSamples?.length || 0;
     return pooledOnly + pooledAndIndependent;
   }
 }

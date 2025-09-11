@@ -1,9 +1,8 @@
-import { Component, Input, Output, EventEmitter, OnInit, signal } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormArray } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgbActiveModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
-import { SamplePool } from '../../models';
-import { ApiService } from '../../services/api';
+import { SamplePool, SamplePoolService } from '../../models';
 
 @Component({
   selector: 'app-sample-pool-edit-modal',
@@ -20,30 +19,28 @@ export class SamplePoolEditModal implements OnInit {
   editForm: FormGroup;
   isLoading = signal(false);
 
-  constructor(
-    private fb: FormBuilder,
-    private activeModal: NgbActiveModal,
-    private apiService: ApiService
-  ) {
+  private fb = inject(FormBuilder);
+  private activeModal = inject(NgbActiveModal);
+  private samplePoolService = inject(SamplePoolService);
+
+  constructor() {
     this.editForm = this.fb.group({
-      pool_name: ['', [Validators.required, Validators.maxLength(255)]],
-      pool_description: [''],
-      is_reference: [false],
-      template_sample: [null],
-      pooled_only_samples_text: [''],
-      pooled_and_independent_samples_text: ['']
+      poolName: ['', [Validators.required, Validators.maxLength(255)]],
+      poolDescription: [''],
+      isReference: [false],
+      pooledOnlySamplesText: [''],
+      pooledAndIndependentSamplesText: ['']
     });
   }
 
   ngOnInit() {
     if (this.pool) {
       this.editForm.patchValue({
-        pool_name: this.pool.pool_name,
-        pool_description: this.pool.pool_description || '',
-        is_reference: this.pool.is_reference,
-        template_sample: this.pool.template_sample || null,
-        pooled_only_samples_text: this.pool.pooled_only_samples?.join(', ') || '',
-        pooled_and_independent_samples_text: this.pool.pooled_and_independent_samples?.join(', ') || ''
+        poolName: this.pool.poolName,
+        poolDescription: this.pool.poolDescription || '',
+        isReference: this.pool.isReference,
+        pooledOnlySamplesText: this.pool.pooledOnlySamples?.join(', ') || '',
+        pooledAndIndependentSamplesText: this.pool.pooledAndIndependentSamples?.join(', ') || ''
       });
     }
   }
@@ -55,19 +52,18 @@ export class SamplePoolEditModal implements OnInit {
       const formValue = this.editForm.value;
       
       // Parse sample arrays from text input
-      const pooledOnlySamples = this.parseSampleNumbers(formValue.pooled_only_samples_text);
-      const pooledAndIndependentSamples = this.parseSampleNumbers(formValue.pooled_and_independent_samples_text);
+      const pooledOnlySamples = this.parseSampleNumbers(formValue.pooledOnlySamplesText);
+      const pooledAndIndependentSamples = this.parseSampleNumbers(formValue.pooledAndIndependentSamplesText);
       
       const updateData: Partial<SamplePool> = {
-        pool_name: formValue.pool_name.trim(),
-        pool_description: formValue.pool_description?.trim() || undefined,
-        is_reference: formValue.is_reference,
-        template_sample: formValue.template_sample || undefined,
-        pooled_only_samples: pooledOnlySamples,
-        pooled_and_independent_samples: pooledAndIndependentSamples
+        poolName: formValue.poolName.trim(),
+        poolDescription: formValue.poolDescription?.trim() || undefined,
+        isReference: formValue.isReference,
+        pooledOnlySamples: pooledOnlySamples,
+        pooledAndIndependentSamples: pooledAndIndependentSamples
       };
 
-      this.apiService.updateSamplePool(this.pool.id, updateData).subscribe({
+      this.samplePoolService.updateSamplePool(this.pool.id, updateData).subscribe({
         next: (updatedPool) => {
           this.poolSaved.emit(updatedPool);
           this.activeModal.close(updatedPool);
@@ -85,7 +81,7 @@ export class SamplePoolEditModal implements OnInit {
   }
 
   get title(): string {
-    return `Edit ${this.pool?.pool_name || 'Sample Pool'}`;
+    return `Edit ${this.pool?.poolName || 'Sample Pool'}`;
   }
 
   get hasChanges(): boolean {
@@ -93,12 +89,11 @@ export class SamplePoolEditModal implements OnInit {
     
     const formValue = this.editForm.value;
     return (
-      formValue.pool_name !== this.pool.pool_name ||
-      formValue.pool_description !== (this.pool.pool_description || '') ||
-      formValue.is_reference !== this.pool.is_reference ||
-      formValue.template_sample !== this.pool.template_sample ||
-      formValue.pooled_only_samples_text !== (this.pool.pooled_only_samples?.join(', ') || '') ||
-      formValue.pooled_and_independent_samples_text !== (this.pool.pooled_and_independent_samples?.join(', ') || '')
+      formValue.poolName !== this.pool.poolName ||
+      formValue.poolDescription !== (this.pool.poolDescription || '') ||
+      formValue.isReference !== this.pool.isReference ||
+      formValue.pooledOnlySamplesText !== (this.pool.pooledOnlySamples?.join(', ') || '') ||
+      formValue.pooledAndIndependentSamplesText !== (this.pool.pooledAndIndependentSamples?.join(', ') || '')
     );
   }
 
@@ -161,23 +156,22 @@ export class SamplePoolEditModal implements OnInit {
 
   private getFieldDisplayName(fieldName: string): string {
     const displayNames: { [key: string]: string } = {
-      'pool_name': 'Pool name',
-      'pool_description': 'Description',
-      'template_sample': 'Template sample',
-      'pooled_only_samples_text': 'Pooled only samples',
-      'pooled_and_independent_samples_text': 'Pooled and independent samples'
+      'poolName': 'Pool name',
+      'poolDescription': 'Description',
+      'pooledOnlySamplesText': 'Pooled only samples',
+      'pooledAndIndependentSamplesText': 'Pooled and independent samples'
     };
     return displayNames[fieldName] || fieldName;
   }
 
   // Helper methods for template
   get pooledOnlySamplesCount(): number {
-    const text = this.editForm.get('pooled_only_samples_text')?.value || '';
+    const text = this.editForm.get('pooledOnlySamplesText')?.value || '';
     return this.parseSampleNumbers(text).length;
   }
 
   get pooledAndIndependentSamplesCount(): number {
-    const text = this.editForm.get('pooled_and_independent_samples_text')?.value || '';
+    const text = this.editForm.get('pooledAndIndependentSamplesText')?.value || '';
     return this.parseSampleNumbers(text).length;
   }
 

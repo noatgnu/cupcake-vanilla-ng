@@ -4,8 +4,8 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
 import { NgbActiveModal, NgbModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { MetadataTableTemplate, LabGroup, MetadataColumn, ResourceVisibility } from '../../../shared/models';
+import { MetadataTableTemplateService } from '@cupcake/vanilla';
 import { ColumnEditModal } from '../column-edit-modal/column-edit-modal';
-import { ApiService } from '../../../shared/services/api';
 import { ToastService } from '../../../shared/services/toast';
 
 @Component({
@@ -28,8 +28,8 @@ export class MetadataTableTemplateEditModal implements OnInit {
   templateColumns = computed(() => {
     // Sort columns by position, then by name+type for grouping same columns together
     return this._templateColumns().sort((a, b) => {
-      if (a.column_position !== b.column_position) {
-        return (a.column_position || 0) - (b.column_position || 0);
+      if (a.columnPosition !== b.columnPosition) {
+        return (a.columnPosition || 0) - (b.columnPosition || 0);
       }
       // Secondary sort: group columns with same name and type together
       const aKey = `${a.name}_${a.type}`;
@@ -49,15 +49,15 @@ export class MetadataTableTemplateEditModal implements OnInit {
     private fb: FormBuilder,
     private activeModal: NgbActiveModal,
     private modalService: NgbModal,
-    private apiService: ApiService,
+    private metadataTableTemplateService: MetadataTableTemplateService,
     private toastService: ToastService
   ) {
     this.editForm = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(3)]],
       description: [''],
       visibility: [ResourceVisibility.PRIVATE],
-      is_default: [false],
-      lab_group: [null]
+      isDefault: [false],
+      labGroupId: [null]
     });
   }
 
@@ -69,21 +69,19 @@ export class MetadataTableTemplateEditModal implements OnInit {
 
   private populateForm() {
     if (this.template) {
-      const labGroupId = typeof this.template.lab_group === 'object' 
-        ? this.template.lab_group?.id 
-        : this.template.lab_group;
+      const labGroupId = this.template.labGroup;
       
       this.editForm.patchValue({
         name: this.template.name,
         description: this.template.description || '',
         visibility: this.template.visibility || ResourceVisibility.PRIVATE,
-        is_default: this.template.is_default || false,
-        lab_group: labGroupId || null
+        isDefault: this.template.isDefault || false,
+        labGroupId: labGroupId || null
       });
       
       // Load existing columns if editing
-      if (this.template.user_columns) {
-        this._templateColumns.set([...this.template.user_columns]);
+      if (this.template.userColumns) {
+        this._templateColumns.set([...this.template.userColumns]);
       }
     }
   }
@@ -98,13 +96,13 @@ export class MetadataTableTemplateEditModal implements OnInit {
         name: formValue.name,
         description: formValue.description || '',
         visibility: formValue.visibility || ResourceVisibility.PRIVATE,
-        is_default: formValue.is_default || false,
-        lab_group: formValue.lab_group || null,
+        isDefault: formValue.isDefault || false,
+        labGroup: formValue.labGroupId || null,
         // Include updated columns
-        user_columns: this._templateColumns(),
+        userColumns: this._templateColumns(),
         // Keep existing field mapping if editing
         ...(this.template && {
-          field_mask_mapping: this.template.field_mask_mapping
+          fieldMaskMapping: this.template.fieldMaskMapping
         })
       };
 
@@ -168,7 +166,7 @@ export class MetadataTableTemplateEditModal implements OnInit {
       ...column,
       id: this.generateTempId(), // Generate temporary ID for tracking
       name: `${column.name} (Copy)`,
-      column_position: this.getNextPositionForSameType(column)
+      columnPosition: this.getNextPositionForSameType(column)
     };
 
     // Add the duplicated column right after columns with same name/type
@@ -243,9 +241,9 @@ export class MetadataTableTemplateEditModal implements OnInit {
     } else {
       // Add new column
       const newColumn: MetadataColumn = {
+        ...columnData as MetadataColumn,
         id: this.generateTempId(),
-        column_position: this.getNextPositionForNameType(columnData.name!, columnData.type!),
-        ...columnData as MetadataColumn
+        columnPosition: this.getNextPositionForNameType(columnData.name!, columnData.type!)
       };
       
       const updatedColumns = [...currentColumns, newColumn];
@@ -262,11 +260,11 @@ export class MetadataTableTemplateEditModal implements OnInit {
     }
 
     this.isLoading.set(true);
-    this.apiService.addColumnWithAutoReorderToTemplate(this.template.id, {
-      column_data: columnData,
-      auto_reorder: true
+    
+    this.metadataTableTemplateService.addColumnWithAutoReorder(this.template.id, {
+      columnData: columnData
     }).subscribe({
-      next: (response) => {
+      next: (response: { message: string; column: any; reordered: boolean; schemaIdsUsed: number[] }) => {
         this.isLoading.set(false);
         
         // Refresh the template data by reloading it
@@ -275,7 +273,7 @@ export class MetadataTableTemplateEditModal implements OnInit {
         // Show success message with reordering info
         let message = `Column "${response.column.name}" added successfully!`;
         if (response.reordered) {
-          message += ` Columns reordered using ${response.schema_ids_used.length} schema(s).`;
+          message += ` Columns reordered using ${response.schemaIdsUsed.length} schema(s).`;
         }
         
         this.toastService.success(message);
@@ -290,9 +288,9 @@ export class MetadataTableTemplateEditModal implements OnInit {
 
   private reloadTemplateColumns(): void {
     if (this.template?.id) {
-      this.apiService.getMetadataTableTemplate(this.template.id).subscribe({
+      this.metadataTableTemplateService.getMetadataTableTemplate(this.template.id).subscribe({
         next: (updatedTemplate) => {
-          this._templateColumns.set([...updatedTemplate.user_columns || []]);
+          this._templateColumns.set([...updatedTemplate.userColumns || []]);
         },
         error: (error) => {
           console.error('Error reloading template columns:', error);
@@ -318,7 +316,7 @@ export class MetadataTableTemplateEditModal implements OnInit {
       return currentColumns.length;
     }
     
-    const maxPosition = Math.max(...sameNameTypeColumns.map(col => col.column_position || 0));
+    const maxPosition = Math.max(...sameNameTypeColumns.map(col => col.columnPosition || 0));
     return maxPosition + 1;
   }
 
@@ -332,13 +330,13 @@ export class MetadataTableTemplateEditModal implements OnInit {
       return currentColumns.length;
     }
     
-    const maxPosition = Math.max(...sameNameTypeColumns.map(col => col.column_position || 0));
+    const maxPosition = Math.max(...sameNameTypeColumns.map(col => col.columnPosition || 0));
     return maxPosition + 1;
   }
 
   private normalizeColumnPositions(columns: MetadataColumn[]) {
     columns.forEach((col, index) => {
-      col.column_position = index;
+      col.columnPosition = index;
     });
   }
 
@@ -360,10 +358,10 @@ export class MetadataTableTemplateEditModal implements OnInit {
     
     for (const [key, groupColumns] of groups) {
       // Sort within group by original position to maintain relative order
-      groupColumns.sort((a, b) => (a.column_position || 0) - (b.column_position || 0));
+      groupColumns.sort((a, b) => (a.columnPosition || 0) - (b.columnPosition || 0));
       
       groupColumns.forEach(col => {
-        col.column_position = position++;
+        col.columnPosition = position++;
         regroupedColumns.push(col);
       });
     }

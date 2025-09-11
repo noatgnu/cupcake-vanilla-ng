@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { NgbAlert } from '@ng-bootstrap/ng-bootstrap';
@@ -18,10 +18,19 @@ export class SiteConfigComponent implements OnInit {
   private siteConfigService = inject(SiteConfigService);
 
   configForm: FormGroup;
-  loading = false;
-  error: string | null = null;
-  success: string | null = null;
-  selectedLogoFile: File | null = null;
+  
+  // Signals for reactive state management
+  loading = signal(false);
+  error = signal<string | null>(null);
+  success = signal<string | null>(null);
+  selectedLogoFile = signal<File | null>(null);
+  currentConfig = signal<SiteConfig | null>(null);
+
+  // Computed signal for preview configuration
+  previewConfig = computed(() => {
+    if (!this.currentConfig()) return null;
+    return { ...this.currentConfig()!, ...this.configForm.value };
+  });
 
   // Preset colors for the color picker
   presetColors = [
@@ -32,12 +41,12 @@ export class SiteConfigComponent implements OnInit {
 
   constructor() {
     this.configForm = this.fb.group({
-      site_name: ['', [Validators.required, Validators.minLength(1), Validators.maxLength(255)]],
-      logo_url: [''],
-      primary_color: ['#1976d2', [Validators.pattern(/^#[0-9A-Fa-f]{6}$/)]],
-      show_powered_by: [true],
-      allow_user_registration: [false],
-      enable_orcid_login: [false]
+      siteName: ['', [Validators.required, Validators.minLength(1), Validators.maxLength(255)]],
+      logoUrl: [''],
+      primaryColor: ['#1976d2', [Validators.pattern(/^#[0-9A-Fa-f]{6}$/)]],
+      showPoweredBy: [true],
+      allowUserRegistration: [false],
+      enableOrcidLogin: [false]
     });
   }
 
@@ -45,11 +54,11 @@ export class SiteConfigComponent implements OnInit {
     // Load current configuration for admin (authenticated endpoint)
     this.siteConfigService.getCurrentConfig().subscribe({
       next: (config) => {
+        this.currentConfig.set(config);
         this.configForm.patchValue(config);
       },
       error: (error) => {
-        this.error = 'Failed to load current configuration.';
-        console.error('Error loading site config:', error);
+        this.error.set('Failed to load current configuration.');
       }
     });
   }
@@ -59,30 +68,30 @@ export class SiteConfigComponent implements OnInit {
    */
   onSubmit() {
     if (this.configForm.valid) {
-      this.loading = true;
-      this.error = null;
-      this.success = null;
+      this.loading.set(true);
+      this.error.set(null);
+      this.success.set(null);
 
       const config: Partial<SiteConfig> = this.configForm.value;
 
       this.siteConfigService.updateConfig(config).subscribe({
         next: (updatedConfig) => {
-          this.loading = false;
-          this.success = 'Site configuration updated successfully!';
+          this.loading.set(false);
+          this.success.set('Site configuration updated successfully!');
+          this.currentConfig.set(updatedConfig);
 
-          // Update local config
           localStorage.setItem('site_config', JSON.stringify(updatedConfig));
 
           setTimeout(() => {
-            this.success = null;
+            this.success.set(null);
           }, 3000);
         },
         error: (error) => {
-          this.loading = false;
-          this.error = error.error?.detail || 'Failed to update site configuration.';
+          this.loading.set(false);
+          this.error.set(error.error?.detail || 'Failed to update site configuration.');
 
           setTimeout(() => {
-            this.error = null;
+            this.error.set(null);
           }, 5000);
         }
       });
@@ -93,10 +102,11 @@ export class SiteConfigComponent implements OnInit {
    * Reset form to current configuration
    */
   resetForm() {
-    const currentConfig = this.siteConfigService.getCurrentConfig();
-    this.configForm.patchValue(currentConfig);
-    this.error = null;
-    this.success = null;
+    if (this.currentConfig()) {
+      this.configForm.patchValue(this.currentConfig()!);
+    }
+    this.error.set(null);
+    this.success.set(null);
   }
 
   /**
@@ -105,8 +115,8 @@ export class SiteConfigComponent implements OnInit {
   onColorChange(event: any) {
     const color = event.color?.hex || event.hex || event;
     if (color && typeof color === 'string') {
-      this.configForm.get('primary_color')?.setValue(color);
-      this.configForm.get('primary_color')?.markAsTouched();
+      this.configForm.get('primaryColor')?.setValue(color);
+      this.configForm.get('primaryColor')?.markAsTouched();
     }
   }
 
@@ -135,24 +145,24 @@ export class SiteConfigComponent implements OnInit {
   }
 
   /**
-   * Preview the current form values
+   * Get the current primary color value for styling
    */
-  getPreviewConfig(): SiteConfig {
-    return { ...this.siteConfigService.getCurrentConfig(), ...this.configForm.value };
+  getCurrentPrimaryColor(): string {
+    return this.configForm.get('primaryColor')?.value || '#1976d2';
   }
 
   /**
    * Clear error message
    */
   clearError() {
-    this.error = null;
+    this.error.set(null);
   }
 
   /**
    * Clear success message
    */
   clearSuccess() {
-    this.success = null;
+    this.success.set(null);
   }
 
   /**
@@ -161,27 +171,28 @@ export class SiteConfigComponent implements OnInit {
   onLogoFileSelected(event: Event) {
     const target = event.target as HTMLInputElement;
     if (target.files && target.files.length > 0) {
-      this.selectedLogoFile = target.files[0];
+      const file = target.files[0];
 
       // Validate file type
       const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/svg+xml'];
-      if (!allowedTypes.includes(this.selectedLogoFile.type)) {
-        this.error = 'Please select a valid image file (JPEG, PNG, GIF, or SVG).';
-        this.selectedLogoFile = null;
+      if (!allowedTypes.includes(file.type)) {
+        this.error.set('Please select a valid image file (JPEG, PNG, GIF, or SVG).');
+        this.selectedLogoFile.set(null);
         target.value = '';
         return;
       }
 
       // Validate file size (max 5MB)
       const maxSize = 5 * 1024 * 1024; // 5MB
-      if (this.selectedLogoFile.size > maxSize) {
-        this.error = 'Logo file size must be less than 5MB.';
-        this.selectedLogoFile = null;
+      if (file.size > maxSize) {
+        this.error.set('Logo file size must be less than 5MB.');
+        this.selectedLogoFile.set(null);
         target.value = '';
         return;
       }
 
-      this.error = null;
+      this.selectedLogoFile.set(file);
+      this.error.set(null);
     }
   }
 
@@ -189,7 +200,7 @@ export class SiteConfigComponent implements OnInit {
    * Remove selected logo file
    */
   clearLogoFile() {
-    this.selectedLogoFile = null;
+    this.selectedLogoFile.set(null);
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
     if (fileInput) {
       fileInput.value = '';

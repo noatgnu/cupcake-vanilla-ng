@@ -6,11 +6,13 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { ColumnTemplateEditModal } from './column-template-edit-modal/column-template-edit-modal';
 import { 
   MetadataColumnTemplate, 
+  MetadataColumnTemplateCreateRequest,
   LabGroup, 
   LabGroupQueryResponse,
-  ResourceVisibility
+  ResourceVisibility,
+  MetadataColumnTemplateService
 } from '../../shared/models';
-import { ApiService } from '../../shared/services/api';
+import { LabGroupService } from '@cupcake/core';
 
 @Component({
   selector: 'app-column-templates',
@@ -25,8 +27,8 @@ export class ColumnTemplatesComponent implements OnInit {
   // Signals for reactive state management
   private searchParams = signal({
     search: '',
-    lab_group_id: null as number | null,
-    is_global: false,
+    labGroupId: null as number | null,
+    visibility: null as string | null,
     limit: 10,
     offset: 0
   });
@@ -74,7 +76,7 @@ export class ColumnTemplatesComponent implements OnInit {
     // Apply filter
     let filtered = filter ? 
       templates.filter(template => 
-        template.column_name.toLowerCase().includes(filter) ||
+        template.columnName.toLowerCase().includes(filter) ||
         template.name.toLowerCase().includes(filter)
       ) : templates;
     
@@ -89,17 +91,17 @@ export class ColumnTemplatesComponent implements OnInit {
             aValue = a.name?.toLowerCase() || '';
             bValue = b.name?.toLowerCase() || '';
             break;
-          case 'column_name':
-            aValue = a.column_name?.toLowerCase() || '';
-            bValue = b.column_name?.toLowerCase() || '';
+          case 'columnName':
+            aValue = a.columnName?.toLowerCase() || '';
+            bValue = b.columnName?.toLowerCase() || '';
             break;
-          case 'column_type':
-            aValue = a.column_type?.toLowerCase() || '';
-            bValue = b.column_type?.toLowerCase() || '';
+          case 'columnType':
+            aValue = a.columnType?.toLowerCase() || '';
+            bValue = b.columnType?.toLowerCase() || '';
             break;
-          case 'ontology_type':
-            aValue = a.ontology_type?.toLowerCase() || '';
-            bValue = b.ontology_type?.toLowerCase() || '';
+          case 'ontologyType':
+            aValue = a.ontologyType?.toLowerCase() || '';
+            bValue = b.ontologyType?.toLowerCase() || '';
             break;
           case 'visibility':
             aValue = a.visibility?.toLowerCase() || '';
@@ -120,13 +122,14 @@ export class ColumnTemplatesComponent implements OnInit {
 
   constructor(
     private fb: FormBuilder,
-    private apiService: ApiService,
+    private metadataColumnTemplateService: MetadataColumnTemplateService,
+    private labGroupService: LabGroupService,
     private modalService: NgbModal
   ) {
     this.searchForm = this.fb.group({
       search: [''],
-      lab_group_id: [null],
-      is_global: [false]
+      labGroupId: [null],
+      visibility: [null]
     });
 
     // Effect to automatically reload templates when search params change
@@ -156,20 +159,20 @@ export class ColumnTemplatesComponent implements OnInit {
     
     this.searchParams.set({
       search: '',
-      lab_group_id: null,
-      is_global: false,
+      labGroupId: null,
+      visibility: null,
       limit: this.pageSize(),
       offset: 0
     });
   }
 
   private loadLabGroupsWithParams(params: { limit: number; offset: number }) {
-    this.apiService.getMyLabGroups(params).subscribe({
-      next: (response) => {
+    this.labGroupService.getMyLabGroups({ limit: params.limit, offset: params.offset }).subscribe({
+      next: (response: LabGroupQueryResponse) => {
         this.labGroupsTotalItems.set(response.count);
         this.labGroupsData.set(response);
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error loading lab groups:', error);
         this.labGroupsData.set({ count: 0, results: [] });
       }
@@ -188,8 +191,8 @@ export class ColumnTemplatesComponent implements OnInit {
       // Update search params signal - this will trigger the effect
       this.searchParams.set({
         search: formValue.search || '',
-        lab_group_id: formValue.lab_group_id || null,
-        is_global: formValue.is_global || false,
+        labGroupId: formValue.labGroupId || null,
+        visibility: formValue.visibility || null,
         limit: this.pageSize(),
         offset: 0 // Always start from first page when searching
       });
@@ -199,10 +202,10 @@ export class ColumnTemplatesComponent implements OnInit {
   private loadTemplatesWithParams(params: any) {
     this.isLoading.set(true);
     
-    this.apiService.getColumnTemplates({
+    this.metadataColumnTemplateService.getMetadataColumnTemplates({
       search: params.search || undefined,
-      lab_group_id: params.lab_group_id || undefined,
-      is_global: params.is_global || undefined,
+      labGroupId: params.labGroupId || undefined,
+      visibility: params.visibility || undefined,
       limit: params.limit,
       offset: params.offset
     }).subscribe({
@@ -230,7 +233,7 @@ export class ColumnTemplatesComponent implements OnInit {
     // Update search params - effect will trigger reload
     this.searchParams.update(params => ({
       ...params,
-      lab_group_id: id,
+      labGroupId: id,
       offset: 0
     }));
   }
@@ -332,8 +335,8 @@ export class ColumnTemplatesComponent implements OnInit {
     this.isLoading.set(true);
     
     const apiCall = isEdit && templateId
-      ? this.apiService.updateColumnTemplate(templateId, templateData)
-      : this.apiService.createColumnTemplate(templateData);
+      ? this.metadataColumnTemplateService.updateMetadataColumnTemplate(templateId, templateData)
+      : this.metadataColumnTemplateService.createMetadataColumnTemplate(templateData as MetadataColumnTemplateCreateRequest);
 
     apiCall.subscribe({
       next: (template) => {
@@ -355,7 +358,7 @@ export class ColumnTemplatesComponent implements OnInit {
     
     if (confirm(confirmMessage)) {
       this.isLoading.set(true);
-      this.apiService.deleteColumnTemplate(template.id!).subscribe({
+      this.metadataColumnTemplateService.deleteMetadataColumnTemplate(template.id!).subscribe({
         next: () => {
           this.isLoading.set(false);
           console.log('Column template deleted successfully');
@@ -374,17 +377,17 @@ export class ColumnTemplatesComponent implements OnInit {
     const duplicatedTemplate: Partial<MetadataColumnTemplate> = {
       name: `${template.name} (Copy)`,
       description: template.description,
-      column_name: `${template.column_name}_copy`,
-      column_type: template.column_type,
-      default_value: template.default_value,
-      ontology_type: template.ontology_type,
+      columnName: `${template.columnName}_copy`,
+      columnType: template.columnType,
+      defaultValue: template.defaultValue,
+      ontologyType: template.ontologyType,
       visibility: ResourceVisibility.PRIVATE, // Always create as private
-      lab_group: template.lab_group || this.selectedLabGroup()?.id || undefined,
-      is_active: true
+      labGroup: template.labGroup || this.selectedLabGroup()?.id || undefined,
+      isActive: true
     };
     
     this.isLoading.set(true);
-    this.apiService.createColumnTemplate(duplicatedTemplate).subscribe({
+    this.metadataColumnTemplateService.createMetadataColumnTemplate(duplicatedTemplate as MetadataColumnTemplateCreateRequest).subscribe({
       next: (newTemplate) => {
         this.isLoading.set(false);
         console.log('Column template duplicated:', newTemplate);

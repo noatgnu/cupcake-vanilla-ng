@@ -5,7 +5,7 @@ import { NgbActiveModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
 
 import { AsyncTaskService } from '../../services/async-task';
 import { ToastService } from '../../services/toast';
-import { ValidationTaskCreateRequest, MetadataValidationConfig } from '../../models/async-task';
+import { MetadataValidationRequest, MetadataValidationConfig, AsyncTaskCreateResponse } from '@cupcake/vanilla';
 
 @Component({
   selector: 'app-metadata-validation-modal',
@@ -39,19 +39,19 @@ export class MetadataValidationModal {
     this.validationError.set(null);
     
     const formValue = this.validationForm.value;
-    const request: ValidationTaskCreateRequest = {
-      metadata_table_id: this.config.metadata_table_id,
-      validate_sdrf_format: formValue.validate_sdrf_format ?? true
+    const request: MetadataValidationRequest = {
+      metadataTableId: this.config.metadataTableId,
+      validateSdrfFormat: formValue.validate_sdrf_format ?? true
     };
     
     this.asyncTaskService.validateMetadataTable(request).subscribe({
       next: (response) => {
         this.toastService.success(
-          `Validation started successfully for "${this.config?.metadata_table_name}"`
+          `Validation started successfully for "${this.config?.metadataTableName}"`
         );
         this.activeModal.close({
           success: true,
-          task_id: response.task_id,
+          task_id: response.taskId,
           message: response.message
         });
       },

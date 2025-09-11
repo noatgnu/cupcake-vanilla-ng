@@ -56,7 +56,7 @@
                   class="form-check-input" 
                   type="checkbox" 
                   id="allowInvites" 
-                  formControlName="allow_member_invites">
+                  formControlName="allowMemberInvites">
                 <label class="form-check-label" for="allowInvites">
                   <i class="bi bi-envelope me-1"></i>Allow members to invite others
                 </label>
@@ -156,19 +156,19 @@
                         <br><small class="text-muted">{{ group.description }}</small>
                       }
                     </td>
-                    <td>{{ group.owner_username || 'Unknown' }}</td>
+                    <td>{{ group.creatorName || 'Unknown' }}</td>
                     <td>
-                      <span class="badge bg-info">{{ group.member_count }}</span>
+                      <span class="badge bg-info">{{ group.memberCount }}</span>
                     </td>
                     <td>
-                      @if (group.is_active) {
+                      @if (group.isActive) {
                         <span class="badge bg-success">Active</span>
                       } @else {
                         <span class="badge bg-secondary">Inactive</span>
                       }
                     </td>
                     <td>
-                      <small>{{ group.created_at | date:'short' }}</small>
+                      <small>{{ group.createdAt | date:'short' }}</small>
                     </td>
                     <td>
                       <div class="btn-group btn-group-sm" role="group">
@@ -179,7 +179,7 @@
                           title="View members">
                           <i class="bi bi-people"></i>
                         </button>
-                        @if (group.is_member && !group.is_creator) {
+                        @if (group.isMember && !group.isCreator) {
                           <button 
                             type="button"
                             class="btn btn-outline-warning" 
@@ -188,7 +188,7 @@
                             <i class="bi bi-box-arrow-right"></i>
                           </button>
                         }
-                        @if (group.can_manage) {
+                        @if (group.canManage) {
                           <button 
                             type="button"
                             class="btn btn-outline-danger" 
@@ -226,7 +226,7 @@
               <i class="bi bi-people display-1 mb-3"></i>
               <h5>No Lab Groups Found</h5>
               <p>
-                @if (searchForm.get('search')?.value) {
+                @if (hasSearchValue()) {
                   Try adjusting your search criteria or create a new lab group.
                 } @else {
                   Get started by creating your first lab group.
@@ -251,13 +251,13 @@
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title">
-            <i class="bi bi-people me-2"></i>{{ selectedGroupForMembers()!.name }} - Members
+            <i class="bi bi-people me-2"></i>{{ currentGroupName() }} - Members
           </h5>
           <button type="button" class="btn-close" (click)="closeGroupDetails()"></button>
         </div>
         <div class="modal-body">
           <!-- Invite Form -->
-          @if (selectedGroupForMembers()!.can_invite) {
+          @if (canInviteToCurrentGroup()) {
             <div class="card mb-4">
               <div class="card-header d-flex justify-content-between align-items-center">
                 <h6 class="mb-0">
@@ -283,17 +283,17 @@
                           type="email" 
                           class="form-control" 
                           id="inviteEmail" 
-                          formControlName="invited_email"
-                          [class.is-invalid]="inviteForm.get('invited_email')?.invalid && inviteForm.get('invited_email')?.touched"
+                          formControlName="invitedEmail"
+                          [class.is-invalid]="inviteForm.get('invitedEmail')?.invalid && inviteForm.get('invitedEmail')?.touched"
                           placeholder="Email address">
                         <label for="inviteEmail">Email Address *</label>
                       </div>
-                      @if (inviteForm.get('invited_email')?.invalid && inviteForm.get('invited_email')?.touched) {
+                      @if (inviteForm.get('invitedEmail')?.invalid && inviteForm.get('invitedEmail')?.touched) {
                         <div class="invalid-feedback">
-                          @if (inviteForm.get('invited_email')?.errors?.['required']) {
+                          @if (inviteForm.get('invitedEmail')?.errors?.['required']) {
                             Email is required
                           }
-                          @if (inviteForm.get('invited_email')?.errors?.['email']) {
+                          @if (inviteForm.get('invitedEmail')?.errors?.['email']) {
                             Please enter a valid email address
                           }
                         </div>
@@ -331,23 +331,23 @@
           <div class="card mb-3">
             <div class="card-header">
               <h6 class="mb-0">
-                <i class="bi bi-people me-2"></i>Current Members ({{ groupMembers().length }})
+                <i class="bi bi-people me-2"></i>Current Members ({{ groupMembersCount() }})
               </h6>
             </div>
             <div class="card-body p-0">
-              @if (groupMembers().length > 0) {
+              @if (hasGroupMembers()) {
                 <div class="list-group list-group-flush">
                   @for (member of groupMembers(); track member.id) {
                     <div class="list-group-item d-flex justify-content-between align-items-center">
                       <div>
-                        <strong>{{ member.first_name }} {{ member.last_name }}</strong>
+                        <strong>{{ member.firstName }} {{ member.lastName }}</strong>
                         <br>
                         <small class="text-muted">{{ member.email }}</small>
-                        @if (member.is_creator) {
+                        @if (selectedGroupForMembers() && member.id === selectedGroupForMembers()!.creator) {
                           <span class="badge bg-warning ms-2">Creator</span>
                         }
                       </div>
-                      @if (selectedGroupForMembers()!.can_manage && !member.is_creator) {
+                      @if (canManageCurrentGroup() && selectedGroupForMembers() && member.id !== selectedGroupForMembers()!.creator) {
                         <button 
                           type="button"
                           class="btn btn-outline-danger btn-sm" 
@@ -369,11 +369,11 @@
           </div>
 
           <!-- Pending Invitations -->
-          @if (pendingInvitations().length > 0) {
+          @if (hasPendingInvitations()) {
             <div class="card">
               <div class="card-header">
                 <h6 class="mb-0">
-                  <i class="bi bi-clock me-2"></i>Pending Invitations ({{ pendingInvitations().length }})
+                  <i class="bi bi-clock me-2"></i>Pending Invitations ({{ pendingInvitationsCount() }})
                 </h6>
               </div>
               <div class="card-body p-0">
@@ -381,17 +381,17 @@
                   @for (invitation of pendingInvitations(); track invitation.id) {
                     <div class="list-group-item d-flex justify-content-between align-items-center">
                       <div>
-                        <strong>{{ invitation.invited_email }}</strong>
+                        <strong>{{ invitation.invitedEmail }}</strong>
                         <br>
                         <small class="text-muted">
-                          Invited by {{ invitation.inviter_name }} on {{ invitation.created_at | date:'short' }}
+                          Invited by {{ invitation.inviterName }} on {{ invitation.createdAt | date:'short' }}
                         </small>
                         @if (invitation.message) {
                           <br>
                           <small class="text-info">{{ invitation.message }}</small>
                         }
                       </div>
-                      @if (selectedGroupForMembers()!.can_manage) {
+                      @if (canManageCurrentGroup()) {
                         <button 
                           type="button"
                           class="btn btn-outline-danger btn-sm" 

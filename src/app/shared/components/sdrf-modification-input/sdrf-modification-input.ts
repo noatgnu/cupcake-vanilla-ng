@@ -4,8 +4,15 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
 import { NgbTypeahead, NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { Observable, OperatorFunction, debounceTime, distinctUntilChanged, filter, map, switchMap, of, catchError } from 'rxjs';
 import { SdrfSyntaxService, ModificationParameters } from '../../services/sdrf-syntax';
-import { ApiService } from '../../services/api';
-import { OntologySuggestion, UnimodFullData, UnimodSpecification, isUnimodFullData, OntologyUtils } from '../../models';
+import { 
+  OntologySuggestion, 
+  UnimodFullData, 
+  UnimodSpecification, 
+  isUnimodFullData, 
+  OntologyUtils,
+  MetadataColumnService,
+  MetadataColumnTemplateService 
+} from '../../models';
 
 @Component({
   selector: 'app-sdrf-modification-input',
@@ -24,7 +31,8 @@ export class SdrfModificationInput implements OnInit {
 
   private fb = inject(FormBuilder);
   private sdrfSyntax = inject(SdrfSyntaxService);
-  private apiService = inject(ApiService);
+  private metadataColumnService = inject(MetadataColumnService);
+  private metadataColumnTemplateService = inject(MetadataColumnTemplateService);
 
   modificationForm!: FormGroup;
 
@@ -132,10 +140,11 @@ export class SdrfModificationInput implements OnInit {
       switchMap(term => {
         // Use column ID first if available (for actual metadata columns), otherwise template ID (for templates/favorites)
         if (this.columnId) {
-          return this.apiService.getMetadataColumnOntologySuggestions(this.columnId, {
+          return this.metadataColumnService.getOntologySuggestions({
+            columnId: this.columnId,
             search: term,
             limit: 10,
-            search_type: this.searchType()
+            searchType: this.searchType()
           }).pipe(
             map(response => response.suggestions || []),
             catchError(error => {
@@ -144,10 +153,11 @@ export class SdrfModificationInput implements OnInit {
             })
           );
         } else if (this.templateId) {
-          return this.apiService.getColumnTemplateOntologySuggestions(this.templateId, {
+          return this.metadataColumnTemplateService.getOntologySuggestions({
+            templateId: this.templateId,
             search: term,
             limit: 10,
-            search_type: this.searchType()
+            searchType: this.searchType()
           }).pipe(
             map(response => response.suggestions || []),
             catchError(error => {
@@ -240,17 +250,17 @@ export class SdrfModificationInput implements OnInit {
       }
 
       // Update form fields with specification data
-      if (spec.site) {
-        this.modificationForm.patchValue({ TA: spec.site });
+      if (spec['site']) {
+        this.modificationForm.patchValue({ TA: spec['site'] });
       }
-      if (spec.position) {
+      if (spec['position']) {
         // Map Unimod position to our dropdown values
-        const mappedPosition = this.mapUnimodPosition(spec.position);
+        const mappedPosition = this.mapUnimodPosition(spec['position']);
         this.modificationForm.patchValue({ PP: mappedPosition });
       }
-      if (spec.classification) {
+      if (spec['classification']) {
         // Map classification to modification type if possible
-        const mappedType = this.mapClassificationToType(spec.classification);
+        const mappedType = this.mapClassificationToType(spec['classification']);
         if (mappedType) {
           this.modificationForm.patchValue({ MT: mappedType });
         }
@@ -288,9 +298,9 @@ export class SdrfModificationInput implements OnInit {
   // Get specification display text
   getSpecificationDisplay(spec: UnimodSpecification & { specNumber: string }): string {
     const parts = [];
-    if (spec.site) parts.push(`Site: ${spec.site}`);
-    if (spec.position) parts.push(`Position: ${spec.position}`);
-    if (spec.classification) parts.push(`Class: ${spec.classification}`);
+    if (spec['site']) parts.push(`Site: ${spec['site']}`);
+    if (spec['position']) parts.push(`Position: ${spec['position']}`);
+    if (spec['classification']) parts.push(`Class: ${spec['classification']}`);
 
     return parts.join(' | ') || `Specification ${spec.specNumber}`;
   }

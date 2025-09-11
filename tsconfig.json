@@ -4,9 +4,49 @@
   "compileOnSave": false,
   "compilerOptions": {
     "paths": {
-      "cupcake-core": [
+      "@cupcake/core": [
         "./dist/cupcake-core",
+        "./projects/cupcake-core/src/public-api.ts"
       ],
+      "@cupcake/macaron": [
+        "./dist/cupcake-macaron",
+        "./projects/cupcake-macaron/src/public-api.ts"
+      ],
+      "@cupcake/mint-chocolate": [
+        "./dist/cupcake-mint-chocolate",
+        "./projects/cupcake-mint-chocolate/src/public-api.ts"
+      ],
+      "@cupcake/red-velvet": [
+        "./dist/cupcake-red-velvet",
+        "./projects/cupcake-red-velvet/src/public-api.ts"
+      ],
+      "@cupcake/salted-caramel": [
+        "./dist/cupcake-salted-caramel",
+        "./projects/cupcake-salted-caramel/src/public-api.ts"
+      ],
+      "@cupcake/vanilla": [
+        "./dist/cupcake-vanilla",
+        "./projects/cupcake-vanilla/src/public-api.ts"
+      ],
+      // Backward compatibility - keep old names for now
+      "cupcake-core": [
+        "./dist/cupcake-core"
+      ],
+      "cupcake-macaron": [
+        "./dist/cupcake-macaron"
+      ],
+      "cupcake-mint-chocolate": [
+        "./dist/cupcake-mint-chocolate"
+      ],
+      "cupcake-red-velvet": [
+        "./dist/cupcake-red-velvet"
+      ],
+      "cupcake-salted-caramel": [
+        "./dist/cupcake-salted-caramel"
+      ],
+      "cupcake-vanilla": [
+        "./dist/cupcake-vanilla"
+      ]
     },
     "strict": true,
     "noImplicitOverride": true,
@@ -42,10 +82,34 @@
       "path": "./projects/cupcake-core/tsconfig.spec.json"
     },
     {
-      "path": "./projects/cupcake-core/tsconfig.lib.json"
+      "path": "./projects/cupcake-macaron/tsconfig.lib.json"
     },
     {
-      "path": "./projects/cupcake-core/tsconfig.spec.json"
+      "path": "./projects/cupcake-macaron/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/cupcake-mint-chocolate/tsconfig.lib.json"
+    },
+    {
+      "path": "./projects/cupcake-mint-chocolate/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/cupcake-salted-caramel/tsconfig.lib.json"
+    },
+    {
+      "path": "./projects/cupcake-salted-caramel/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/cupcake-red-velvet/tsconfig.lib.json"
+    },
+    {
+      "path": "./projects/cupcake-red-velvet/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/cupcake-vanilla/tsconfig.lib.json"
+    },
+    {
+      "path": "./projects/cupcake-vanilla/tsconfig.spec.json"
     }
   ]
 }

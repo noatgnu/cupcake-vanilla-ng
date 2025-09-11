@@ -7,7 +7,7 @@
           <h4 class="mb-0">
             <i class="bi bi-person-circle me-2 text-primary"></i>User Profile
           </h4>
-          @if (isStaff) {
+          @if (isStaff()) {
             <span class="badge bg-warning ms-3">Staff</span>
           }
         </div>
@@ -33,7 +33,7 @@
           <div class="row">
             <div class="col-md-6">
               <small class="text-muted">Full Name:</small>
-              <div class="fw-semibold">{{ fullName }}</div>
+              <div class="fw-semibold">{{ fullName() }}</div>
             </div>
             <div class="col-md-6">
               <small class="text-muted">Username:</small>
@@ -48,7 +48,7 @@
             <div class="col-md-6">
               <small class="text-muted">Account Status:</small>
               <div>
-                @if (currentUser()?.is_active) {
+                @if (currentUser()?.isActive) {
                   <span class="badge bg-success">Active</span>
                 } @else {
                   <span class="badge bg-danger">Inactive</span>
@@ -59,18 +59,18 @@
           <div class="row mt-3">
             <div class="col-md-6">
               <small class="text-muted">Member Since:</small>
-              <div class="fw-semibold">{{ joinDate }}</div>
+              <div class="fw-semibold">{{ joinDate() }}</div>
             </div>
             <div class="col-md-6">
               <small class="text-muted">Last Login:</small>
-              <div class="fw-semibold">{{ lastLogin }}</div>
+              <div class="fw-semibold">{{ lastLogin() }}</div>
             </div>
           </div>
         </div>
       </div>
 
       <!-- Navigation Tabs -->
-      <ul ngbNav #profileNav="ngbNav" [(activeId)]="activeTab" class="nav-tabs">
+      <ul ngbNav #profileNav="ngbNav" [activeId]="activeTab()" (activeIdChange)="setActiveTab($event)" class="nav-tabs">
         <li [ngbNavItem]="'profile'">
           <button ngbNavLink (click)="setActiveTab('profile')">
             <i class="bi bi-person me-1"></i>Profile Settings
@@ -93,9 +93,9 @@
                           type="text"
                           class="form-control"
                           id="firstName"
-                          formControlName="first_name"
-                          [class.is-invalid]="profileForm.get('first_name')?.invalid && profileForm.get('first_name')?.touched">
-                        @if (profileForm.get('first_name')?.invalid && profileForm.get('first_name')?.touched) {
+                          formControlName="firstName"
+                          [class.is-invalid]="profileForm.get('firstName')?.invalid && profileForm.get('firstName')?.touched">
+                        @if (profileForm.get('firstName')?.invalid && profileForm.get('firstName')?.touched) {
                           <div class="invalid-feedback">
                             First name is required (max 30 characters)
                           </div>
@@ -107,9 +107,9 @@
                           type="text"
                           class="form-control"
                           id="lastName"
-                          formControlName="last_name"
-                          [class.is-invalid]="profileForm.get('last_name')?.invalid && profileForm.get('last_name')?.touched">
-                        @if (profileForm.get('last_name')?.invalid && profileForm.get('last_name')?.touched) {
+                          formControlName="lastName"
+                          [class.is-invalid]="profileForm.get('lastName')?.invalid && profileForm.get('lastName')?.touched">
+                        @if (profileForm.get('lastName')?.invalid && profileForm.get('lastName')?.touched) {
                           <div class="invalid-feedback">
                             Last name is required (max 30 characters)
                           </div>
@@ -122,10 +122,10 @@
                         type="password"
                         class="form-control"
                         id="currentPassword"
-                        formControlName="current_password"
+                        formControlName="currentPassword"
                         placeholder="Enter your current password to confirm changes"
-                        [class.is-invalid]="profileForm.get('current_password')?.invalid && profileForm.get('current_password')?.touched">
-                      @if (profileForm.get('current_password')?.invalid && profileForm.get('current_password')?.touched) {
+                        [class.is-invalid]="profileForm.get('currentPassword')?.invalid && profileForm.get('currentPassword')?.touched">
+                      @if (profileForm.get('currentPassword')?.invalid && profileForm.get('currentPassword')?.touched) {
                         <div class="invalid-feedback">
                           Current password is required to update profile
                         </div>
@@ -178,9 +178,9 @@
                         type="password"
                         class="form-control"
                         id="currentPasswordChange"
-                        formControlName="current_password"
-                        [class.is-invalid]="passwordForm.get('current_password')?.invalid && passwordForm.get('current_password')?.touched">
-                      @if (passwordForm.get('current_password')?.invalid && passwordForm.get('current_password')?.touched) {
+                        formControlName="currentPassword"
+                        [class.is-invalid]="passwordForm.get('currentPassword')?.invalid && passwordForm.get('currentPassword')?.touched">
+                      @if (passwordForm.get('currentPassword')?.invalid && passwordForm.get('currentPassword')?.touched) {
                         <div class="invalid-feedback">
                           Current password is required
                         </div>
@@ -192,9 +192,9 @@
                         type="password"
                         class="form-control"
                         id="newPassword"
-                        formControlName="new_password"
-                        [class.is-invalid]="passwordForm.get('new_password')?.invalid && passwordForm.get('new_password')?.touched">
-                      @if (passwordForm.get('new_password')?.invalid && passwordForm.get('new_password')?.touched) {
+                        formControlName="newPassword"
+                        [class.is-invalid]="passwordForm.get('newPassword')?.invalid && passwordForm.get('newPassword')?.touched">
+                      @if (passwordForm.get('newPassword')?.invalid && passwordForm.get('newPassword')?.touched) {
                         <div class="invalid-feedback">
                           Password must be at least 8 characters long
                         </div>
@@ -206,14 +206,14 @@
                         type="password"
                         class="form-control"
                         id="confirmPassword"
-                        formControlName="confirm_password"
-                        [class.is-invalid]="(passwordForm.get('confirm_password')?.invalid || passwordForm.hasError('passwordMismatch')) && passwordForm.get('confirm_password')?.touched">
-                      @if (passwordForm.get('confirm_password')?.invalid && passwordForm.get('confirm_password')?.touched) {
+                        formControlName="confirmPassword"
+                        [class.is-invalid]="(passwordForm.get('confirmPassword')?.invalid || passwordForm.hasError('passwordMismatch')) && passwordForm.get('confirmPassword')?.touched">
+                      @if (passwordForm.get('confirmPassword')?.invalid && passwordForm.get('confirmPassword')?.touched) {
                         <div class="invalid-feedback">
                           Please confirm your new password
                         </div>
                       }
-                      @if (passwordForm.hasError('passwordMismatch') && passwordForm.get('confirm_password')?.touched) {
+                      @if (passwordForm.hasError('passwordMismatch') && passwordForm.get('confirmPassword')?.touched) {
                         <div class="invalid-feedback">
                           Passwords do not match
                         </div>
@@ -278,9 +278,9 @@
                         type="email"
                         class="form-control"
                         id="newEmail"
-                        formControlName="new_email"
-                        [class.is-invalid]="emailChangeForm.get('new_email')?.invalid && emailChangeForm.get('new_email')?.touched">
-                      @if (emailChangeForm.get('new_email')?.invalid && emailChangeForm.get('new_email')?.touched) {
+                        formControlName="newEmail"
+                        [class.is-invalid]="emailChangeForm.get('newEmail')?.invalid && emailChangeForm.get('newEmail')?.touched">
+                      @if (emailChangeForm.get('newEmail')?.invalid && emailChangeForm.get('newEmail')?.touched) {
                         <div class="invalid-feedback">
                           Please enter a valid email address
                         </div>
@@ -292,9 +292,9 @@
                         type="password"
                         class="form-control"
                         id="passwordEmailChange"
-                        formControlName="current_password"
-                        [class.is-invalid]="emailChangeForm.get('current_password')?.invalid && emailChangeForm.get('current_password')?.touched">
-                      @if (emailChangeForm.get('current_password')?.invalid && emailChangeForm.get('current_password')?.touched) {
+                        formControlName="currentPassword"
+                        [class.is-invalid]="emailChangeForm.get('currentPassword')?.invalid && emailChangeForm.get('currentPassword')?.touched">
+                      @if (emailChangeForm.get('currentPassword')?.invalid && emailChangeForm.get('currentPassword')?.touched) {
                         <div class="invalid-feedback">
                           Current password is required
                         </div>

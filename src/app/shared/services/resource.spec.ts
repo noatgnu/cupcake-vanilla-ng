@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 
 import { ResourceService } from './resource';
-import { ResourceVisibility, ResourceRole, BaseResource } from '../models/resource';
+import { ResourceVisibility, ResourceRole, BaseResource } from '../models';
 
 describe('ResourceService', () => {
   let service: ResourceService;

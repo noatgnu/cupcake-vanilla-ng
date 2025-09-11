@@ -1,17 +1,72 @@
-import { BaseResource } from './resource';
+import { BaseTimestampedModel } from './base';
+import { InvitationStatus } from './enums';
 
-export interface LabGroup extends BaseResource {
+export interface LabGroup extends BaseTimestampedModel {
   id: number;
   name: string;
   description?: string;
-  allow_member_invites: boolean;
-  member_count: number;
-  is_creator: boolean;
-  is_member: boolean;
-  can_invite: boolean;
-  can_manage: boolean;
-  created_at: string;
-  updated_at: string;
+  creator: number;
+  creatorName?: string;
+  isActive: boolean;
+  allowMemberInvites: boolean;
+  memberCount: number;
+  isCreator: boolean;
+  isMember: boolean;
+  canInvite: boolean;
+  canManage: boolean;
+}
+
+export interface LabGroupInvitation extends BaseTimestampedModel {
+  id: number;
+  labGroup: number;
+  labGroupName?: string;
+  inviter: number;
+  inviterName?: string;
+  invitedUser?: number;
+  invitedEmail: string;
+  status: InvitationStatus;
+  message?: string;
+  invitationToken: string;
+  expiresAt: string;
+  respondedAt?: string;
+  canAccept: boolean;
+}
+
+export interface LabGroupCreateRequest {
+  name: string;
+  description?: string;
+  allowMemberInvites?: boolean;
+}
+
+export interface LabGroupUpdateRequest {
+  name?: string;
+  description?: string;
+  isActive?: boolean;
+  allowMemberInvites?: boolean;
+}
+
+export interface LabGroupInviteRequest {
+  emails: string[];
+  message?: string;
+}
+
+export interface InvitationResponseRequest {
+  accept: boolean;
+}
+
+export interface LabGroupMember {
+  id: number;
+  username: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  isStaff: boolean;
+  isSuperuser: boolean;
+  isActive: boolean;
+  dateJoined: string;
+  lastLogin?: string;
+  hasOrcid: boolean;
+  orcidId?: string;
 }
 
 export interface LabGroupQueryResponse {
@@ -19,32 +74,6 @@ export interface LabGroupQueryResponse {
   next?: string;
   previous?: string;
   results: LabGroup[];
-}
-
-export interface LabGroupCreateRequest {
-  name: string;
-  description?: string;
-  allow_member_invites?: boolean;
-}
-
-export interface LabGroupInvitation {
-  id: number;
-  lab_group: number;
-  lab_group_name: string;
-  inviter: number;
-  inviter_name: string;
-  invited_user?: number;
-  invited_user_name?: string;
-  invited_email: string;
-  status: 'pending' | 'accepted' | 'rejected' | 'expired';
-  message?: string;
-  invitation_token: string;
-  expires_at: string;
-  responded_at?: string;
-  can_accept: boolean;
-  is_expired: boolean;
-  created_at: string;
-  updated_at: string;
 }
 
 export interface LabGroupInvitationQueryResponse {
@@ -55,16 +84,7 @@ export interface LabGroupInvitationQueryResponse {
 }
 
 export interface LabGroupInvitationCreateRequest {
-  lab_group: number;
-  invited_email: string;
+  labGroup: number;
+  invitedEmail: string;
   message?: string;
-}
-
-export interface LabGroupMember {
-  id: number;
-  username: string;
-  email: string;
-  first_name: string;
-  last_name: string;
-  is_creator: boolean;
 }

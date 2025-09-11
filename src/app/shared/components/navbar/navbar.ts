@@ -2,7 +2,7 @@ import { Component, inject, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { NgbDropdownModule } from '@ng-bootstrap/ng-bootstrap';
-import { AuthService, User, SiteConfigService, UserManagementService } from 'cupcake-core';
+import { AuthService, User, SiteConfigService, UserManagementService } from '@cupcake/core';
 import { ThemeService } from '../../services/theme';
 import { AsyncTaskService } from '../../services/async-task';
 import { NotificationPanel } from '../notification-panel/notification-panel';
@@ -11,7 +11,7 @@ import { Notification } from '../../services/notification';
 import { Websocket } from '../../services/websocket';
 import { Subscription, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { TaskListItem, TaskType, TaskStatus } from '../../models/async-task';
+import { TaskListItem, TaskType, TaskStatus } from '@cupcake/vanilla';
 import { environment } from '../../../../environments/environment';
 
 @Component({

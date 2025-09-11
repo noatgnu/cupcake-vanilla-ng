@@ -33,7 +33,7 @@ export class ColumnTemplateEditModal implements OnInit {
 
   visibilityOptions = [
     { value: 'private', label: 'Private' },
-    { value: 'lab_group', label: 'Lab Group' },
+    { value: 'labGroup', label: 'Lab Group' },
     { value: 'public', label: 'Public' },
     { value: 'global', label: 'Global' }
   ];
@@ -67,24 +67,24 @@ export class ColumnTemplateEditModal implements OnInit {
     this.editForm = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(3)]],
       description: [''],
-      column_name: ['', [Validators.required, Validators.pattern(/^[a-zA-Z_][a-zA-Z0-9_]*$/)]],
-      column_type: ['text', Validators.required],
-      default_value: [''],
-      default_position: [0, [Validators.min(0)]],
-      ontology_type: [''],
-      custom_ontology_filters: [{}],
+      columnName: ['', [Validators.required, Validators.pattern(/^[a-zA-Z_][a-zA-Z0-9_]*$/)]],
+      columnType: ['text', Validators.required],
+      defaultValue: [''],
+      defaultPosition: [0, [Validators.min(0)]],
+      ontologyType: [''],
+      customOntologyFilters: [{}],
       visibility: ['private', Validators.required],
-      lab_group: [null],
-      enable_typeahead: [false],
-      excel_validation: [false],
-      is_active: [true],
+      labGroup: [null],
+      enableTypeahead: [false],
+      excelValidation: [false],
+      isActive: [true],
       tags: [''],
       category: ['']
     });
   }
 
   ngOnInit() {
-    // Set initial disabled state for lab_group field
+    // Set initial disabled state for labGroup field
     this.onVisibilityChange();
 
     if (this.template && this.isEdit) {
@@ -101,17 +101,17 @@ export class ColumnTemplateEditModal implements OnInit {
       this.editForm.patchValue({
         name: this.template.name,
         description: this.template.description || '',
-        column_name: this.template.column_name,
-        column_type: this.template.column_type,
-        default_value: this.template.default_value || '',
-        default_position: this.template.default_position || 0,
-        ontology_type: this.template.ontology_type || '',
-        custom_ontology_filters: this.template.custom_ontology_filters || {},
+        columnName: this.template.columnName,
+        columnType: this.template.columnType,
+        defaultValue: this.template.defaultValue || '',
+        defaultPosition: this.template.defaultPosition || 0,
+        ontologyType: this.template.ontologyType || '',
+        customOntologyFilters: this.template.customOntologyFilters || {},
         visibility: this.template.visibility || 'private',
-        lab_group: this.template.lab_group || null,
-        enable_typeahead: this.template.enable_typeahead || false,
-        excel_validation: this.template.excel_validation || false,
-        is_active: this.template.is_active !== false,
+        labGroup: this.template.labGroup || null,
+        enableTypeahead: this.template.enableTypeahead || false,
+        excelValidation: this.template.excelValidation || false,
+        isActive: this.template.isActive !== false,
         tags: this.template.tags || '',
         category: this.template.category || ''
       });
@@ -120,9 +120,9 @@ export class ColumnTemplateEditModal implements OnInit {
 
   onVisibilityChange() {
     const visibility = this.editForm.get('visibility')?.value;
-    const labGroupControl = this.editForm.get('lab_group');
+    const labGroupControl = this.editForm.get('labGroup');
 
-    if (visibility === 'lab_group') {
+    if (visibility === 'labGroup') {
       labGroupControl?.setValidators([Validators.required]);
       labGroupControl?.enable();
     } else {
@@ -134,8 +134,8 @@ export class ColumnTemplateEditModal implements OnInit {
   }
 
   onOntologyTypeChange() {
-    const ontologyType = this.editForm.get('ontology_type')?.value;
-    const customFiltersControl = this.editForm.get('custom_ontology_filters');
+    const ontologyType = this.editForm.get('ontologyType')?.value;
+    const customFiltersControl = this.editForm.get('customOntologyFilters');
     
     // Find the selected ontology type configuration
     const selectedOntology = this.ontologyTypes.find(ont => ont.value === ontologyType);
@@ -159,8 +159,8 @@ export class ColumnTemplateEditModal implements OnInit {
       // Clean up form data
       const templateData: Partial<MetadataColumnTemplate> = {
         ...formValue,
-        lab_group: formValue.visibility === 'lab_group' ? formValue.lab_group : null,
-        default_position: Number(formValue.default_position) || 0
+        labGroup: formValue.visibility === 'labGroup' ? formValue.labGroup : null,
+        defaultPosition: Number(formValue.defaultPosition) || 0
       };
 
       this.templateSaved.emit(templateData);

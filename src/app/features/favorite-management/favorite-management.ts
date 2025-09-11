@@ -4,10 +4,18 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
 import { RouterModule } from '@angular/router';
 import { NgbModule, NgbModal, NgbTypeahead } from '@ng-bootstrap/ng-bootstrap';
 import { Observable, OperatorFunction, debounceTime, distinctUntilChanged, filter, map, switchMap, of, catchError, forkJoin, firstValueFrom } from 'rxjs';
-import {FavouriteMetadataOption, MetadataColumn, MetadataColumnTemplate, OntologySuggestion, LabGroup} from '../../shared/models';
-import { ApiService } from '../../shared/services/api';
+import { LabGroup } from '../../shared/models';
+import { 
+  FavouriteMetadataOption, 
+  FavouriteMetadataOptionService,
+  FavouriteMetadataOptionCreateRequest,
+  MetadataColumn, 
+  MetadataColumnTemplate, 
+  MetadataColumnTemplateService,
+  OntologySuggestion
+} from '@cupcake/vanilla';
 import { ToastService } from '../../shared/services/toast';
-import { AuthService, User } from 'cupcake-core';
+import { AuthService, User, LabGroupService } from '@cupcake/core';
 import { SdrfSyntaxService, SyntaxType } from '../../shared/services/sdrf-syntax';
 import { SdrfAgeInput } from '../../shared/components/sdrf-age-input/sdrf-age-input';
 import { SdrfModificationInput } from '../../shared/components/sdrf-modification-input/sdrf-modification-input';
@@ -58,23 +66,23 @@ export class FavoriteManagementComponent implements OnInit {
       const matchesSearch = !searchTerm ||
         fav.name.toLowerCase().includes(searchTerm) ||
         fav.value.toLowerCase().includes(searchTerm) ||
-        (fav.display_value?.toLowerCase().includes(searchTerm) ?? false);
+        (fav.displayValue?.toLowerCase().includes(searchTerm) ?? false);
 
       // Scope filter
       let matchesScope = true;
       if (scopeFilter) {
         if (scopeFilter === 'personal') {
-          matchesScope = !!(fav.user && !fav.is_global && !fav.lab_group);
-        } else if (scopeFilter === 'lab_group') {
-          matchesScope = !!(fav.lab_group && !fav.is_global);
+          matchesScope = !!(fav.user && !fav.isGlobal && !fav.labGroup);
+        } else if (scopeFilter === 'labGroup') {
+          matchesScope = !!(fav.labGroup && !fav.isGlobal);
         } else if (scopeFilter === 'global') {
-          matchesScope = !!fav.is_global;
+          matchesScope = !!fav.isGlobal;
         }
       }
 
       // Specific lab group filter
       const matchesLabGroup = !labGroupFilter ||
-        (fav.lab_group && fav.lab_group.toString() === labGroupFilter);
+        (fav.labGroup && fav.labGroup.toString() === labGroupFilter);
 
       // Column type filter
       const matchesType = !columnTypeFilter || fav.type.includes(columnTypeFilter);
@@ -114,7 +122,7 @@ export class FavoriteManagementComponent implements OnInit {
   currentUser = signal<User | null>(null);
   isAdmin = computed(() => {
     const user = this.currentUser();
-    return user?.is_staff || user?.is_superuser || false;
+    return user?.isStaff || user?.isSuperuser || false;
   });
   currentUserId = computed(() => this.currentUser()?.id || null);
   userLabGroups = signal<LabGroup[]>([]);
@@ -143,7 +151,9 @@ export class FavoriteManagementComponent implements OnInit {
 
   constructor(
     private fb: FormBuilder,
-    private apiService: ApiService,
+    private favouriteMetadataOptionService: FavouriteMetadataOptionService,
+    private metadataColumnTemplateService: MetadataColumnTemplateService,
+    private labGroupService: LabGroupService,
     private toastService: ToastService,
     private modalService: NgbModal,
     private authService: AuthService
@@ -159,9 +169,9 @@ export class FavoriteManagementComponent implements OnInit {
       name: ['', [Validators.required, Validators.maxLength(255)]],
       type: ['', [Validators.required, Validators.maxLength(255)]],
       value: ['', [Validators.maxLength(500)]],
-      display_value: ['', [Validators.maxLength(500)]],
+      displayValue: ['', [Validators.maxLength(500)]],
       scope: ['personal', Validators.required],
-      lab_group_id: [null],
+      labGroup_id: [null],
       template_id: [null] // Store the selected template ID for value autocompletion
     });
 
@@ -224,7 +234,7 @@ export class FavoriteManagementComponent implements OnInit {
     const size = this.pageSize();
     const offset = (page - 1) * size;
     
-    this.apiService.getFavouriteMetadataOptions({
+    this.favouriteMetadataOptionService.getFavouriteMetadataOptions({
       limit: size,
       offset: offset
     }).subscribe({
@@ -251,7 +261,7 @@ export class FavoriteManagementComponent implements OnInit {
     }
 
     // Admin can edit global favorites
-    if (favorite.is_global && this.isAdmin()) {
+    if (favorite.isGlobal && this.isAdmin()) {
       return true;
     }
 
@@ -271,7 +281,7 @@ export class FavoriteManagementComponent implements OnInit {
       name: '',
       type: '',
       value: '',
-      display_value: '',
+      displayValue: '',
       scope: 'personal',
       template_id: null
     });
@@ -287,19 +297,19 @@ export class FavoriteManagementComponent implements OnInit {
 
     // Determine scope
     let scope = 'personal';
-    if (favorite.is_global) scope = 'global';
-    else if (favorite.lab_group) scope = 'lab_group';
+    if (favorite.isGlobal) scope = 'global';
+    else if (favorite.labGroup) scope = 'labGroup';
 
-    // Use stored column_template ID if available, otherwise try to find matching template
-    let templateId = favorite.column_template || null;
+    // Use stored columnTemplate ID if available, otherwise try to find matching template
+    let templateId = favorite.columnTemplate || null;
     
     this.editForm.patchValue({
       name: favorite.name,
       type: favorite.type,
       value: favorite.value,
-      display_value: favorite.display_value || '',
+      displayValue: favorite.displayValue || '',
       scope: scope,
-      lab_group_id: favorite.lab_group || null,
+      labGroup_id: favorite.labGroup || null,
       template_id: templateId
     });
 
@@ -323,7 +333,7 @@ export class FavoriteManagementComponent implements OnInit {
     if (!templateId) {
       this.findTemplatesForColumnName(favorite.name).then(templates => {
         const matchingTemplate = templates.find(t => 
-          t.column_name === favorite.name && t.column_type === favorite.type
+          t.columnName === favorite.name && t.columnType === favorite.type
         );
         if (matchingTemplate?.id) {
           this.editForm.patchValue({ template_id: matchingTemplate.id });
@@ -346,20 +356,20 @@ export class FavoriteManagementComponent implements OnInit {
       value = value.value || value.display_name || String(value);
     }
     
-    const favoriteData: Partial<FavouriteMetadataOption> = {
+    const favoriteData: FavouriteMetadataOptionCreateRequest = {
       name: formValue.name,
       type: formValue.type,
-      column_template: formValue.template_id || undefined,
+      columnTemplate: formValue.template_id || undefined,
       value: value,
-      display_value: formValue.display_value || value,
-      is_global: formValue.scope === 'global',
+      displayValue: formValue.displayValue || value,
+      isGlobal: formValue.scope === 'global',
       user: formValue.scope === 'personal' ? this.currentUserId() || undefined : undefined,
-      lab_group: formValue.scope === 'lab_group' ? formValue.lab_group_id || this.userLabGroups()[0]?.id : undefined
+      labGroup: formValue.scope === 'labGroup' ? formValue.labGroup_id || this.userLabGroups()[0]?.id : undefined
     };
 
     const operation = this.isEditMode()
-      ? this.apiService.updateFavouriteMetadataOption(this.editingFavorite()!.id!, favoriteData)
-      : this.apiService.createFavouriteMetadataOption(favoriteData);
+      ? this.favouriteMetadataOptionService.updateFavouriteMetadataOption(this.editingFavorite()!.id!, favoriteData)
+      : this.favouriteMetadataOptionService.createFavouriteMetadataOption(favoriteData);
 
     operation.subscribe({
       next: (favorite) => {
@@ -379,10 +389,10 @@ export class FavoriteManagementComponent implements OnInit {
   deleteFavorite(favorite: FavouriteMetadataOption): void {
     if (!this.canDeleteFavorite(favorite)) return;
 
-    const confirmMessage = `Are you sure you want to delete the favorite "${favorite.display_value || favorite.value}"?`;
+    const confirmMessage = `Are you sure you want to delete the favorite "${favorite.displayValue || favorite.value}"?`;
 
     if (confirm(confirmMessage)) {
-      this.apiService.deleteFavouriteMetadataOption(favorite.id!).subscribe({
+      this.favouriteMetadataOptionService.deleteFavouriteMetadataOption(favorite.id!).subscribe({
         next: () => {
           this.toastService.success('Favorite deleted successfully!');
           this.loadFavorites();
@@ -424,15 +434,15 @@ export class FavoriteManagementComponent implements OnInit {
   }
 
   getScopeDisplay(favorite: FavouriteMetadataOption): string {
-    if (favorite.is_global) return 'Global';
-    if (favorite.lab_group) return `Lab Group: ${favorite.lab_group_name || favorite.lab_group}`;
-    if (favorite.user) return `Personal (${favorite.user_username || favorite.user})`;
+    if (favorite.isGlobal) return 'Global';
+    if (favorite.labGroup) return `Lab Group: ${favorite.labGroupName || favorite.labGroup}`;
+    if (favorite.user) return `Personal (${favorite.userUsername || favorite.user})`;
     return 'Unknown';
   }
 
   getScopeClass(favorite: FavouriteMetadataOption): string {
-    if (favorite.is_global) return 'badge bg-success';
-    if (favorite.lab_group) return 'badge bg-info';
+    if (favorite.isGlobal) return 'badge bg-success';
+    if (favorite.labGroup) return 'badge bg-info';
     if (favorite.user) return 'badge bg-primary';
     return 'badge bg-secondary';
   }
@@ -442,12 +452,10 @@ export class FavoriteManagementComponent implements OnInit {
   }
 
   loadUserLabGroups(): void {
-    // Load user's lab groups
-    this.apiService.getMyLabGroups({ limit: 10 }).subscribe({
+    this.labGroupService.getMyLabGroups({ limit: 10 }).subscribe({
       next: (response) => {
         this.userLabGroups.set(response.results);
 
-        // Store available lab groups for filtering
         const labGroups = response.results.map(group => ({
           id: group.id!,
           name: group.name
@@ -455,8 +463,6 @@ export class FavoriteManagementComponent implements OnInit {
         this.availableLabGroups.set(labGroups);
 
         this.userLabGroupsLoaded.set(true);
-
-        // Reload favorites now that we have user lab groups
         this.loadFavorites();
       },
       error: (error) => {
@@ -464,14 +470,11 @@ export class FavoriteManagementComponent implements OnInit {
         this.userLabGroups.set([]);
         this.availableLabGroups.set([]);
         this.userLabGroupsLoaded.set(true);
-
-        // Still load favorites even if lab group loading failed
         this.loadFavorites();
       }
     });
 
-    // Load all lab groups for typeahead search (limit higher for search functionality)
-    this.apiService.getLabGroups({ limit: 50 }).subscribe({
+    this.labGroupService.getLabGroups({ limit: 10 }).subscribe({
       next: (response) => {
         const allLabGroups = response.results.map(group => ({
           id: group.id!,
@@ -479,7 +482,6 @@ export class FavoriteManagementComponent implements OnInit {
         }));
         this.allLabGroups.set(allLabGroups);
 
-        // If user is admin, also update available lab groups for filtering
         if (this.isAdmin()) {
           this.availableLabGroups.set(allLabGroups);
         }
@@ -491,8 +493,7 @@ export class FavoriteManagementComponent implements OnInit {
   }
 
   loadAvailableColumnTemplates(): void {
-    // Load all available column templates for typeahead
-    this.apiService.getColumnTemplates({ limit: 10 }).subscribe({
+    this.metadataColumnTemplateService.getMetadataColumnTemplates({ limit: 10 }).subscribe({
       next: (response) => {
         this.availableColumnTemplates.set(response.results);
         this.columnTemplatesLoaded.set(true);
@@ -515,17 +516,15 @@ export class FavoriteManagementComponent implements OnInit {
           // Show initial cached results when no search term
           return of(this.getColumnNameSuggestions(''));
         } else if (term.length >= 1) {
-          // Make API call for dynamic search
-          return this.apiService.getColumnTemplates({
+          return this.metadataColumnTemplateService.getMetadataColumnTemplates({
             search: term,
-            limit: 20 // Get more results for search
+            limit: 10
           }).pipe(
             map(response => {
-              const uniqueNames = [...new Set(response.results.map(template => template.column_name))];
+              const uniqueNames = [...new Set(response.results.map((template: MetadataColumnTemplate) => template.columnName))];
               return uniqueNames.sort();
             }),
             catchError(() => {
-              // Fallback to cached data on error
               return of(this.getColumnNameSuggestions(term));
             })
           );
@@ -537,7 +536,7 @@ export class FavoriteManagementComponent implements OnInit {
 
   private getColumnNameSuggestions(term: string): string[] {
     const templates = this.availableColumnTemplates();
-    const uniqueNames = [...new Set(templates.map(template => template.column_name))];
+    const uniqueNames = [...new Set(templates.map(template => template.columnName))];
 
     if (!term) {
       // Return initial list when no term
@@ -567,11 +566,11 @@ export class FavoriteManagementComponent implements OnInit {
     let availableTypes: string[];
     if (selectedName) {
       availableTypes = templates
-        .filter(template => template.column_name === selectedName)
-        .map(template => template.column_type);
+        .filter(template => template.columnName === selectedName)
+        .map(template => template.columnType);
     } else {
       // Otherwise show all available types
-      availableTypes = [...new Set(templates.map(template => template.column_type))];
+      availableTypes = [...new Set(templates.map(template => template.columnType))];
     }
 
     return availableTypes
@@ -591,17 +590,17 @@ export class FavoriteManagementComponent implements OnInit {
         if (templatesForName.length > 0) {
           // Use the first (most common) type as suggestion
           const currentType = this.editForm.get('type')?.value;
-          const typesForName = templatesForName.map(template => template.column_type);
+          const typesForName = templatesForName.map(template => template.columnType);
 
           if (!currentType || !typesForName.includes(currentType)) {
             const firstTemplate = templatesForName[0];
             this.editForm.patchValue({
-              type: firstTemplate.column_type,
+              type: firstTemplate.columnType,
               template_id: firstTemplate.id // Set template ID for value autocompletion
             });
           } else {
             // If current type is valid, find the template with matching name and type
-            const matchingTemplate = templatesForName.find(t => t.column_type === currentType);
+            const matchingTemplate = templatesForName.find(t => t.columnType === currentType);
             if (matchingTemplate) {
               this.editForm.patchValue({ template_id: matchingTemplate.id });
             } else {
@@ -623,21 +622,20 @@ export class FavoriteManagementComponent implements OnInit {
   private async findTemplatesForColumnName(columnName: string): Promise<MetadataColumnTemplate[]> {
     // First check cached templates
     const cached = this.availableColumnTemplates();
-    const cachedMatches = cached.filter(template => template.column_name === columnName);
+    const cachedMatches = cached.filter(template => template.columnName === columnName);
 
     if (cachedMatches.length > 0) {
       return cachedMatches;
     }
 
-    // If not found in cache, make API call
     try {
-      const response = await firstValueFrom(this.apiService.getColumnTemplates({
+      const response = await firstValueFrom(this.metadataColumnTemplateService.getMetadataColumnTemplates({
         search: columnName,
         limit: 10
       }));
 
       if (response) {
-        const exactMatches = response.results.filter(template => template.column_name === columnName);
+        const exactMatches = response.results.filter((template: MetadataColumnTemplate) => template.columnName === columnName);
         return exactMatches;
       }
     } catch (error) {
@@ -657,7 +655,7 @@ export class FavoriteManagementComponent implements OnInit {
       if (selectedName) {
         const templates = this.availableColumnTemplates();
         const matchingTemplate = templates.find(template =>
-          template.column_name === selectedName && template.column_type === selectedType
+          template.columnName === selectedName && template.columnType === selectedType
         );
 
         if (matchingTemplate && matchingTemplate.id) {
@@ -684,10 +682,11 @@ export class FavoriteManagementComponent implements OnInit {
           return of([]);
         }
 
-        return this.apiService.getColumnTemplateOntologySuggestions(templateId, {
+        return this.metadataColumnTemplateService.getOntologySuggestions({
+          templateId: templateId,
           search: term,
           limit: 10,
-          search_type: this.searchType()
+          searchType: this.searchType()
         }).pipe(
           map(response => response.suggestions || []),
           catchError(error => {
@@ -716,10 +715,10 @@ export class FavoriteManagementComponent implements OnInit {
       // Store the actual value for form submission
       this.selectedOntologyValue = suggestion.value;
       
-      // Update display_value if it's empty
-      const currentDisplayValue = this.editForm.get('display_value')?.value;
+      // Update displayValue if it's empty
+      const currentDisplayValue = this.editForm.get('displayValue')?.value;
       if (!currentDisplayValue && suggestion.display_name && suggestion.display_name !== suggestion.value) {
-        this.editForm.get('display_value')?.setValue(suggestion.display_name);
+        this.editForm.get('displayValue')?.setValue(suggestion.display_name);
       }
       
       console.log('Stored ontology value:', this.selectedOntologyValue);
@@ -740,17 +739,15 @@ export class FavoriteManagementComponent implements OnInit {
           // Show initial cached user lab groups when no search term
           return of(this.availableLabGroups().slice(0, 10));
         } else if (term.length >= 1) {
-          // Make API call for dynamic search across all lab groups
-          return this.apiService.getLabGroups({
+          return this.labGroupService.getLabGroups({
             search: term,
-            limit: 20
+            limit: 10
           }).pipe(
             map(response => response.results.map(group => ({
               id: group.id!,
               name: group.name
             }))),
             catchError(() => {
-              // Fallback to cached data on error
               return of(this.getLabGroupSuggestions(term));
             })
           );

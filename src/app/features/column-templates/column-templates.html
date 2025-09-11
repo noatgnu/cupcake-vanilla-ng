@@ -48,7 +48,7 @@
               <select
                 class="form-select"
                 id="labGroupSelect"
-                formControlName="lab_group_id"
+                formControlName="labGroupId"
                 (change)="onLabGroupChange($event)">
                 <option [ngValue]="null">All Lab Groups</option>
                 @if (hasLabGroups()) {
@@ -82,7 +82,7 @@
                 class="form-check-input"
                 type="checkbox"
                 id="globalTemplates"
-                formControlName="is_global">
+                formControlName="visibility">
               <label class="form-check-label" for="globalTemplates">
                 <i class="bi bi-globe me-1"></i>Global Templates Only
               </label>
@@ -153,27 +153,27 @@
                       </div>
                     </th>
                     <th class="sortable" 
-                        (click)="sortBy('column_name')"
-                        [class.sorted]="isSorted('column_name')">
+                        (click)="sortBy('columnName')"
+                        [class.sorted]="isSorted('columnName')">
                       <div class="d-flex align-items-center justify-content-between">
                         <span><i class="bi bi-list me-1"></i>Column Name</span>
-                        <i class="bi ms-1" [class]="getSortIcon('column_name')"></i>
+                        <i class="bi ms-1" [class]="getSortIcon('columnName')"></i>
                       </div>
                     </th>
                     <th class="sortable" 
-                        (click)="sortBy('column_type')"
-                        [class.sorted]="isSorted('column_type')">
+                        (click)="sortBy('columnType')"
+                        [class.sorted]="isSorted('columnType')">
                       <div class="d-flex align-items-center justify-content-between">
                         <span><i class="bi bi-layers me-1"></i>Type</span>
-                        <i class="bi ms-1" [class]="getSortIcon('column_type')"></i>
+                        <i class="bi ms-1" [class]="getSortIcon('columnType')"></i>
                       </div>
                     </th>
                     <th class="sortable" 
-                        (click)="sortBy('ontology_type')"
-                        [class.sorted]="isSorted('ontology_type')">
+                        (click)="sortBy('ontologyType')"
+                        [class.sorted]="isSorted('ontologyType')">
                       <div class="d-flex align-items-center justify-content-between">
                         <span><i class="bi bi-diagram-3 me-1"></i>Ontology</span>
-                        <i class="bi ms-1" [class]="getSortIcon('ontology_type')"></i>
+                        <i class="bi ms-1" [class]="getSortIcon('ontologyType')"></i>
                       </div>
                     </th>
                     <th class="sortable" 
@@ -193,17 +193,17 @@
                     <tr>
                       <td>
                         <strong>{{ template.name }}</strong>
-                        @if (template.is_system_template) {
+                        @if (template.isSystemTemplate) {
                           <i class="bi bi-shield-check text-success ms-2" title="System template"></i>
                         }
                       </td>
-                      <td>{{ template.column_name }}</td>
+                      <td>{{ template.columnName }}</td>
                       <td>
-                        <span class="badge bg-secondary">{{ template.column_type }}</span>
+                        <span class="badge bg-secondary">{{ template.columnType }}</span>
                       </td>
                       <td>
-                        @if (template.ontology_type) {
-                          <span class="badge bg-success">{{ template.ontology_type }}</span>
+                        @if (template.ontologyType) {
+                          <span class="badge bg-success">{{ template.ontologyType }}</span>
                         } @else {
                           <span class="text-muted">-</span>
                         }
@@ -279,7 +279,7 @@
               <i class="bi bi-clipboard-list fs-1 text-muted mb-3"></i>
               <h5 class="text-muted">No Column Templates Found</h5>
               <p class="text-muted">
-                @if (searchForm.get('search')?.value || searchForm.get('lab_group_id')?.value) {
+                @if (searchForm.get('search')?.value || searchForm.get('labGroupId')?.value) {
                   Try adjusting your search criteria or create a new template.
                 } @else {
                   Get started by creating your first column template.

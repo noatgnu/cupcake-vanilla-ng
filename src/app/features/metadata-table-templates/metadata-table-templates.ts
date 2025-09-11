@@ -6,6 +6,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { MetadataTableTemplateEditModal } from './metadata-table-template-edit-modal/metadata-table-template-edit-modal';
 import { SchemaSelectionModal, SchemaSelectionResult } from './schema-selection-modal/schema-selection-modal';
 import { TableCreationModalComponent, TableCreationData } from './table-creation-modal/table-creation-modal';
+import { LabGroupService } from '@cupcake/core';
 import {
   MetadataTableTemplate,
   MetadataTableTemplateQueryResponse,
@@ -13,7 +14,7 @@ import {
   LabGroupQueryResponse,
   ResourceVisibility
 } from '../../shared/models';
-import { ApiService } from '../../shared/services/api';
+import { MetadataTableTemplateService, MetadataTable, MetadataTableTemplateCreateRequest } from '@cupcake/vanilla';
 import { ToastService } from '../../shared/services/toast';
 
 @Component({
@@ -68,7 +69,8 @@ export class MetadataTableTemplates implements OnInit {
 
   constructor(
     private fb: FormBuilder,
-    private apiService: ApiService,
+    private metadataTableTemplateService: MetadataTableTemplateService,
+    private labGroupService: LabGroupService,
     private modalService: NgbModal,
     private toastService: ToastService
   ) {
@@ -116,7 +118,7 @@ export class MetadataTableTemplates implements OnInit {
   }
 
   private loadLabGroupsWithParams(params: { limit: number; offset: number }) {
-    this.apiService.getMyLabGroups(params).subscribe({
+    this.labGroupService.getMyLabGroups(params).subscribe({
       next: (response) => {
         this.labGroupsTotalItems.set(response.count);
         this.labGroupsData.set(response);
@@ -136,7 +138,7 @@ export class MetadataTableTemplates implements OnInit {
     ).subscribe(formValue => {
       // Reset to first page when searching
       this.currentPage.set(1);
-      
+
       // Update search params signal - this will trigger the effect
       this.searchParams.set({
         search: formValue.search || '',
@@ -152,11 +154,11 @@ export class MetadataTableTemplates implements OnInit {
   private loadTemplatesWithParams(params: any) {
     this.isLoading.set(true);
 
-    this.apiService.getMetadataTableTemplates({
+    this.metadataTableTemplateService.getMetadataTableTemplates({
       search: params.search || undefined,
-      lab_group_id: params.lab_group_id || undefined,
+      labGroupId: params.lab_group_id || undefined,
       visibility: params.visibility || undefined,
-      is_default: params.is_default || undefined,
+      isDefault: params.is_default || undefined,
       limit: params.limit,
       offset: params.offset
     }).subscribe({
@@ -194,6 +196,12 @@ export class MetadataTableTemplates implements OnInit {
     return labGroups.results.find((group: LabGroup) => group.id === id) || null;
   }
 
+  getLabGroupName(labGroupId: number | undefined): string {
+    if (!labGroupId) return '-';
+    const labGroup = this.findLabGroupById(labGroupId);
+    return labGroup?.name || labGroupId.toString();
+  }
+
   onPageChange(page: number) {
     this.currentPage.set(page);
     this.searchParams.update(params => ({
@@ -224,7 +232,7 @@ export class MetadataTableTemplates implements OnInit {
 
     if (confirm(confirmMessage)) {
       this.isLoading.set(true);
-      this.apiService.deleteMetadataTableTemplate(template.id!).subscribe({
+      this.metadataTableTemplateService.deleteMetadataTableTemplate(template.id!).subscribe({
         next: () => {
           this.isLoading.set(false);
           console.log('Template deleted successfully');
@@ -240,18 +248,18 @@ export class MetadataTableTemplates implements OnInit {
   }
 
   duplicateTemplate(template: MetadataTableTemplate) {
-    const duplicatedTemplate: Partial<MetadataTableTemplate> = {
+    const duplicatedTemplate: MetadataTableTemplateCreateRequest = {
       name: `${template.name} (Copy)`,
       description: template.description,
-      user_columns: [...(template.user_columns || [])],
-      field_mask_mapping: { ...template.field_mask_mapping },
+      userColumnIds: [...(template.userColumnIds || [])],
+      fieldMaskMapping: { ...template.fieldMaskMapping },
       visibility: ResourceVisibility.PRIVATE, // Always create as private
-      is_default: false, // Never default
-      lab_group: template.lab_group || this.selectedLabGroup()?.id || undefined
+      isDefault: false, // Never default
+      labGroup: template.labGroup || this.selectedLabGroup()?.id || undefined
     };
 
     this.isLoading.set(true);
-    this.apiService.createMetadataTableTemplate(duplicatedTemplate).subscribe({
+    this.metadataTableTemplateService.createMetadataTableTemplate(duplicatedTemplate).subscribe({
       next: (newTemplate) => {
         this.isLoading.set(false);
         console.log('Template duplicated:', newTemplate);
@@ -286,8 +294,8 @@ export class MetadataTableTemplates implements OnInit {
     this.isLoading.set(true);
 
     const apiCall = isEdit && templateId
-      ? this.apiService.updateMetadataTableTemplate(templateId, templateData)
-      : this.apiService.createMetadataTableTemplate(templateData);
+      ? this.metadataTableTemplateService.updateMetadataTableTemplate(templateId, templateData)
+      : this.metadataTableTemplateService.createMetadataTableTemplate(templateData as MetadataTableTemplateCreateRequest);
 
     apiCall.subscribe({
       next: (template) => {
@@ -310,7 +318,8 @@ export class MetadataTableTemplates implements OnInit {
 
   private loadAvailableSchemas() {
     this.isLoadingSchemas.set(true);
-    this.apiService.getAvailableSchemas().subscribe({
+    
+    this.metadataTableTemplateService.getAvailableSchemas().subscribe({
       next: (schemas) => {
         this.availableSchemas.set(schemas);
         this.isLoadingSchemas.set(false);
@@ -357,10 +366,14 @@ export class MetadataTableTemplates implements OnInit {
       is_default: result.is_default
     };
 
-    this.apiService.createMetadataTableTemplateFromSchema(templateData).subscribe({
-      next: (template) => {
+    this.metadataTableTemplateService.createFromSchema({
+      schemaIds: result.schema_ids,
+      templateName: result.name,
+      templateDescription: result.description
+    }).subscribe({
+      next: (response) => {
         this.isLoading.set(false);
-        console.log('Template created from schemas:', template);
+        console.log('Template created from schemas:', response);
         this.refreshTemplates();
       },
       error: (error) => {
@@ -391,37 +404,42 @@ export class MetadataTableTemplates implements OnInit {
     });
   }
 
-  private handleTableCreation(data: TableCreationData, modalRef?: any) {
+  private handleTableCreation = (data: TableCreationData, modalRef?: any): void => {
     this.isLoading.set(true);
-    
+
     // Set creating state on modal if provided
     if (modalRef?.componentInstance) {
       modalRef.componentInstance.setCreatingState(true);
     }
 
-    this.apiService.createMetadataTableFromTemplate(data).subscribe({
-      next: (table) => {
+    this.metadataTableTemplateService.createTableFromTemplate({
+      templateId: data.template_id,
+      tableName: data.name,
+      tableDescription: data.description,
+      sampleCount: data.sample_count || 1
+    }).subscribe({
+      next: (response: { message: string; table: MetadataTable }) => {
         this.isLoading.set(false);
-        console.log('Metadata table created from template:', table);
-        
+        console.log('Metadata table created from template:', response);
+
         // Close modal and show success message
         if (modalRef) {
           modalRef.close();
         }
-        
-        this.toastService.success(`Table "${table.name}" created successfully!`);
+
+        this.toastService.success(`Table "${response.table.name}" created successfully!`);
       },
-      error: (error) => {
+      error: (error: { error?: { detail?: string; message?: string }; message?: string }) => {
         this.isLoading.set(false);
         console.error('Error creating table from template:', error);
-        
+
         // Reset creating state on modal if provided and show error
         if (modalRef?.componentInstance) {
           modalRef.componentInstance.setCreatingState(false);
-          const errorMsg = error?.error?.detail || error?.message || 'Failed to create table from template. Please try again.';
+          const errorMsg = error?.error?.detail || error?.error?.message || error?.message || 'Failed to create table from template. Please try again.';
           modalRef.componentInstance.setErrorMessage(errorMsg);
         } else {
-          const errorMsg = error?.error?.detail || error?.message || 'Failed to create table from template. Please try again.';
+          const errorMsg = error?.error?.detail || error?.error?.message || error?.message || 'Failed to create table from template. Please try again.';
           this.toastService.error(errorMsg);
         }
       }

@@ -23,26 +23,14 @@
           type="text" 
           class="form-control"
           id="poolName"
-          formControlName="pool_name"
-          [class.is-invalid]="isFieldInvalid('pool_name')"
+          formControlName="poolName"
+          [class.is-invalid]="isFieldInvalid('poolName')"
           placeholder="Enter pool name">
-        <div class="invalid-feedback" *ngIf="isFieldInvalid('pool_name')">
-          {{ getFieldError('pool_name') }}
+        <div class="invalid-feedback" *ngIf="isFieldInvalid('poolName')">
+          {{ getFieldError('poolName') }}
         </div>
       </div>
 
-      <!-- Template Sample -->
-      <div class="col-md-6 mb-3">
-        <label for="templateSample" class="form-label">Template Sample</label>
-        <input 
-          type="number" 
-          class="form-control"
-          id="templateSample"
-          formControlName="template_sample"
-          min="1"
-          [max]="metadataTable.sample_count"
-          placeholder="Optional template sample number">
-      </div>
 
       <!-- Description -->
       <div class="col-12 mb-3">
@@ -50,7 +38,7 @@
         <textarea 
           class="form-control"
           id="poolDescription"
-          formControlName="pool_description"
+          formControlName="poolDescription"
           rows="2"
           placeholder="Optional pool description"></textarea>
       </div>
@@ -62,7 +50,7 @@
             class="form-check-input" 
             type="checkbox" 
             id="isReference" 
-            formControlName="is_reference">
+            formControlName="isReference">
           <label class="form-check-label" for="isReference">
             <strong>Reference Pool</strong>
             <div class="form-text">Check if this is a reference pool</div>
@@ -105,7 +93,7 @@
                   id="rangeStart"
                   formControlName="range_start"
                   min="1"
-                  [max]="metadataTable.sample_count"
+                  [max]="metadataTable.sampleCount"
                   [class.is-invalid]="isFieldInvalid('range_start')">
                 <div class="invalid-feedback" *ngIf="isFieldInvalid('range_start')">
                   {{ getFieldError('range_start') }}
@@ -119,7 +107,7 @@
                   id="rangeEnd"
                   formControlName="range_end"
                   min="1"
-                  [max]="metadataTable.sample_count"
+                  [max]="metadataTable.sampleCount"
                   [class.is-invalid]="isFieldInvalid('range_end')">
                 <div class="invalid-feedback" *ngIf="isFieldInvalid('range_end')">
                   {{ getFieldError('range_end') }}
@@ -270,14 +258,14 @@
 
       <!-- Total Count Display -->
       <div class="alert" 
-           [class.alert-success]="totalPooledSamplesCount > 0 && totalPooledSamplesCount <= metadataTable.sample_count"
+           [class.alert-success]="totalPooledSamplesCount > 0 && totalPooledSamplesCount <= metadataTable.sampleCount"
            [class.alert-warning]="totalPooledSamplesCount === 0"
-           [class.alert-danger]="totalPooledSamplesCount > metadataTable.sample_count">
+           [class.alert-danger]="totalPooledSamplesCount > metadataTable.sampleCount">
         <i class="bi bi-info-circle me-2"></i>
         <strong>Total Samples:</strong> {{ totalPooledSamplesCount }}
-        @if (totalPooledSamplesCount > metadataTable.sample_count) {
+        @if (totalPooledSamplesCount > metadataTable.sampleCount) {
           <span class="text-danger ms-2">
-            (Exceeds maximum of {{ metadataTable.sample_count }})
+            (Exceeds maximum of {{ metadataTable.sampleCount }})
           </span>
         } @else if (totalPooledSamplesCount === 0) {
           <span class="text-warning ms-2">
@@ -290,7 +278,7 @@
     <!-- Form Status -->
     <div class="d-flex justify-content-between align-items-center mb-2">
       <small class="text-muted">
-        Name: {{ createForm.get('pool_name')?.value?.length || 0 }}/255 characters
+        Name: {{ createForm.get('poolName')?.value?.length || 0 }}/255 characters
       </small>
       @if (totalPooledSamplesCount > 0) {
         <small class="text-success">
@@ -310,7 +298,7 @@
     type="button" 
     class="btn btn-primary" 
     (click)="onSubmit()"
-    [disabled]="createForm.invalid || isLoading() || totalPooledSamplesCount === 0 || totalPooledSamplesCount > metadataTable.sample_count">
+    [disabled]="createForm.invalid || isLoading() || totalPooledSamplesCount === 0 || totalPooledSamplesCount > metadataTable.sampleCount">
     @if (isLoading()) {
       <span class="spinner-border spinner-border-sm me-2"></span>
     }

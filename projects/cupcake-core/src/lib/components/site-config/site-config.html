@@ -13,8 +13,8 @@
             type="submit" 
             form="configForm"
             class="btn btn-primary btn-sm"
-            [disabled]="configForm.invalid || loading">
-            @if (loading) {
+            [disabled]="configForm.invalid || loading()">
+            @if (loading()) {
               <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
             } @else {
               <i class="bi bi-check-lg me-1"></i>
@@ -26,7 +26,7 @@
             type="button" 
             class="btn btn-outline-secondary btn-sm"
             (click)="resetForm()"
-            [disabled]="loading">
+            [disabled]="loading()">
             <i class="bi bi-arrow-clockwise me-1"></i>
             Reset
           </button>
@@ -47,16 +47,16 @@
           </div>
         <div class="card-body">
           <!-- Success Alert -->
-          @if (success) {
+          @if (success()) {
             <ngb-alert type="success" (closed)="clearSuccess()" [dismissible]="true">
-              <i class="bi bi-check-circle me-2"></i>{{ success }}
+              <i class="bi bi-check-circle me-2"></i>{{ success() }}
             </ngb-alert>
           }
 
           <!-- Error Alert -->
-          @if (error) {
+          @if (error()) {
             <ngb-alert type="danger" (closed)="clearError()" [dismissible]="true">
-              <i class="bi bi-exclamation-triangle me-2"></i>{{ error }}
+              <i class="bi bi-exclamation-triangle me-2"></i>{{ error() }}
             </ngb-alert>
           }
 
@@ -71,18 +71,18 @@
                 type="text" 
                 class="form-control" 
                 id="site_name"
-                formControlName="site_name"
-                [class.is-invalid]="configForm.get('site_name')?.invalid && configForm.get('site_name')?.touched"
+                formControlName="siteName"
+                [class.is-invalid]="configForm.get('siteName')?.invalid && configForm.get('siteName')?.touched"
                 placeholder="Enter your site name">
-              @if (configForm.get('site_name')?.invalid && configForm.get('site_name')?.touched) {
+              @if (configForm.get('siteName')?.invalid && configForm.get('siteName')?.touched) {
                 <div class="invalid-feedback">
-                  @if (configForm.get('site_name')?.errors?.['required']) {
+                  @if (configForm.get('siteName')?.errors?.['required']) {
                     <span>Site name is required</span>
                   }
-                  @if (configForm.get('site_name')?.errors?.['minlength']) {
+                  @if (configForm.get('siteName')?.errors?.['minlength']) {
                     <span>Site name must be at least 1 character</span>
                   }
-                  @if (configForm.get('site_name')?.errors?.['maxlength']) {
+                  @if (configForm.get('siteName')?.errors?.['maxlength']) {
                     <span>Site name must be less than 255 characters</span>
                   }
                 </div>
@@ -102,7 +102,7 @@
                 type="url" 
                 class="form-control" 
                 id="logo_url"
-                formControlName="logo_url"
+                formControlName="logoUrl"
                 placeholder="https://example.com/logo.png">
               <div class="form-text">
                 Optional: URL to your organization's logo
@@ -124,11 +124,11 @@
               <div class="form-text">
                 Upload a logo file (overrides logo URL). Supported: JPEG, PNG, GIF, SVG. Max 5MB.
               </div>
-              @if (selectedLogoFile) {
+              @if (selectedLogoFile()) {
                 <div class="mt-2">
                   <div class="alert alert-info py-2">
                     <i class="bi bi-file-image me-1"></i>
-                    Selected: {{ selectedLogoFile.name }}
+                    Selected: {{ selectedLogoFile()?.name }}
                     <button type="button" class="btn btn-sm btn-outline-danger ms-2" (click)="clearLogoFile()">
                       <i class="bi bi-x"></i>
                     </button>
@@ -145,14 +145,14 @@
               </label>
               <div class="color-picker-wrapper">
                 <color-sketch
-                  [color]="configForm.get('primary_color')?.value"
+                  [color]="configForm.get('primaryColor')?.value"
                   (onChange)="onColorChange($event)"
                   [presetColors]="presetColors">
                 </color-sketch>
               </div>
-              @if (configForm.get('primary_color')?.invalid && configForm.get('primary_color')?.touched) {
+              @if (configForm.get('primaryColor')?.invalid && configForm.get('primaryColor')?.touched) {
                 <div class="invalid-feedback">
-                  @if (configForm.get('primary_color')?.errors?.['pattern']) {
+                  @if (configForm.get('primaryColor')?.errors?.['pattern']) {
                     <span>Please enter a valid hex color (e.g., #1976d2)</span>
                   }
                 </div>
@@ -169,7 +169,7 @@
                   class="form-check-input" 
                   type="checkbox" 
                   id="show_powered_by"
-                  formControlName="show_powered_by">
+                  formControlName="showPoweredBy">
                 <label class="form-check-label" for="show_powered_by">
                   <i class="bi bi-lightning-charge me-1"></i>
                   Show "Powered by CUPCAKE Vanilla"
@@ -193,7 +193,7 @@
                     class="form-check-input" 
                     type="checkbox" 
                     id="allow_user_registration"
-                    formControlName="allow_user_registration">
+                    formControlName="allowUserRegistration">
                   <label class="form-check-label" for="allow_user_registration">
                     <i class="bi bi-person-plus me-1"></i>
                     Allow Public User Registration
@@ -212,7 +212,7 @@
                     class="form-check-input" 
                     type="checkbox" 
                     id="enable_orcid_login"
-                    formControlName="enable_orcid_login">
+                    formControlName="enableOrcidLogin">
                   <label class="form-check-label" for="enable_orcid_login">
                     <i class="bi bi-person-badge me-1"></i>
                     Enable ORCID OAuth Login
@@ -241,41 +241,41 @@
           </div>
         <div class="card-body">
           <div class="preview-navbar mb-3" 
-               [style.background]="'linear-gradient(135deg, ' + (configForm.get('primary_color')?.value || '#1976d2') + ' 0%, ' + getDarkerColor(configForm.get('primary_color')?.value || '#1976d2') + ' 100%)'">
+               [style.background]="'linear-gradient(135deg, ' + (configForm.get('primaryColor')?.value || '#1976d2') + ' 0%, ' + getDarkerColor(configForm.get('primaryColor')?.value || '#1976d2') + ' 100%)'">
             <div class="preview-nav">
               <span class="preview-brand">
-                @if (configForm.get('logo_url')?.value) {
-                  <img [src]="configForm.get('logo_url')?.value" alt="Logo" style="height: 20px; width: auto;" class="me-2">
+                @if (configForm.get('logoUrl')?.value) {
+                  <img [src]="configForm.get('logoUrl')?.value" alt="Logo" style="height: 20px; width: auto;" class="me-2">
                 } @else {
                   <i class="bi bi-flask me-2"></i>
                 }
-                {{ configForm.get('site_name')?.value || 'Your Site Name' }}
+                {{ configForm.get('siteName')?.value || 'Your Site Name' }}
               </span>
             </div>
           </div>
           
           <div class="preview-login-card">
             <h6 class="text-center mb-3">
-              @if (configForm.get('logo_url')?.value) {
-                <img [src]="configForm.get('logo_url')?.value" alt="Logo" style="height: 24px; width: auto;" class="me-2">
+              @if (configForm.get('logoUrl')?.value) {
+                <img [src]="configForm.get('logoUrl')?.value" alt="Logo" style="height: 24px; width: auto;" class="me-2">
               } @else {
                 <i class="bi bi-flask me-2"></i>
               }
-              {{ configForm.get('site_name')?.value || 'Your Site Name' }}
+              {{ configForm.get('siteName')?.value || 'Your Site Name' }}
             </h6>
-            @if (configForm.get('enable_orcid_login')?.value) {
+            @if (configForm.get('enableOrcidLogin')?.value) {
               <div class="preview-button mb-2"
-                   [style.background]="'linear-gradient(135deg, ' + (configForm.get('primary_color')?.value || '#1976d2') + ' 0%, ' + getDarkerColor(configForm.get('primary_color')?.value || '#1976d2') + ' 100%)'">
+                   [style.background]="'linear-gradient(135deg, ' + (configForm.get('primaryColor')?.value || '#1976d2') + ' 0%, ' + getDarkerColor(configForm.get('primaryColor')?.value || '#1976d2') + ' 100%)'">
                 <i class="bi bi-person-badge me-2"></i>
                 Login with ORCID
               </div>
             }
             <div class="preview-button mb-2"
-                 [style.background]="'linear-gradient(135deg, ' + (configForm.get('primary_color')?.value || '#1976d2') + ' 0%, ' + getDarkerColor(configForm.get('primary_color')?.value || '#1976d2') + ' 100%)'">
+                 [style.background]="'linear-gradient(135deg, ' + (configForm.get('primaryColor')?.value || '#1976d2') + ' 0%, ' + getDarkerColor(configForm.get('primaryColor')?.value || '#1976d2') + ' 100%)'">
               <i class="bi bi-box-arrow-in-right me-2"></i>
               Regular Login
             </div>
-            @if (configForm.get('allow_user_registration')?.value) {
+            @if (configForm.get('allowUserRegistration')?.value) {
               <div class="text-center mb-2">
                 <small class="text-muted">
                   <i class="bi bi-person-plus me-1"></i>
@@ -285,7 +285,7 @@
             }
             <div class="text-center">
               <small class="text-muted">
-                {{ configForm.get('site_name')?.value || 'Your Site Name' }} - Scientific Metadata Management
+                {{ configForm.get('siteName')?.value || 'Your Site Name' }} - Scientific Metadata Management
               </small>
             </div>
           </div>
@@ -298,7 +298,7 @@
                 Regular login: Always enabled
               </li>
               <li>
-                @if (configForm.get('enable_orcid_login')?.value) {
+                @if (configForm.get('enableOrcidLogin')?.value) {
                   <i class="bi bi-check-circle-fill text-success me-1"></i>
                   ORCID login: Enabled
                 } @else {
@@ -307,7 +307,7 @@
                 }
               </li>
               <li>
-                @if (configForm.get('allow_user_registration')?.value) {
+                @if (configForm.get('allowUserRegistration')?.value) {
                   <i class="bi bi-check-circle-fill text-success me-1"></i>
                   Public registration: Enabled
                 } @else {
@@ -318,7 +318,7 @@
             </ul>
           </div>
 
-          @if (configForm.get('show_powered_by')?.value) {
+          @if (configForm.get('showPoweredBy')?.value) {
             <div class="mt-3">
               <small class="text-muted">
                 <i class="bi bi-lightning-charge me-1"></i>

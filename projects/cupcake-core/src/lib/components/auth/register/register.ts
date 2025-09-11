@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, AbstractControl } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
@@ -9,6 +9,7 @@ import { UserRegistrationRequest, UserResponse, RegistrationStatus } from '../..
 
 @Component({
   selector: 'app-register',
+  standalone: true,
   imports: [CommonModule, ReactiveFormsModule, NgbAlert],
   templateUrl: './register.html',
   styleUrl: './register.scss'
@@ -21,16 +22,16 @@ export class RegisterComponent implements OnInit {
   private siteConfigService = inject(SiteConfigService);
 
   registrationForm: FormGroup;
-  loading = false;
-  error: string | null = null;
-  success: string | null = null;
+  loading = signal(false);
+  error = signal<string | null>(null);
+  success = signal<string | null>(null);
   
   // Observable for site configuration
   siteConfig$ = this.siteConfigService.config$;
   
-  // Registration status
-  registrationStatus: RegistrationStatus | null = null;
-  registrationEnabled = false;
+  // Registration status signals
+  registrationStatus = signal<RegistrationStatus | null>(null);
+  registrationEnabled = signal(false);
 
   private returnUrl: string = '/login';
 
@@ -38,10 +39,10 @@ export class RegisterComponent implements OnInit {
     this.registrationForm = this.fb.group({
       username: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(150)]],
       email: ['', [Validators.required, Validators.email, Validators.maxLength(254)]],
-      first_name: ['', [Validators.required, Validators.maxLength(30)]],
-      last_name: ['', [Validators.required, Validators.maxLength(30)]],
+      firstName: ['', [Validators.required, Validators.maxLength(30)]],
+      lastName: ['', [Validators.required, Validators.maxLength(30)]],
       password: ['', [Validators.required, Validators.minLength(8)]],
-      confirm_password: ['', [Validators.required]]
+      confirmPassword: ['', [Validators.required]]
     }, { validators: this.passwordMatchValidator });
   }
 
@@ -61,16 +62,15 @@ export class RegisterComponent implements OnInit {
   private checkRegistrationStatus(): void {
     this.apiService.getRegistrationStatus().subscribe({
       next: (status) => {
-        this.registrationStatus = status;
-        this.registrationEnabled = status.registration_enabled;
+        this.registrationStatus.set(status);
+        this.registrationEnabled.set(status.registrationEnabled);
         
-        if (!this.registrationEnabled) {
-          this.error = status.message || 'Registration is currently disabled';
+        if (!this.registrationEnabled()) {
+          this.error.set(status.message || 'Registration is currently disabled');
         }
       },
       error: (error) => {
-        console.warn('Could not load registration status:', error);
-        this.error = 'Unable to check registration status. Please try again later.';
+        this.error.set('Unable to check registration status. Please try again later.');
       }
     });
   }
@@ -80,7 +80,7 @@ export class RegisterComponent implements OnInit {
    */
   private passwordMatchValidator(form: AbstractControl): {[key: string]: any} | null {
     const password = form.get('password');
-    const confirmPassword = form.get('confirm_password');
+    const confirmPassword = form.get('confirmPassword');
     
     if (password && confirmPassword && password.value !== confirmPassword.value) {
       return { passwordMismatch: true };
@@ -92,23 +92,23 @@ export class RegisterComponent implements OnInit {
    * Handle form submission
    */
   onSubmit() {
-    if (this.registrationForm.valid && this.registrationEnabled) {
-      this.loading = true;
-      this.error = null;
+    if (this.registrationForm.valid && this.registrationEnabled()) {
+      this.loading.set(true);
+      this.error.set(null);
 
       const registrationData: UserRegistrationRequest = {
         username: this.registrationForm.get('username')?.value,
         email: this.registrationForm.get('email')?.value,
-        first_name: this.registrationForm.get('first_name')?.value,
-        last_name: this.registrationForm.get('last_name')?.value,
+        firstName: this.registrationForm.get('firstName')?.value,
+        lastName: this.registrationForm.get('lastName')?.value,
         password: this.registrationForm.get('password')?.value,
-        password_confirm: this.registrationForm.get('confirm_password')?.value
+        passwordConfirm: this.registrationForm.get('confirmPassword')?.value
       };
 
       this.apiService.registerUser(registrationData).subscribe({
         next: (response: UserResponse) => {
-          this.loading = false;
-          this.success = response.message || 'Registration successful! You can now log in with your credentials.';
+          this.loading.set(false);
+          this.success.set(response.message || 'Registration successful! You can now log in with your credentials.');
           
           // Redirect to login after successful registration
           setTimeout(() => {
@@ -122,7 +122,7 @@ export class RegisterComponent implements OnInit {
           }, 2000);
         },
         error: (error) => {
-          this.loading = false;
+          this.loading.set(false);
           
           // Handle specific validation errors
           if (error.error && typeof error.error === 'object') {
@@ -134,9 +134,9 @@ export class RegisterComponent implements OnInit {
                 errors.push(`${field}: ${messages}`);
               }
             }
-            this.error = errors.join('\n');
+            this.error.set(errors.join('\n'));
           } else {
-            this.error = error.error?.message || error.message || 'Registration failed. Please try again.';
+            this.error.set(error.error?.message || error.message || 'Registration failed. Please try again.');
           }
         }
       });
@@ -156,14 +156,14 @@ export class RegisterComponent implements OnInit {
    * Clear error message
    */
   clearError() {
-    this.error = null;
+    this.error.set(null);
   }
 
   /**
    * Clear success message
    */
   clearSuccess() {
-    this.success = null;
+    this.success.set(null);
   }
 
   /**
@@ -188,8 +188,7 @@ export class RegisterComponent implements OnInit {
       }
     }
     
-    // Check for password mismatch
-    if (fieldName === 'confirm_password' && this.registrationForm.errors?.['passwordMismatch'] && field?.touched) {
+    if (fieldName === 'confirmPassword' && this.registrationForm.errors?.['passwordMismatch'] && field?.touched) {
       return 'Passwords do not match';
     }
     
@@ -203,10 +202,10 @@ export class RegisterComponent implements OnInit {
     const displayNames: {[key: string]: string} = {
       username: 'Username',
       email: 'Email',
-      first_name: 'First name',
-      last_name: 'Last name',
+      firstName: 'First name',
+      lastName: 'Last name',
       password: 'Password',
-      confirm_password: 'Confirm password'
+      confirmPassword: 'Confirm password'
     };
     return displayNames[fieldName] || fieldName;
   }
@@ -216,10 +215,18 @@ export class RegisterComponent implements OnInit {
    */
   hasFieldError(fieldName: string): boolean {
     const field = this.registrationForm.get(fieldName);
-    if (fieldName === 'confirm_password') {
+    if (fieldName === 'confirmPassword') {
       return (field?.invalid && field?.touched) || 
              (this.registrationForm.errors?.['passwordMismatch'] && field?.touched) || false;
     }
     return field?.invalid && field?.touched || false;
   }
+
+  /**
+   * Computed signals for UI display logic
+   */
+  isRegistrationDisabled = computed(() => !this.registrationEnabled());
+  canSubmitForm = computed(() => {
+    return this.registrationForm.valid && this.registrationEnabled() && !this.loading();
+  });
 }

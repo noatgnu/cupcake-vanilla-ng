@@ -4,8 +4,7 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
 import { NgbTypeahead, NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { Observable, OperatorFunction, debounceTime, distinctUntilChanged, filter, map, switchMap, of, catchError } from 'rxjs';
 import { SdrfSyntaxService, CleavageAgentDetails } from '../../services/sdrf-syntax';
-import { ApiService } from '../../services/api';
-import { OntologySuggestion } from '../../models';
+import { OntologySuggestion, MetadataColumnService, MetadataColumnTemplateService } from '../../models';
 
 @Component({
   selector: 'app-sdrf-cleavage-input',
@@ -24,7 +23,8 @@ export class SdrfCleavageInput implements OnInit {
 
   private fb = inject(FormBuilder);
   private sdrfSyntax = inject(SdrfSyntaxService);
-  private apiService = inject(ApiService);
+  private metadataColumnService = inject(MetadataColumnService);
+  private metadataColumnTemplateService = inject(MetadataColumnTemplateService);
 
   cleavageForm!: FormGroup;
 
@@ -104,10 +104,11 @@ export class SdrfCleavageInput implements OnInit {
       switchMap(term => {
         // Use column ID first if available (for actual metadata columns), otherwise template ID (for templates/favorites)
         if (this.columnId) {
-          return this.apiService.getMetadataColumnOntologySuggestions(this.columnId, {
+          return this.metadataColumnService.getOntologySuggestions({
+            columnId: this.columnId,
             search: term,
             limit: 10,
-            search_type: this.searchType()
+            searchType: this.searchType()
           }).pipe(
             map(response => response.suggestions || []),
             catchError(error => {
@@ -116,10 +117,11 @@ export class SdrfCleavageInput implements OnInit {
             })
           );
         } else if (this.templateId) {
-          return this.apiService.getColumnTemplateOntologySuggestions(this.templateId, {
+          return this.metadataColumnTemplateService.getOntologySuggestions({
+            templateId: this.templateId,
             search: term,
             limit: 10,
-            search_type: this.searchType()
+            searchType: this.searchType()
           }).pipe(
             map(response => response.suggestions || []),
             catchError(error => {

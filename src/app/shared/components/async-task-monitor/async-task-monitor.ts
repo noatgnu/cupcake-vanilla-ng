@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy, Input, signal, computed } from '@angular/
 import { CommonModule } from '@angular/common';
 import { Observable, Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
-import { TaskListItem, TaskStatus, TaskType, TASK_TYPE_LABELS, TASK_STATUS_LABELS, TASK_STATUS_COLORS } from '../../models/async-task';
+import { AsyncTaskStatus, TaskStatus, TaskType, TASK_TYPE_LABELS, TASK_STATUS_LABELS, TASK_STATUS_COLORS } from '@cupcake/vanilla';
 import { AsyncTaskService } from '../../services/async-task';
 
 @Component({
@@ -18,12 +18,12 @@ export class AsyncTaskMonitorComponent implements OnInit, OnDestroy {
 
   private destroy$ = new Subject<void>();
   
-  tasks$!: Observable<TaskListItem[]>;
-  activeTasks$!: Observable<TaskListItem[]>;
+  tasks$!: Observable<AsyncTaskStatus[]>;
+  activeTasks$!: Observable<AsyncTaskStatus[]>;
 
   // Filter state using signals
   selectedFilter = signal<'all' | 'active' | 'completed' | 'failed'>('all');
-  allTasks = signal<TaskListItem[]>([]);
+  allTasks = signal<AsyncTaskStatus[]>([]);
   
   // Computed filtered tasks
   filteredTasks = computed(() => {
@@ -93,21 +93,21 @@ export class AsyncTaskMonitorComponent implements OnInit, OnDestroy {
   /**
    * Download task result
    */
-  downloadResult(task: TaskListItem): void {
+  downloadResult(task: AsyncTaskStatus): void {
     this.asyncTaskService.downloadTaskResult(task.id);
   }
 
   /**
    * Check if task can be cancelled
    */
-  canCancelTask(task: TaskListItem): boolean {
+  canCancelTask(task: AsyncTaskStatus): boolean {
     return this.asyncTaskService.canCancelTask(task.status);
   }
 
   /**
    * Check if task result can be downloaded
    */
-  canDownloadResult(task: TaskListItem): boolean {
+  canDownloadResult(task: AsyncTaskStatus): boolean {
     return this.asyncTaskService.canDownloadResult(task);
   }
 
@@ -149,9 +149,9 @@ export class AsyncTaskMonitorComponent implements OnInit, OnDestroy {
   /**
    * Generate filename for download if not provided
    */
-  private generateFilename(task: TaskListItem): string {
-    const extension = task.task_type === 'EXPORT_EXCEL' ? '.xlsx' : '.sdrf.tsv';
-    const tableName = task.metadata_table_name ? `_${task.metadata_table_name}` : '';
+  private generateFilename(task: AsyncTaskStatus): string {
+    const extension = task.taskType === 'EXPORT_EXCEL' ? '.xlsx' : '.sdrf.tsv';
+    const tableName = task.metadataTableName ? `_${task.metadataTableName}` : '';
     return `export${tableName}${extension}`;
   }
 
@@ -167,7 +167,7 @@ export class AsyncTaskMonitorComponent implements OnInit, OnDestroy {
   /**
    * Track by function for task list
    */
-  trackByTaskId(index: number, task: TaskListItem): string {
+  trackByTaskId(index: number, task: AsyncTaskStatus): string {
     return task.id;
   }
 
@@ -189,12 +189,12 @@ export class AsyncTaskMonitorComponent implements OnInit, OnDestroy {
   /**
    * Get task icon based on task type and status
    */
-  getTaskIcon(task: TaskListItem): string {
+  getTaskIcon(task: AsyncTaskStatus): string {
     if (task.status === 'STARTED') {
       return 'bi bi-hourglass-split';
     }
     
-    switch (task.task_type) {
+    switch (task.taskType) {
       case 'EXPORT_EXCEL':
         return 'bi bi-file-earmark-excel';
       case 'EXPORT_SDRF':
@@ -214,7 +214,7 @@ export class AsyncTaskMonitorComponent implements OnInit, OnDestroy {
   /**
    * Get task badge class based on status
    */
-  getTaskBadgeClass(task: TaskListItem): string {
+  getTaskBadgeClass(task: AsyncTaskStatus): string {
     const baseClass = 'task-icon';
     
     switch (task.status) {

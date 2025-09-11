@@ -35,11 +35,11 @@
           type="text"
           class="form-control"
           id="columnName"
-          formControlName="column_name"
-          [class.is-invalid]="editForm.get('column_name')?.invalid && editForm.get('column_name')?.touched"
-          placeholder="column_name">
+          formControlName="columnName"
+          [class.is-invalid]="editForm.get('columnName')?.invalid && editForm.get('columnName')?.touched"
+          placeholder="columnName">
         <div class="invalid-feedback">
-          {{ getFieldError('column_name') }}
+          {{ getFieldError('columnName') }}
         </div>
         <small class="form-text text-muted">Column name based on column type and template name. Example: characteristics[biological replicate]</small>
       </div>
@@ -66,14 +66,14 @@
         <select
           class="form-select"
           id="columnType"
-          formControlName="column_type"
-          [class.is-invalid]="editForm.get('column_type')?.invalid && editForm.get('column_type')?.touched">
+          formControlName="columnType"
+          [class.is-invalid]="editForm.get('columnType')?.invalid && editForm.get('columnType')?.touched">
           @for (type of columnTypes; track type.value) {
             <option [value]="type.value">{{ type.label }}</option>
           }
         </select>
         <div class="invalid-feedback">
-          {{ getFieldError('column_type') }}
+          {{ getFieldError('columnType') }}
         </div>
       </div>
 
@@ -83,12 +83,12 @@
           type="number"
           class="form-control"
           id="defaultPosition"
-          formControlName="default_position"
-          [class.is-invalid]="editForm.get('default_position')?.invalid && editForm.get('default_position')?.touched"
+          formControlName="defaultPosition"
+          [class.is-invalid]="editForm.get('defaultPosition')?.invalid && editForm.get('defaultPosition')?.touched"
           min="0"
           placeholder="0">
         <div class="invalid-feedback">
-          {{ getFieldError('default_position') }}
+          {{ getFieldError('defaultPosition') }}
         </div>
       </div>
 
@@ -98,7 +98,7 @@
           type="text"
           class="form-control"
           id="defaultValue"
-          formControlName="default_value"
+          formControlName="defaultValue"
           placeholder="Optional default value">
       </div>
 
@@ -107,7 +107,7 @@
         <select
           class="form-select"
           id="ontologyType"
-          formControlName="ontology_type"
+          formControlName="ontologyType"
           (change)="onOntologyTypeChange()">
           @for (ontology of ontologyTypes; track $index) {
             <option [value]="ontology.value">{{ ontology.label }}</option>
@@ -115,7 +115,7 @@
         </select>
       </div>
 
-      @if (editForm.get('ontology_type')?.value && editForm.get('custom_ontology_filters')?.value && Object.keys(editForm.get('custom_ontology_filters')?.value || {}).length > 0) {
+      @if (editForm.get('ontologyType')?.value && editForm.get('customOntologyFilters')?.value && Object.keys(editForm.get('customOntologyFilters')?.value || {}).length > 0) {
         <div class="col-12 mb-3">
           <div class="alert alert-info">
             <h6 class="alert-heading">
@@ -123,7 +123,7 @@
             </h6>
             <small class="mb-0">
               The following custom filters will be automatically applied for this ontology type:
-              <code class="ms-1">{{ editForm.get('custom_ontology_filters')?.value | json }}</code>
+              <code class="ms-1">{{ editForm.get('customOntologyFilters')?.value | json }}</code>
             </small>
           </div>
         </div>
@@ -158,15 +158,15 @@
         <select
           class="form-select"
           id="labGroup"
-          formControlName="lab_group"
-          [class.is-invalid]="editForm.get('lab_group')?.invalid && editForm.get('lab_group')?.touched">
+          formControlName="labGroup"
+          [class.is-invalid]="editForm.get('labGroup')?.invalid && editForm.get('labGroup')?.touched">
           <option [ngValue]="null">Select Lab Group</option>
           @for (group of labGroups; track group.id) {
             <option [ngValue]="group.id">{{ group.name }}</option>
           }
         </select>
         <div class="invalid-feedback">
-          {{ getFieldError('lab_group') }}
+          {{ getFieldError('labGroup') }}
         </div>
       </div>
 
@@ -205,7 +205,7 @@
                 class="form-check-input"
                 type="checkbox"
                 id="enableTypeahead"
-                formControlName="enable_typeahead">
+                formControlName="enableTypeahead">
               <label class="form-check-label" for="enableTypeahead">
                 Enable Typeahead
               </label>
@@ -217,7 +217,7 @@
                 class="form-check-input"
                 type="checkbox"
                 id="excelValidation"
-                formControlName="excel_validation">
+                formControlName="excelValidation">
               <label class="form-check-label" for="excelValidation">
                 Excel Validation
               </label>
@@ -229,7 +229,7 @@
                 class="form-check-input"
                 type="checkbox"
                 id="isActive"
-                formControlName="is_active">
+                formControlName="isActive">
               <label class="form-check-label" for="isActive">
                 Active
               </label>

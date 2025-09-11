@@ -4,9 +4,8 @@ import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { CommonModule } from '@angular/common';
 import { NavbarComponent } from './shared/components/navbar/navbar';
 import { PoweredByFooterComponent } from './shared/components/powered-by-footer/powered-by-footer';
-import { AsyncTaskMonitorComponent } from './shared/components/async-task-monitor/async-task-monitor';
 import { AsyncTaskService } from './shared/services/async-task';
-import { SiteConfigService } from 'cupcake-core';
+import { SiteConfigService } from '@cupcake/core';
 import { ToastContainerComponent } from './shared/components/toast-container/toast-container';
 import { ToastService } from './shared/services/toast';
 
@@ -17,7 +16,7 @@ import { environment } from '../environments/environment';
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, NgbModule, CommonModule, NavbarComponent, PoweredByFooterComponent, AsyncTaskMonitorComponent, ToastContainerComponent],
+  imports: [RouterOutlet, NgbModule, CommonModule, NavbarComponent, PoweredByFooterComponent, ToastContainerComponent],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })
@@ -41,7 +40,7 @@ export class App implements OnInit {
     this.themeService.isDark();
     this.siteConfigService.getCurrentConfig().subscribe(currentConfig => {
       if (currentConfig) {
-        this.updatePrimaryColorTheme(currentConfig.primary_color || '#1976d2');
+        this.updatePrimaryColorTheme(currentConfig.primaryColor || '#1976d2');
       }
     });
   });
@@ -57,7 +56,7 @@ export class App implements OnInit {
     try {
       // Subscribe to site config changes and update CSS custom properties
       this.siteConfigService.config$.subscribe(config => {
-        this.updatePrimaryColorTheme(config.primary_color || '#1976d2');
+        this.updatePrimaryColorTheme(config.primaryColor || '#1976d2');
       });
 
       // Mark app as initialized

@@ -50,7 +50,7 @@
 
           <div class="col-md-4">
             <label for="isStaff" class="form-label">Staff Status</label>
-            <select class="form-select" id="isStaff" formControlName="is_staff">
+            <select class="form-select" id="isStaff" formControlName="isStaff">
               <option value="">All Users</option>
               <option value="true">Staff Only</option>
               <option value="false">Regular Users</option>
@@ -59,7 +59,7 @@
 
           <div class="col-md-4">
             <label for="isActive" class="form-label">Account Status</label>
-            <select class="form-select" id="isActive" formControlName="is_active">
+            <select class="form-select" id="isActive" formControlName="isActive">
               <option value="">All Accounts</option>
               <option value="true">Active Only</option>
               <option value="false">Inactive Only</option>
@@ -98,7 +98,7 @@
         }
       </div>
       <div class="card-body p-0">
-        @if (users().length > 0) {
+        @if (hasResults()) {
           <div class="table-responsive">
             <table class="table table-hover mb-0">
               <thead class="table-light">
@@ -127,18 +127,18 @@
                     </td>
                     <td>
                       <div class="d-flex gap-1 flex-wrap">
-                        @if (user.is_active) {
+                        @if (user.isActive) {
                           <span class="badge bg-success">Active</span>
                         } @else {
                           <span class="badge bg-danger">Inactive</span>
                         }
-                        @if (user.is_staff) {
+                        @if (user.isStaff) {
                           <span class="badge bg-warning">Staff</span>
                         }
                       </div>
                     </td>
-                    <td>{{ formatDate(user.date_joined) }}</td>
-                    <td>{{ formatDate(user.last_login) }}</td>
+                    <td>{{ formatDate(user.dateJoined) }}</td>
+                    <td>{{ formatDate(user.lastLogin) }}</td>
                     <td class="text-end">
                       <div class="btn-group btn-group-sm" role="group">
                         <button
@@ -158,18 +158,18 @@
                         <button
                           type="button"
                           class="btn"
-                          [class]="user.is_active ? 'btn-outline-secondary' : 'btn-outline-success'"
+                          [class]="user.isActive ? 'btn-outline-secondary' : 'btn-outline-success'"
                           (click)="toggleUserStatus(user)"
-                          [title]="user.is_active ? 'Deactivate user' : 'Activate user'">
-                          <i class="bi" [class]="user.is_active ? 'bi-person-dash' : 'bi-person-check'"></i>
+                          [title]="user.isActive ? 'Deactivate user' : 'Activate user'">
+                          <i class="bi" [class]="user.isActive ? 'bi-person-dash' : 'bi-person-check'"></i>
                         </button>
                         <button
                           type="button"
                           class="btn"
-                          [class]="user.is_staff ? 'btn-outline-secondary' : 'btn-outline-info'"
+                          [class]="user.isStaff ? 'btn-outline-secondary' : 'btn-outline-info'"
                           (click)="toggleStaffStatus(user)"
-                          [title]="user.is_staff ? 'Remove staff privileges' : 'Grant staff privileges'">
-                          <i class="bi" [class]="user.is_staff ? 'bi-person-x' : 'bi-person-badge'"></i>
+                          [title]="user.isStaff ? 'Remove staff privileges' : 'Grant staff privileges'">
+                          <i class="bi" [class]="user.isStaff ? 'bi-person-x' : 'bi-person-badge'"></i>
                         </button>
                         <button
                           type="button"
@@ -187,25 +187,25 @@
           </div>
 
           <!-- Pagination -->
-          @if (totalPages > 1) {
+          @if (totalPages() > 1) {
             <div class="d-flex justify-content-between align-items-center p-3 border-top">
               <div class="text-muted">
-                Showing {{ ((currentPage() - 1) * pageSize()) + 1 }} to {{ Math.min(currentPage() * pageSize(), totalUsers()) }} of {{ totalUsers() }} users
+                Showing {{ showingFrom() }} to {{ showingTo() }} of {{ totalUsers() }} users
               </div>
               <nav>
                 <ul class="pagination pagination-sm mb-0">
-                  <li class="page-item" [class.disabled]="currentPage() === 1">
-                    <button class="page-link" (click)="onPageChange(currentPage() - 1)" [disabled]="currentPage() === 1">
+                  <li class="page-item" [class.disabled]="!canGoToPreviousPage()">
+                    <button class="page-link" (click)="onPageChange(currentPage() - 1)" [disabled]="!canGoToPreviousPage()">
                       <i class="bi bi-chevron-left"></i>
                     </button>
                   </li>
-                  @for (page of pages; track page) {
+                  @for (page of pages(); track page) {
                     <li class="page-item" [class.active]="page === currentPage()">
                       <button class="page-link" (click)="onPageChange(page)">{{ page }}</button>
                     </li>
                   }
-                  <li class="page-item" [class.disabled]="currentPage() === totalPages">
-                    <button class="page-link" (click)="onPageChange(currentPage() + 1)" [disabled]="currentPage() === totalPages">
+                  <li class="page-item" [class.disabled]="!canGoToNextPage()">
+                    <button class="page-link" (click)="onPageChange(currentPage() + 1)" [disabled]="!canGoToNextPage()">
                       <i class="bi bi-chevron-right"></i>
                     </button>
                   </li>
@@ -272,7 +272,7 @@
             type="text"
             class="form-control"
             id="createFirstName"
-            name="first_name"
+            name="firstName"
             ngModel
             required
             #firstNameField="ngModel">
@@ -286,7 +286,7 @@
             type="text"
             class="form-control"
             id="createLastName"
-            name="last_name"
+            name="lastName"
             ngModel
             required
             #lastNameField="ngModel">
@@ -333,7 +333,7 @@
               class="form-check-input"
               type="checkbox"
               id="createIsStaff"
-              name="is_staff"
+              name="isStaff"
               ngModel>
             <label class="form-check-label" for="createIsStaff">
               Staff privileges
@@ -346,7 +346,7 @@
               class="form-check-input"
               type="checkbox"
               id="createIsActive"
-              name="is_active"
+              name="isActive"
               ngModel
               checked>
             <label class="form-check-label" for="createIsActive">
@@ -365,7 +365,7 @@
       type="button"
       class="btn btn-primary"
       (click)="createUser(createForm.value)"
-      [disabled]="createForm.invalid || isCreatingUser()">
+      [disabled]="createForm.invalid || !canCreateUser()">
       @if (isCreatingUser()) {
         <span class="spinner-border spinner-border-sm me-2"></span>
       }
@@ -383,7 +383,7 @@
     <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
   </div>
   <div class="modal-body">
-    @if (selectedUser()) {
+    @if (hasSelectedUser()) {
       <form #editForm="ngForm" id="editUserForm" (ngSubmit)="updateUser(selectedUser()!.id!, editForm.value)">
         <div class="row g-3">
           <div class="col-md-6">
@@ -423,8 +423,8 @@
               type="text"
               class="form-control"
               id="editFirstName"
-              name="first_name"
-              [ngModel]="selectedUser()!.first_name"
+              name="firstName"
+              [ngModel]="selectedUser()!.firstName"
               required
               #editFirstNameField="ngModel">
             @if (editFirstNameField.invalid && editFirstNameField.touched) {
@@ -437,8 +437,8 @@
               type="text"
               class="form-control"
               id="editLastName"
-              name="last_name"
-              [ngModel]="selectedUser()!.last_name"
+              name="lastName"
+              [ngModel]="selectedUser()!.lastName"
               required
               #editLastNameField="ngModel">
             @if (editLastNameField.invalid && editLastNameField.touched) {
@@ -453,8 +453,8 @@
                 class="form-check-input"
                 type="checkbox"
                 id="editIsStaff"
-                name="is_staff"
-                [ngModel]="selectedUser()!.is_staff">
+                name="isStaff"
+                [ngModel]="selectedUser()!.isStaff">
               <label class="form-check-label" for="editIsStaff">
                 Staff privileges
               </label>
@@ -466,8 +466,8 @@
                 class="form-check-input"
                 type="checkbox"
                 id="editIsActive"
-                name="is_active"
-                [ngModel]="selectedUser()!.is_active">
+                name="isActive"
+                [ngModel]="selectedUser()!.isActive">
               <label class="form-check-label" for="editIsActive">
                 Active account
               </label>
@@ -481,12 +481,12 @@
     <button type="button" class="btn btn-outline-secondary" (click)="modal.dismiss()">
       <i class="bi bi-x-circle me-1"></i>Cancel
     </button>
-    @if (selectedUser()) {
+    @if (hasSelectedUser()) {
       <button
         type="submit"
         class="btn btn-primary"
         form="editUserForm"
-        [disabled]="isUpdatingUser()">
+        [disabled]="!canUpdateUser()">
         @if (isUpdatingUser()) {
           <span class="spinner-border spinner-border-sm me-2"></span>
         }
@@ -505,10 +505,10 @@
     <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
   </div>
   <div class="modal-body">
-    @if (selectedUser()) {
+    @if (hasSelectedUser()) {
       <div class="alert alert-warning">
         <i class="bi bi-exclamation-triangle me-2"></i>
-        You are about to reset the password for user <strong>{{ selectedUser()!.username }}</strong>.
+        You are about to reset the password for user <strong>{{ selectedUserDisplayName() }}</strong>.
       </div>
       
       <form #resetForm="ngForm" id="resetPasswordForm" (ngSubmit)="resetUserPassword(selectedUser()!.id!, resetForm.value)">
@@ -571,12 +571,12 @@
     <button type="button" class="btn btn-outline-secondary" (click)="modal.dismiss()">
       <i class="bi bi-x-circle me-1"></i>Cancel
     </button>
-    @if (selectedUser()) {
+    @if (hasSelectedUser()) {
       <button
         type="submit"
         class="btn btn-warning"
         form="resetPasswordForm"
-        [disabled]="isResettingPassword()">
+        [disabled]="!canResetPassword()">
         @if (isResettingPassword()) {
           <span class="spinner-border spinner-border-sm me-2"></span>
         }

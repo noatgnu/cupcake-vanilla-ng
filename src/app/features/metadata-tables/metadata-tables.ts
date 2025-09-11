@@ -5,20 +5,21 @@ import { ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
 import { NgbModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
-import { 
-  MetadataTable, 
+import {
+  MetadataTable,
   MetadataTableQueryResponse,
   LabGroup,
   LabGroupQueryResponse
 } from '../../shared/models';
-import { ApiService } from '../../shared/services/api';
-import { MetadataTableService } from '../../shared/services/metadata-table';
+import { User, LabGroupService } from '@cupcake/core';
+import { MetadataTableService, MetadataValidationConfig } from '@cupcake/vanilla';
+import { NavigationState } from '../../shared/services/navigation-state';
 import { AsyncTaskService } from '../../shared/services/async-task';
 import { ToastService } from '../../shared/services/toast';
 import { MetadataValidationModal } from '../../shared/components/metadata-validation-modal/metadata-validation-modal';
-import { MetadataValidationConfig } from '../../shared/models/async-task';
 import { ExcelExportModalComponent, ExcelExportOptions } from '../../shared/components/excel-export-modal/excel-export-modal';
 import { environment } from '../../../environments/environment';
+import { AuthService } from '@cupcake/core';
 
 @Component({
   selector: 'app-metadata-tables',
@@ -30,13 +31,15 @@ import { environment } from '../../../environments/environment';
 export class MetadataTablesComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   searchForm: FormGroup;
-  
+
   // Signals for reactive state management
   private searchParams = signal({
     search: '',
-    lab_group_id: null as number | null,
-    is_locked: null as boolean | null,
-    is_published: null as boolean | null,
+    labGroupId: null as number | null,
+    isLocked: null as boolean | null,
+    isPublished: null as boolean | null,
+    showShared: false,
+    adminView: false,
     limit: 12,
     offset: 0
   });
@@ -66,6 +69,12 @@ export class MetadataTablesComponent implements OnInit, OnDestroy {
   selectAllChecked = signal<boolean>(false);
   selectAllIndeterminate = signal<boolean>(false);
 
+  // User and permission state
+  currentUser = signal<User | null>(null);
+  isStaff = computed(() => this.currentUser()?.isStaff === true);
+  showSharedTables = signal(false);
+  showAdminView = signal(false);
+
   // Computed values
   hasTables = computed(() => this.tablesData().results.length > 0);
   hasLabGroups = computed(() => this.labGroupsData().results.length > 0);
@@ -76,23 +85,40 @@ export class MetadataTablesComponent implements OnInit, OnDestroy {
 
   constructor(
     private fb: FormBuilder,
-    private apiService: ApiService,
+    private labGroupService: LabGroupService,
     private metadataTableService: MetadataTableService,
+    private navigationState: NavigationState,
     private asyncTaskService: AsyncTaskService,
     private toastService: ToastService,
-    private modalService: NgbModal
+    private modalService: NgbModal,
+    private authService: AuthService
   ) {
     this.searchForm = this.fb.group({
       search: [''],
-      lab_group_id: [null],
-      is_locked: [null],
-      is_published: [null]
+      labGroupId: [null],
+      isLocked: [null],
+      isPublished: [null],
+      showShared: [false],
+      adminView: [false]
     });
 
     // Effect to automatically reload tables when search params change
     effect(() => {
       const params = this.searchParams();
       this.loadTablesWithParams(params);
+    });
+
+    // Effect to update search params when permission toggles change
+    effect(() => {
+      const showShared = this.showSharedTables();
+      const adminView = this.showAdminView();
+
+      this.searchParams.update(params => ({
+        ...params,
+        showShared: showShared,
+        adminView: adminView,
+        offset: 0
+      }));
     });
 
     // Effect to automatically reload lab groups when params change
@@ -109,9 +135,23 @@ export class MetadataTablesComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    this.initializeUser();
     this.setupSearch();
     this.loadInitialData();
     this.setupAsyncTaskRefreshListener();
+  }
+
+  private initializeUser(): void {
+    // Get current user and set up user state
+    const user = this.authService.getCurrentUser();
+    this.currentUser.set(user);
+
+    // Subscribe to user changes
+    this.authService.currentUser$.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(user => {
+      this.currentUser.set(user);
+    });
   }
 
   ngOnDestroy(): void {
@@ -136,20 +176,22 @@ export class MetadataTablesComponent implements OnInit, OnDestroy {
       limit: this.labGroupsPageSize(),
       offset: 0
     });
-    
+
     // Load tables
     this.searchParams.set({
       search: '',
-      lab_group_id: null,
-      is_locked: null,
-      is_published: null,
+      labGroupId: null,
+      isLocked: null,
+      isPublished: null,
+      showShared: this.showSharedTables(),
+      adminView: this.showAdminView(),
       limit: this.pageSize(),
       offset: 0
     });
   }
 
   private loadLabGroupsWithParams(params: { limit: number; offset: number }) {
-    this.apiService.getMyLabGroups(params).subscribe({
+    this.labGroupService.getMyLabGroups(params).subscribe({
       next: (response) => {
         this.labGroupsTotalItems.set(response.count);
         this.labGroupsData.set(response);
@@ -167,35 +209,41 @@ export class MetadataTablesComponent implements OnInit, OnDestroy {
       distinctUntilChanged()
     ).subscribe(formValue => {
       this.currentPage.set(1);
-      
+
       this.searchParams.set({
         search: formValue.search || '',
-        lab_group_id: formValue.lab_group_id || null,
-        is_locked: formValue.is_locked,
-        is_published: formValue.is_published,
+        labGroupId: formValue.labGroupId || null,
+        isLocked: formValue.isLocked,
+        isPublished: formValue.isPublished,
+        showShared: this.showSharedTables(),
+        adminView: this.showAdminView(),
         limit: this.pageSize(),
         offset: 0
       });
     });
   }
 
-  private loadTablesWithParams(params: any) {
+  private loadTablesWithParams(params: any): void {
     this.isLoading.set(true);
-    
-    this.apiService.getMetadataTables({
+
+    const requestParams = {
       search: params.search || undefined,
-      lab_group_id: params.lab_group_id || undefined,
-      is_locked: params.is_locked,
-      is_published: params.is_published,
+      labGroupId: params.labGroupId || undefined,
+      isLocked: params.isLocked,
+      isPublished: params.isPublished,
+      showShared: params.showShared || false,
+      adminView: params.adminView || false,
       limit: params.limit,
       offset: params.offset
-    }).subscribe({
-      next: (response) => {
+    };
+
+    this.metadataTableService.getMetadataTables(requestParams).subscribe({
+      next: (response: MetadataTableQueryResponse) => {
         this.isLoading.set(false);
         this.totalItems.set(response.count);
         this.tablesData.set(response);
       },
-      error: (error) => {
+      error: (error: any) => {
         this.isLoading.set(false);
         console.error('Error loading metadata tables:', error);
         this.tablesData.set({ count: 0, results: [] });
@@ -210,10 +258,10 @@ export class MetadataTablesComponent implements OnInit, OnDestroy {
     const labGroup = id ? this.findLabGroupById(id) : null;
     this.selectedLabGroup.set(labGroup);
     this.currentPage.set(1);
-    
+
     this.searchParams.update(params => ({
       ...params,
-      lab_group_id: id,
+      labGroupId: id,
       offset: 0
     }));
   }
@@ -241,10 +289,10 @@ export class MetadataTablesComponent implements OnInit, OnDestroy {
 
   deleteTable(table: MetadataTable) {
     const confirmMessage = `Are you sure you want to delete the table "${table.name}"?\n\nThis action cannot be undone.`;
-    
+
     if (confirm(confirmMessage)) {
       this.isLoading.set(true);
-      this.apiService.deleteMetadataTable(table.id!).subscribe({
+      this.metadataTableService.deleteMetadataTable(table.id!).subscribe({
         next: () => {
           console.log('Metadata table deleted successfully');
           this.toastService.success(`Table "${table.name}" deleted successfully!`);
@@ -265,18 +313,18 @@ export class MetadataTablesComponent implements OnInit, OnDestroy {
   }
 
   navigateToTemplates(): void {
-    this.metadataTableService.setNavigationType('template');
+    this.navigationState.setNavigationType('template');
   }
 
   getTableStatusBadge(table: MetadataTable): string {
-    if (table.is_published) return 'Published';
-    if (table.is_locked) return 'Locked';
+    if (table.isPublished) return 'Published';
+    if (table.isLocked) return 'Locked';
     return 'Draft';
   }
 
   getTableStatusClass(table: MetadataTable): string {
-    if (table.is_published) return 'bg-success';
-    if (table.is_locked) return 'bg-warning';
+    if (table.isPublished) return 'bg-success';
+    if (table.isLocked) return 'bg-warning';
     return 'bg-secondary';
   }
 
@@ -360,21 +408,21 @@ export class MetadataTablesComponent implements OnInit, OnDestroy {
    */
   bulkExportSdrf(): void {
     const selectedIds = Array.from(this.selectedTables());
-    
+
     if (selectedIds.length === 0) {
       this.toastService.warning('Please select at least one table to export');
       return;
     }
 
     const request = {
-      metadata_table_ids: selectedIds,
+      metadataTableIds: selectedIds,
       include_pools: true,
       validate_sdrf: false
     };
 
     this.asyncTaskService.queueBulkSdrfExport(request).subscribe({
       next: (response) => {
-        this.toastService.success(`Bulk SDRF export started! Task ID: ${response.task_id}`);
+        this.toastService.success(`Bulk SDRF export started! Task ID: ${response.taskId}`);
         this.clearSelection();
       },
       error: (error) => {
@@ -390,20 +438,20 @@ export class MetadataTablesComponent implements OnInit, OnDestroy {
    */
   bulkExportExcel(): void {
     const selectedIds = Array.from(this.selectedTables());
-    
+
     if (selectedIds.length === 0) {
       this.toastService.warning('Please select at least one table to export');
       return;
     }
 
     const request = {
-      metadata_table_ids: selectedIds,
+      metadataTableIds: selectedIds,
       include_pools: true
     };
 
     this.asyncTaskService.queueBulkExcelExport(request).subscribe({
       next: (response) => {
-        this.toastService.success(`Bulk Excel export started! Task ID: ${response.task_id}`);
+        this.toastService.success(`Bulk Excel export started! Task ID: ${response.taskId}`);
         this.clearSelection();
       },
       error: (error) => {
@@ -424,8 +472,8 @@ export class MetadataTablesComponent implements OnInit, OnDestroy {
     }
 
     const config: MetadataValidationConfig = {
-      metadata_table_id: table.id,
-      metadata_table_name: table.name
+      metadataTableId: table.id,
+      metadataTableName: table.name
     };
 
     const modalRef = this.modalService.open(MetadataValidationModal, {
@@ -486,12 +534,12 @@ export class MetadataTablesComponent implements OnInit, OnDestroy {
     const columnIds = table.columns!
       .filter(col => col && col.id != null)
       .map(col => col.id!);
-    
+
     if (columnIds.length === 0) {
       this.toastService.error('No valid columns available for export');
       return;
     }
-    
+
     // Prepare lab group IDs based on options
     let labGroupIds: number[] | undefined = undefined;
     if (options.includeLabGroups === 'selected') {
@@ -505,15 +553,15 @@ export class MetadataTablesComponent implements OnInit, OnDestroy {
     // Use async export if enabled
     if (environment.features?.asyncTasks) {
       this.asyncTaskService.queueExcelExport({
-        metadata_table_id: table.id!,
-        metadata_column_ids: columnIds,
-        sample_number: table.sample_count,
-        export_format: 'excel',
-        include_pools: options.includePools,
-        lab_group_ids: labGroupIds
+        metadataTableId: table.id!,
+        metadataColumnIds: columnIds,
+        sampleNumber: table.sampleCount,
+        exportFormat: 'excel',
+        includePools: options.includePools,
+        labGroupIds: labGroupIds
       }).subscribe({
         next: (response) => {
-          this.toastService.success(`Excel export queued successfully! Task ID: ${response.task_id}`);
+          this.toastService.success(`Excel export queued successfully! Task ID: ${response.taskId}`);
           // Start monitoring tasks if not already started
           this.asyncTaskService.startRealtimeUpdates();
         },
@@ -534,7 +582,7 @@ export class MetadataTablesComponent implements OnInit, OnDestroy {
     const columnIds = table.columns!
       .filter(col => col && col.id != null)
       .map(col => col.id!);
-    
+
     if (columnIds.length === 0) {
       this.toastService.error('No valid columns available for export');
       return;
@@ -543,13 +591,14 @@ export class MetadataTablesComponent implements OnInit, OnDestroy {
     // Use async export if enabled
     if (environment.features?.asyncTasks) {
       this.asyncTaskService.queueSdrfExport({
-        metadata_table_id: table.id!,
-        metadata_column_ids: columnIds,
-        sample_number: table.sample_count,
-        export_format: 'sdrf'
+        metadataTableId: table.id!,
+        metadataColumnIds: columnIds,
+        sampleNumber: table.sampleCount,
+        exportFormat: 'sdrf',
+        includePools: true
       }).subscribe({
         next: (response) => {
-          this.toastService.success(`SDRF export queued successfully! Task ID: ${response.task_id}`);
+          this.toastService.success(`SDRF export queued successfully! Task ID: ${response.taskId}`);
           // Start monitoring tasks if not already started
           this.asyncTaskService.startRealtimeUpdates();
         },
@@ -562,6 +611,43 @@ export class MetadataTablesComponent implements OnInit, OnDestroy {
     } else {
       // Use synchronous export (fallback)
       this.toastService.info('Synchronous SDRF export not implemented');
+    }
+  }
+
+  /**
+   * Toggle showing shared tables that the user has access to
+   */
+  toggleSharedTables(): void {
+    const newValue = !this.showSharedTables();
+    this.showSharedTables.set(newValue);
+    this.currentPage.set(1);
+  }
+
+  toggleAdminView(): void {
+    const currentUser = this.authService.getCurrentUser();
+    if (!currentUser) {
+      this.toastService.error('User not authenticated');
+      return;
+    }
+    if (!currentUser.isStaff) {
+      this.toastService.error('Admin access required');
+      return;
+    }
+    const newValue = !this.showAdminView();
+    this.showAdminView.set(newValue);
+    this.currentPage.set(1);
+    if (newValue) {
+      this.showSharedTables.set(false);
+    }
+  }
+
+  getCurrentViewDescription(): string {
+    if (this.showAdminView()) {
+      return 'Showing all tables (admin view)';
+    } else if (this.showSharedTables()) {
+      return 'Showing your tables and shared tables';
+    } else {
+      return 'Showing only your tables';
     }
   }
 }

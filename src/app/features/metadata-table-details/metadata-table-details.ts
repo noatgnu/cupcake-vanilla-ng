@@ -4,8 +4,7 @@ import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { NgbModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs';
-import { MetadataTable, MetadataColumn, SamplePool } from '../../shared/models';
-import { ApiService } from '../../shared/services/api';
+import { MetadataTable, MetadataColumn, SamplePool, MetadataTableService, AsyncImportService, AsyncExportService, SamplePoolService, ChunkedUploadService, MetadataColumnService, MetadataImportRequest, MetadataExportRequest } from '@cupcake/vanilla';
 import { ToastService } from '../../shared/services/toast';
 import { AsyncTaskService } from '../../shared/services/async-task';
 import { MetadataValueEditModal, MetadataValueEditConfig } from '../../shared/components/metadata-value-edit-modal/metadata-value-edit-modal';
@@ -15,7 +14,6 @@ import { SamplePoolEditModal } from '../../shared/components/sample-pool-edit-mo
 import { SamplePoolCreateModal } from '../../shared/components/sample-pool-create-modal/sample-pool-create-modal';
 import { ExcelExportModalComponent, ExcelExportOptions } from '../../shared/components/excel-export-modal/excel-export-modal';
 import { ColumnEditModal } from '../metadata-table-templates/column-edit-modal/column-edit-modal';
-import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-metadata-table-details',
@@ -94,10 +92,13 @@ export class MetadataTableDetailsComponent implements OnInit, OnDestroy {
   sortDirection = signal<'asc' | 'desc'>('asc');
 
   // Computed values
-  hasColumns = computed(() => this.table()?.columns && this.table()!.columns.length > 0);
+  hasColumns = computed(() => {
+    const table = this.table();
+    return table?.columns && table.columns.length > 0;
+  });
   hasPools = computed(() => {
     const table = this.table();
-    return table?.sample_pools && table.sample_pools.length > 0;
+    return table?.samplePools && table.samplePools.length > 0;
   });
   sortedColumns = computed(() => {
     const columns = this.table()?.columns || [];
@@ -132,9 +133,9 @@ export class MetadataTableDetailsComponent implements OnInit, OnDestroy {
             aValue = a.value?.toLowerCase() || '';
             bValue = b.value?.toLowerCase() || '';
             break;
-          case 'ontology_type':
-            aValue = a.ontology_type?.toLowerCase() || '';
-            bValue = b.ontology_type?.toLowerCase() || '';
+          case 'ontologyType':
+            aValue = a.ontologyType?.toLowerCase() || '';
+            bValue = b.ontologyType?.toLowerCase() || '';
             break;
           default:
             return 0;
@@ -152,8 +153,8 @@ export class MetadataTableDetailsComponent implements OnInit, OnDestroy {
     return filtered;
   });
   sortedPools = computed(() => {
-    const pools = this.table()?.sample_pools || [];
-    return [...pools].sort((a, b) => a.pool_name.localeCompare(b.pool_name));
+    const pools = this.table()?.samplePools || [];
+    return [...pools].sort((a, b) => a.poolName.localeCompare(b.poolName));
   });
 
   // Table data generation
@@ -162,7 +163,7 @@ export class MetadataTableDetailsComponent implements OnInit, OnDestroy {
     if (!table || !this.hasColumns()) return [];
 
     const rows: any[] = [];
-    for (let i = 0; i < table.sample_count; i++) {
+    for (let i = 0; i < table.sampleCount; i++) {
       const sampleIndex = i + 1; // 1-based sample index
       const row: any = { _sampleIndex: sampleIndex };
 
@@ -186,18 +187,18 @@ export class MetadataTableDetailsComponent implements OnInit, OnDestroy {
     const rows: any[] = [];
     this.sortedPools().forEach(pool => {
       const row: any = {
-        _poolName: pool.pool_name,
+        _poolName: pool.poolName,
         _poolId: pool.id,
         _poolData: pool
       };
 
-      // For each column, get the value from the pool's metadata_columns
+      // For each column, get the value from the pool's metadataColumns
       this.sortedColumns().forEach(column => {
         let value = '';
 
         // Find the corresponding metadata column in this pool by matching column IDs if available
         // or fall back to name matching for compatibility
-        const poolColumn = pool.metadata_columns?.find(pc =>
+        const poolColumn = pool.metadataColumns?.find((pc: any) =>
           (pc.id && column.id && pc.id === column.id) || pc.name === column.name
         );
         if (poolColumn) {
@@ -233,7 +234,11 @@ export class MetadataTableDetailsComponent implements OnInit, OnDestroy {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private apiService: ApiService,
+    private metadataTableService: MetadataTableService,
+    private asyncExportService: AsyncExportService,
+    private chunkedUploadService: ChunkedUploadService,
+    private samplePoolService: SamplePoolService,
+    private metadataColumnService: MetadataColumnService,
     private toastService: ToastService,
     private asyncTaskService: AsyncTaskService,
     private modalService: NgbModal
@@ -277,7 +282,7 @@ export class MetadataTableDetailsComponent implements OnInit, OnDestroy {
   private loadTable(id: number): void {
     this.isLoading.set(true);
 
-    this.apiService.getMetadataTable(id).subscribe({
+    this.metadataTableService.getMetadataTable(id).subscribe({
       next: (table) => {
         this.isLoading.set(false);
         this.table.set(table);
@@ -323,7 +328,7 @@ export class MetadataTableDetailsComponent implements OnInit, OnDestroy {
 
   editTable(): void {
     const table = this.table();
-    if (!table || !table.can_edit) return;
+    if (!table || !table.canEdit) return;
 
     const modalRef = this.modalService.open(MetadataTableEditModal, {
       size: 'lg',
@@ -369,50 +374,30 @@ export class MetadataTableDetailsComponent implements OnInit, OnDestroy {
     if (confirm(`Import SDRF data into table "${table.name}"?\n\nThis will add new columns and may modify existing data.`)) {
       input.value = ''; // Reset input early
 
-      // Use async import if enabled
-      if (environment.features?.asyncTasks) {
-        this.asyncTaskService.queueSdrfImport({
-          file,
-          metadata_table_id: table.id,
-          replace_existing: false,
-          validate_ontologies: true
-        }).subscribe({
-          next: (response) => {
-            this.toastService.success(`SDRF import queued successfully! Task ID: ${response.task_id}`);
-            // Start monitoring tasks if not already started
-            this.asyncTaskService.startRealtimeUpdates();
-          },
-          error: (error) => {
-            console.error('Error queuing SDRF import:', error);
-            const errorMsg = error?.error?.detail || error?.error?.message || 'Failed to queue SDRF import';
-            this.toastService.error(errorMsg);
-          }
-        });
-      } else {
-        // Use synchronous import
-        this.isLoading.set(true);
+      // Use async import with chunked upload
+      this.isLoading.set(true);
 
-        this.apiService.importSdrfFile({
-          file,
-          metadata_table_id: table.id,
-          import_type: 'user_metadata',
-          create_pools: true,
-          replace_existing: false
-        }).subscribe({
-          next: (response) => {
-            this.isLoading.set(false);
-            this.toastService.success('SDRF file imported successfully!');
-            // Reload table data to show imported columns
-            this.loadTable(table.id);
-          },
-          error: (error) => {
-            this.isLoading.set(false);
-            console.error('Error importing SDRF:', error);
-            const errorMsg = error?.error?.detail || error?.error?.message || 'Failed to import SDRF file';
-            this.toastService.error(errorMsg);
-          }
-        });
-      }
+      this.chunkedUploadService.uploadFileInChunks(file, 1024 * 1024, {
+        metadataTableId: table.id,
+        replaceExisting: false,
+        createPools: true,
+        onProgress: (progress) => {
+          console.log(`Upload progress: ${progress}%`);
+        }
+      }).subscribe({
+        next: (response) => {
+          this.isLoading.set(false);
+          this.toastService.success('SDRF file imported successfully!');
+          // Reload table data to show imported columns
+          this.loadTable(table.id);
+        },
+        error: (error) => {
+          this.isLoading.set(false);
+          console.error('Error importing SDRF:', error);
+          const errorMsg = error?.error?.detail || error?.error?.message || 'Failed to import SDRF file';
+          this.toastService.error(errorMsg);
+        }
+      });
     } else {
       input.value = ''; // Reset input if cancelled
     }
@@ -436,50 +421,30 @@ export class MetadataTableDetailsComponent implements OnInit, OnDestroy {
     if (confirm(`Import Excel data into table "${table.name}"?\n\nThis will update existing columns and may modify data.`)) {
       input.value = ''; // Reset input early
 
-      // Use async import if enabled
-      if (environment.features?.asyncTasks) {
-        this.asyncTaskService.queueExcelImport({
-          file,
-          metadata_table_id: table.id,
-          replace_existing: false,
-          validate_ontologies: true
-        }).subscribe({
-          next: (response) => {
-            this.toastService.success(`Excel import queued successfully! Task ID: ${response.task_id}`);
-            // Start monitoring tasks if not already started
-            this.asyncTaskService.startRealtimeUpdates();
-          },
-          error: (error) => {
-            console.error('Error queuing Excel import:', error);
-            const errorMsg = error?.error?.detail || error?.error?.message || 'Failed to queue Excel import';
-            this.toastService.error(errorMsg);
-          }
-        });
-      } else {
-        // Use synchronous import
-        this.isLoading.set(true);
+      // Use async import with chunked upload
+      this.isLoading.set(true);
 
-        this.apiService.importExcelFile({
-          file,
-          metadata_table_id: table.id,
-          import_type: 'user_metadata',
-          create_pools: true,
-          replace_existing: false
-        }).subscribe({
-          next: (response) => {
-            this.isLoading.set(false);
-            this.toastService.success('Excel file imported successfully!');
-            // Reload table data to show updated columns
-            this.loadTable(table.id);
-          },
-          error: (error) => {
-            this.isLoading.set(false);
-            console.error('Error importing Excel:', error);
-            const errorMsg = error?.error?.detail || error?.error?.message || 'Failed to import Excel file';
-            this.toastService.error(errorMsg);
-          }
-        });
-      }
+      this.chunkedUploadService.uploadFileInChunks(file, 1024 * 1024, {
+        metadataTableId: table.id,
+        replaceExisting: false,
+        createPools: true,
+        onProgress: (progress) => {
+          console.log(`Upload progress: ${progress}%`);
+        }
+      }).subscribe({
+        next: (response) => {
+          this.isLoading.set(false);
+          this.toastService.success('Excel file imported successfully!');
+          // Reload table data to show updated columns
+          this.loadTable(table.id);
+        },
+        error: (error) => {
+          this.isLoading.set(false);
+          console.error('Error importing Excel:', error);
+          const errorMsg = error?.error?.detail || error?.error?.message || 'Failed to import Excel file';
+          this.toastService.error(errorMsg);
+        }
+      });
     } else {
       input.value = ''; // Reset input if cancelled
     }
@@ -523,103 +488,60 @@ export class MetadataTableDetailsComponent implements OnInit, OnDestroy {
     }
     // For 'none', labGroupIds stays undefined
 
-    // Use async export if enabled
-    if (environment.features?.asyncTasks) {
-      this.asyncTaskService.queueExcelExport({
-        metadata_table_id: table.id,
-        metadata_column_ids: columnIds,
-        sample_number: table.sample_count,
-        export_format: 'excel',
-        include_pools: options.includePools,
-        lab_group_ids: labGroupIds
-      }).subscribe({
-        next: (response) => {
-          this.toastService.success(`Excel export queued successfully! Task ID: ${response.task_id}`);
-          // Start monitoring tasks if not already started
-          this.asyncTaskService.startRealtimeUpdates();
-        },
-        error: (error) => {
-          console.error('Error queuing Excel export:', error);
-          const errorMsg = error?.error?.detail || error?.error?.message || 'Failed to queue Excel export';
-          this.toastService.error(errorMsg);
-        }
-      });
-    } else {
-      // Use synchronous export
-      this.isLoading.set(true);
-
-      const exportRequest = this.apiService.exportExcelTemplate({
-        metadata_table_id: table.id,
-        metadata_column_ids: columnIds,
-        sample_number: table.sample_count,
-        export_format: 'excel',
-        include_pools: options.includePools,
-        lab_group_ids: labGroupIds
-      });
-
-      this.handleExportRequest(exportRequest, 'excel');
-    }
+    // Use async export only
+    this.asyncExportService.excelTemplate({
+      metadataTableId: table.id,
+      metadataColumnIds: columnIds,
+      sampleNumber: table.sampleCount,
+      exportFormat: 'excel',
+      includePools: options.includePools,
+      labGroupIds: labGroupIds
+    }).subscribe({
+      next: (response) => {
+        this.toastService.success(`Excel export queued successfully! Task ID: ${response.taskId}`);
+        // Start monitoring tasks if not already started
+        this.asyncTaskService.startRealtimeUpdates();
+      },
+      error: (error) => {
+        console.error('Error queuing Excel export:', error);
+        const errorMsg = error?.error?.detail || error?.error?.message || 'Failed to queue Excel export';
+        this.toastService.error(errorMsg);
+      }
+    });
   }
 
   private performSdrfExport(table: MetadataTable): void {
     const columnIds = table.columns!.map(col => col.id!);
 
-    // Use async export if enabled
-    if (environment.features?.asyncTasks) {
-      this.asyncTaskService.queueSdrfExport({
-        metadata_table_id: table.id,
-        metadata_column_ids: columnIds,
-        sample_number: table.sample_count,
-        export_format: 'sdrf',
-        include_pools: true
-      }).subscribe({
-        next: (response) => {
-          this.toastService.success(`SDRF export queued successfully! Task ID: ${response.task_id}`);
-          // Start monitoring tasks if not already started
-          this.asyncTaskService.startRealtimeUpdates();
-        },
-        error: (error) => {
-          console.error('Error queuing SDRF export:', error);
-          const errorMsg = error?.error?.detail || error?.error?.message || 'Failed to queue SDRF export';
-          this.toastService.error(errorMsg);
-        }
-      });
-    } else {
-      // Use synchronous export
-      this.isLoading.set(true);
-
-      const exportRequest = this.apiService.exportSdrfFile({
-        metadata_table_id: table.id,
-        metadata_column_ids: columnIds,
-        sample_number: table.sample_count,
-        export_format: 'sdrf',
-        include_pools: true
-      });
-
-      this.handleExportRequest(exportRequest, 'sdrf');
-    }
+    // Use async export only
+    this.asyncExportService.sdrfFile({
+      metadataTableId: table.id,
+      metadataColumnIds: columnIds,
+      sampleNumber: table.sampleCount,
+      exportFormat: 'sdrf',
+      includePools: true
+    }).subscribe({
+      next: (response) => {
+        this.toastService.success(`SDRF export queued successfully! Task ID: ${response.taskId}`);
+        // Start monitoring tasks if not already started
+        this.asyncTaskService.startRealtimeUpdates();
+      },
+      error: (error) => {
+        console.error('Error queuing SDRF export:', error);
+        const errorMsg = error?.error?.detail || error?.error?.message || 'Failed to queue SDRF export';
+        this.toastService.error(errorMsg);
+      }
+    });
   }
 
   private handleExportRequest(exportRequest: any, format: 'excel' | 'sdrf'): void {
     exportRequest.subscribe({
-      next: (blob: Blob) => {
+      next: (response: { taskId: string; message: string }) => {
         this.isLoading.set(false);
-
-        // Create download link
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-
-        const extension = format === 'excel' ? 'xlsx' : 'txt';
-        const table = this.table()!;
-        link.download = `${table.name}_exported.${extension}`;
-
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-
-        this.toastService.success(`Table exported as ${format.toUpperCase()} successfully!`);
+        this.toastService.success(`${format.toUpperCase()} export task queued successfully! Task ID: ${response.taskId}`);
+        
+        // Start monitoring tasks if not already started
+        this.asyncTaskService.startRealtimeUpdates();
       },
       error: (error: any) => {
         this.isLoading.set(false);
@@ -638,7 +560,7 @@ export class MetadataTableDetailsComponent implements OnInit, OnDestroy {
 
     if (confirm(confirmMessage)) {
       this.isLoading.set(true);
-      this.apiService.deleteMetadataTable(table.id).subscribe({
+      this.metadataTableService.deleteMetadataTable(table.id).subscribe({
         next: () => {
           this.toastService.success(`Table "${table.name}" deleted successfully!`);
           this.navigateBack();
@@ -656,16 +578,16 @@ export class MetadataTableDetailsComponent implements OnInit, OnDestroy {
   getTableStatusBadge(): string {
     const table = this.table();
     if (!table) return '';
-    if (table.is_published) return 'Published';
-    if (table.is_locked) return 'Locked';
+    if (table.isPublished) return 'Published';
+    if (table.isLocked) return 'Locked';
     return 'Draft';
   }
 
   getTableStatusClass(): string {
     const table = this.table();
     if (!table) return '';
-    if (table.is_published) return 'bg-success';
-    if (table.is_locked) return 'bg-warning';
+    if (table.isPublished) return 'bg-success';
+    if (table.isLocked) return 'bg-warning';
     return 'bg-secondary';
   }
 
@@ -756,12 +678,12 @@ export class MetadataTableDetailsComponent implements OnInit, OnDestroy {
 
   // Sample Pool Methods
   getPoolSampleCount(pool: SamplePool): number {
-    return pool.pooled_only_samples.length + pool.pooled_and_independent_samples.length;
+    return pool.pooledOnlySamples.length + pool.pooledAndIndependentSamples.length;
   }
 
   getPoolSampleDisplay(pool: SamplePool): string {
-    const pooledOnly = pool.pooled_only_samples.length;
-    const pooledAndIndependent = pool.pooled_and_independent_samples.length;
+    const pooledOnly = pool.pooledOnlySamples.length;
+    const pooledAndIndependent = pool.pooledAndIndependentSamples.length;
     const total = pooledOnly + pooledAndIndependent;
 
     if (pooledOnly > 0 && pooledAndIndependent > 0) {
@@ -776,7 +698,7 @@ export class MetadataTableDetailsComponent implements OnInit, OnDestroy {
   }
 
   getPoolSamples(pool: SamplePool): string {
-    const allSamples = [...pool.pooled_only_samples, ...pool.pooled_and_independent_samples].sort((a, b) => a - b);
+    const allSamples = [...pool.pooledOnlySamples, ...pool.pooledAndIndependentSamples].sort((a, b) => a - b);
     if (allSamples.length === 0) return 'None';
 
     // Group consecutive numbers into ranges
@@ -798,15 +720,15 @@ export class MetadataTableDetailsComponent implements OnInit, OnDestroy {
   }
 
   getPoolTypeIcon(pool: SamplePool): string {
-    return pool.is_reference ? 'bi-star-fill' : 'bi-layers';
+    return pool.isReference ? 'bi-star-fill' : 'bi-layers';
   }
 
   getPoolTypeClass(pool: SamplePool): string {
-    return pool.is_reference ? 'text-warning' : 'text-primary';
+    return pool.isReference ? 'text-warning' : 'text-primary';
   }
 
   getPoolTypeLabel(pool: SamplePool): string {
-    return pool.is_reference ? 'Reference Pool' : 'Sample Pool';
+    return pool.isReference ? 'Reference Pool' : 'Sample Pool';
   }
 
   viewPoolDetails(pool: SamplePool): void {
@@ -820,7 +742,7 @@ export class MetadataTableDetailsComponent implements OnInit, OnDestroy {
 
   editPool(pool: SamplePool): void {
     const table = this.table();
-    if (!table || !table.can_edit) return;
+    if (!table || !table.canEdit) return;
 
     const modalRef = this.modalService.open(SamplePoolEditModal, {
       size: 'lg',
@@ -828,18 +750,18 @@ export class MetadataTableDetailsComponent implements OnInit, OnDestroy {
     });
 
     modalRef.componentInstance.pool = pool;
-    modalRef.componentInstance.maxSampleCount = table.sample_count;
+    modalRef.componentInstance.maxSampleCount = table.sampleCount;
 
     modalRef.componentInstance.poolSaved.subscribe((updatedPool: SamplePool) => {
       // Reload the entire table to sync all pool-related changes
       this.loadTable(table.id);
-      this.toastService.success(`Pool "${updatedPool.pool_name}" updated successfully!`);
+      this.toastService.success(`Pool "${updatedPool.poolName}" updated successfully!`);
     });
   }
 
   createPool(): void {
     const table = this.table();
-    if (!table || !table.can_edit) return;
+    if (!table || !table.canEdit) return;
 
     const modalRef = this.modalService.open(SamplePoolCreateModal, {
       size: 'xl',
@@ -852,7 +774,7 @@ export class MetadataTableDetailsComponent implements OnInit, OnDestroy {
     modalRef.componentInstance.poolCreated.subscribe((createdPool: SamplePool) => {
       // Reload the entire table to sync all pool-related changes
       this.loadTable(table.id);
-      this.toastService.success(`Pool "${createdPool.pool_name}" created successfully!`);
+      this.toastService.success(`Pool "${createdPool.poolName}" created successfully!`);
     });
 
     modalRef.result.catch(() => {
@@ -864,18 +786,18 @@ export class MetadataTableDetailsComponent implements OnInit, OnDestroy {
     const table = this.table();
     if (!table || !pool.id) return;
 
-    const confirmMessage = `Are you sure you want to delete the pool "${pool.pool_name}"?\n\nThis action cannot be undone.`;
+    const confirmMessage = `Are you sure you want to delete the pool "${pool.poolName}"?\n\nThis action cannot be undone.`;
 
     if (confirm(confirmMessage)) {
-      this.apiService.deleteSamplePool(pool.id).subscribe({
+      this.samplePoolService.deleteSamplePool(pool.id).subscribe({
         next: () => {
           // Reload the entire table to sync all pool-related changes
           this.loadTable(table.id);
-          this.toastService.success(`Pool "${pool.pool_name}" deleted successfully!`);
+          this.toastService.success(`Pool "${pool.poolName}" deleted successfully!`);
         },
         error: (error) => {
           console.error('Error deleting pool:', error);
-          this.toastService.error(`Failed to delete pool "${pool.pool_name}"`);
+          this.toastService.error(`Failed to delete pool "${pool.poolName}"`);
         }
       });
     }
@@ -884,7 +806,7 @@ export class MetadataTableDetailsComponent implements OnInit, OnDestroy {
   // Metadata value editing methods
   editColumnValue(column: MetadataColumn): void {
     const table = this.table();
-    if (!table || !table.can_edit || !column.id) return;
+    if (!table || !table.canEdit || !column.id) return;
 
     // Prepare sample data for multi-sample editing
     const sampleData = this.tableRows().map(row => ({
@@ -897,14 +819,14 @@ export class MetadataTableDetailsComponent implements OnInit, OnDestroy {
       columnId: column.id,
       columnName: column.name,
       columnType: column.type,
-      ontologyType: column.ontology_type,
+      ontologyType: column.ontologyType,
       enableTypeahead: true,
       currentValue: column.value,
       context: 'table',
       tableId: table.id,
       enableMultiSampleEdit: true,
       sampleData: sampleData,
-      maxSampleCount: table.sample_count
+      maxSampleCount: table.sampleCount
     };
 
     const modalRef = this.modalService.open(MetadataValueEditModal, {
@@ -940,11 +862,17 @@ export class MetadataTableDetailsComponent implements OnInit, OnDestroy {
       }
 
       // Use the API to update the column value
-      this.apiService.updateMetadataColumnValue(column.id!, apiData).subscribe({
+      const requestData = {
+        value: typeof result === 'string' ? result : result.value,
+        sampleIndices: typeof result === 'string' ? undefined : result.sampleIndices,
+        valueType: typeof result === 'string' ? 'default' as const : 'sample_specific' as const
+      };
+
+      this.metadataColumnService.updateColumnValue(column.id!, requestData).subscribe({
         next: (response) => {
           // Update the local column data with the returned column
           const currentTable = this.table();
-          if (currentTable && response.column) {
+          if (currentTable && currentTable.columns && response.column) {
             const updatedColumns = currentTable.columns.map(col =>
               col.id === column.id ? response.column : col
             );
@@ -964,15 +892,15 @@ export class MetadataTableDetailsComponent implements OnInit, OnDestroy {
   // Toggle column hidden property
   toggleColumnHidden(column: MetadataColumn): void {
     const table = this.table();
-    if (!table || !table.can_edit || !column.id) return;
+    if (!table || !table.canEdit || !column.id) return;
 
     const newHiddenValue = !column.hidden;
 
-    this.apiService.updateMetadataColumn(column.id, { hidden: newHiddenValue }).subscribe({
+    this.metadataColumnService.patchMetadataColumn(column.id, { hidden: newHiddenValue }).subscribe({
       next: (updatedColumn) => {
         // Update the local column data
         const currentTable = this.table();
-        if (currentTable) {
+        if (currentTable && currentTable.columns) {
           const updatedColumns = currentTable.columns.map(col =>
             col.id === column.id ? updatedColumn : col
           );
@@ -993,17 +921,17 @@ export class MetadataTableDetailsComponent implements OnInit, OnDestroy {
   // Pool metadata value editing method
   editPoolColumnValue(pool: SamplePool, column: any): void {
     const table = this.table();
-    if (!table || !table.can_edit) return;
+    if (!table || !table.canEdit) return;
 
     // Find the pool's metadata column that corresponds to this table column
-    const poolColumn = pool.metadata_columns.find(pc => pc.name === column.name);
+    const poolColumn = pool.metadataColumns?.find(pc => pc.name === column.name);
     if (!poolColumn || !poolColumn.id) return;
 
     const config: MetadataValueEditConfig = {
       columnId: poolColumn.id,
       columnName: poolColumn.name,
       columnType: poolColumn.type,
-      ontologyType: poolColumn.ontology_type,
+      ontologyType: poolColumn.ontologyType,
       enableTypeahead: true,
       currentValue: poolColumn.value,
       context: 'pool',
@@ -1020,17 +948,17 @@ export class MetadataTableDetailsComponent implements OnInit, OnDestroy {
     modalRef.componentInstance.valueSaved.subscribe((newValue: string) => {
       // Update the pool's metadata column value locally
       const currentTable = this.table();
-      if (currentTable && currentTable.sample_pools) {
-        const updatedPools = currentTable.sample_pools.map(p => {
+      if (currentTable && currentTable.samplePools) {
+        const updatedPools = currentTable.samplePools.map(p => {
           if (p.id === pool.id) {
-            const updatedMetadataColumns = p.metadata_columns.map(mc =>
+            const updatedMetadataColumns = p.metadataColumns.map((mc: MetadataColumn) =>
               mc.id === poolColumn.id ? { ...mc, value: newValue } : mc
             );
-            return { ...p, metadata_columns: updatedMetadataColumns };
+            return { ...p, metadataColumns: updatedMetadataColumns };
           }
           return p;
         });
-        this.table.set({ ...currentTable, sample_pools: updatedPools });
+        this.table.set({ ...currentTable, samplePools: updatedPools });
       }
 
       this.toastService.success('Pool column value updated successfully!');
@@ -1041,7 +969,7 @@ export class MetadataTableDetailsComponent implements OnInit, OnDestroy {
   // Sample-specific metadata value editing method
   editSampleColumnValue(column: MetadataColumn, sampleIndex: number): void {
     const table = this.table();
-    if (!table || !table.can_edit || !column.id) return;
+    if (!table || !table.canEdit || !column.id) return;
 
     // Get current value for this sample (could be default or modified)
     const currentValue = this.getSampleColumnValue(column, sampleIndex);
@@ -1050,7 +978,7 @@ export class MetadataTableDetailsComponent implements OnInit, OnDestroy {
       columnId: column.id,
       columnName: column.name,
       columnType: column.type,
-      ontologyType: column.ontology_type,
+      ontologyType: column.ontologyType,
       enableTypeahead: true,
       currentValue: currentValue,
       context: 'table',
@@ -1065,15 +993,15 @@ export class MetadataTableDetailsComponent implements OnInit, OnDestroy {
     modalRef.componentInstance.config = config;
     modalRef.componentInstance.valueSaved.subscribe((newValue: string) => {
       // Use the API to update the sample-specific value
-      this.apiService.updateMetadataColumnValue(column.id!, {
+      this.metadataColumnService.updateColumnValue(column.id!, {
         value: newValue,
-        sample_indices: [sampleIndex],
-        value_type: 'sample_specific'
+        sampleIndices: [sampleIndex],
+        valueType: 'sample_specific'
       }).subscribe({
         next: (response) => {
           // Update the local column data with the returned column
           const currentTable = this.table();
-          if (currentTable && response.column) {
+          if (currentTable && currentTable.columns && response.column) {
             const updatedColumns = currentTable.columns.map(col =>
               col.id === column.id ? response.column : col
             );
@@ -1096,10 +1024,10 @@ export class MetadataTableDetailsComponent implements OnInit, OnDestroy {
     if (column.modifiers && column.modifiers.length > 0) {
       for (const modifier of column.modifiers) {
         if (modifier?.samples) {
-          const sampleRanges = modifier.samples.split(',').map(s => s.trim()).filter(s => s.length > 0);
+          const sampleRanges = modifier.samples.split(',').map((s: string) => s.trim()).filter((s: string) => s.length > 0);
           for (const range of sampleRanges) {
             if (range.includes('-')) {
-              const parts = range.split('-').map(n => n.trim());
+              const parts = range.split('-').map((n: string) => n.trim());
               if (parts.length === 2) {
                 const start = parseInt(parts[0]);
                 const end = parseInt(parts[1]);
@@ -1125,16 +1053,16 @@ export class MetadataTableDetailsComponent implements OnInit, OnDestroy {
   // Remove column method
   removeColumn(column: MetadataColumn): void {
     const table = this.table();
-    if (!table || !table.can_edit || !column.id) return;
+    if (!table || !table.canEdit || !column.id) return;
 
     const confirmMessage = `Are you sure you want to remove the column "${column.name}"?\n\nThis action cannot be undone and will remove all data in this column.`;
 
     if (confirm(confirmMessage)) {
-      this.apiService.deleteMetadataColumn(column.id).subscribe({
+      this.metadataColumnService.deleteMetadataColumn(column.id).subscribe({
         next: () => {
           // Remove the column from the local table data
           const currentTable = this.table();
-          if (currentTable) {
+          if (currentTable && currentTable.columns) {
             const updatedColumns = currentTable.columns.filter(col => col.id !== column.id);
             this.table.set({ ...currentTable, columns: updatedColumns });
           }
@@ -1182,19 +1110,18 @@ export class MetadataTableDetailsComponent implements OnInit, OnDestroy {
 
     this.isLoading.set(true);
 
-    this.apiService.addColumnWithAutoReorder(currentTable.id, {
-      column_data: columnData,
-      auto_reorder: true
+    this.metadataTableService.addColumnWithAutoReorder(currentTable.id, {
+      columnData: columnData
     }).subscribe({
-      next: (response) => {
+      next: (response: { message: string; column: MetadataColumn; reordered: boolean; schemaIdsUsed: number[] }) => {
         // Update the local table data with the new column
-        const updatedColumns = [...currentTable.columns, response.column];
+        const updatedColumns = [...(currentTable.columns || []), response.column];
         this.table.set({ ...currentTable, columns: updatedColumns });
 
         // Show success message with reordering info
         let message = `Column "${response.column.name}" added successfully!`;
         if (response.reordered) {
-          message += ` Columns reordered using ${response.schema_ids_used.length} schema(s).`;
+          message += ` Columns reordered using ${response.schemaIdsUsed.length} schema(s).`;
         }
         
         this.toastService.success(message);
@@ -1202,7 +1129,7 @@ export class MetadataTableDetailsComponent implements OnInit, OnDestroy {
         // Refresh the table to get the latest column positions
         this.loadTable(currentTable.id);
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error adding column:', error);
         this.toastService.error('Failed to add column');
       },

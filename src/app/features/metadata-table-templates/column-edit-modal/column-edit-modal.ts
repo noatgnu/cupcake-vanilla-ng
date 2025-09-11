@@ -61,12 +61,12 @@ export class ColumnEditModal implements OnInit {
       name: ['', [Validators.required, Validators.minLength(1)]],
       type: ['characteristics', Validators.required],
       value: [''],
-      ontology_type: [''],
-      enable_typeahead: [false],
+      ontologyType: [''],
+      enableTypeahead: [false],
       mandatory: [false],
       hidden: [false],
       readonly: [false],
-      not_applicable: [false]
+      notApplicable: [false]
     });
   }
 
@@ -82,12 +82,12 @@ export class ColumnEditModal implements OnInit {
         name: this.column.name,
         type: this.column.type,
         value: this.column.value || '',
-        ontology_type: this.column.ontology_type || '',
-        enable_typeahead: this.column.enable_typeahead || false,
+        ontologyType: this.column.ontologyType || '',
+        enableTypeahead: this.column.enableTypeahead || false,
         mandatory: this.column.mandatory || false,
         hidden: this.column.hidden || false,
         readonly: this.column.readonly || false,
-        not_applicable: this.column.not_applicable || false
+        notApplicable: this.column.notApplicable || false
       });
     }
   }
@@ -101,12 +101,12 @@ export class ColumnEditModal implements OnInit {
         name: formValue.name,
         type: formValue.type,
         value: formValue.value || '',
-        ontology_type: formValue.ontology_type || null,
-        enable_typeahead: formValue.enable_typeahead || false,
+        ontologyType: formValue.ontologyType || null,
+        enableTypeahead: formValue.enableTypeahead || false,
         mandatory: formValue.mandatory || false,
         hidden: formValue.hidden || false,
         readonly: formValue.readonly || false,
-        not_applicable: formValue.not_applicable || false
+        notApplicable: formValue.notApplicable || false
       };
 
       this.columnSaved.emit(columnData);
@@ -145,12 +145,12 @@ export class ColumnEditModal implements OnInit {
   }
 
   get hasOntologyType(): boolean {
-    const ontologyType = this.editForm.get('ontology_type')?.value;
+    const ontologyType = this.editForm.get('ontologyType')?.value;
     return !!(ontologyType && ontologyType.length > 0);
   }
 
   get hasTypeaheadEnabled(): boolean {
-    return this.hasOntologyType && this.editForm.get('enable_typeahead')?.value === true;
+    return this.hasOntologyType && this.editForm.get('enableTypeahead')?.value === true;
   }
 
   openValueEditModal(): void {
@@ -158,8 +158,8 @@ export class ColumnEditModal implements OnInit {
       columnId: this.column?.id,
       columnName: this.editForm.get('name')?.value || 'Column',
       columnType: this.editForm.get('type')?.value || '',
-      ontologyType: this.editForm.get('ontology_type')?.value || '',
-      enableTypeahead: this.editForm.get('enable_typeahead')?.value || false,
+      ontologyType: this.editForm.get('ontologyType')?.value || '',
+      enableTypeahead: this.editForm.get('enableTypeahead')?.value || false,
       currentValue: this.editForm.get('value')?.value || '',
       context: 'template',
       templateId: this.templateId || undefined

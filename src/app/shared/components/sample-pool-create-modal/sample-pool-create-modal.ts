@@ -2,8 +2,7 @@ import { Component, Input, Output, EventEmitter, OnInit, signal } from '@angular
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgbActiveModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
-import { SamplePool, SamplePoolCreateRequest, MetadataTable } from '../../models';
-import { ApiService } from '../../services/api';
+import { SamplePool, SamplePoolCreateRequest, MetadataTable, SamplePoolService } from '../../models';
 import { ToastService } from '../../services/toast';
 
 interface SampleSelectionItem {
@@ -42,14 +41,13 @@ export class SamplePoolCreateModal implements OnInit {
   constructor(
     private fb: FormBuilder,
     private activeModal: NgbActiveModal,
-    private apiService: ApiService,
+    private samplePoolService: SamplePoolService,
     private toastService: ToastService
   ) {
     this.createForm = this.fb.group({
-      pool_name: ['', [Validators.required, Validators.maxLength(255)]],
-      pool_description: [''],
-      is_reference: [false],
-      template_sample: [null],
+      poolName: ['', [Validators.required, Validators.maxLength(255)]],
+      poolDescription: [''],
+      isReference: [false],
       range_start: [1, [Validators.min(1)]],
       range_end: [10, [Validators.min(1)]],
       pooled_only_samples_text: [''],
@@ -71,7 +69,7 @@ export class SamplePoolCreateModal implements OnInit {
     if (rangeEndControl) {
       rangeEndControl.setValidators([
         Validators.min(1), 
-        Validators.max(this.metadataTable.sample_count)
+        Validators.max(this.metadataTable.sampleCount)
       ]);
       rangeEndControl.updateValueAndValidity();
     }
@@ -80,7 +78,7 @@ export class SamplePoolCreateModal implements OnInit {
     if (rangeStartControl) {
       rangeStartControl.setValidators([
         Validators.min(1), 
-        Validators.max(this.metadataTable.sample_count)
+        Validators.max(this.metadataTable.sampleCount)
       ]);
       rangeStartControl.updateValueAndValidity();
     }
@@ -90,7 +88,7 @@ export class SamplePoolCreateModal implements OnInit {
     const sampleItems: SampleSelectionItem[] = [];
     const existingPooledSamples = this.getExistingPooledSamples();
     
-    for (let i = 1; i <= this.metadataTable.sample_count; i++) {
+    for (let i = 1; i <= this.metadataTable.sampleCount; i++) {
       sampleItems.push({
         sampleNumber: i,
         selected: false,
@@ -102,10 +100,10 @@ export class SamplePoolCreateModal implements OnInit {
   }
 
   private getExistingPooledSamples(): number[] {
-    if (!this.metadataTable.sample_pools) return [];
+    if (!this.metadataTable.samplePools) return [];
     
     const pooledSamples: number[] = [];
-    this.metadataTable.sample_pools.forEach(pool => {
+    this.metadataTable.samplePools.forEach((pool: any) => {
       pooledSamples.push(...pool.pooled_only_samples || []);
       pooledSamples.push(...pool.pooled_and_independent_samples || []);
     });
@@ -195,18 +193,17 @@ export class SamplePoolCreateModal implements OnInit {
       }
 
       const createData: SamplePoolCreateRequest = {
-        pool_name: formValue.pool_name.trim(),
-        pool_description: formValue.pool_description?.trim() || undefined,
-        is_reference: formValue.is_reference,
-        template_sample: formValue.template_sample || undefined,
-        pooled_only_samples: pooledOnlySamples,
-        pooled_and_independent_samples: pooledAndIndependentSamples,
-        metadata_table: this.metadataTable.id
+        poolName: formValue.poolName.trim(),
+        poolDescription: formValue.poolDescription?.trim() || undefined,
+        isReference: formValue.isReference,
+        pooledOnlySamples: pooledOnlySamples,
+        pooledAndIndependentSamples: pooledAndIndependentSamples,
+        metadataTable: this.metadataTable.id
       };
 
-      this.apiService.createSamplePool(createData).subscribe({
+      this.samplePoolService.createSamplePool(createData).subscribe({
         next: (createdPool) => {
-          this.toastService.success(`Sample pool "${createdPool.pool_name}" created successfully`);
+          this.toastService.success(`Sample pool "${createdPool.poolName}" created successfully`);
           this.poolCreated.emit(createdPool);
           this.activeModal.close(createdPool);
         },
@@ -236,7 +233,7 @@ export class SamplePoolCreateModal implements OnInit {
         const [start, end] = part.split('-').map(s => parseInt(s.trim(), 10));
         if (!isNaN(start) && !isNaN(end) && start <= end) {
           for (let i = start; i <= end; i++) {
-            if (i > 0 && i <= this.metadataTable.sample_count) {
+            if (i > 0 && i <= this.metadataTable.sampleCount) {
               numbers.push(i);
             }
           }
@@ -244,7 +241,7 @@ export class SamplePoolCreateModal implements OnInit {
       } else {
         // Handle single number
         const num = parseInt(part, 10);
-        if (!isNaN(num) && num > 0 && num <= this.metadataTable.sample_count) {
+        if (!isNaN(num) && num > 0 && num <= this.metadataTable.sampleCount) {
           numbers.push(num);
         }
       }
@@ -302,9 +299,8 @@ export class SamplePoolCreateModal implements OnInit {
 
   private getFieldDisplayName(fieldName: string): string {
     const displayNames: { [key: string]: string } = {
-      'pool_name': 'Pool name',
-      'pool_description': 'Description',
-      'template_sample': 'Template sample',
+      'poolName': 'Pool name',
+      'poolDescription': 'Description',
       'range_start': 'Range start',
       'range_end': 'Range end'
     };

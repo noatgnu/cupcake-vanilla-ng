@@ -2,8 +2,7 @@ import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
-import { ApiService } from '../../services/api';
-import { LabGroup } from '../../models';
+import { LabGroup, LabGroupService } from '@cupcake/core';
 
 export interface ExcelExportOptions {
   includeLabGroups: 'none' | 'selected' | 'all';
@@ -20,7 +19,7 @@ export interface ExcelExportOptions {
 })
 export class ExcelExportModalComponent implements OnInit {
   activeModal = inject(NgbActiveModal);
-  apiService = inject(ApiService);
+  labGroupService = inject(LabGroupService);
 
   // State
   isLoadingLabGroups = signal(false);
@@ -46,7 +45,7 @@ export class ExcelExportModalComponent implements OnInit {
 
   private loadLabGroups(): void {
     this.isLoadingLabGroups.set(true);
-    this.apiService.getLabGroups().subscribe({
+    this.labGroupService.getMyLabGroups().subscribe({
       next: (response) => {
         this.availableLabGroups.set(response.results || []);
         this.isLoadingLabGroups.set(false);

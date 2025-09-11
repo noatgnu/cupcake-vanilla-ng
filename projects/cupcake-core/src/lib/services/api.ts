@@ -1,26 +1,9 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, map } from 'rxjs';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { ResourceService } from './resource';
 import {
-  MetadataColumn,
-  MetadataColumnTemplate,
-  FavouriteMetadataOption,
-  LabGroup,
-  LabGroupQueryResponse,
-  LabGroupCreateRequest,
-  LabGroupInvitation,
-  LabGroupInvitationQueryResponse,
-  LabGroupInvitationCreateRequest,
-  LabGroupMember,
-  MetadataTable,
-  MetadataTableQueryResponse,
-  MetadataTableCreateRequest,
-  MetadataTableTemplate,
-  MetadataTableTemplateQueryResponse,
-  OntologySuggestion,
-  OntologySuggestionResponse,
-  SamplePool,
   SiteConfig,
   AuthConfig,
   RegistrationStatus,
@@ -33,54 +16,26 @@ import {
   PasswordChangeResponse,
   AdminPasswordResetRequest,
   PasswordResetRequest,
-  PasswordResetConfirm,
+  PasswordResetConfirmRequest,
   UserProfileUpdateRequest,
   EmailChangeRequest,
-  EmailChangeConfirm
+  EmailChangeConfirmRequest,
+  Annotation,
+  AnnotationFolder,
+  AnnotationCreateRequest,
+  AnnotationUpdateRequest,
+  AnnotationFolderCreateRequest,
+  AnnotationFolderUpdateRequest,
+  ResourcePermission,
+  ResourcePermissionCreateRequest,
+  ResourcePermissionUpdateRequest,
+  BulkPermissionRequest,
+  RemoteHost,
+  RemoteHostCreateRequest,
+  RemoteHostUpdateRequest
 } from '../models';
 import { CUPCAKE_CORE_CONFIG } from './auth';
 
-/**
- * Core API service providing HTTP operations for cupcake-core library
- * 
- * This service handles all backend API communication including user management,
- * metadata operations, lab groups, and site configuration.
- * 
- * @example Basic usage
- * ```typescript
- * constructor(private apiService: ApiService) {}
- * 
- * // Get user list
- * this.apiService.getUsers({ limit: 10 }).subscribe(response => {
- *   console.log('Users:', response.results);
- * });
- * 
- * // Create a lab group
- * this.apiService.createLabGroup({
- *   name: 'Research Lab',
- *   description: 'Main research laboratory'
- * }).subscribe(group => {
- *   console.log('Created lab group:', group.name);
- * });
- * ```
- * 
- * @example Metadata operations
- * ```typescript
- * // Get metadata tables
- * this.apiService.getMetadataTables({ page: 1, limit: 20 }).subscribe(response => {
- *   console.log('Tables:', response.results);
- * });
- * 
- * // Create metadata column
- * this.apiService.createMetadataColumn({
- *   name: 'organism',
- *   metadata_table: tableId,
- *   required: true
- * }).subscribe(column => {
- *   console.log('Created column:', column.name);
- * });
- * ```
- */
 @Injectable({
   providedIn: 'root'
 })
@@ -91,485 +46,105 @@ export class ApiService {
 
   constructor(private http: HttpClient) {}
 
+  // ===== SYSTEMATIC CASE TRANSFORMATION METHODS =====
+
   /**
-   * Get the current user's profile information
-   * @returns Observable containing user profile data
-   * @example
-   * ```typescript
-   * this.apiService.getUserProfile().subscribe({
-   *   next: (response) => {
-   *     console.log('User profile:', response.user);
-   *     this.userProfile = response.user;
-   *   },
-   *   error: (error) => console.error('Failed to load profile:', error)
-   * });
-   * ```
+   * Transform camelCase object to snake_case for API requests
    */
+  private transformToSnakeCase(obj: any): any {
+    if (obj === null || typeof obj !== 'object') {
+      return obj;
+    }
+
+    if (Array.isArray(obj)) {
+      return obj.map(item => this.transformToSnakeCase(item));
+    }
+
+    const transformed: any = {};
+    Object.entries(obj).forEach(([key, value]) => {
+      // Convert camelCase to snake_case
+      const snakeKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
+      transformed[snakeKey] = this.transformToSnakeCase(value);
+    });
+
+    return transformed;
+  }
+
+  /**
+   * Transform snake_case object to camelCase for TypeScript interfaces
+   */
+  private transformToCamelCase(obj: any): any {
+    if (obj === null || typeof obj !== 'object') {
+      return obj;
+    }
+
+    if (Array.isArray(obj)) {
+      return obj.map(item => this.transformToCamelCase(item));
+    }
+
+    const transformed: any = {};
+    Object.entries(obj).forEach(([key, value]) => {
+      // Convert snake_case to camelCase
+      const camelKey = key.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+      transformed[camelKey] = this.transformToCamelCase(value);
+    });
+
+    return transformed;
+  }
+
+  /**
+   * Make HTTP GET request with automatic snake_case to camelCase transformation
+   */
+  public get<T>(url: string, options?: any): Observable<T> {
+    return this.http.get(url, options).pipe(
+      map(response => this.transformToCamelCase(response) as T)
+    );
+  }
+
+  /**
+   * Make HTTP POST request with automatic camelCase to snake_case transformation
+   */
+  public post<T>(url: string, body: any, options?: any): Observable<T> {
+    const transformedBody = this.transformToSnakeCase(body);
+    return this.http.post(url, transformedBody, options).pipe(
+      map(response => this.transformToCamelCase(response) as T)
+    );
+  }
+
+  /**
+   * Make HTTP PUT request with automatic camelCase to snake_case transformation
+   */
+  public put<T>(url: string, body: any, options?: any): Observable<T> {
+    const transformedBody = this.transformToSnakeCase(body);
+    return this.http.put(url, transformedBody, options).pipe(
+      map(response => this.transformToCamelCase(response) as T)
+    );
+  }
+
+  /**
+   * Make HTTP PATCH request with automatic camelCase to snake_case transformation
+   */
+  public patch<T>(url: string, body: any, options?: any): Observable<T> {
+    const transformedBody = this.transformToSnakeCase(body);
+    return this.http.patch(url, transformedBody, options).pipe(
+      map(response => this.transformToCamelCase(response) as T)
+    );
+  }
+
+  /**
+   * Make HTTP DELETE request with automatic snake_case to camelCase transformation
+   */
+  public delete<T>(url: string, options?: any): Observable<T> {
+    return this.http.delete(url, options).pipe(
+      map(response => this.transformToCamelCase(response) as T)
+    );
+  }
+
+  // USER PROFILE
   getUserProfile(): Observable<{user: any}> {
     return this.http.get<{user: any}>(`${this.apiUrl}/auth/profile/`);
   }
 
-  /**
-   * Retrieve lab groups with optional filtering and pagination
-   * @param params - Optional query parameters
-   * @param params.search - Search term for lab group names/descriptions
-   * @param params.limit - Maximum number of results to return
-   * @param params.offset - Number of results to skip for pagination
-   * @returns Observable containing paginated lab groups
-   * @example
-   * ```typescript
-   * // Get all lab groups
-   * this.apiService.getLabGroups().subscribe(response => {
-   *   console.log('Lab groups:', response.results);
-   * });
-   * 
-   * // Search and paginate
-   * this.apiService.getLabGroups({
-   *   search: 'research',
-   *   limit: 10,
-   *   offset: 0
-   * }).subscribe(response => {
-   *   console.log(`Found ${response.count} lab groups`);
-   * });
-   * ```
-   */
-  getLabGroups(params?: {
-    search?: string;
-    limit?: number;
-    offset?: number;
-  }): Observable<LabGroupQueryResponse> {
-    let httpParams = new HttpParams();
-    if (params) {
-      Object.keys(params).forEach(key => {
-        const value = params[key as keyof typeof params];
-        if (value !== undefined && value !== null) {
-          httpParams = httpParams.set(key, value.toString());
-        }
-      });
-    }
-    return this.http.get<any>(`${this.apiUrl}/lab-groups/`, { params: httpParams }).pipe(
-      map(response => ({
-        ...response,
-        results: response.results.map((labGroup: any) => this.resourceService.transformLegacyResource(labGroup))
-      }))
-    );
-  }
-
-  // Get lab groups that the current user is a member of
-  getMyLabGroups(params?: {
-    search?: string;
-    limit?: number;
-    offset?: number;
-  }): Observable<LabGroupQueryResponse> {
-    let httpParams = new HttpParams();
-    if (params) {
-      Object.keys(params).forEach(key => {
-        const value = params[key as keyof typeof params];
-        if (value !== undefined && value !== null) {
-          httpParams = httpParams.set(key, value.toString());
-        }
-      });
-    }
-    return this.http.get<any>(`${this.apiUrl}/lab-groups/my_groups/`, { params: httpParams }).pipe(
-      map(response => ({
-        ...response,
-        results: response.results.map((labGroup: any) => this.resourceService.transformLegacyResource(labGroup))
-      }))
-    );
-  }
-
-  createLabGroup(labGroup: LabGroupCreateRequest): Observable<LabGroup> {
-    return this.http.post<any>(`${this.apiUrl}/lab-groups/`, labGroup).pipe(
-      map(response => this.resourceService.transformLegacyResource(response))
-    );
-  }
-
-  updateLabGroup(id: number, labGroup: Partial<LabGroup>): Observable<LabGroup> {
-    const preparedData = this.resourceService.prepareForAPI(labGroup);
-    return this.http.patch<any>(`${this.apiUrl}/lab-groups/${id}/`, preparedData).pipe(
-      map(response => this.resourceService.transformLegacyResource(response))
-    );
-  }
-
-  deleteLabGroup(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/lab-groups/${id}/`);
-  }
-
-  getLabGroupMembers(id: number): Observable<LabGroupMember[]> {
-    return this.http.get<LabGroupMember[]>(`${this.apiUrl}/lab-groups/${id}/members/`);
-  }
-
-  inviteUserToLabGroup(id: number, invitation: LabGroupInvitationCreateRequest): Observable<LabGroupInvitation> {
-    return this.http.post<LabGroupInvitation>(`${this.apiUrl}/lab-groups/${id}/invite_user/`, invitation);
-  }
-
-  removeMemberFromLabGroup(id: number, userId: number): Observable<{message: string}> {
-    return this.http.post<{message: string}>(`${this.apiUrl}/lab-groups/${id}/remove_member/`, { user_id: userId });
-  }
-
-  leaveLabGroup(id: number): Observable<{message: string}> {
-    return this.http.post<{message: string}>(`${this.apiUrl}/lab-groups/${id}/leave_group/`, {});
-  }
-
-  // Lab Group Invitations
-  getLabGroupInvitations(params?: {
-    lab_group?: number;
-    status?: string;
-    limit?: number;
-    offset?: number;
-  }): Observable<LabGroupInvitationQueryResponse> {
-    let httpParams = new HttpParams();
-    if (params) {
-      Object.keys(params).forEach(key => {
-        const value = params[key as keyof typeof params];
-        if (value !== undefined && value !== null) {
-          httpParams = httpParams.set(key, value.toString());
-        }
-      });
-    }
-    return this.http.get<LabGroupInvitationQueryResponse>(`${this.apiUrl}/lab-group-invitations/`, { params: httpParams });
-  }
-
-  getMyPendingInvitations(): Observable<LabGroupInvitation[]> {
-    return this.http.get<LabGroupInvitation[]>(`${this.apiUrl}/lab-group-invitations/my_pending_invitations/`);
-  }
-
-  acceptLabGroupInvitation(id: number): Observable<{message: string, invitation: LabGroupInvitation}> {
-    return this.http.post<{message: string, invitation: LabGroupInvitation}>(`${this.apiUrl}/lab-group-invitations/${id}/accept_invitation/`, {});
-  }
-
-  rejectLabGroupInvitation(id: number): Observable<{message: string, invitation: LabGroupInvitation}> {
-    return this.http.post<{message: string, invitation: LabGroupInvitation}>(`${this.apiUrl}/lab-group-invitations/${id}/reject_invitation/`, {});
-  }
-
-  cancelLabGroupInvitation(id: number): Observable<{message: string}> {
-    return this.http.post<{message: string}>(`${this.apiUrl}/lab-group-invitations/${id}/cancel_invitation/`, {});
-  }
-
-  // Metadata Table Templates
-  getMetadataTableTemplates(params?: {
-    search?: string;
-    lab_group_id?: number;
-    user_id?: number;
-    visibility?: string;
-    is_default?: boolean;
-    limit?: number;
-    offset?: number;
-  }): Observable<MetadataTableTemplateQueryResponse> {
-    let httpParams = new HttpParams();
-    if (params) {
-      Object.keys(params).forEach(key => {
-        const value = params[key as keyof typeof params];
-        if (value !== undefined && value !== null) {
-          httpParams = httpParams.set(key, value.toString());
-        }
-      });
-    }
-    return this.http.get<any>(`${this.apiUrl}/metadata-table-templates/`, { params: httpParams }).pipe(
-      map(response => ({
-        ...response,
-        results: response.results.map((template: any) => this.resourceService.transformLegacyResource(template))
-      }))
-    );
-  }
-
-  getMetadataTableTemplate(id: number): Observable<MetadataTableTemplate> {
-    return this.http.get<any>(`${this.apiUrl}/metadata-table-templates/${id}/`).pipe(
-      map(response => this.resourceService.transformLegacyResource(response))
-    );
-  }
-
-  createMetadataTableTemplate(template: Partial<MetadataTableTemplate>): Observable<MetadataTableTemplate> {
-    const preparedData = this.resourceService.prepareForAPI(template);
-    return this.http.post<any>(`${this.apiUrl}/metadata-table-templates/`, preparedData).pipe(
-      map(response => this.resourceService.transformLegacyResource(response))
-    );
-  }
-
-  updateMetadataTableTemplate(id: number, template: Partial<MetadataTableTemplate>): Observable<MetadataTableTemplate> {
-    const preparedData = this.resourceService.prepareForAPI(template);
-    return this.http.patch<any>(`${this.apiUrl}/metadata-table-templates/${id}/`, preparedData).pipe(
-      map(response => this.resourceService.transformLegacyResource(response))
-    );
-  }
-
-  deleteMetadataTableTemplate(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/metadata-table-templates/${id}/`);
-  }
-
-  // Schema-based template creation
-  getAvailableSchemas(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/schemas/available/`);
-  }
-
-  // Schema management
-  getSchemas(params?: {
-    search?: string;
-    is_builtin?: boolean;
-    is_active?: boolean;
-    is_public?: boolean;
-    tags?: string;
-    limit?: number;
-    offset?: number;
-  }): Observable<any> {
-    let httpParams = new HttpParams();
-    if (params) {
-      Object.keys(params).forEach(key => {
-        const value = params[key as keyof typeof params];
-        if (value !== undefined && value !== null) {
-          httpParams = httpParams.set(key, value.toString());
-        }
-      });
-    }
-    return this.http.get<any>(`${this.apiUrl}/schemas/`, { params: httpParams });
-  }
-
-  getSchema(id: number): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/schemas/${id}/`);
-  }
-
-  createMetadataTableTemplateFromSchema(data: {
-    name: string;
-    schema_ids?: number[];
-    schemas?: string[]; // Legacy support
-    description?: string;
-    lab_group_id?: number;
-    is_public?: boolean;
-    is_default?: boolean;
-  }): Observable<MetadataTableTemplate> {
-    return this.http.post<MetadataTableTemplate>(`${this.apiUrl}/metadata-table-templates/create_from_schema/`, data);
-  }
-
-  // Column Templates
-  getColumnTemplates(params?: {
-    lab_group_id?: number;
-    is_global?: boolean;
-    search?: string;
-    limit?: number;
-    offset?: number;
-  }): Observable<{count: number, results: MetadataColumnTemplate[]}> {
-    let httpParams = new HttpParams();
-    if (params) {
-      Object.keys(params).forEach(key => {
-        const value = params[key as keyof typeof params];
-        if (value !== undefined && value !== null) {
-          httpParams = httpParams.set(key, value.toString());
-        }
-      });
-    }
-    return this.http.get<{count: number, results: MetadataColumnTemplate[]}>(`${this.apiUrl}/column-templates/`, { params: httpParams });
-  }
-
-  createColumnTemplate(template: Partial<MetadataColumnTemplate>): Observable<MetadataColumnTemplate> {
-    return this.http.post<MetadataColumnTemplate>(`${this.apiUrl}/column-templates/`, template);
-  }
-
-  updateColumnTemplate(id: number, template: Partial<MetadataColumnTemplate>): Observable<MetadataColumnTemplate> {
-    return this.http.patch<MetadataColumnTemplate>(`${this.apiUrl}/column-templates/${id}/`, template);
-  }
-
-  deleteColumnTemplate(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/column-templates/${id}/`);
-  }
-
-  // Metadata Tables
-  getMetadataTables(params?: {
-    search?: string;
-    lab_group_id?: number;
-    owner_id?: number;
-    is_locked?: boolean;
-    is_published?: boolean;
-    limit?: number;
-    offset?: number;
-  }): Observable<MetadataTableQueryResponse> {
-    let httpParams = new HttpParams();
-    if (params) {
-      Object.keys(params).forEach(key => {
-        const value = params[key as keyof typeof params];
-        if (value !== undefined && value !== null) {
-          httpParams = httpParams.set(key, value.toString());
-        }
-      });
-    }
-    return this.http.get<any>(`${this.apiUrl}/metadata-tables/`, { params: httpParams }).pipe(
-      map(response => ({
-        ...response,
-        results: response.results.map((table: any) => this.resourceService.transformLegacyResource(table))
-      }))
-    );
-  }
-
-  getMetadataTable(id: number): Observable<MetadataTable> {
-    return this.http.get<any>(`${this.apiUrl}/metadata-tables/${id}/`).pipe(
-      map(response => this.resourceService.transformLegacyResource(response))
-    );
-  }
-
-  createMetadataTable(table: MetadataTableCreateRequest): Observable<MetadataTable> {
-    const preparedData = this.resourceService.prepareForAPI(table);
-    return this.http.post<any>(`${this.apiUrl}/metadata-tables/`, preparedData).pipe(
-      map(response => this.resourceService.transformLegacyResource(response))
-    );
-  }
-
-  updateMetadataTable(id: number, table: Partial<MetadataTable>): Observable<MetadataTable> {
-    const preparedData = this.resourceService.prepareForAPI(table);
-    return this.http.patch<any>(`${this.apiUrl}/metadata-tables/${id}/`, preparedData).pipe(
-      map(response => this.resourceService.transformLegacyResource(response))
-    );
-  }
-
-  deleteMetadataTable(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/metadata-tables/${id}/`);
-  }
-
-  // Sample Pool Management
-  getSamplePool(id: number): Observable<SamplePool> {
-    return this.http.get<SamplePool>(`${this.apiUrl}/sample-pools/${id}/`);
-  }
-
-  updateSamplePool(id: number, pool: Partial<SamplePool>): Observable<SamplePool> {
-    return this.http.patch<SamplePool>(`${this.apiUrl}/sample-pools/${id}/`, pool);
-  }
-
-  deleteSamplePool(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/sample-pools/${id}/`);
-  }
-
-  // Create metadata table from template
-  createMetadataTableFromTemplate(data: {
-    name: string;
-    template_id: number;
-    sample_count?: number;
-    description?: string;
-    lab_group_id?: number;
-  }): Observable<MetadataTable> {
-    return this.http.post<MetadataTable>(`${this.apiUrl}/metadata-table-templates/create_table_from_template/`, data);
-  }
-
-  // Create metadata table from schemas
-  createMetadataTableFromSchemas(data: {
-    name: string;
-    schema_ids?: number[];
-    schemas?: string[]; // Legacy support
-    sample_count?: number;
-    description?: string;
-    lab_group_id?: number;
-  }): Observable<MetadataTable> {
-    return this.http.post<MetadataTable>(`${this.apiUrl}/metadata-table-templates/create_table_from_schemas/`, data);
-  }
-
-  // SDRF Import/Export
-  importSdrfFile(data: {
-    file: File;
-    metadata_table_id: number;
-    import_type?: 'user_metadata' | 'staff_metadata' | 'both';
-    create_pools?: boolean;
-    replace_existing?: boolean;
-  }): Observable<any> {
-    const formData = new FormData();
-    formData.append('file', data.file);
-    formData.append('metadata_table_id', data.metadata_table_id.toString());
-    if (data.import_type) formData.append('import_type', data.import_type);
-    if (data.create_pools !== undefined) formData.append('create_pools', data.create_pools.toString());
-    if (data.replace_existing !== undefined) formData.append('replace_existing', data.replace_existing.toString());
-
-    return this.http.post(`${this.apiUrl}/metadata-management/import_sdrf_file/`, formData);
-  }
-
-  exportSdrfFile(data: {
-    metadata_table_id: number;
-    metadata_column_ids: number[];
-    sample_number: number;
-    export_format?: 'excel' | 'sdrf';
-    include_pools?: boolean;
-    pool_ids?: number[];
-    lab_group_id?: number;
-  }): Observable<Blob> {
-    return this.http.post(`${this.apiUrl}/metadata-management/export_sdrf_file/`, data, {
-      responseType: 'blob'
-    });
-  }
-
-  // Ontology Suggestions for existing metadata columns
-  getMetadataColumnOntologySuggestions(columnId: number, params?: {
-    search?: string;
-    limit?: number;
-    search_type?: 'icontains' | 'istartswith' | 'exact';
-  }): Observable<any> {
-    let httpParams = new HttpParams();
-    httpParams = httpParams.set('column_id', columnId.toString());
-    if (params?.search) httpParams = httpParams.set('search', params.search);
-    if (params?.limit) httpParams = httpParams.set('limit', params.limit.toString());
-    if (params?.search_type) httpParams = httpParams.set('search_type', params.search_type);
-
-    return this.http.get<any>(`${this.apiUrl}/metadata-columns/ontology_suggestions/`,
-      { params: httpParams });
-  }
-
-  // Delete metadata column
-  deleteMetadataColumn(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/metadata-columns/${id}/`);
-  }
-
-  // Ontology Suggestions for metadata column templates (for the modal)
-  getColumnTemplateOntologySuggestions(templateId: number, params?: {
-    search?: string;
-    limit?: number;
-    search_type?: 'icontains' | 'istartswith';
-  }): Observable<any> {
-    let httpParams = new HttpParams();
-    httpParams = httpParams.set('template_id', templateId.toString());
-    if (params?.search) httpParams = httpParams.set('search', params.search);
-    if (params?.limit) httpParams = httpParams.set('limit', params.limit.toString());
-    if (params?.search_type) httpParams = httpParams.set('search_type', params.search_type);
-
-    return this.http.get<any>(`${this.apiUrl}/column-templates/ontology_suggestions/`,
-      { params: httpParams });
-  }
-
-  // Favourite Metadata Options
-  getFavouriteMetadataOptions(params?: {
-    name?: string;
-    type?: string;
-    user_id?: number;
-    lab_group_id?: number;
-    is_global?: boolean;
-    limit?: number;
-    offset?: number;
-  }): Observable<{count: number, results: FavouriteMetadataOption[]}> {
-    let httpParams = new HttpParams();
-    if (params) {
-      Object.keys(params).forEach(key => {
-        const value = params[key as keyof typeof params];
-        if (value !== undefined && value !== null) {
-          httpParams = httpParams.set(key, value.toString());
-        }
-      });
-    }
-    return this.http.get<{count: number, results: FavouriteMetadataOption[]}>(`${this.apiUrl}/favourite-options/`, { params: httpParams });
-  }
-
-  createFavouriteMetadataOption(option: Partial<FavouriteMetadataOption>): Observable<FavouriteMetadataOption> {
-    return this.http.post<FavouriteMetadataOption>(`${this.apiUrl}/favourite-options/`, option);
-  }
-
-  updateFavouriteMetadataOption(id: number, option: Partial<FavouriteMetadataOption>): Observable<FavouriteMetadataOption> {
-    return this.http.patch<FavouriteMetadataOption>(`${this.apiUrl}/favourite-options/${id}/`, option);
-  }
-
-  deleteFavouriteMetadataOption(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/favourite-options/${id}/`);
-  }
-
-  // Update metadata column value with automatic modifier calculation
-  updateMetadataColumnValue(columnId: number, data: {
-    value: string;
-    sample_indices?: number[];
-    value_type?: 'default' | 'sample_specific' | 'replace_all';
-  }): Observable<MetadataColumn> {
-    return this.http.post<MetadataColumn>(`${this.apiUrl}/metadata-columns/${columnId}/update_column_value/`, data);
-  }
 
   // ===================================================================
   // SITE CONFIGURATION METHODS
@@ -589,18 +164,18 @@ export class ApiService {
 
   // Admin-only user management
   getUsers(params?: {
-    is_staff?: boolean;
-    is_active?: boolean;
+    isStaff?: boolean;
+    isActive?: boolean;
     search?: string;
     page?: number;
-    page_size?: number;
+    pageSize?: number;
   }): Observable<UserListResponse> {
     let httpParams = new HttpParams();
-    if (params?.is_staff !== undefined) httpParams = httpParams.set('is_staff', params.is_staff.toString());
-    if (params?.is_active !== undefined) httpParams = httpParams.set('is_active', params.is_active.toString());
+    if (params?.isStaff !== undefined) httpParams = httpParams.set('is_staff', params.isStaff.toString());
+    if (params?.isActive !== undefined) httpParams = httpParams.set('is_active', params.isActive.toString());
     if (params?.search) httpParams = httpParams.set('search', params.search);
     if (params?.page) httpParams = httpParams.set('page', params.page.toString());
-    if (params?.page_size) httpParams = httpParams.set('page_size', params.page_size.toString());
+    if (params?.pageSize) httpParams = httpParams.set('page_size', params.pageSize.toString());
 
     return this.http.get<UserListResponse>(`${this.apiUrl}/users/`, { params: httpParams });
   }
@@ -654,13 +229,20 @@ export class ApiService {
     return this.http.post<{message: string, new_email: string}>(`${this.apiUrl}/users/request_email_change/`, emailData);
   }
 
-  confirmEmailChange(confirmData: EmailChangeConfirm): Observable<{message: string}> {
+  confirmEmailChange(confirmData: EmailChangeConfirmRequest): Observable<{message: string}> {
     return this.http.post<{message: string}>(`${this.apiUrl}/users/confirm_email_change/`, confirmData);
   }
 
   // Admin password reset
   resetUserPassword(userId: number, passwordData: AdminPasswordResetRequest): Observable<PasswordChangeResponse> {
-    return this.http.post<PasswordChangeResponse>(`${this.apiUrl}/users/${userId}/reset_password/`, passwordData);
+    const apiData = {
+      user_id: passwordData.userId,
+      new_password: passwordData.newPassword,
+      confirm_password: passwordData.confirmPassword,
+      force_password_change: passwordData.forcePasswordChange,
+      reason: passwordData.reason
+    };
+    return this.http.post<PasswordChangeResponse>(`${this.apiUrl}/users/${userId}/reset_password/`, apiData);
   }
 
   // Password reset request (forgot password)
@@ -669,7 +251,7 @@ export class ApiService {
   }
 
   // Confirm password reset with token
-  confirmPasswordReset(confirmData: PasswordResetConfirm): Observable<PasswordChangeResponse> {
+  confirmPasswordReset(confirmData: PasswordResetConfirmRequest): Observable<PasswordChangeResponse> {
     return this.http.post<PasswordChangeResponse>(`${this.apiUrl}/users/confirm_password_reset/`, confirmData);
   }
 
@@ -678,7 +260,7 @@ export class ApiService {
   // ===================================================================
 
   // Link ORCID to current user account
-  linkOrcid(orcidData: { orcid_id: string; verification_code?: string }): Observable<any> {
+  linkOrcid(orcidData: { orcidId: string; verificationCode?: string }): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/users/link_orcid/`, orcidData);
   }
 
@@ -690,18 +272,254 @@ export class ApiService {
   // Detect duplicate accounts
   detectDuplicateAccounts(searchData: {
     email?: string;
-    orcid_id?: string;
-    first_name?: string;
-    last_name?: string;
+    orcidId?: string;
+    firstName?: string;
+    lastName?: string;
   }): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/users/detect_duplicates/`, searchData);
   }
 
   // Request account merge
   requestAccountMerge(mergeData: {
-    duplicate_user_id: number;
+    duplicateUserId: number;
     reason: string;
   }): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/users/request_merge/`, mergeData);
+  }
+
+  // ANNOTATION MANAGEMENT
+
+  getAnnotationFolders(params?: {
+    search?: string;
+    parentFolder?: number;
+    isSharedDocumentFolder?: boolean;
+    labGroup?: number;
+    limit?: number;
+    offset?: number;
+  }): Observable<{count: number, results: AnnotationFolder[]}> {
+    let httpParams = new HttpParams();
+    if (params) {
+      Object.keys(params).forEach(key => {
+        const value = params[key as keyof typeof params];
+        if (value !== undefined && value !== null) {
+          httpParams = httpParams.set(key, value.toString());
+        }
+      });
+    }
+    return this.http.get<any>(`${this.apiUrl}/annotation-folders/`, { params: httpParams }).pipe(
+      map(response => ({
+        ...response,
+        results: response.results.map((folder: any) => this.resourceService.transformLegacyResource(folder))
+      }))
+    );
+  }
+
+  getAnnotationFolder(id: number): Observable<AnnotationFolder> {
+    return this.http.get<any>(`${this.apiUrl}/annotation-folders/${id}/`).pipe(
+      map(response => this.resourceService.transformLegacyResource(response))
+    );
+  }
+
+  createAnnotationFolder(folderData: AnnotationFolderCreateRequest): Observable<AnnotationFolder> {
+    const preparedData = this.resourceService.prepareForAPI(folderData);
+    return this.http.post<any>(`${this.apiUrl}/annotation-folders/`, preparedData).pipe(
+      map(response => this.resourceService.transformLegacyResource(response))
+    );
+  }
+
+  updateAnnotationFolder(id: number, folderData: AnnotationFolderUpdateRequest): Observable<AnnotationFolder> {
+    const preparedData = this.resourceService.prepareForAPI(folderData);
+    return this.http.patch<any>(`${this.apiUrl}/annotation-folders/${id}/`, preparedData).pipe(
+      map(response => this.resourceService.transformLegacyResource(response))
+    );
+  }
+
+  deleteAnnotationFolder(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/annotation-folders/${id}/`);
+  }
+
+  getAnnotations(params?: {
+    search?: string;
+    annotationType?: string;
+    folder?: number;
+    transcribed?: boolean;
+    scratched?: boolean;
+    labGroup?: number;
+    limit?: number;
+    offset?: number;
+  }): Observable<{count: number, results: Annotation[]}> {
+    let httpParams = new HttpParams();
+    if (params) {
+      Object.keys(params).forEach(key => {
+        const value = params[key as keyof typeof params];
+        if (value !== undefined && value !== null) {
+          httpParams = httpParams.set(key, value.toString());
+        }
+      });
+    }
+    return this.http.get<any>(`${this.apiUrl}/annotations/`, { params: httpParams }).pipe(
+      map(response => ({
+        ...response,
+        results: response.results.map((annotation: any) => this.resourceService.transformLegacyResource(annotation))
+      }))
+    );
+  }
+
+  getAnnotation(id: number): Observable<Annotation> {
+    return this.http.get<any>(`${this.apiUrl}/annotations/${id}/`).pipe(
+      map(response => this.resourceService.transformLegacyResource(response))
+    );
+  }
+
+  createAnnotation(annotationData: AnnotationCreateRequest): Observable<Annotation> {
+    const formData = new FormData();
+    Object.keys(annotationData).forEach(key => {
+      const value = (annotationData as any)[key];
+      if (value !== undefined && value !== null) {
+        if (key === 'file' && value instanceof File) {
+          formData.append(key, value);
+        } else {
+          formData.append(key, value.toString());
+        }
+      }
+    });
+    return this.http.post<any>(`${this.apiUrl}/annotations/`, formData).pipe(
+      map(response => this.resourceService.transformLegacyResource(response))
+    );
+  }
+
+  updateAnnotation(id: number, annotationData: AnnotationUpdateRequest): Observable<Annotation> {
+    const preparedData = this.resourceService.prepareForAPI(annotationData);
+    return this.http.patch<any>(`${this.apiUrl}/annotations/${id}/`, preparedData).pipe(
+      map(response => this.resourceService.transformLegacyResource(response))
+    );
+  }
+
+  deleteAnnotation(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/annotations/${id}/`);
+  }
+
+  // RESOURCE PERMISSIONS
+
+  getResourcePermissions(params?: {
+    user?: number;
+    resourceContentType?: number;
+    resourceObjectId?: number;
+    role?: string;
+    limit?: number;
+    offset?: number;
+  }): Observable<{count: number, results: ResourcePermission[]}> {
+    let httpParams = new HttpParams();
+    if (params) {
+      Object.keys(params).forEach(key => {
+        const value = params[key as keyof typeof params];
+        if (value !== undefined && value !== null) {
+          httpParams = httpParams.set(key, value.toString());
+        }
+      });
+    }
+    return this.http.get<any>(`${this.apiUrl}/resource-permissions/`, { params: httpParams }).pipe(
+      map(response => ({
+        ...response,
+        results: response.results.map((permission: any) => this.resourceService.transformLegacyResource(permission))
+      }))
+    );
+  }
+
+  getResourcePermission(id: number): Observable<ResourcePermission> {
+    return this.http.get<any>(`${this.apiUrl}/resource-permissions/${id}/`).pipe(
+      map(response => this.resourceService.transformLegacyResource(response))
+    );
+  }
+
+  createResourcePermission(permissionData: ResourcePermissionCreateRequest): Observable<ResourcePermission> {
+    const preparedData = this.resourceService.prepareForAPI(permissionData);
+    return this.http.post<any>(`${this.apiUrl}/resource-permissions/`, preparedData).pipe(
+      map(response => this.resourceService.transformLegacyResource(response))
+    );
+  }
+
+  updateResourcePermission(id: number, permissionData: ResourcePermissionUpdateRequest): Observable<ResourcePermission> {
+    const preparedData = this.resourceService.prepareForAPI(permissionData);
+    return this.http.patch<any>(`${this.apiUrl}/resource-permissions/${id}/`, preparedData).pipe(
+      map(response => this.resourceService.transformLegacyResource(response))
+    );
+  }
+
+  deleteResourcePermission(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/resource-permissions/${id}/`);
+  }
+
+  createBulkPermissions(bulkData: BulkPermissionRequest): Observable<{created: ResourcePermission[], errors: any[]}> {
+    const preparedData = this.resourceService.prepareForAPI(bulkData);
+    return this.http.post<any>(`${this.apiUrl}/resource-permissions/bulk_create/`, preparedData).pipe(
+      map(response => ({
+        ...response,
+        created: response.created.map((permission: any) => this.resourceService.transformLegacyResource(permission))
+      }))
+    );
+  }
+
+  getResourcePermissionsByResource(resourceContentType: number, resourceObjectId: number): Observable<ResourcePermission[]> {
+    const httpParams = new HttpParams()
+      .set('resourceContentType', resourceContentType.toString())
+      .set('resourceObjectId', resourceObjectId.toString());
+    return this.http.get<any[]>(`${this.apiUrl}/resource-permissions/by_resource/`, { params: httpParams }).pipe(
+      map(permissions => permissions.map(permission => this.resourceService.transformLegacyResource(permission)))
+    );
+  }
+
+  // REMOTE HOST MANAGEMENT
+
+  getRemoteHosts(params?: {
+    search?: string;
+    hostName?: string;
+    hostProtocol?: string;
+    limit?: number;
+    offset?: number;
+  }): Observable<{count: number, results: RemoteHost[]}> {
+    let httpParams = new HttpParams();
+    if (params) {
+      Object.keys(params).forEach(key => {
+        const value = params[key as keyof typeof params];
+        if (value !== undefined && value !== null) {
+          httpParams = httpParams.set(key, value.toString());
+        }
+      });
+    }
+    return this.http.get<any>(`${this.apiUrl}/remote-hosts/`, { params: httpParams }).pipe(
+      map(response => ({
+        ...response,
+        results: response.results.map((host: any) => this.resourceService.transformLegacyResource(host))
+      }))
+    );
+  }
+
+  getRemoteHost(id: number): Observable<RemoteHost> {
+    return this.http.get<any>(`${this.apiUrl}/remote-hosts/${id}/`).pipe(
+      map(response => this.resourceService.transformLegacyResource(response))
+    );
+  }
+
+  createRemoteHost(hostData: RemoteHostCreateRequest): Observable<RemoteHost> {
+    const preparedData = this.resourceService.prepareForAPI(hostData);
+    return this.http.post<any>(`${this.apiUrl}/remote-hosts/`, preparedData).pipe(
+      map(response => this.resourceService.transformLegacyResource(response))
+    );
+  }
+
+  updateRemoteHost(id: number, hostData: RemoteHostUpdateRequest): Observable<RemoteHost> {
+    const preparedData = this.resourceService.prepareForAPI(hostData);
+    return this.http.patch<any>(`${this.apiUrl}/remote-hosts/${id}/`, preparedData).pipe(
+      map(response => this.resourceService.transformLegacyResource(response))
+    );
+  }
+
+  deleteRemoteHost(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/remote-hosts/${id}/`);
+  }
+
+  testRemoteHostConnection(id: number): Observable<{success: boolean, message: string}> {
+    return this.http.post<{success: boolean, message: string}>(`${this.apiUrl}/remote-hosts/${id}/test_connection/`, {});
   }
 }

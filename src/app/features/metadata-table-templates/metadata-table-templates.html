@@ -103,18 +103,6 @@
               </label>
             </div>
           </div>
-          <div class="col-md-3">
-            <div class="form-check form-switch mt-3">
-              <input
-                class="form-check-input"
-                type="checkbox"
-                id="defaultTemplates"
-                formControlName="is_default">
-              <label class="form-check-label" for="defaultTemplates">
-                <i class="bi bi-star me-1"></i>Default Templates Only
-              </label>
-            </div>
-          </div>
         </form>
       </div>
     </div>
@@ -156,16 +144,16 @@
                           <br><small class="text-muted">{{ template.description }}</small>
                         }
                       </td>
-                      <td>{{ template.owner_username || 'System' }}</td>
+                      <td>{{ template.ownerUsername || 'System' }}</td>
                       <td>
-                        @if (template.lab_group) {
-                          <span class="badge bg-info">{{ typeof template.lab_group === 'object' ? template.lab_group.name : template.lab_group }}</span>
+                        @if (template.labGroup) {
+                          <span class="badge bg-info">{{ getLabGroupName(template.labGroup) }}</span>
                         } @else {
                           <span class="text-muted">-</span>
                         }
                       </td>
                       <td>
-                        <span class="badge bg-secondary">{{ template.column_count || 0 }}</span>
+                        <span class="badge bg-secondary">{{ template.columnCount || 0 }}</span>
                       </td>
                       <td>
                         @switch (template.visibility) {
@@ -184,7 +172,7 @@
                         }
                       </td>
                       <td>
-                        @if (template.is_default) {
+                        @if (template.isDefault) {
                           <i class="bi bi-star-fill text-warning"></i>
                         } @else {
                           <span class="text-muted">-</span>

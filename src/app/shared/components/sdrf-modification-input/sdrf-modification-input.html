@@ -109,7 +109,7 @@
                       [for]="'spec_' + spec.specNumber">
                       <div class="fw-semibold">
                         Spec {{ spec.specNumber }}
-                        @if (spec.hidden === '1') {
+                        @if (spec['hidden'] === '1') {
                           <span class="badge bg-warning text-dark ms-1" title="Hidden specification">Hidden</span>
                         }
                       </div>

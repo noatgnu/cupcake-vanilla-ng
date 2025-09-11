@@ -1,12 +1,12 @@
 @if (isAuthenticated$ | async) {
   <nav class="navbar navbar-expand-lg navbar-dark" 
-       [style.background-color]="(siteConfig$ | async)?.primary_color || '#1976d2'">
+       [style.background-color]="(siteConfig$ | async)?.primaryColor || '#1976d2'">
   <div class="container-fluid">
     <!-- Brand -->
     @if (siteConfig$ | async; as config) {
       <a class="navbar-brand" routerLink="/">
         <i class="bi bi-flask me-2"></i>
-        {{ config.site_name }}
+        {{ config.siteName }}
       </a>
     }
 
@@ -70,7 +70,7 @@
           </ul>
         </li>
         @if (currentUser$ | async; as user) {
-          @if (user.is_staff) {
+          @if (user.isStaff) {
             <li class="nav-item dropdown" ngbDropdown>
               <a class="nav-link dropdown-toggle" 
                  id="adminDropdown" 
@@ -161,7 +161,7 @@
              aria-expanded="false">
             <i class="bi bi-person-circle me-1"></i>
             {{ getUserDisplayName(user) }}
-            @if (user.orcid_id) {
+            @if (user.orcidId) {
               <span class="badge bg-secondary ms-1">ORCID</span>
             }
           </a>
@@ -180,11 +180,11 @@
                 </span>
               </li>
             }
-            @if (user.orcid_id) {
+            @if (user.orcidId) {
               <li>
                 <span class="dropdown-item-text text-muted small">
                   <i class="bi bi-person-badge me-1"></i>
-                  {{ user.orcid_id }}
+                  {{ user.orcidId }}
                 </span>
               </li>
             }

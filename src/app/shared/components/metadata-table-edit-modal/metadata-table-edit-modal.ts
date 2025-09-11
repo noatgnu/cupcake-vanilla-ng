@@ -2,8 +2,8 @@ import { Component, Input, Output, EventEmitter, OnInit, signal } from '@angular
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgbActiveModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
-import { MetadataTable, LabGroup } from '../../models';
-import { ApiService } from '../../services/api';
+import { MetadataTable, MetadataTableService, MetadataTableUpdateRequest } from '@cupcake/vanilla';
+import { LabGroupService, LabGroup } from '@cupcake/core';
 
 @Component({
   selector: 'app-metadata-table-edit-modal',
@@ -24,7 +24,8 @@ export class MetadataTableEditModal implements OnInit {
   constructor(
     private fb: FormBuilder,
     private activeModal: NgbActiveModal,
-    private apiService: ApiService
+    private metadataTableService: MetadataTableService,
+    private labGroupService: LabGroupService
   ) {
     this.editForm = this.fb.group({
       name: ['', [Validators.required, Validators.maxLength(255)]],
@@ -40,9 +41,9 @@ export class MetadataTableEditModal implements OnInit {
       this.editForm.patchValue({
         name: this.table.name,
         description: this.table.description || '',
-        sample_count: this.table.sample_count,
+        sample_count: this.table.sampleCount,
         version: this.table.version,
-        lab_group: this.table.lab_group || null
+        lab_group: this.table.labGroup || null
       });
     }
     
@@ -52,7 +53,7 @@ export class MetadataTableEditModal implements OnInit {
   loadLabGroups(): void {
     this.isLoadingLabGroups.set(true);
     
-    this.apiService.getMyLabGroups({ limit: 10 }).subscribe({
+    this.labGroupService.getMyLabGroups({ limit: 10 }).subscribe({
       next: (response) => {
         this.availableLabGroups.set(response.results);
         this.isLoadingLabGroups.set(false);
@@ -73,12 +74,12 @@ export class MetadataTableEditModal implements OnInit {
       const updateData: Partial<MetadataTable> = {
         name: formValue.name.trim(),
         description: formValue.description?.trim() || undefined,
-        sample_count: formValue.sample_count,
+        sampleCount: formValue.sample_count,
         version: formValue.version?.trim() || undefined,
-        lab_group: formValue.lab_group || undefined
+        labGroup: formValue.lab_group || undefined
       };
 
-      this.apiService.updateMetadataTable(this.table.id, updateData).subscribe({
+      this.metadataTableService.updateMetadataTable(this.table.id, updateData).subscribe({
         next: (updatedTable) => {
           this.tableSaved.emit(updatedTable);
           this.activeModal.close(updatedTable);
@@ -106,9 +107,9 @@ export class MetadataTableEditModal implements OnInit {
     return (
       formValue.name !== this.table.name ||
       formValue.description !== (this.table.description || '') ||
-      formValue.sample_count !== this.table.sample_count ||
+      formValue.sample_count !== this.table.sampleCount ||
       formValue.version !== this.table.version ||
-      formValue.lab_group !== this.table.lab_group
+      formValue.lab_group !== this.table.labGroup
     );
   }
 
@@ -121,27 +122,29 @@ export class MetadataTableEditModal implements OnInit {
   getFieldError(fieldName: string): string {
     const field = this.editForm.get(fieldName);
     if (!field || !field.errors) return '';
-
+    
+    const displayName = this.getFieldDisplayName(fieldName);
+    
     if (field.errors['required']) {
-      return `${this.getFieldDisplayName(fieldName)} is required`;
+      return `${displayName} is required`;
     }
     if (field.errors['maxlength']) {
-      return `${this.getFieldDisplayName(fieldName)} must be less than ${field.errors['maxlength'].requiredLength} characters`;
+      return `${displayName} must be less than ${field.errors['maxlength'].requiredLength} characters`;
     }
     if (field.errors['min']) {
-      return `${this.getFieldDisplayName(fieldName)} must be at least ${field.errors['min'].min}`;
+      return `${displayName} must be at least ${field.errors['min'].min}`;
     }
     if (field.errors['max']) {
-      return `${this.getFieldDisplayName(fieldName)} must be no more than ${field.errors['max'].max}`;
+      return `${displayName} must be no more than ${field.errors['max'].max}`;
     }
-
+    
     return 'Invalid value';
   }
 
   private getFieldDisplayName(fieldName: string): string {
-    const displayNames: { [key: string]: string } = {
+    const displayNames: Record<string, string> = {
       'name': 'Table name',
-      'description': 'Description',
+      'description': 'Description', 
       'sample_count': 'Sample count',
       'version': 'Version',
       'lab_group': 'Lab group'

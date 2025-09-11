@@ -15,11 +15,11 @@
         type="text" 
         class="form-control"
         id="poolName"
-        formControlName="pool_name"
-        [class.is-invalid]="isFieldInvalid('pool_name')"
+        formControlName="poolName"
+        [class.is-invalid]="isFieldInvalid('poolName')"
         placeholder="Enter pool name">
-      <div class="invalid-feedback" *ngIf="isFieldInvalid('pool_name')">
-        {{ getFieldError('pool_name') }}
+      <div class="invalid-feedback" *ngIf="isFieldInvalid('poolName')">
+        {{ getFieldError('poolName') }}
       </div>
     </div>
 
@@ -29,7 +29,7 @@
       <textarea 
         class="form-control"
         id="poolDescription"
-        formControlName="pool_description"
+        formControlName="poolDescription"
         rows="2"
         placeholder="Optional pool description"></textarea>
     </div>
@@ -42,23 +42,12 @@
             class="form-check-input" 
             type="checkbox" 
             id="isReference" 
-            formControlName="is_reference">
+            formControlName="isReference">
           <label class="form-check-label" for="isReference">
             <strong>Reference Pool</strong>
             <div class="form-text">Check if this is a reference pool</div>
           </label>
         </div>
-      </div>
-      <div class="col-md-6 mb-3">
-        <label for="templateSample" class="form-label">Template Sample</label>
-        <input 
-          type="number" 
-          class="form-control"
-          id="templateSample"
-          formControlName="template_sample"
-          min="1"
-          [max]="maxSampleCount"
-          placeholder="Optional template sample number">
       </div>
     </div>
 
@@ -76,7 +65,7 @@
           type="text" 
           class="form-control"
           id="pooledOnlySamples"
-          formControlName="pooled_only_samples_text"
+          formControlName="pooledOnlySamplesText"
           placeholder="e.g., 1, 2, 3, 5-8">
         <div class="form-text">
           Enter sample numbers separated by commas. Ranges like "5-8" are supported.
@@ -93,7 +82,7 @@
           type="text" 
           class="form-control"
           id="pooledAndIndependentSamples"
-          formControlName="pooled_and_independent_samples_text"
+          formControlName="pooledAndIndependentSamplesText"
           placeholder="e.g., 4, 9, 10-15">
         <div class="form-text">
           Enter sample numbers that are both pooled and run independently.
@@ -116,7 +105,7 @@
     <div class="mb-2">
       <div class="d-flex justify-content-between align-items-center">
         <small class="text-muted">
-          Name: {{ editForm.get('pool_name')?.value?.length || 0 }}/255 characters
+          Name: {{ editForm.get('poolName')?.value?.length || 0 }}/255 characters
         </small>
         @if (hasChanges) {
           <small class="text-info">

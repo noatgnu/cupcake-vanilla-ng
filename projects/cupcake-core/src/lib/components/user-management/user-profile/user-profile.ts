@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, inject } from '@angular/core';
+import { Component, OnInit, signal, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
@@ -29,7 +29,7 @@ export class UserProfileComponent implements OnInit {
   emailChangeForm: FormGroup;
   
   // UI state
-  activeTab: 'profile' | 'password' | 'email' | 'account' = 'profile';
+  activeTab = signal<'profile' | 'password' | 'email' | 'account'>('profile');
   isUpdatingProfile = signal(false);
   isChangingPassword = signal(false);
   isChangingEmail = signal(false);
@@ -40,22 +40,40 @@ export class UserProfileComponent implements OnInit {
   emailMessage = signal<string>('');
   errorMessage = signal<string>('');
 
+  // Computed signals for derived values
+  fullName = computed(() => {
+    const user = this.currentUser();
+    return user ? `${user.firstName} ${user.lastName}`.trim() : '';
+  });
+
+  isStaff = computed(() => this.currentUser()?.isStaff || false);
+
+  joinDate = computed(() => {
+    const user = this.currentUser();
+    return user?.dateJoined ? new Date(user.dateJoined).toLocaleDateString() : '';
+  });
+
+  lastLogin = computed(() => {
+    const user = this.currentUser();
+    return user?.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : 'Never';
+  });
+
   constructor() {
     this.profileForm = this.fb.group({
-      first_name: ['', [Validators.required, Validators.maxLength(30)]],
-      last_name: ['', [Validators.required, Validators.maxLength(30)]],
-      current_password: ['', [Validators.required]]
+      firstName: ['', [Validators.required, Validators.maxLength(30)]],
+      lastName: ['', [Validators.required, Validators.maxLength(30)]],
+      currentPassword: ['', [Validators.required]]
     });
 
     this.passwordForm = this.fb.group({
-      current_password: ['', [Validators.required]],
-      new_password: ['', [Validators.required, Validators.minLength(8)]],
-      confirm_password: ['', [Validators.required]]
+      currentPassword: ['', [Validators.required]],
+      newPassword: ['', [Validators.required, Validators.minLength(8)]],
+      confirmPassword: ['', [Validators.required]]
     }, { validators: this.passwordMatchValidator });
 
     this.emailChangeForm = this.fb.group({
-      new_email: ['', [Validators.required, Validators.email]],
-      current_password: ['', [Validators.required]]
+      newEmail: ['', [Validators.required, Validators.email]],
+      currentPassword: ['', [Validators.required]]
     });
   }
 
@@ -69,8 +87,8 @@ export class UserProfileComponent implements OnInit {
       next: (response) => {
         this.currentUser.set(response.user);
         this.profileForm.patchValue({
-          first_name: response.user.first_name,
-          last_name: response.user.last_name
+          firstName: response.user.firstName,
+          lastName: response.user.lastName
         });
         this.isLoading.set(false);
       },
@@ -88,16 +106,16 @@ export class UserProfileComponent implements OnInit {
       this.errorMessage.set('');
 
       const profileData: UserProfileUpdateRequest = {
-        first_name: this.profileForm.get('first_name')?.value,
-        last_name: this.profileForm.get('last_name')?.value,
-        current_password: this.profileForm.get('current_password')?.value
+        firstName: this.profileForm.get('firstName')?.value,
+        lastName: this.profileForm.get('lastName')?.value,
+        currentPassword: this.profileForm.get('currentPassword')?.value
       };
 
       this.userManagementService.updateProfile(profileData).subscribe({
         next: (response) => {
           this.profileMessage.set('Profile updated successfully');
           this.currentUser.set(response.user);
-          this.profileForm.get('current_password')?.setValue('');
+          this.profileForm.get('currentPassword')?.setValue('');
           this.isUpdatingProfile.set(false);
         },
         error: (error) => {
@@ -115,9 +133,9 @@ export class UserProfileComponent implements OnInit {
       this.errorMessage.set('');
 
       const passwordData: PasswordChangeRequest = {
-        current_password: this.passwordForm.get('current_password')?.value,
-        new_password: this.passwordForm.get('new_password')?.value,
-        confirm_password: this.passwordForm.get('confirm_password')?.value
+        currentPassword: this.passwordForm.get('currentPassword')?.value,
+        newPassword: this.passwordForm.get('newPassword')?.value,
+        confirmPassword: this.passwordForm.get('confirmPassword')?.value
       };
 
       this.userManagementService.changePassword(passwordData).subscribe({
@@ -141,8 +159,8 @@ export class UserProfileComponent implements OnInit {
       this.errorMessage.set('');
 
       const emailData: EmailChangeRequest = {
-        new_email: this.emailChangeForm.get('new_email')?.value,
-        current_password: this.emailChangeForm.get('current_password')?.value
+        newEmail: this.emailChangeForm.get('newEmail')?.value,
+        currentPassword: this.emailChangeForm.get('currentPassword')?.value
       };
 
       this.userManagementService.requestEmailChange(emailData).subscribe({
@@ -160,7 +178,7 @@ export class UserProfileComponent implements OnInit {
   }
 
   setActiveTab(tab: 'profile' | 'password' | 'email' | 'account'): void {
-    this.activeTab = tab;
+    this.activeTab.set(tab);
     // Clear messages when switching tabs
     this.profileMessage.set('');
     this.passwordMessage.set('');
@@ -169,8 +187,8 @@ export class UserProfileComponent implements OnInit {
   }
 
   private passwordMatchValidator(form: FormGroup) {
-    const newPassword = form.get('new_password');
-    const confirmPassword = form.get('confirm_password');
+    const newPassword = form.get('newPassword');
+    const confirmPassword = form.get('confirmPassword');
     
     if (newPassword && confirmPassword && newPassword.value !== confirmPassword.value) {
       return { passwordMismatch: true };
@@ -178,22 +196,4 @@ export class UserProfileComponent implements OnInit {
     return null;
   }
 
-  get fullName(): string {
-    const user = this.currentUser();
-    return user ? `${user.first_name} ${user.last_name}`.trim() : '';
-  }
-
-  get isStaff(): boolean {
-    return this.currentUser()?.is_staff || false;
-  }
-
-  get joinDate(): string {
-    const user = this.currentUser();
-    return user?.date_joined ? new Date(user.date_joined).toLocaleDateString() : '';
-  }
-
-  get lastLogin(): string {
-    const user = this.currentUser();
-    return user?.last_login ? new Date(user.last_login).toLocaleDateString() : 'Never';
-  }
 }

@@ -2,10 +2,9 @@ import { Component, Input, Output, EventEmitter, OnInit, signal, inject } from '
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgbActiveModal, NgbModule, NgbNavModule } from '@ng-bootstrap/ng-bootstrap';
-import { Observable, of, catchError, debounceTime, distinctUntilChanged, tap, switchMap } from 'rxjs';
-import { MetadataColumn, OntologySuggestion, FavouriteMetadataOption } from '../../models';
-import { ApiService } from '../../services/api';
-import { AuthService, User } from 'cupcake-core';
+import { Observable, of, catchError, debounceTime, distinctUntilChanged, tap, switchMap, map } from 'rxjs';
+import { MetadataColumn, OntologySuggestion, FavouriteMetadataOption, FavouriteMetadataOptionService, FavouriteMetadataOptionCreateRequest, MetadataColumnService, MetadataColumnTemplateService } from '@cupcake/vanilla';
+import { AuthService, User, LabGroupService } from '@cupcake/core';
 import { SdrfSyntaxService, SyntaxType } from '../../services/sdrf-syntax';
 import { SdrfAgeInput } from '../sdrf-age-input/sdrf-age-input';
 import { SdrfModificationInput } from '../sdrf-modification-input/sdrf-modification-input';
@@ -81,8 +80,11 @@ export class MetadataValueEditModal implements OnInit {
   constructor(
     private fb: FormBuilder,
     private activeModal: NgbActiveModal,
-    private apiService: ApiService,
-    private authService: AuthService
+    private authService: AuthService,
+    private favouriteMetadataOptionService: FavouriteMetadataOptionService,
+    private metadataColumnService: MetadataColumnService,
+    private metadataColumnTemplateService: MetadataColumnTemplateService,
+    private labGroupService: LabGroupService
   ) {
     this.editForm = this.fb.group({
       value: ['', [Validators.maxLength(500)]]
@@ -176,21 +178,24 @@ export class MetadataValueEditModal implements OnInit {
 
         // Use appropriate API endpoint based on context
         if (this.config.context === 'table' && this.config.columnId) {
-          return this.apiService.getMetadataColumnOntologySuggestions(this.config.columnId, {
+          return this.metadataColumnService.getOntologySuggestions({
+            columnId: this.config.columnId,
             search: term,
             limit: 10,
-            search_type: this.searchType()
+            searchType: this.searchType()
           }).pipe(
             switchMap(response => of(response.suggestions || [])),
             catchError(() => of([])),
             tap(() => this.isLoadingSuggestions.set(false))
           );
         } else if (this.config.context === 'template' && this.config.templateId) {
-          return this.apiService.getColumnTemplateOntologySuggestions(this.config.templateId, {
+          return this.metadataColumnTemplateService.getOntologySuggestions({
+            templateId: this.config.templateId,
             search: term,
-            limit: 10
+            limit: 10,
+            searchType: this.searchType()
           }).pipe(
-            switchMap(response => of(response.suggestions || [])),
+            map(response => response.suggestions || []),
             catchError(() => of([])),
             tap(() => this.isLoadingSuggestions.set(false))
           );
@@ -233,10 +238,9 @@ export class MetadataValueEditModal implements OnInit {
     // Load user favorites
     const currentUser = this.currentUser();
     if (currentUser?.id) {
-      this.apiService.getFavouriteMetadataOptions({
-        name: this.config.columnName,
+      this.favouriteMetadataOptionService.getFavouriteMetadataOptions({
         type: this.config.columnType,
-        user_id: currentUser.id,
+        userId: currentUser.id,
         limit: 10
       }).subscribe({
         next: (response) => {
@@ -249,10 +253,9 @@ export class MetadataValueEditModal implements OnInit {
     // Load lab group favorites - load for first lab group if user has any
     const userLabGroups = this.userLabGroups();
     if (userLabGroups.length > 0) {
-      this.apiService.getFavouriteMetadataOptions({
-        name: this.config.columnName,
+      this.favouriteMetadataOptionService.getFavouriteMetadataOptions({
         type: this.config.columnType,
-        lab_group_id: userLabGroups[0], // Use first lab group for now
+        labGroupId: userLabGroups[0], // Use first lab group for now
         limit: 10
       }).subscribe({
         next: (response) => {
@@ -265,10 +268,9 @@ export class MetadataValueEditModal implements OnInit {
     }
 
     // Load global favorites
-    this.apiService.getFavouriteMetadataOptions({
-      name: this.config.columnName,
+    this.favouriteMetadataOptionService.getFavouriteMetadataOptions({
       type: this.config.columnType,
-      is_global: true,
+      isGlobal: true,
       limit: 10
     }).subscribe({
       next: (response) => {
@@ -300,13 +302,13 @@ export class MetadataValueEditModal implements OnInit {
     }
 
     // If the favorite has a stored template ID, update our config to use it for typeahead
-    if (favorite.column_template && favorite.column_template !== this.config.templateId) {
-      this.config.templateId = favorite.column_template;
+    if (favorite.columnTemplate && favorite.columnTemplate !== this.config.templateId) {
+      this.config.templateId = favorite.columnTemplate;
     }
 
     // Optional: Show a brief toast if display name differs from actual value
     if (this.hasCustomDisplayValue(favorite)) {
-      console.log(`Selected "${favorite.display_value}" (value: ${favorite.value})`);
+      console.log(`Selected "${favorite.displayValue}" (value: ${favorite.value})`);
     }
   }
 
@@ -343,18 +345,18 @@ export class MetadataValueEditModal implements OnInit {
     const value = this.editForm.get('value')?.value;
     if (!value || !this.config?.columnName || !this.config?.columnType) return;
 
-    const newFavorite: Partial<FavouriteMetadataOption> = {
+    const newFavorite: FavouriteMetadataOptionCreateRequest = {
       name: this.config.columnName,
       type: this.config.columnType,
-      column_template: this.config.templateId || undefined,
+      columnTemplate: this.config.templateId || undefined,
       value: value,
-      display_value: value,
-      is_global: scope === 'global',
+      displayValue: value,
+      isGlobal: scope === 'global',
       user: scope === 'user' ? this.currentUser()?.id : undefined,
-      lab_group: scope === 'lab_group' ? this.userLabGroups()[0] || undefined : undefined
+      labGroup: scope === 'lab_group' ? this.userLabGroups()[0] || undefined : undefined
     };
 
-    this.apiService.createFavouriteMetadataOption(newFavorite).subscribe({
+    this.favouriteMetadataOptionService.createFavouriteMetadataOption(newFavorite).subscribe({
       next: (created) => {
         // Add to appropriate list
         if (scope === 'user') {
@@ -378,14 +380,14 @@ export class MetadataValueEditModal implements OnInit {
   }
 
   getFavoriteDisplayValue(favorite: FavouriteMetadataOption): string {
-    return favorite.display_value || favorite.value || '';
+    return favorite.displayValue || favorite.value || '';
   }
 
   getFavoriteTooltip(favorite: FavouriteMetadataOption): string {
-    const displayValue = favorite.display_value || favorite.value || '';
+    const displayValue = favorite.displayValue || favorite.value || '';
     const actualValue = favorite.value || '';
 
-    if (favorite.display_value && favorite.display_value !== actualValue) {
+    if (favorite.displayValue && favorite.displayValue !== actualValue) {
       return `${displayValue}\n\nActual value: ${actualValue}`;
     }
 
@@ -393,9 +395,9 @@ export class MetadataValueEditModal implements OnInit {
   }
 
   hasCustomDisplayValue(favorite: FavouriteMetadataOption): boolean {
-    return !!(favorite.display_value &&
-              favorite.display_value !== favorite.value &&
-              favorite.display_value.trim() !== '');
+    return !!(favorite.displayValue &&
+              favorite.displayValue !== favorite.value &&
+              favorite.displayValue.trim() !== '');
   }
 
   getSelectedFavoriteInfo(): string {
@@ -407,7 +409,7 @@ export class MetadataValueEditModal implements OnInit {
     }
 
     if (this.hasCustomDisplayValue(selected)) {
-      return `Selected from favorite: "${selected.display_value}"`;
+      return `Selected from favorite: "${selected.displayValue}"`;
     }
 
     return '';
@@ -415,7 +417,7 @@ export class MetadataValueEditModal implements OnInit {
 
   loadUserLabGroups(): void {
     // Load user's lab groups
-    this.apiService.getMyLabGroups({ limit: 10 }).subscribe({
+    this.labGroupService.getMyLabGroups({ limit: 10 }).subscribe({
       next: (response) => {
         const labGroupIds = response.results.map(group => group.id!);
         this.userLabGroups.set(labGroupIds);
@@ -494,7 +496,7 @@ export class MetadataValueEditModal implements OnInit {
   }
 
   // Override the onSubmit method to handle multi-sample editing
-  onSubmit() {
+  onSubmit(): void {
     if (this.editForm.valid) {
       this.isLoading.set(true);
       const value = this.editForm.get('value')?.value || '';

@@ -50,7 +50,7 @@
         <select 
           class="form-select"
           id="ontologyType"
-          formControlName="ontology_type">
+          formControlName="ontologyType">
           @for (ontology of ontologyTypes; track ontology.value) {
             <option [value]="ontology.value">{{ ontology.label }}</option>
           }
@@ -64,13 +64,13 @@
               class="form-check-input" 
               type="checkbox" 
               id="enableTypeahead"
-              formControlName="enable_typeahead">
+              formControlName="enableTypeahead">
             <label class="form-check-label" for="enableTypeahead">
               <i class="bi bi-search me-1"></i>Enable Typeahead Autocomplete
             </label>
             <div class="form-text">
               <i class="bi bi-info-circle me-1"></i>
-              Enable autocomplete suggestions from {{ editForm.get('ontology_type')?.value }} ontology when editing values
+              Enable autocomplete suggestions from {{ editForm.get('ontologyType')?.value }} ontology when editing values
             </div>
           </div>
         </div>
@@ -106,7 +106,7 @@
         <div class="form-text">
           @if (hasTypeaheadEnabled) {
             <i class="bi bi-info-circle me-1"></i>
-            Click "Edit" to use autocomplete suggestions from {{ editForm.get('ontology_type')?.value }} ontology
+            Click "Edit" to use autocomplete suggestions from {{ editForm.get('ontologyType')?.value }} ontology
           } @else if (hasOntologyType) {
             <i class="bi bi-info-circle me-1"></i>
             Click "Edit" to set default value. Enable typeahead above for autocomplete suggestions.
@@ -168,7 +168,7 @@
                 class="form-check-input" 
                 type="checkbox" 
                 id="notApplicable"
-                formControlName="not_applicable">
+                formControlName="notApplicable">
               <label class="form-check-label" for="notApplicable">
                 <i class="bi bi-dash-circle me-1"></i>N/A
               </label>

@@ -62,7 +62,7 @@
             </div>
           }
           <!-- Import Dropdown -->
-          @if (table() && table()!.can_edit) {
+          @if (table() && table()!.canEdit) {
             <div class="btn-group" ngbDropdown>
               <!-- Hidden file inputs -->
               <input
@@ -120,7 +120,7 @@
           }
 
           <!-- Edit Button -->
-          @if (table() && table()!.can_edit) {
+          @if (table() && table()!.canEdit) {
             <button
               type="button"
               class="btn btn-outline-primary btn-sm"
@@ -132,7 +132,7 @@
           }
 
           <!-- Create Pool Button -->
-          @if (table() && table()!.can_edit && hasColumns()) {
+          @if (table() && table()!.canEdit && hasColumns()) {
             <button
               type="button"
               class="btn btn-success btn-sm"
@@ -144,7 +144,7 @@
           }
 
           <!-- More Actions Dropdown -->
-          @if (table() && table()!.can_edit) {
+          @if (table() && table()!.canEdit) {
             <div class="btn-group" ngbDropdown>
               <button
                 type="button"
@@ -186,7 +186,7 @@
               <i class="bi bi-info-circle me-2"></i>Table Information
             </h5>
             <small class="text-muted">
-              Created {{ table()!.created_at | date:'medium' }}
+              Created {{ table()!.createdAt | date:'medium' }}
             </small>
           </div>
         </div>
@@ -202,27 +202,27 @@
                   <div class="d-flex align-items-center mb-2">
                     <i class="bi bi-hash text-muted me-2"></i>
                     <span class="fw-semibold me-2">Sample Count:</span>
-                    <span class="badge bg-primary">{{ table()!.sample_count }}</span>
+                    <span class="badge bg-primary">{{ table()!.sampleCount }}</span>
                   </div>
                   <div class="d-flex align-items-center mb-2">
                     <i class="bi bi-columns-gap text-muted me-2"></i>
                     <span class="fw-semibold me-2">Columns:</span>
-                    <span class="badge bg-info">{{ table()!.columns.length || 0 }}</span>
+                    <span class="badge bg-info">{{ table()!.columns?.length || 0 }}</span>
                   </div>
                 </div>
                 <div class="col-md-6">
-                  @if (table()!.owner_username) {
+                  @if (table()!.ownerUsername) {
                     <div class="d-flex align-items-center mb-2">
                       <i class="bi bi-person text-muted me-2"></i>
                       <span class="fw-semibold me-2">Owner:</span>
-                      <span>{{ table()!.owner_username }}</span>
+                      <span>{{ table()!.ownerUsername }}</span>
                     </div>
                   }
-                  @if (table()!.lab_group_name) {
+                  @if (table()!.labGroupName) {
                     <div class="d-flex align-items-center mb-2">
                       <i class="bi bi-people text-muted me-2"></i>
                       <span class="fw-semibold me-2">Lab Group:</span>
-                      <span>{{ table()!.lab_group_name }}</span>
+                      <span>{{ table()!.labGroupName }}</span>
                     </div>
                   }
                   <div class="d-flex align-items-center mb-2">
@@ -235,12 +235,12 @@
             </div>
             <div class="col-md-4 text-end">
               <div class="d-flex flex-column gap-2">
-                @if (table()!.is_locked) {
+                @if (table()!.isLocked) {
                   <span class="badge bg-warning">
                     <i class="bi bi-lock me-1"></i>Locked
                   </span>
                 }
-                @if (table()!.is_published) {
+                @if (table()!.isPublished) {
                   <span class="badge bg-success">
                     <i class="bi bi-cloud-check me-1"></i>Published
                   </span>
@@ -270,7 +270,7 @@
                       <th scope="col" [class]="getColumnHeaderClass(column)" [title]="column.name">
                         <div class="header-cell d-flex justify-content-between align-items-center">
                           <span>{{ getShortColumnName(column) }}</span>
-                          @if (table()!.can_edit) {
+                          @if (table()!.canEdit) {
                             <div class="header-actions">
                               <button
                                 type="button"
@@ -288,13 +288,13 @@
                 </thead>
                 <tbody>
                   @for (poolRow of poolTableRows(); track poolRow._poolId) {
-                    <tr class="pool-row" [class.editable]="table()!.can_edit">
+                    <tr class="pool-row" [class.editable]="table()!.canEdit">
                       <td class="text-muted fw-semibold" 
-                          [class.clickable]="table()!.can_edit"
-                          (click)="table()!.can_edit ? editPool(poolRow._poolData) : null"
-                          [title]="table()!.can_edit ? 'Click to edit pool: ' + poolRow._poolName : poolRow._poolName">
+                          [class.clickable]="table()!.canEdit"
+                          (click)="table()!.canEdit ? editPool(poolRow._poolData) : null"
+                          [title]="table()!.canEdit ? 'Click to edit pool: ' + poolRow._poolName : poolRow._poolName">
                         <i class="bi bi-layers me-2"></i>{{ poolRow._poolName }}
-                        @if (table()!.can_edit) {
+                        @if (table()!.canEdit) {
                           <i class="bi bi-pencil-square ms-1 text-primary" style="font-size: 0.8em;"></i>
                         }
                       </td>
@@ -304,8 +304,8 @@
                           [class.opacity-50]="column.hidden"
                           [attr.data-pool-id]="poolRow._poolId"
                           [attr.data-column-id]="column.id"
-                          (click)="table()!.can_edit ? editPoolColumnValue(poolRow._poolData, column) : null"
-                          [title]="table()!.can_edit ? 'Click to edit ' + column.name + ' for pool ' + poolRow._poolName : ''">
+                          (click)="table()!.canEdit ? editPoolColumnValue(poolRow._poolData, column) : null"
+                          [title]="table()!.canEdit ? 'Click to edit ' + column.name + ' for pool ' + poolRow._poolName : ''">
                           {{ poolRow['col_' + column.id] || '-' }}
                         </td>
                       }
@@ -364,7 +364,7 @@
             <div class="d-flex gap-2 align-items-center">
               @if (viewMode() === 'list') {
                 <span class="badge bg-primary">{{ sortedColumns().length }} columns</span>
-                @if (table() && table()!.can_edit) {
+                @if (table() && table()!.canEdit) {
                   <button
                     type="button"
                     class="btn btn-success btn-sm"
@@ -374,7 +374,7 @@
                     <i class="bi bi-plus-circle me-1"></i>Add Column
                   </button>
                 }
-                @if (table() && table()!.can_edit && sortedColumns().length === 0) {
+                @if (table() && table()!.canEdit && sortedColumns().length === 0) {
                   <small class="text-muted">Import SDRF to add columns</small>
                 }
               } @else {
@@ -383,7 +383,7 @@
                   <span class="badge bg-warning">{{ sortedPools().length }} pools</span>
                 }
                 <span class="badge bg-primary">{{ sortedColumns().length }} columns</span>
-                @if (table() && table()!.can_edit) {
+                @if (table() && table()!.canEdit) {
                   <button
                     type="button"
                     class="btn btn-success btn-sm"
@@ -493,9 +493,9 @@
                           @if (column.auto_generated) {
                             <span class="badge bg-info" title="Auto-generated field">Auto</span>
                           }
-                          @if (column.ontology_type) {
-                            <span class="badge bg-success" title="Ontology: {{ column.ontology_type }}">
-                              {{ column.ontology_type }}
+                          @if (column.ontologyType) {
+                            <span class="badge bg-success" title="Ontology: {{ column.ontologyType }}">
+                              {{ column.ontologyType }}
                             </span>
                           }
                         </div>
@@ -506,7 +506,7 @@
                                   title="View column details">
                             <i class="bi bi-eye"></i>
                           </button>
-                          @if (table()!.can_edit) {
+                          @if (table()!.canEdit) {
                             <button type="button" 
                                     class="btn"
                                     [class]="column.hidden ? 'btn-outline-warning' : 'btn-outline-success'"
@@ -545,7 +545,7 @@
                         <th scope="col" [class]="getColumnHeaderClass(column)" [title]="column.name">
                           <div class="header-cell d-flex justify-content-between align-items-center">
                             <span>{{ getShortColumnName(column) }}</span>
-                            @if (table()!.can_edit) {
+                            @if (table()!.canEdit) {
                               <div class="header-actions">
                                 <button
                                   type="button"
@@ -578,7 +578,7 @@
                   </thead>
                   <tbody>
                     @for (row of paginatedRows(); track row._sampleIndex) {
-                      <tr class="sample-row" [class.editable]="table()!.can_edit">
+                      <tr class="sample-row" [class.editable]="table()!.canEdit">
                         <td class="text-muted fw-semibold">{{ row._sampleIndex }}</td>
                         @for (column of sortedColumns(); track column.id) {
                           <td
@@ -586,8 +586,8 @@
                             [class.opacity-50]="column.hidden"
                             [attr.data-sample-index]="row._sampleIndex"
                             [attr.data-column-id]="column.id"
-                            (click)="table()!.can_edit ? editSampleColumnValue(column, row._sampleIndex) : null"
-                            [title]="table()!.can_edit ? 'Click to edit ' + column.name + ' for sample ' + row._sampleIndex : ''">
+                            (click)="table()!.canEdit ? editSampleColumnValue(column, row._sampleIndex) : null"
+                            [title]="table()!.canEdit ? 'Click to edit ' + column.name + ' for sample ' + row._sampleIndex : ''">
                             {{ row['col_' + column.id] || '-' }}
                           </td>
                         }
@@ -635,7 +635,7 @@
               <i class="bi bi-inbox display-1 mb-3"></i>
               <h5>No Columns Found</h5>
               <p>This table doesn't have any columns defined yet.</p>
-              @if (table()!.can_edit) {
+              @if (table()!.canEdit) {
                 <button type="button" class="btn btn-primary" (click)="openAddColumnModal()">
                   <i class="bi bi-plus me-1"></i>Add First Column
                 </button>

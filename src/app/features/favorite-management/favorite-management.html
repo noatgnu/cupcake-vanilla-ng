@@ -149,9 +149,9 @@
                             </div>
                           </td>
                           <td>
-                            <div class="text-truncate" [title]="favorite.display_value || 'No display name'">
-                              @if (favorite.display_value && favorite.display_value.trim()) {
-                                {{ favorite.display_value }}
+                            <div class="text-truncate" [title]="favorite.displayValue || 'No display name'">
+                              @if (favorite.displayValue && favorite.displayValue.trim()) {
+                                {{ favorite.displayValue }}
                               } @else {
                                 <span class="text-muted fst-italic">No display name</span>
                               }
@@ -178,24 +178,24 @@
                           </td>
                           <td>
                       <span [class]="getScopeClass(favorite)">
-                        @if (favorite.is_global) {
+                        @if (favorite.isGlobal) {
                           <i class="bi bi-globe me-1"></i>Global
-                        } @else if (favorite.lab_group) {
+                        } @else if (favorite.labGroup) {
                           <i class="bi bi-people me-1"></i>Lab Group
                         } @else {
                           <i class="bi bi-person me-1"></i>Personal
                         }
                       </span>
-                            @if (favorite.user_username && !favorite.is_global) {
-                              <br><small class="text-muted">{{ favorite.user_username }}</small>
+                            @if (favorite.userUsername && !favorite.isGlobal) {
+                              <br><small class="text-muted">{{ favorite.userUsername }}</small>
                             }
-                            @if (favorite.lab_group_name) {
-                              <br><small class="text-muted">{{ favorite.lab_group_name }}</small>
+                            @if (favorite.labGroupName) {
+                              <br><small class="text-muted">{{ favorite.labGroupName }}</small>
                             }
                           </td>
                           <td>
                             <small class="text-muted">
-                              {{ favorite.created_at | date:'MMM d, y' }}
+                              {{ favorite.createdAt | date:'MMM d, y' }}
                             </small>
                           </td>
                           <td>
@@ -512,7 +512,7 @@
                 type="text"
                 class="form-control"
                 id="favDisplayValue"
-                formControlName="display_value"
+                formControlName="displayValue"
                 placeholder="Optional: Human-readable version">
               <div class="form-text">If empty, will use the same value as above</div>
             </div>

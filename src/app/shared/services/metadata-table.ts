@@ -1,17 +1,18 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, BehaviorSubject, forkJoin, map } from 'rxjs';
-import { environment } from '../../../environments/environment';
-import { MetadataTable, MetadataTableQueryResponse, MetadataTableCreateRequest } from '../models/metadata-table';
-import { ApiService } from './api';
+import { 
+  MetadataTable, 
+  MetadataTableTemplate,
+  MetadataTableService as LibMetadataTableService,
+  MetadataTableTemplateService 
+} from '../models';
 
 @Injectable({
   providedIn: 'root'
 })
 export class MetadataTableService {
-  private http = inject(HttpClient);
-  private apiService = inject(ApiService);
-  private apiUrl = environment.apiUrl || 'http://localhost:8000';
+  private metadataTableService = inject(LibMetadataTableService);
+  private metadataTableTemplateService = inject(MetadataTableTemplateService);
 
   // Navigation state
   private navigationTypeSubject = new BehaviorSubject<'table' | 'template'>('table');
@@ -29,8 +30,8 @@ export class MetadataTableService {
   }> {
     // Make parallel API calls to get counts
     return forkJoin({
-      tables: this.apiService.getMetadataTables({ limit: 1 }),
-      templates: this.apiService.getMetadataTableTemplates({ limit: 1 })
+      tables: this.metadataTableService.getMetadataTables({ limit: 1 }),
+      templates: this.metadataTableTemplateService.getMetadataTableTemplates({ limit: 1 })
     }).pipe(
       map(({ tables, templates }) => {
         const tablesCount = tables.count || 0;
@@ -64,5 +65,12 @@ export class MetadataTableService {
    */
   getCurrentNavigationType(): 'table' | 'template' {
     return this.navigationTypeSubject.value;
+  }
+
+  /**
+   * Get metadata tables with optional filtering
+   */
+  getMetadataTables(params?: any): Observable<any> {
+    return this.metadataTableService.getMetadataTables(params);
   }
 }
