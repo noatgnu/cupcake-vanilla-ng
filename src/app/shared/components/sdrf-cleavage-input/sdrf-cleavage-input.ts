@@ -64,7 +64,7 @@ export class SdrfCleavageInput implements OnInit {
     // Handle objects from typeahead selection (OntologySuggestion)
     if (value && typeof value === 'object') {
       // For cleavage agents: display_name for NT, value for AC
-      if (value.display_name) return value.display_name;
+      if (value.displayName) return value.displayName;
       if (value.value) return value.value;
       if (value.name) return value.name;
     }
@@ -138,7 +138,7 @@ export class SdrfCleavageInput implements OnInit {
 
   // Formatter for ontology suggestions
   formatOntologySuggestion = (suggestion: OntologySuggestion): string => {
-    return suggestion.display_name || suggestion.value;
+    return suggestion.displayName || suggestion.value;
   };
 
   // Handle ontology suggestion selection

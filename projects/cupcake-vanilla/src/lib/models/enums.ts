@@ -1,4 +1,5 @@
 export enum OntologyType {
+  NONE = '',
   SPECIES = 'species',
   TISSUE = 'tissue',
   HUMAN_DISEASE = 'human_disease',
@@ -14,6 +15,7 @@ export enum OntologyType {
 }
 
 export const OntologyTypeLabels: Record<OntologyType, string> = {
+  [OntologyType.NONE]: 'None',
   [OntologyType.SPECIES]: 'Species',
   [OntologyType.TISSUE]: 'Tissue',
   [OntologyType.HUMAN_DISEASE]: 'Human Disease',
@@ -39,3 +41,11 @@ export const TemplatePermissionLabels: Record<TemplatePermissionLevel, string> =
   [TemplatePermissionLevel.WRITE]: 'Read & Write',
   [TemplatePermissionLevel.ADMIN]: 'Administrator'
 };
+
+export enum ColumnType {
+  CHARACTERISTICS = 'characteristics',
+  COMMENT = 'comment',
+  FACTOR_VALUE = 'factor_value',
+  SOURCE_NAME = 'source_name',
+  SPECIAL = 'special'
+}

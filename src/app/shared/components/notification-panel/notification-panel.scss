@@ -1,16 +1,26 @@
 // Notification Panel Content - Embedded in navbar dropdown
 .notification-panel-content {
   width: 100%;
-  max-height: 400px;
+  max-height: 500px; // Match dropdown max-height
+  display: flex;
+  flex-direction: column;
   
   // Notification header styling
   .notification-header {
     background-color: var(--bs-body-bg);
     border-bottom: 1px solid var(--bs-border-color);
+    flex-shrink: 0; // Prevent header from shrinking
+  }
+
+  // Connection status alert
+  .alert {
+    flex-shrink: 0; // Prevent alert from shrinking
   }
 
   // Filter tabs styling
   .notification-filters {
+    flex-shrink: 0; // Prevent filters from shrinking
+    
     .d-flex.overflow-auto {
       scrollbar-width: none;
       -ms-overflow-style: none;
@@ -33,10 +43,16 @@
     }
   }
 
+  // Actions bar styling
+  .notification-actions {
+    flex-shrink: 0; // Prevent actions from shrinking
+  }
+
   // Notification list styling
   .notification-list {
-    max-height: 300px;
+    flex: 1; // Take remaining space
     overflow-y: auto;
+    min-height: 0; // Allow flex item to shrink below content size
     
     .notification-item {
       transition: all 0.2s ease;

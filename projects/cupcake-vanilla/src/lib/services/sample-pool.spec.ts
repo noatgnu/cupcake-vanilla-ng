@@ -29,17 +29,17 @@ describe('SamplePoolService', () => {
 
   describe('Basic CRUD Operations', () => {
     it('should get sample pools with parameters', (done) => {
-      const params = { 
-        search: 'plasma', 
-        limit: 10, 
+      const params = {
+        search: 'plasma',
+        limit: 10,
         metadataTable: 1,
         isReference: true
       };
       const mockResponse = {
         count: 1,
-        results: [{ 
-          id: 1, 
-          name: 'Plasma Pool 1', 
+        results: [{
+          id: 1,
+          name: 'Plasma Pool 1',
           description: 'Human plasma samples',
           isReference: true
         }]
@@ -50,8 +50,8 @@ describe('SamplePoolService', () => {
         done();
       });
 
-      const req = httpMock.expectOne(req => 
-        req.url === `${mockConfig.apiUrl}/sample-pools/` && 
+      const req = httpMock.expectOne(req =>
+        req.url === `${mockConfig.apiUrl}/sample-pools/` &&
         req.params.get('search') === 'plasma' &&
         req.params.get('limit') === '10' &&
         req.params.get('metadata_table') === '1' &&
@@ -82,9 +82,9 @@ describe('SamplePoolService', () => {
 
     it('should get single sample pool', (done) => {
       const poolId = 1;
-      const mockResponse = { 
-        id: 1, 
-        name: 'Test Pool', 
+      const mockResponse = {
+        id: 1,
+        name: 'Test Pool',
         description: 'Test description',
         metadataTable: { id: 1, name: 'Associated Table' },
         sampleCount: 25
@@ -101,15 +101,15 @@ describe('SamplePoolService', () => {
     });
 
     it('should create sample pool', (done) => {
-      const poolData = { 
-        name: 'New Pool', 
+      const poolData = {
+        name: 'New Pool',
         description: 'New pool description',
         metadataTable: 1,
         isReference: false
       };
-      const mockResponse = { 
-        id: 1, 
-        name: 'New Pool', 
+      const mockResponse = {
+        id: 1,
+        name: 'New Pool',
         description: 'New pool description',
         metadataTable: { id: 1, name: 'Table' },
         isReference: false
@@ -122,8 +122,8 @@ describe('SamplePoolService', () => {
 
       const req = httpMock.expectOne(`${mockConfig.apiUrl}/sample-pools/`);
       expect(req.request.method).toBe('POST');
-      expect(req.request.body).toEqual({ 
-        name: 'New Pool', 
+      expect(req.request.body).toEqual({
+        name: 'New Pool',
         description: 'New pool description',
         metadata_table: 1,
         is_reference: false
@@ -133,14 +133,14 @@ describe('SamplePoolService', () => {
 
     it('should update sample pool with PUT', (done) => {
       const poolId = 1;
-      const updateData = { 
-        name: 'Updated Pool', 
+      const updateData = {
+        name: 'Updated Pool',
         description: 'Updated description',
         isReference: true
       };
-      const mockResponse = { 
-        id: 1, 
-        name: 'Updated Pool', 
+      const mockResponse = {
+        id: 1,
+        name: 'Updated Pool',
         description: 'Updated description',
         isReference: true
       };
@@ -152,8 +152,8 @@ describe('SamplePoolService', () => {
 
       const req = httpMock.expectOne(`${mockConfig.apiUrl}/sample-pools/1/`);
       expect(req.request.method).toBe('PUT');
-      expect(req.request.body).toEqual({ 
-        name: 'Updated Pool', 
+      expect(req.request.body).toEqual({
+        name: 'Updated Pool',
         description: 'Updated description',
         is_reference: true
       });
@@ -163,9 +163,9 @@ describe('SamplePoolService', () => {
     it('should partially update sample pool with PATCH', (done) => {
       const poolId = 1;
       const patchData = { name: 'Patched Pool' };
-      const mockResponse = { 
-        id: 1, 
-        name: 'Patched Pool', 
+      const mockResponse = {
+        id: 1,
+        name: 'Patched Pool',
         description: 'Original description'
       };
 
@@ -248,7 +248,7 @@ describe('SamplePoolService', () => {
         done();
       });
 
-      const req = httpMock.expectOne(req => 
+      const req = httpMock.expectOne(req =>
         req.params.get('is_reference') === 'true'
       );
       req.flush({ count: 0, results: [] });
@@ -294,7 +294,7 @@ describe('SamplePoolService', () => {
 
       const req = httpMock.expectOne(`${mockConfig.apiUrl}/sample-pools/`);
       req.flush(
-        { name: ['This field may not be blank.'] }, 
+        { name: ['This field may not be blank.'] },
         { status: 400, statusText: 'Bad Request' }
       );
     });
@@ -342,7 +342,7 @@ describe('SamplePoolService', () => {
 
   describe('Data Transformation', () => {
     it('should transform camelCase to snake_case in requests', (done) => {
-      const poolData = { 
+      const poolData = {
         metadataTable: 1,
         isReference: true,
         createdBy: 5
@@ -367,7 +367,7 @@ describe('SamplePoolService', () => {
         metadata_table: { id: 1, name: 'Table' },
         is_reference: true,
         created_at: '2023-01-01T00:00:00Z',
-        sample_count: 100
+        sampleCount: 100
       };
 
       const expectedResponse = {
@@ -390,13 +390,13 @@ describe('SamplePoolService', () => {
 
   describe('Integration Scenarios', () => {
     it('should handle creating pool with metadata table relationship', (done) => {
-      const poolData = { 
+      const poolData = {
         name: 'Clinical Samples',
         metadataTable: 1,
         description: 'Patient clinical samples'
       };
 
-      const mockResponse = { 
+      const mockResponse = {
         id: 1,
         name: 'Clinical Samples',
         metadataTable: {
@@ -441,7 +441,7 @@ describe('SamplePoolService', () => {
         done();
       });
 
-      const req = httpMock.expectOne(req => 
+      const req = httpMock.expectOne(req =>
         req.params.get('search') === 'plasma'
       );
       req.flush(mockResponse);

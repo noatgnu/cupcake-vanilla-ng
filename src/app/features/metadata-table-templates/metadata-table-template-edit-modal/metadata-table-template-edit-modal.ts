@@ -24,7 +24,7 @@ export class MetadataTableTemplateEditModal implements OnInit {
   isLoading = signal(false);
   
   // Column management
-  private _templateColumns = signal<MetadataColumn[]>([]);
+  _templateColumns = signal<MetadataColumn[]>([]);
   templateColumns = computed(() => {
     // Sort columns by position, then by name+type for grouping same columns together
     return this._templateColumns().sort((a, b) => {
@@ -187,6 +187,11 @@ export class MetadataTableTemplateEditModal implements OnInit {
   }
 
   onColumnDrop(event: CdkDragDrop<MetadataColumn[]>) {
+    // If dropped in the same position, no action needed
+    if (event.previousIndex === event.currentIndex) {
+      return;
+    }
+
     const currentColumns = [...this._templateColumns()];
     
     // Move the item in the array

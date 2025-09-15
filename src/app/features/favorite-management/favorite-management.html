@@ -540,7 +540,7 @@
                 <select
                   class="form-select"
                   id="favLabGroup"
-                  formControlName="lab_group_id">
+                  formControlName="labGroupId">
                   <option value="">Select a lab group</option>
                   @for (labGroup of userLabGroups(); track labGroup.id) {
                     <option [value]="labGroup.id">{{ labGroup.name }}</option>

@@ -37,9 +37,49 @@ export interface MetadataTableUpdateRequest {
   name?: string;
   description?: string;
   sampleCount?: number;
+  sampleCountConfirmed?: boolean;
   version?: string;
+  labGroup?: number;
   isLocked?: boolean;
   isPublished?: boolean;
+}
+
+export interface SampleCountValidationRequest {
+  newSampleCount: number;
+}
+
+export interface SampleCountValidationResult {
+  valid: boolean;
+  warnings: string[];
+  affectedModifiers: Array<{
+    modifierIndex: number;
+    columnName: string;
+    samples: string;
+    invalidIndices: number[];
+    value: string;
+  }>;
+  affectedPools: Array<{
+    poolName: string;
+    invalidPooledOnly: number[];
+    invalidPooledAndIndependent: number[];
+  }>;
+  samplesToRemove: number[];
+}
+
+export interface SampleCountValidationResponse {
+  currentSampleCount: number;
+  newSampleCount: number;
+  validationResult: SampleCountValidationResult;
+}
+
+export interface SampleCountConfirmationError {
+  sampleCount: string[];
+  sampleCountConfirmationDetails: {
+    currentSampleCount: number;
+    newSampleCount: number;
+    requiresConfirmation: true;
+    validationResult: SampleCountValidationResult;
+  };
 }
 
 export interface MetadataTableQueryResponse {

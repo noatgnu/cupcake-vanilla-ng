@@ -2,9 +2,10 @@ import { Component, OnInit, OnDestroy, signal, computed, ViewChild, ElementRef }
 import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { NgbModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs';
-import { MetadataTable, MetadataColumn, SamplePool, MetadataTableService, AsyncImportService, AsyncExportService, SamplePoolService, ChunkedUploadService, MetadataColumnService, MetadataImportRequest, MetadataExportRequest } from '@cupcake/vanilla';
+import { MetadataTable, MetadataColumn, SamplePool, MetadataTableService, AsyncExportService, SamplePoolService, ChunkedUploadService, MetadataColumnService, MetadataExportRequest, ColumnType } from '@cupcake/vanilla';
 import { ToastService } from '../../shared/services/toast';
 import { AsyncTaskService } from '../../shared/services/async-task';
 import { MetadataValueEditModal, MetadataValueEditConfig } from '../../shared/components/metadata-value-edit-modal/metadata-value-edit-modal';
@@ -14,11 +15,12 @@ import { SamplePoolEditModal } from '../../shared/components/sample-pool-edit-mo
 import { SamplePoolCreateModal } from '../../shared/components/sample-pool-create-modal/sample-pool-create-modal';
 import { ExcelExportModalComponent, ExcelExportOptions } from '../../shared/components/excel-export-modal/excel-export-modal';
 import { ColumnEditModal } from '../metadata-table-templates/column-edit-modal/column-edit-modal';
+import { SchemaSelectionModal, SchemaSelectionResult } from '../../shared/components/schema-selection-modal/schema-selection-modal';
 
 @Component({
   selector: 'app-metadata-table-details',
   standalone: true,
-  imports: [CommonModule, RouterModule, NgbModule],
+  imports: [CommonModule, RouterModule, NgbModule, DragDropModule],
   templateUrl: './metadata-table-details.html',
   styleUrl: './metadata-table-details.scss'
 })
@@ -103,55 +105,15 @@ export class MetadataTableDetailsComponent implements OnInit, OnDestroy {
   sortedColumns = computed(() => {
     const columns = this.table()?.columns || [];
     const filter = this.columnFilter().toLowerCase();
-    const sortField = this.sortField();
-    const sortDirection = this.sortDirection();
 
-    let filtered = [...columns]
-      .filter(col => col && col.name) // Ensure column has valid data
-      .filter(col => !filter || col.name.toLowerCase().includes(filter)); // Apply filter
-
-    // Apply sorting
-    if (sortField) {
-      filtered.sort((a, b) => {
-        let aValue: any = '';
-        let bValue: any = '';
-
-        switch (sortField) {
-          case 'name':
-            aValue = a.name?.toLowerCase() || '';
-            bValue = b.name?.toLowerCase() || '';
-            break;
-          case 'type':
-            aValue = a.type?.toLowerCase() || '';
-            bValue = b.type?.toLowerCase() || '';
-            break;
-          case 'position':
-            aValue = a.column_position || 0;
-            bValue = b.column_position || 0;
-            break;
-          case 'value':
-            aValue = a.value?.toLowerCase() || '';
-            bValue = b.value?.toLowerCase() || '';
-            break;
-          case 'ontologyType':
-            aValue = a.ontologyType?.toLowerCase() || '';
-            bValue = b.ontologyType?.toLowerCase() || '';
-            break;
-          default:
-            return 0;
-        }
-
-        if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
-        if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
-        return 0;
-      });
-    } else {
-      // Default sort by position
-      filtered.sort((a, b) => (a.column_position || 0) - (b.column_position || 0));
-    }
-
-    return filtered;
+    return [...columns]
+      .filter(col => col && col.name) 
+      .filter(col => !filter || col.name.toLowerCase().includes(filter))
+      .sort((a, b) => (a.columnPosition || 0) - (b.columnPosition || 0));
   });
+  
+  dragColumnsForList = signal<MetadataColumn[]>([]);
+
   sortedPools = computed(() => {
     const pools = this.table()?.samplePools || [];
     return [...pools].sort((a, b) => a.poolName.localeCompare(b.poolName));
@@ -286,6 +248,8 @@ export class MetadataTableDetailsComponent implements OnInit, OnDestroy {
       next: (table) => {
         this.isLoading.set(false);
         this.table.set(table);
+        const naturalOrder = [...(table.columns || [])].sort((a, b) => (a.columnPosition || 0) - (b.columnPosition || 0));
+        this.dragColumnsForList.set(naturalOrder);
       },
       error: (error) => {
         this.isLoading.set(false);
@@ -349,16 +313,22 @@ export class MetadataTableDetailsComponent implements OnInit, OnDestroy {
   }
 
   triggerFileInput(): void {
+    console.log('triggerFileInput called');
     this.fileInput.nativeElement.click();
   }
 
   triggerExcelInput(): void {
+    console.log('triggerExcelInput called');
     this.excelInput.nativeElement.click();
   }
 
   importSdrf(event: Event): void {
+    console.log('importSdrf called', event);
     const input = event.target as HTMLInputElement;
-    if (!input.files || input.files.length === 0) return;
+    if (!input.files || input.files.length === 0) {
+      console.log('No files selected');
+      return;
+    }
 
     const file = input.files[0];
     const table = this.table();
@@ -374,22 +344,45 @@ export class MetadataTableDetailsComponent implements OnInit, OnDestroy {
     if (confirm(`Import SDRF data into table "${table.name}"?\n\nThis will add new columns and may modify existing data.`)) {
       input.value = ''; // Reset input early
 
-      // Use async import with chunked upload
+      // Use chunked upload service for import with progress tracking
       this.isLoading.set(true);
 
-      this.chunkedUploadService.uploadFileInChunks(file, 1024 * 1024, {
-        metadataTableId: table.id,
-        replaceExisting: false,
-        createPools: true,
-        onProgress: (progress) => {
-          console.log(`Upload progress: ${progress}%`);
+      console.log('Starting SDRF import using chunked upload:', {
+        fileName: file.name,
+        fileSize: file.size,
+        metadataTableId: table.id
+      });
+
+      // Use chunked upload - it now triggers async import task on completion
+      this.chunkedUploadService.uploadFileInChunks(
+        file,
+        1024 * 1024, // 1MB chunks
+        {
+          metadataTableId: table.id,
+          createPools: true,
+          replaceExisting: false,
+          onProgress: (progress) => {
+            console.log(`SDRF upload progress: ${Math.round(progress)}%`);
+          }
         }
-      }).subscribe({
-        next: (response) => {
+      ).subscribe({
+        next: (result) => {
           this.isLoading.set(false);
-          this.toastService.success('SDRF file imported successfully!');
-          // Reload table data to show imported columns
-          this.loadTable(table.id);
+          console.log('SDRF chunked upload completed:', result);
+          
+          // If a taskId is returned, monitor the async import task
+          if (result?.taskId) {
+            console.log('Starting async task monitoring for taskId:', result.taskId);
+            this.toastService.success(`SDRF import task queued successfully! Task ID: ${result.taskId}`);
+            
+            // Mark task for monitoring and start real-time updates (same pattern as export)
+            this.asyncTaskService.monitorTask(result.taskId);
+            this.asyncTaskService.startRealtimeUpdates();
+          } else {
+            // Fallback for immediate processing (backward compatibility)
+            this.toastService.success('SDRF file imported successfully!');
+            this.loadTable(table.id);
+          }
         },
         error: (error) => {
           this.isLoading.set(false);
@@ -421,22 +414,45 @@ export class MetadataTableDetailsComponent implements OnInit, OnDestroy {
     if (confirm(`Import Excel data into table "${table.name}"?\n\nThis will update existing columns and may modify data.`)) {
       input.value = ''; // Reset input early
 
-      // Use async import with chunked upload
+      // Use chunked upload service for import with progress tracking
       this.isLoading.set(true);
 
-      this.chunkedUploadService.uploadFileInChunks(file, 1024 * 1024, {
-        metadataTableId: table.id,
-        replaceExisting: false,
-        createPools: true,
-        onProgress: (progress) => {
-          console.log(`Upload progress: ${progress}%`);
+      console.log('Starting Excel import using chunked upload:', {
+        fileName: file.name,
+        fileSize: file.size,
+        metadataTableId: table.id
+      });
+
+      // Use chunked upload - it now triggers async import task on completion
+      this.chunkedUploadService.uploadFileInChunks(
+        file,
+        1024 * 1024, // 1MB chunks
+        {
+          metadataTableId: table.id,
+          createPools: true,
+          replaceExisting: false,
+          onProgress: (progress) => {
+            console.log(`Excel upload progress: ${Math.round(progress)}%`);
+          }
         }
-      }).subscribe({
-        next: (response) => {
+      ).subscribe({
+        next: (result) => {
           this.isLoading.set(false);
-          this.toastService.success('Excel file imported successfully!');
-          // Reload table data to show updated columns
-          this.loadTable(table.id);
+          console.log('Excel chunked upload completed:', result);
+          
+          // If a taskId is returned, monitor the async import task
+          if (result?.taskId) {
+            console.log('Starting async task monitoring for taskId:', result.taskId);
+            this.toastService.success(`Excel import task queued successfully! Task ID: ${result.taskId}`);
+            
+            // Mark task for monitoring and start real-time updates (same pattern as export)
+            this.asyncTaskService.monitorTask(result.taskId);
+            this.asyncTaskService.startRealtimeUpdates();
+          } else {
+            // Fallback for immediate processing (backward compatibility)
+            this.toastService.success('Excel file imported successfully!');
+            this.loadTable(table.id);
+          }
         },
         error: (error) => {
           this.isLoading.set(false);
@@ -539,7 +555,7 @@ export class MetadataTableDetailsComponent implements OnInit, OnDestroy {
       next: (response: { taskId: string; message: string }) => {
         this.isLoading.set(false);
         this.toastService.success(`${format.toUpperCase()} export task queued successfully! Task ID: ${response.taskId}`);
-        
+
         // Start monitoring tasks if not already started
         this.asyncTaskService.startRealtimeUpdates();
       },
@@ -593,32 +609,32 @@ export class MetadataTableDetailsComponent implements OnInit, OnDestroy {
 
   getColumnTypeIcon(column: MetadataColumn): string {
     const type = column.type?.toLowerCase() || '';
-    if (type.includes('characteristics')) return 'bi-tags';
-    if (type.includes('factor')) return 'bi-sliders';
-    if (type.includes('comment')) return 'bi-chat-left-text';
-    if (type.includes('source')) return 'bi-diagram-3';
-    if (type === 'special') return 'bi-star';
+    if (type.includes(ColumnType.CHARACTERISTICS)) return 'bi-tags';
+    if (type.includes(ColumnType.FACTOR_VALUE.replace('_', ' '))) return 'bi-sliders';
+    if (type.includes(ColumnType.COMMENT)) return 'bi-chat-left-text';
+    if (type.includes(ColumnType.SOURCE_NAME.replace('_', ' '))) return 'bi-diagram-3';
+    if (type === ColumnType.SPECIAL) return 'bi-star';
     return 'bi-circle';
   }
 
   getColumnTypeClass(column: MetadataColumn): string {
     const type = column.type?.toLowerCase() || '';
-    if (type.includes('characteristics')) return 'text-primary';
-    if (type.includes('factor')) return 'text-success';
-    if (type.includes('comment')) return 'text-info';
-    if (type.includes('source')) return 'text-warning';
-    if (type === 'special') return 'text-danger';
+    if (type.includes(ColumnType.CHARACTERISTICS)) return 'text-primary';
+    if (type.includes(ColumnType.FACTOR_VALUE.replace('_', ' '))) return 'text-success';
+    if (type.includes(ColumnType.COMMENT)) return 'text-info';
+    if (type.includes(ColumnType.SOURCE_NAME.replace('_', ' '))) return 'text-warning';
+    if (type === ColumnType.SPECIAL) return 'text-danger';
     return 'text-muted';
   }
 
   getColumnHeaderClass(column: MetadataColumn): string {
     let baseClass = '';
     const type = column.type?.toLowerCase() || '';
-    if (type.includes('characteristics')) baseClass = 'bg-primary-subtle text-primary-emphasis';
-    else if (type.includes('factor')) baseClass = 'bg-success-subtle text-success-emphasis';
-    else if (type.includes('comment')) baseClass = 'bg-info-subtle text-info-emphasis';
-    else if (type.includes('source')) baseClass = 'bg-warning-subtle text-warning-emphasis';
-    else if (type === 'special') baseClass = 'bg-danger-subtle text-danger-emphasis';
+    if (type.includes(ColumnType.CHARACTERISTICS)) baseClass = 'bg-primary-subtle text-primary-emphasis';
+    else if (type.includes(ColumnType.FACTOR_VALUE.replace('_', ' '))) baseClass = 'bg-success-subtle text-success-emphasis';
+    else if (type.includes(ColumnType.COMMENT)) baseClass = 'bg-info-subtle text-info-emphasis';
+    else if (type.includes(ColumnType.SOURCE_NAME.replace('_', ' '))) baseClass = 'bg-warning-subtle text-warning-emphasis';
+    else if (type === ColumnType.SPECIAL) baseClass = 'bg-danger-subtle text-danger-emphasis';
     else baseClass = 'bg-body-secondary text-body';
 
     // Add hidden column styling
@@ -635,13 +651,13 @@ export class MetadataTableDetailsComponent implements OnInit, OnDestroy {
     // Handle different column types
     const type = column.type?.toLowerCase() || '';
 
-    if (type.includes('characteristics')) {
+    if (type.includes(ColumnType.CHARACTERISTICS)) {
       name = name.replace(/^characteristics\s*\[/i, '').replace(/\]$/, '');
-    } else if (type.includes('factor')) {
+    } else if (type.includes(ColumnType.FACTOR_VALUE.replace('_', ' '))) {
       name = name.replace(/^factor\s*value\s*\[/i, '').replace(/\]$/, '');
-    } else if (type.includes('comment')) {
+    } else if (type.includes(ColumnType.COMMENT)) {
       name = name.replace(/^comment\s*\[/i, '').replace(/\]$/, '');
-    } else if (type === 'special') {
+    } else if (type === ColumnType.SPECIAL) {
       // Special columns have no prefix or brackets - use name as is
       return name;
     }
@@ -812,7 +828,7 @@ export class MetadataTableDetailsComponent implements OnInit, OnDestroy {
     const sampleData = this.tableRows().map(row => ({
       index: row._sampleIndex,
       value: row[`col_${column.id}`] || column.value || '',
-      sourceName: row.source_name || `Sample ${row._sampleIndex}`
+      sourceName: row.sourceName || `Sample ${row._sampleIndex}`
     }));
 
     const config: MetadataValueEditConfig = {
@@ -1123,7 +1139,7 @@ export class MetadataTableDetailsComponent implements OnInit, OnDestroy {
         if (response.reordered) {
           message += ` Columns reordered using ${response.schemaIdsUsed.length} schema(s).`;
         }
-        
+
         this.toastService.success(message);
 
         // Refresh the table to get the latest column positions
@@ -1135,6 +1151,102 @@ export class MetadataTableDetailsComponent implements OnInit, OnDestroy {
       },
       complete: () => {
         this.isLoading.set(false);
+      }
+    });
+  }
+
+  /**
+   * Reorder columns by schema selection
+   */
+  reorderColumns(): void {
+    const currentTable = this.table();
+    if (!currentTable) {
+      this.toastService.error('No table selected');
+      return;
+    }
+
+    const modalRef = this.modalService.open(SchemaSelectionModal, {
+      size: 'lg',
+      backdrop: 'static'
+    });
+
+    modalRef.componentInstance.title = 'Reorder Columns by Schema';
+    modalRef.componentInstance.description = `Select schemas to reorder columns in "${currentTable.name}". Columns will be arranged based on the selected schema order.`;
+
+    modalRef.result.then((result: SchemaSelectionResult) => {
+      if (result && result.selectedSchemaIds) {
+        this.performColumnReorder(currentTable.id, result.selectedSchemaIds);
+      }
+    }).catch(() => {
+      // Modal was dismissed - no action needed
+    });
+  }
+
+  /**
+   * Perform the actual column reordering with async task monitoring
+   */
+  private performColumnReorder(tableId: number, schemaIds: number[]): void {
+    this.isLoading.set(true);
+
+    this.metadataTableService.reorderColumnsBySchemaAsync(tableId, schemaIds).subscribe({
+      next: (response) => {
+        console.log('Column reorder task started:', response);
+        this.toastService.success(`Column reorder task queued successfully! Task ID: ${response.taskId}`);
+        
+        // Mark task for monitoring and start real-time updates (same pattern as imports)
+        this.asyncTaskService.monitorTask(response.taskId);
+        this.asyncTaskService.startRealtimeUpdates();
+        
+        this.isLoading.set(false);
+      },
+      error: (error) => {
+        console.error('Error starting column reorder:', error);
+        this.toastService.error('Failed to start column reordering');
+        this.isLoading.set(false);
+      }
+    });
+  }
+
+  onColumnDrop(event: CdkDragDrop<MetadataColumn[]>): void {
+    if (event.previousIndex === event.currentIndex) return;
+
+    const currentTable = this.table();
+    if (!currentTable?.canEdit) return;
+
+    const dragColumns = [...this.dragColumnsForList()];
+    moveItemInArray(dragColumns, event.previousIndex, event.currentIndex);
+    
+    // Update columnPosition for all columns in the new order
+    dragColumns.forEach((col, index) => {
+      col.columnPosition = index;
+    });
+    
+    this.dragColumnsForList.set(dragColumns);
+
+    // Update the main table data too
+    const updatedTableColumns = [...(currentTable.columns || [])];
+    dragColumns.forEach((dragCol, index) => {
+      const tableColIndex = updatedTableColumns.findIndex(col => col.id === dragCol.id);
+      if (tableColIndex !== -1) {
+        updatedTableColumns[tableColIndex] = { ...updatedTableColumns[tableColIndex], columnPosition: index };
+      }
+    });
+    
+    this.table.update(table => table ? { ...table, columns: updatedTableColumns } : null);
+
+    const draggedColumn = dragColumns[event.currentIndex];
+    const newPosition = event.currentIndex;
+    
+    console.log(`Moving column "${draggedColumn.name}" to position ${newPosition}`);
+
+    this.metadataTableService.reorderColumn(currentTable.id, draggedColumn.id, newPosition).subscribe({
+      next: () => {
+        this.toastService.success('Column reordered successfully');
+        this.loadTable(currentTable.id);
+      },
+      error: () => {
+        this.toastService.error('Failed to reorder column');
+        this.loadTable(currentTable.id);
       }
     });
   }

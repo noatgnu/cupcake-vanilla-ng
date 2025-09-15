@@ -4,14 +4,15 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
 import { NgbTypeahead, NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { Observable, OperatorFunction, debounceTime, distinctUntilChanged, filter, map, switchMap, of, catchError } from 'rxjs';
 import { SdrfSyntaxService, ModificationParameters } from '../../services/sdrf-syntax';
-import { 
-  OntologySuggestion, 
-  UnimodFullData, 
-  UnimodSpecification, 
-  isUnimodFullData, 
+import {
+  OntologySuggestion,
+  UnimodFullData,
+  UnimodSpecification,
+  isUnimodFullData,
   OntologyUtils,
   MetadataColumnService,
-  MetadataColumnTemplateService 
+  MetadataColumnTemplateService,
+  OntologyType
 } from '../../models';
 
 @Component({
@@ -89,8 +90,8 @@ export class SdrfModificationInput implements OnInit {
     // Handle objects from typeahead selection (OntologySuggestion)
     if (value && typeof value === 'object') {
       // For Unimod modifications, use the name from full_data
-      if (value.full_data && value.full_data.name) {
-        return value.full_data.name;
+      if (value.fullData && value.fullData.name) {
+        return value.fullData.name;
       }
       // For other ontology types, use the value property
       if (value.value) return value.value;
@@ -174,7 +175,7 @@ export class SdrfModificationInput implements OnInit {
 
   // Formatter for ontology suggestions
   formatOntologySuggestion = (suggestion: OntologySuggestion): string => {
-    return suggestion.display_name || suggestion.value;
+    return suggestion.displayName || suggestion.value;
   };
 
   // Handle ontology suggestion selection
@@ -182,26 +183,26 @@ export class SdrfModificationInput implements OnInit {
     const suggestion: OntologySuggestion = event.item;
     if (suggestion) {
       // Set the NT field value - use display name for Unimod, otherwise use value
-      const ntValue = isUnimodFullData(suggestion) && suggestion.full_data.name 
-        ? suggestion.full_data.name 
-        : (suggestion.display_name || suggestion.value);
+      const ntValue = isUnimodFullData(suggestion) && suggestion.fullData.name
+        ? suggestion.fullData.name
+        : (suggestion.displayName || suggestion.value);
       this.modificationForm.patchValue({ NT: ntValue });
 
       // Check if this is a Unimod modification with specifications
       if (isUnimodFullData(suggestion)) {
-        this.selectedUnimodData.set(suggestion.full_data);
+        this.selectedUnimodData.set(suggestion.fullData);
         this.updateAvailableSpecifications(suggestion);
         this.showSpecifications.set(this.availableSpecifications().length > 0);
 
         // Auto-fill some fields from main Unimod data
-        if (suggestion.full_data.accession) {
-          this.modificationForm.patchValue({ AC: suggestion.full_data.accession });
+        if (suggestion.fullData.accession) {
+          this.modificationForm.patchValue({ AC: suggestion.fullData.accession });
         }
-        if (suggestion.full_data.delta_composition) {
-          this.modificationForm.patchValue({ CF: suggestion.full_data.delta_composition });
+        if (suggestion.fullData.deltaComposition) {
+          this.modificationForm.patchValue({ CF: suggestion.fullData.deltaComposition });
         }
-        if (suggestion.full_data.delta_mono_mass) {
-          this.modificationForm.patchValue({ MM: suggestion.full_data.delta_mono_mass });
+        if (suggestion.fullData.deltaMonoMass) {
+          this.modificationForm.patchValue({ MM: suggestion.fullData.deltaMonoMass });
         }
       } else {
         // Not a Unimod modification, clear specification data
@@ -336,9 +337,9 @@ export class SdrfModificationInput implements OnInit {
       const mockSuggestion: OntologySuggestion = {
         id: '',
         value: '',
-        display_name: '',
-        ontology_type: 'unimod',
-        full_data: unimodData
+        displayName: '',
+        ontologyType: OntologyType.UNIMOD,
+        fullData: unimodData
       };
       this.updateAvailableSpecifications(mockSuggestion);
     }

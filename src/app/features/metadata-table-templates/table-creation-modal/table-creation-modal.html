@@ -29,10 +29,10 @@
         <!-- Table Name -->
         <div class="col-12">
           <div class="form-floating">
-            <input 
-              type="text" 
-              class="form-control" 
-              id="tableName" 
+            <input
+              type="text"
+              class="form-control"
+              id="tableName"
               formControlName="name"
               placeholder="Table name"
               [class.is-invalid]="getFieldError('name')">
@@ -48,20 +48,20 @@
         <!-- Sample Count -->
         <div class="col-md-6">
           <div class="form-floating">
-            <input 
-              type="number" 
-              class="form-control" 
-              id="sampleCount" 
-              formControlName="sample_count"
+            <input
+              type="number"
+              class="form-control"
+              id="sampleCount"
+              formControlName="sampleCount"
               placeholder="Sample count"
               min="1"
               max="10000"
-              [class.is-invalid]="getFieldError('sample_count')">
+              [class.is-invalid]="getFieldError('sampleCount')">
             <label for="sampleCount">Number of Samples *</label>
           </div>
-          @if (getFieldError('sample_count')) {
+          @if (getFieldError('sampleCount')) {
             <div class="invalid-feedback d-block">
-              {{ getFieldError('sample_count') }}
+              {{ getFieldError('sampleCount') }}
             </div>
           }
           <div class="form-text">
@@ -72,10 +72,10 @@
         <!-- Lab Group -->
         <div class="col-md-6">
           <div class="form-floating">
-            <select 
-              class="form-select" 
-              id="labGroupSelect" 
-              formControlName="lab_group_id">
+            <select
+              class="form-select"
+              id="labGroupSelect"
+              formControlName="labGroupId">
               <option [ngValue]="null">No Lab Group</option>
               @for (group of labGroups; track group.id) {
                 <option [ngValue]="group.id">{{ group.name }}</option>
@@ -91,9 +91,9 @@
         <!-- Description -->
         <div class="col-12">
           <div class="form-floating">
-            <textarea 
-              class="form-control" 
-              id="tableDescription" 
+            <textarea
+              class="form-control"
+              id="tableDescription"
               formControlName="description"
               placeholder="Description"
               style="height: 100px"></textarea>
@@ -112,8 +112,8 @@
   <button type="button" class="btn btn-secondary" (click)="onClose()" [disabled]="isCreating">
     Cancel
   </button>
-  <button 
-    type="submit" 
+  <button
+    type="submit"
     class="btn btn-success"
     (click)="onSubmit()"
     [disabled]="tableForm.invalid || isCreating">

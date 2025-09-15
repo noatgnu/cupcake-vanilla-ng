@@ -32,7 +32,7 @@ export class Websocket {
   // Connection state management
   private connectionState = signal<'disconnected' | 'connecting' | 'connected' | 'error'>('disconnected');
   private lastError = signal<string | null>(null);
-  
+
   // Message streams
   private messageSubject = new Subject<WebSocketMessage>();
   private connectionSubject = new BehaviorSubject<boolean>(false);
@@ -46,8 +46,8 @@ export class Websocket {
   constructor(private authService: AuthService) {
     this.config = {
       url: this.getWebSocketUrl(),
-      reconnectInterval: 5000,
-      maxReconnectAttempts: 5
+      reconnectInterval: this.getAdaptiveReconnectInterval(),
+      maxReconnectAttempts: 3
     };
 
     // Subscribe to authentication changes to handle reconnections
@@ -57,6 +57,9 @@ export class Websocket {
         this.disconnect();
       }
     });
+
+    // Handle browser resource constraints
+    this.setupBrowserResourceHandling();
   }
 
   private getWebSocketUrl(): string {
@@ -67,17 +70,17 @@ export class Websocket {
 
     // Fallback: construct URL from API URL
     const apiUrl = environment.apiUrl;
-    
+
     try {
       const url = new URL(apiUrl);
       const protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
       const host = url.host;
-      
+
       // Construct WebSocket URL based on the environment API URL
       return `${protocol}//${host}/ws/notifications/`;
     } catch (error) {
       console.error('Invalid API URL in environment config:', apiUrl);
-      
+
       // Final fallback to window location based URL
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
       const host = window.location.host;
@@ -86,6 +89,18 @@ export class Websocket {
   }
 
   connect(): void {
+    console.log('🔌 WebSocket connect() called');
+    console.log('🔌 Current connection state:', this.connectionState());
+    console.log('🔌 WebSocket URL:', this.config.url);
+
+    // Check browser resource constraints before connecting
+    //if (!this.canConnectSafely()) {
+    //  console.warn('❌ Cannot connect WebSocket - browser resource constraints detected');
+    //  this.lastError.set('Browser resource constraints - too many connections');
+    //  this.connectionState.set('error');
+    //  return;
+    //}
+
     // Prevent multiple simultaneous connection attempts
     if (this.isConnecting) {
       console.log('WebSocket connection already in progress');
@@ -106,7 +121,7 @@ export class Websocket {
 
     const token = this.authService.getAccessToken();
     if (!token) {
-      console.error('Cannot connect WebSocket - no authentication token');
+      console.error('❌ Cannot connect WebSocket - no authentication token');
       this.lastError.set('Authentication required');
       this.connectionState.set('error');
       return;
@@ -120,13 +135,29 @@ export class Websocket {
       // Include token in URL query parameter for authentication
       const wsUrl = `${this.config.url}?token=${encodeURIComponent(token)}`;
       console.log('Connecting to WebSocket:', wsUrl.replace(token, '[TOKEN_HIDDEN]'));
-      
+
       this.ws = new WebSocket(wsUrl);
 
       this.ws.onopen = this.onOpen.bind(this);
       this.ws.onmessage = this.onMessage.bind(this);
       this.ws.onerror = this.onError.bind(this);
       this.ws.onclose = this.onClose.bind(this);
+
+      // Add connection timeout for resource-constrained browsers
+      const connectionTimeout = setTimeout(() => {
+        if (this.ws?.readyState === WebSocket.CONNECTING) {
+          console.warn('WebSocket connection timeout - closing');
+          this.ws.close();
+          this.lastError.set('Connection timeout');
+          this.connectionState.set('error');
+          this.isConnecting = false;
+        }
+      }, 10000);
+
+      this.ws.onopen = (event) => {
+        clearTimeout(connectionTimeout);
+        this.onOpen(event);
+      };
 
     } catch (error) {
       console.error('WebSocket connection error:', error);
@@ -139,12 +170,12 @@ export class Websocket {
   disconnect(): void {
     this.destroy$.next();
     this.isConnecting = false;
-    
+
     if (this.ws) {
       this.ws.close(1000, 'User disconnected');
       this.ws = null;
     }
-    
+
     this.connectionState.set('disconnected');
     this.connectionSubject.next(false);
     this.reconnectAttempts = 0;
@@ -220,9 +251,9 @@ export class Websocket {
   private attemptReconnection(): void {
     this.reconnectAttempts++;
     const delay = this.config.reconnectInterval || 5000;
-    
+
     console.log(`WebSocket reconnection attempt ${this.reconnectAttempts} in ${delay}ms`);
-    
+
     timer(delay).pipe(
       takeUntil(this.destroy$),
       tap(() => {
@@ -284,5 +315,96 @@ export class Websocket {
 
   ngOnDestroy(): void {
     this.disconnect();
+  }
+
+  private getAdaptiveReconnectInterval(): number {
+    const baseInterval = 5000;
+    const tabCount = this.estimateTabCount();
+
+    if (tabCount > 20) {
+      return baseInterval * 3; // 15 seconds for high tab count
+    } else if (tabCount > 10) {
+      return baseInterval * 2; // 10 seconds for medium tab count
+    }
+
+    return baseInterval; // 5 seconds for low tab count
+  }
+
+  private estimateTabCount(): number {
+    try {
+      // Use available memory as proxy for tab count
+      if ('memory' in performance) {
+        const memory = (performance as any).memory;
+        const usedMB = memory.usedJSHeapSize / (1024 * 1024);
+
+        // Rough estimate: more memory usage = more tabs
+        if (usedMB > 500) return 25;
+        if (usedMB > 300) return 15;
+        if (usedMB > 150) return 10;
+        return 5;
+      }
+
+      // Fallback: assume moderate tab count
+      return 10;
+    } catch (error) {
+      return 10;
+    }
+  }
+
+  private canConnectSafely(): boolean {
+    try {
+      // Check if browser is resource-constrained
+      if ('memory' in performance) {
+        const memory = (performance as any).memory;
+        const usedMB = memory.usedJSHeapSize / (1024 * 1024);
+        const totalMB = memory.totalJSHeapSize / (1024 * 1024);
+
+        // Don't connect if memory usage is very high
+        const memoryUsageRatio = usedMB / totalMB;
+        if (memoryUsageRatio > 0.9) {
+          console.warn('High memory usage detected, delaying WebSocket connection');
+          return false;
+        }
+      }
+
+      // Check for active WebSocket connections (rough estimate)
+      const tabCount = this.estimateTabCount();
+      if (tabCount > 30) {
+        console.warn('Too many tabs detected, may affect WebSocket reliability');
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      // If we can't determine resource state, be conservative
+      return true;
+    }
+  }
+
+  private setupBrowserResourceHandling(): void {
+    // Listen for visibility changes to manage connection
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        // Tab became active - reconnect if needed
+        if (this.shouldConnect() && this.connectionState() === 'disconnected') {
+          console.log('Tab became active - attempting WebSocket reconnection');
+          setTimeout(() => this.connect(), 1000);
+        }
+      } else {
+        // Tab became inactive - consider disconnecting to save resources
+        const tabCount = this.estimateTabCount();
+        if (tabCount > 15 && this.ws?.readyState === WebSocket.OPEN) {
+          console.log('Tab inactive with high tab count - maintaining connection with reduced activity');
+          // Don't disconnect but reduce activity
+        }
+      }
+    });
+
+    // Handle page beforeunload to cleanup
+    window.addEventListener('beforeunload', () => {
+      if (this.ws) {
+        this.ws.close(1000, 'Page unloading');
+      }
+    });
   }
 }

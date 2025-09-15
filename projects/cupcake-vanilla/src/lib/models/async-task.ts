@@ -1,14 +1,16 @@
 // Task status and type definitions
 export type TaskStatus = 'QUEUED' | 'STARTED' | 'SUCCESS' | 'FAILURE' | 'CANCELLED';
 
-export type TaskType = 
-  | 'EXPORT_EXCEL' 
-  | 'EXPORT_SDRF' 
-  | 'IMPORT_SDRF' 
+export type TaskType =
+  | 'EXPORT_EXCEL'
+  | 'EXPORT_SDRF'
+  | 'IMPORT_SDRF'
   | 'IMPORT_EXCEL'
   | 'EXPORT_MULTIPLE_SDRF'
   | 'EXPORT_MULTIPLE_EXCEL'
-  | 'VALIDATE_TABLE';
+  | 'VALIDATE_TABLE'
+  | 'REORDER_TABLE_COLUMNS'
+  | 'REORDER_TEMPLATE_COLUMNS';
 
 export interface AsyncTaskStatus {
   id: string;
@@ -96,6 +98,14 @@ export interface MetadataImportRequest {
   validateOntologies?: boolean;
 }
 
+export interface ChunkedImportRequest {
+  metadataTableId: number;
+  chunkedUploadId: string;
+  replaceExisting?: boolean;
+  validateOntologies?: boolean;
+  createPools?: boolean;
+}
+
 export interface MetadataValidationRequest {
   metadataTableId: number;
   validateSdrfFormat?: boolean;
@@ -141,6 +151,8 @@ export const TASK_TYPE_LABELS: Record<TaskType, string> = {
   'EXPORT_MULTIPLE_SDRF': 'Export Multiple SDRF Files',
   'EXPORT_MULTIPLE_EXCEL': 'Export Multiple Excel Templates',
   'VALIDATE_TABLE': 'Validate Metadata Table',
+  'REORDER_TABLE_COLUMNS': 'Reorder Table Columns',
+  'REORDER_TEMPLATE_COLUMNS': 'Reorder Template Columns',
 };
 
 export const TASK_STATUS_LABELS: Record<TaskStatus, string> = {

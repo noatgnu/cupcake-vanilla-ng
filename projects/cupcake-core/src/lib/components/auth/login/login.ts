@@ -47,18 +47,18 @@ export class LoginComponent implements OnInit {
   ngOnInit() {
     // Load auth configuration
     this.loadAuthConfig();
-    
+
     // Get return URL from query params
     this.route.queryParams.subscribe(params => {
-      this.returnUrl = params['returnUrl'] || '/';
-      
+      this.returnUrl = this.cleanReturnUrl(params['returnUrl']) || '/';
+
       // Check for ORCID callback parameters
       if (params['code'] && params['state']) {
         this.handleORCIDCallback(params['code'], params['state']);
       } else if (params['error']) {
         this.error.set(`ORCID authentication failed: ${params['error']}`);
       }
-      
+
       // Check for registration success message
       if (params['registered'] === 'true') {
         this.success.set('Registration successful! You can now log in with your credentials.');
@@ -74,6 +74,44 @@ export class LoginComponent implements OnInit {
         this.router.navigate([this.returnUrl]);
       }
     });
+  }
+
+  /**
+   * Clean return URL to prevent accumulating login URLs
+   */
+  private cleanReturnUrl(returnUrl: string | null): string | null {
+    if (!returnUrl) return null;
+
+    try {
+      const url = new URL(returnUrl, window.location.origin);
+
+      // If it's a login URL, extract the original returnUrl from its query params
+      if (url.pathname === '/login') {
+        const innerReturnUrl = url.searchParams.get('returnUrl');
+        if (innerReturnUrl) {
+          // Recursively clean in case of multiple nested login URLs
+          return this.cleanReturnUrl(innerReturnUrl);
+        }
+        // If login URL has no returnUrl, redirect to home
+        return '/';
+      }
+
+      // Return the pathname with search params (but without origin)
+      return url.pathname + url.search;
+    } catch (error) {
+      // If URL parsing fails, treat as a relative path
+      // Remove any login paths to prevent loops
+      if (returnUrl.startsWith('/login')) {
+        // Try to extract returnUrl parameter
+        const urlParams = new URLSearchParams(returnUrl.split('?')[1]);
+        const innerReturnUrl = urlParams.get('returnUrl');
+        if (innerReturnUrl) {
+          return this.cleanReturnUrl(innerReturnUrl);
+        }
+        return '/';
+      }
+      return returnUrl;
+    }
   }
 
   /**

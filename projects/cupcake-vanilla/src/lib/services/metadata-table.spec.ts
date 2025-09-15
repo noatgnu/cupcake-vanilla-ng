@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { MetadataTableService } from './metadata-table';
 import { CUPCAKE_CORE_CONFIG } from '@cupcake/core';
 
@@ -13,9 +14,10 @@ describe('MetadataTableService', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule],
       providers: [
         MetadataTableService,
+        provideHttpClient(),
+        provideHttpClientTesting(),
         { provide: CUPCAKE_CORE_CONFIG, useValue: mockConfig }
       ]
     });
@@ -32,7 +34,18 @@ describe('MetadataTableService', () => {
       const params = { search: 'test', limit: 10, ownerId: 1 };
       const mockResponse = {
         count: 1,
-        results: [{ id: 1, name: 'Test Table', description: 'Test description' }]
+        results: [{
+          id: 1,
+          name: 'Test Table',
+          description: 'Test description',
+          sampleCount: 100,
+          version: '1.0',
+          isLocked: false,
+          isPublished: false,
+          visibility: 'private' as const,
+          createdAt: '2023-01-01T00:00:00Z',
+          updatedAt: '2023-01-01T00:00:00Z'
+        }]
       };
 
       service.getMetadataTables(params).subscribe(response => {
@@ -54,9 +67,16 @@ describe('MetadataTableService', () => {
       const tableId = 1;
       const mockResponse = { 
         id: 1, 
-        name: 'Test Table', 
+        name: 'Test Table',
+        description: 'Test description',
+        sampleCount: 100,
+        version: '1.0',
+        isLocked: false,
+        isPublished: false,
+        visibility: 'private' as const,
         columns: [],
-        createdAt: '2023-01-01T00:00:00Z'
+        createdAt: '2023-01-01T00:00:00Z',
+        updatedAt: '2023-01-01T00:00:00Z'
       };
 
       service.getMetadataTable(tableId).subscribe(response => {
@@ -73,13 +93,19 @@ describe('MetadataTableService', () => {
       const tableData = { 
         name: 'New Table', 
         description: 'New description',
-        visibility: 'private'
+        sampleCount: 50
       };
       const mockResponse = { 
         id: 1, 
         name: 'New Table', 
         description: 'New description',
-        visibility: 'private'
+        sampleCount: 50,
+        version: '1.0',
+        isLocked: false,
+        isPublished: false,
+        visibility: 'private' as const,
+        createdAt: '2023-01-01T00:00:00Z',
+        updatedAt: '2023-01-01T00:00:00Z'
       };
 
       service.createMetadataTable(tableData).subscribe(response => {
@@ -92,7 +118,7 @@ describe('MetadataTableService', () => {
       expect(req.request.body).toEqual({ 
         name: 'New Table', 
         description: 'New description',
-        visibility: 'private'
+        sample_count: 50
       });
       req.flush(mockResponse);
     });
@@ -100,7 +126,18 @@ describe('MetadataTableService', () => {
     it('should update metadata table with PUT', (done) => {
       const tableId = 1;
       const updateData = { name: 'Updated Table', description: 'Updated description' };
-      const mockResponse = { id: 1, name: 'Updated Table', description: 'Updated description' };
+      const mockResponse = {
+        id: 1,
+        name: 'Updated Table',
+        description: 'Updated description',
+        sampleCount: 100,
+        version: '1.0',
+        isLocked: false,
+        isPublished: false,
+        visibility: 'private' as const,
+        createdAt: '2023-01-01T00:00:00Z',
+        updatedAt: '2023-01-01T00:00:00Z'
+      };
 
       service.updateMetadataTable(tableId, updateData).subscribe(response => {
         expect(response).toEqual(mockResponse);
@@ -116,7 +153,18 @@ describe('MetadataTableService', () => {
     it('should partially update metadata table with PATCH', (done) => {
       const tableId = 1;
       const patchData = { name: 'Patched Table' };
-      const mockResponse = { id: 1, name: 'Patched Table', description: 'Original description' };
+      const mockResponse = {
+        id: 1,
+        name: 'Patched Table',
+        description: 'Original description',
+        sampleCount: 100,
+        version: '1.0',
+        isLocked: false,
+        isPublished: false,
+        visibility: 'private' as const,
+        createdAt: '2023-01-01T00:00:00Z',
+        updatedAt: '2023-01-01T00:00:00Z'
+      };
 
       service.patchMetadataTable(tableId, patchData).subscribe(response => {
         expect(response).toEqual(mockResponse);
@@ -149,7 +197,25 @@ describe('MetadataTableService', () => {
       const position = 2;
       const mockResponse = { 
         message: 'Column added successfully',
-        column: { id: 1, name: 'New Column', type: 'text' }
+        column: {
+          id: 1,
+          metadataTable: 1,
+          name: 'New Column',
+          type: 'text',
+          columnPosition: 2,
+          notApplicable: false,
+          mandatory: false,
+          hidden: false,
+          autoGenerated: false,
+          readonly: false,
+          modifiers: [],
+          suggestedValues: [],
+          enableTypeahead: true,
+          possibleDefaultValues: [],
+          staffOnly: false,
+          createdAt: '2023-01-01T00:00:00Z',
+          updatedAt: '2023-01-01T00:00:00Z'
+        }
       };
 
       service.addColumn(tableId, columnData, position).subscribe(response => {
@@ -171,7 +237,25 @@ describe('MetadataTableService', () => {
       const request = { columnData: { name: 'Auto Column', type: 'number' } };
       const mockResponse = { 
         message: 'Column added with reordering',
-        column: { id: 1, name: 'Auto Column', type: 'number' },
+        column: {
+          id: 1,
+          metadataTable: 1,
+          name: 'Auto Column',
+          type: 'number',
+          columnPosition: 0,
+          notApplicable: false,
+          mandatory: false,
+          hidden: false,
+          autoGenerated: false,
+          readonly: false,
+          modifiers: [],
+          suggestedValues: [],
+          enableTypeahead: true,
+          possibleDefaultValues: [],
+          staffOnly: false,
+          createdAt: '2023-01-01T00:00:00Z',
+          updatedAt: '2023-01-01T00:00:00Z'
+        },
         reordered: true,
         schemaIdsUsed: [1, 2, 3]
       };
@@ -234,13 +318,78 @@ describe('MetadataTableService', () => {
       expect(req.request.body).toEqual({});
       req.flush(mockResponse);
     });
+
+    it('should reorder columns by schema async', (done) => {
+      const tableId = 1;
+      const schemaIds = [1, 2, 3];
+      const mockResponse = {
+        taskId: 'task-123',
+        message: 'Column reordering task started successfully',
+        metadataTableId: 1,
+        schemaIds: [1, 2, 3]
+      };
+
+      service.reorderColumnsBySchemaAsync(tableId, schemaIds).subscribe(response => {
+        expect(response).toEqual(mockResponse);
+        done();
+      });
+
+      const req = httpMock.expectOne(`${mockConfig.apiUrl}/metadata-tables/1/reorder_columns_by_schema_async/`);
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body).toEqual({ schemaIds: [1, 2, 3] });
+      req.flush(mockResponse);
+    });
+
+    it('should reorder columns by schema async with empty schema list', (done) => {
+      const tableId = 1;
+      const mockResponse = {
+        taskId: 'task-456',
+        message: 'Column reordering task started with all schemas',
+        metadataTableId: 1,
+        schemaIds: []
+      };
+
+      service.reorderColumnsBySchemaAsync(tableId).subscribe(response => {
+        expect(response).toEqual(mockResponse);
+        done();
+      });
+
+      const req = httpMock.expectOne(`${mockConfig.apiUrl}/metadata-tables/1/reorder_columns_by_schema_async/`);
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body).toEqual({ schemaIds: [] });
+      req.flush(mockResponse);
+    });
   });
 
   describe('Administrative Operations', () => {
     it('should get all tables as admin', (done) => {
       const mockResponse = [
-        { id: 1, name: 'Table 1', owner: { username: 'user1' } },
-        { id: 2, name: 'Table 2', owner: { username: 'user2' } }
+        {
+          id: 1,
+          name: 'Table 1',
+          description: 'Admin table 1',
+          sampleCount: 100,
+          version: '1.0',
+          isLocked: false,
+          isPublished: false,
+          visibility: 'private' as const,
+          ownerUsername: 'user1',
+          createdAt: '2023-01-01T00:00:00Z',
+          updatedAt: '2023-01-01T00:00:00Z'
+        },
+        {
+          id: 2,
+          name: 'Table 2',
+          description: 'Admin table 2',
+          sampleCount: 200,
+          version: '1.0',
+          isLocked: false,
+          isPublished: false,
+          visibility: 'group' as const,
+          ownerUsername: 'user2',
+          createdAt: '2023-01-01T00:00:00Z',
+          updatedAt: '2023-01-01T00:00:00Z'
+        }
       ];
 
       service.getAdminAllTables().subscribe(response => {
@@ -260,8 +409,30 @@ describe('MetadataTableService', () => {
       const mockResponse = {
         count: 2,
         results: [
-          { id: 1, name: 'Proteomics Table 1' },
-          { id: 2, name: 'Proteomics Analysis' }
+          {
+            id: 1,
+            name: 'Proteomics Table 1',
+            description: 'Proteomics study 1',
+            sampleCount: 100,
+            version: '1.0',
+            isLocked: false,
+            isPublished: false,
+            visibility: 'private' as const,
+            createdAt: '2023-01-01T00:00:00Z',
+            updatedAt: '2023-01-01T00:00:00Z'
+          },
+          {
+            id: 2,
+            name: 'Proteomics Analysis',
+            description: 'Proteomics analysis study',
+            sampleCount: 150,
+            version: '1.0',
+            isLocked: false,
+            isPublished: false,
+            visibility: 'private' as const,
+            createdAt: '2023-01-01T00:00:00Z',
+            updatedAt: '2023-01-01T00:00:00Z'
+          }
         ]
       };
 
@@ -282,7 +453,19 @@ describe('MetadataTableService', () => {
       const ownerId = 5;
       const mockResponse = {
         count: 1,
-        results: [{ id: 1, name: 'Owner Table', ownerId: 5 }]
+        results: [{
+          id: 1,
+          name: 'Owner Table',
+          description: 'Table owned by user 5',
+          sampleCount: 75,
+          version: '1.0',
+          owner: 5,
+          isLocked: false,
+          isPublished: false,
+          visibility: 'private' as const,
+          createdAt: '2023-01-01T00:00:00Z',
+          updatedAt: '2023-01-01T00:00:00Z'
+        }]
       };
 
       service.getMetadataTablesByOwner(ownerId).subscribe(response => {
@@ -300,10 +483,32 @@ describe('MetadataTableService', () => {
 
     it('should get shared metadata tables', (done) => {
       const mockResponse = {
-        count: 3,
+        count: 2,
         results: [
-          { id: 1, name: 'Shared Table 1', isShared: true },
-          { id: 2, name: 'Shared Table 2', isShared: true }
+          {
+            id: 1,
+            name: 'Shared Table 1',
+            description: 'First shared table',
+            sampleCount: 90,
+            version: '1.0',
+            isLocked: false,
+            isPublished: false,
+            visibility: 'group' as const,
+            createdAt: '2023-01-01T00:00:00Z',
+            updatedAt: '2023-01-01T00:00:00Z'
+          },
+          {
+            id: 2,
+            name: 'Shared Table 2',
+            description: 'Second shared table',
+            sampleCount: 110,
+            version: '1.0',
+            isLocked: false,
+            isPublished: false,
+            visibility: 'public' as const,
+            createdAt: '2023-01-01T00:00:00Z',
+            updatedAt: '2023-01-01T00:00:00Z'
+          }
         ]
       };
 
@@ -326,7 +531,25 @@ describe('MetadataTableService', () => {
       const request = { columnIds: [1, 2, 3] };
       const mockResponse = { 
         message: 'Columns combined successfully',
-        combinedColumn: { id: 10, name: 'Combined Column', type: 'composite' }
+        combinedColumn: {
+          id: 10,
+          metadataTable: 1,
+          name: 'Combined Column',
+          type: 'composite',
+          columnPosition: 10,
+          notApplicable: false,
+          mandatory: false,
+          hidden: false,
+          autoGenerated: false,
+          readonly: false,
+          modifiers: [],
+          suggestedValues: [],
+          enableTypeahead: true,
+          possibleDefaultValues: [],
+          staffOnly: false,
+          createdAt: '2023-01-01T00:00:00Z',
+          updatedAt: '2023-01-01T00:00:00Z'
+        }
       };
 
       service.combineColumnwise(request).subscribe(response => {
@@ -344,7 +567,25 @@ describe('MetadataTableService', () => {
       const request = { columnIds: [4, 5, 6] };
       const mockResponse = { 
         message: 'Columns combined row-wise successfully',
-        combinedColumn: { id: 11, name: 'Row Combined Column', type: 'composite' }
+        combinedColumn: {
+          id: 11,
+          metadataTable: 1,
+          name: 'Row Combined Column',
+          type: 'composite',
+          columnPosition: 11,
+          notApplicable: false,
+          mandatory: false,
+          hidden: false,
+          autoGenerated: false,
+          readonly: false,
+          modifiers: [],
+          suggestedValues: [],
+          enableTypeahead: true,
+          possibleDefaultValues: [],
+          staffOnly: false,
+          createdAt: '2023-01-01T00:00:00Z',
+          updatedAt: '2023-01-01T00:00:00Z'
+        }
       };
 
       service.combineRowwise(request).subscribe(response => {
@@ -375,7 +616,7 @@ describe('MetadataTableService', () => {
     });
 
     it('should handle validation errors on create', (done) => {
-      const invalidData = { name: '', description: 'Invalid table' };
+      const invalidData = { name: '', description: 'Invalid table', sampleCount: 0 };
 
       service.createMetadataTable(invalidData).subscribe(
         () => fail('should have failed'),

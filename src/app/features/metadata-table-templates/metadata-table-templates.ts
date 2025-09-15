@@ -4,9 +4,11 @@ import { ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
 import { NgbModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { MetadataTableTemplateEditModal } from './metadata-table-template-edit-modal/metadata-table-template-edit-modal';
-import { SchemaSelectionModal, SchemaSelectionResult } from './schema-selection-modal/schema-selection-modal';
+import { SchemaSelectionModal as TemplateSchemaSelectionModal, SchemaSelectionResult } from './schema-selection-modal/schema-selection-modal';
+import { SchemaSelectionModal as ReorderSchemaSelectionModal, SchemaSelectionResult as ReorderSchemaSelectionResult } from '../../shared/components/schema-selection-modal/schema-selection-modal';
 import { TableCreationModalComponent, TableCreationData } from './table-creation-modal/table-creation-modal';
 import { LabGroupService } from '@cupcake/core';
+import { AsyncTaskService } from '../../shared/services/async-task';
 import {
   MetadataTableTemplate,
   MetadataTableTemplateQueryResponse,
@@ -29,9 +31,9 @@ export class MetadataTableTemplates implements OnInit {
   // Signals for reactive state management
   private searchParams = signal({
     search: '',
-    lab_group_id: null as number | null,
+    labGroupId: null as number | null,
     visibility: ResourceVisibility.PRIVATE,
-    is_default: false,
+    isDefault: false,
     limit: 10,
     offset: 0
   });
@@ -72,13 +74,14 @@ export class MetadataTableTemplates implements OnInit {
     private metadataTableTemplateService: MetadataTableTemplateService,
     private labGroupService: LabGroupService,
     private modalService: NgbModal,
-    private toastService: ToastService
+    private toastService: ToastService,
+    private asyncTaskService: AsyncTaskService
   ) {
     this.searchForm = this.fb.group({
       search: [''],
-      lab_group_id: [null],
+      labGroupId: [null],
       visibility: [ResourceVisibility.PRIVATE],
-      is_default: [false]
+      isDefault: [false]
     });
 
     // Effect to automatically reload templates when search params change
@@ -109,9 +112,9 @@ export class MetadataTableTemplates implements OnInit {
 
     this.searchParams.set({
       search: '',
-      lab_group_id: null,
+      labGroupId: null,
       visibility: ResourceVisibility.PRIVATE,
-      is_default: false,
+      isDefault: false,
       limit: this.pageSize(),
       offset: 0
     });
@@ -142,9 +145,9 @@ export class MetadataTableTemplates implements OnInit {
       // Update search params signal - this will trigger the effect
       this.searchParams.set({
         search: formValue.search || '',
-        lab_group_id: formValue.lab_group_id || null,
+        labGroupId: formValue.labGroupId || null,
         visibility: formValue.visibility || ResourceVisibility.PRIVATE,
-        is_default: formValue.is_default || false,
+        isDefault: formValue.isDefault || false,
         limit: this.pageSize(),
         offset: 0 // Always start from first page when searching
       });
@@ -156,9 +159,9 @@ export class MetadataTableTemplates implements OnInit {
 
     this.metadataTableTemplateService.getMetadataTableTemplates({
       search: params.search || undefined,
-      labGroupId: params.lab_group_id || undefined,
+      labGroupId: params.labGroupId || undefined,
       visibility: params.visibility || undefined,
-      isDefault: params.is_default || undefined,
+      isDefault: params.isDefault || undefined,
       limit: params.limit,
       offset: params.offset
     }).subscribe({
@@ -186,7 +189,7 @@ export class MetadataTableTemplates implements OnInit {
     // Update search params - effect will trigger reload
     this.searchParams.update(params => ({
       ...params,
-      lab_group_id: id,
+      labGroupId: id,
       offset: 0
     }));
   }
@@ -318,7 +321,7 @@ export class MetadataTableTemplates implements OnInit {
 
   private loadAvailableSchemas() {
     this.isLoadingSchemas.set(true);
-    
+
     this.metadataTableTemplateService.getAvailableSchemas().subscribe({
       next: (schemas) => {
         this.availableSchemas.set(schemas);
@@ -337,7 +340,7 @@ export class MetadataTableTemplates implements OnInit {
   }
 
   private openSchemaSelectionModal() {
-    const modalRef = this.modalService.open(SchemaSelectionModal, {
+    const modalRef = this.modalService.open(TemplateSchemaSelectionModal, {
       size: 'xl',
       backdrop: 'static',
       keyboard: false
@@ -359,17 +362,17 @@ export class MetadataTableTemplates implements OnInit {
 
     const templateData = {
       name: result.name,
-      schema_ids: result.schema_ids,
+      schemaIds: result.schemaIds,
       description: result.description,
-      lab_group_id: result.lab_group_id,
+      labGroupId: result.labGroupId,
       visibility: result.visibility,
-      is_default: result.is_default
+      isDefault: result.isDefault
     };
 
     this.metadataTableTemplateService.createFromSchema({
-      schemaIds: result.schema_ids,
-      templateName: result.name,
-      templateDescription: result.description
+      schemaIds: result.schemaIds,
+      name: result.name,
+      description: result.description
     }).subscribe({
       next: (response) => {
         this.isLoading.set(false);
@@ -413,12 +416,12 @@ export class MetadataTableTemplates implements OnInit {
     }
 
     this.metadataTableTemplateService.createTableFromTemplate({
-      templateId: data.template_id,
-      tableName: data.name,
-      tableDescription: data.description,
-      sampleCount: data.sample_count || 1
+      templateId: data.templateId,
+      name: data.name,
+      description: data.description,
+      sampleCount: data.sampleCount || 1
     }).subscribe({
-      next: (response: { message: string; table: MetadataTable }) => {
+      next: (response: MetadataTable) => {
         this.isLoading.set(false);
         console.log('Metadata table created from template:', response);
 
@@ -427,7 +430,7 @@ export class MetadataTableTemplates implements OnInit {
           modalRef.close();
         }
 
-        this.toastService.success(`Table "${response.table.name}" created successfully!`);
+        this.toastService.success(`Table "${response.name}" created successfully!`);
       },
       error: (error: { error?: { detail?: string; message?: string }; message?: string }) => {
         this.isLoading.set(false);
@@ -442,6 +445,57 @@ export class MetadataTableTemplates implements OnInit {
           const errorMsg = error?.error?.detail || error?.error?.message || error?.message || 'Failed to create table from template. Please try again.';
           this.toastService.error(errorMsg);
         }
+      }
+    });
+  }
+
+  /**
+   * Reorder template columns by schema selection
+   */
+  reorderTemplateColumns(template: MetadataTableTemplate): void {
+    if (!template.columnCount || template.columnCount === 0) {
+      this.toastService.warning('Template has no columns to reorder');
+      return;
+    }
+
+    const modalRef = this.modalService.open(ReorderSchemaSelectionModal, {
+      size: 'lg',
+      backdrop: 'static'
+    });
+
+    modalRef.componentInstance.title = 'Reorder Template Columns by Schema';
+    modalRef.componentInstance.description = `Select schemas to reorder columns in template "${template.name}". Columns will be arranged based on the selected schema order.`;
+
+    modalRef.result.then((result: ReorderSchemaSelectionResult) => {
+      if (result && result.selectedSchemaIds) {
+        this.performTemplateColumnReorder(template.id, result.selectedSchemaIds);
+      }
+    }).catch(() => {
+      // Modal was dismissed - no action needed
+    });
+  }
+
+  /**
+   * Perform the actual template column reordering with async task monitoring
+   */
+  private performTemplateColumnReorder(templateId: number, schemaIds: number[]): void {
+    this.isLoading.set(true);
+
+    this.metadataTableTemplateService.reorderColumnsBySchemaAsync(templateId, schemaIds).subscribe({
+      next: (response) => {
+        console.log('Template column reorder task started:', response);
+        this.toastService.success(`Template column reorder task queued successfully! Task ID: ${response.taskId}`);
+        
+        // Mark task for monitoring and start real-time updates (same pattern as other async operations)
+        this.asyncTaskService.monitorTask(response.taskId);
+        this.asyncTaskService.startRealtimeUpdates();
+        
+        this.isLoading.set(false);
+      },
+      error: (error) => {
+        console.error('Error starting template column reorder:', error);
+        this.toastService.error('Failed to start template column reordering');
+        this.isLoading.set(false);
       }
     });
   }

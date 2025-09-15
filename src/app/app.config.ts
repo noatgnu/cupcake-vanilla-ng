@@ -4,8 +4,8 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 
 import { routes } from './app.routes';
-import { authInterceptor, CUPCAKE_CORE_CONFIG } from '@cupcake/core';
 import { environment } from '../environments/environment';
+import { authInterceptor, CUPCAKE_CORE_CONFIG } from "@cupcake/core";
 
 export const appConfig: ApplicationConfig = {
   providers: [

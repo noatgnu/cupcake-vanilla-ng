@@ -119,9 +119,9 @@ export class ResourceService {
       delete transformed.creator_username;
     }
 
-    if (legacyData.is_public !== undefined) {
-      transformed.visibility = this.convertLegacyVisibility(legacyData.is_public, legacyData.is_default);
-      delete transformed.is_public;
+    if (legacyData.isPublic !== undefined) {
+      transformed.visibility = this.convertLegacyVisibility(legacyData.isPublic, legacyData.isDefault);
+      delete transformed.isPublic;
     }
 
     if (transformed.visibility === undefined) {
@@ -150,7 +150,7 @@ export class ResourceService {
     }
 
     if (prepared.visibility !== undefined) {
-      prepared.is_public = this.convertToLegacyVisibility(prepared.visibility);
+      prepared.isPublic = this.convertToLegacyVisibility(prepared.visibility);
       delete prepared.visibility;
     }
 

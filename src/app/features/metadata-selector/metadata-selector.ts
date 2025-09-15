@@ -6,6 +6,7 @@ import { MetadataTableService } from '../../shared/services/metadata-table';
 
 @Component({
   selector: 'app-metadata-selector',
+  standalone: true,
   imports: [CommonModule, NgbAlert],
   templateUrl: './metadata-selector.html',
   styleUrl: './metadata-selector.scss'

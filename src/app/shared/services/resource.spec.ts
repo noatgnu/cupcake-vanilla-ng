@@ -16,12 +16,12 @@ describe('ResourceService', () => {
   });
 
   describe('convertLegacyVisibility', () => {
-    it('should convert is_public true to PUBLIC visibility', () => {
+    it('should convert isPublic true to PUBLIC visibility', () => {
       const result = service.convertLegacyVisibility(true);
       expect(result).toBe(ResourceVisibility.PUBLIC);
     });
 
-    it('should convert is_public false to PRIVATE visibility', () => {
+    it('should convert isPublic false to PRIVATE visibility', () => {
       const result = service.convertLegacyVisibility(false);
       expect(result).toBe(ResourceVisibility.PRIVATE);
     });
@@ -98,17 +98,17 @@ describe('ResourceService', () => {
         id: 1,
         creator: 123,
         creator_username: 'testuser',
-        is_public: true
+        isPublic: true
       };
 
       const result = service.transformLegacyResource(legacyData);
 
       expect(result.owner).toBe(123);
-      expect(result.owner_username).toBe('testuser');
+      expect(result.ownerUsername).toBe('testuser');
       expect(result.visibility).toBe(ResourceVisibility.PUBLIC);
       expect(result.creator).toBeUndefined();
-      expect(result.creator_username).toBeUndefined();
-      expect(result.is_public).toBeUndefined();
+      expect(result.creatorUsername).toBeUndefined();
+      expect(result.isPublic).toBeUndefined();
     });
 
     it('should set default values for missing fields', () => {
@@ -116,8 +116,8 @@ describe('ResourceService', () => {
       const result = service.transformLegacyResource(legacyData);
 
       expect(result.visibility).toBe(ResourceVisibility.PRIVATE);
-      expect(result.is_active).toBe(true);
-      expect(result.is_locked).toBe(false);
+      expect(result.isActive).toBe(true);
+      expect(result.isLocked).toBe(false);
     });
   });
 
@@ -133,10 +133,10 @@ describe('ResourceService', () => {
       const result = service.prepareForAPI(resourceData);
 
       expect(result.creator).toBe(123);
-      expect(result.creator_username).toBe('testuser');
-      expect(result.is_public).toBe(true);
+      expect(result.creatorUsername).toBe('testuser');
+      expect(result.isPublic).toBe(true);
       expect(result.owner).toBeUndefined();
-      expect(result.owner_username).toBeUndefined();
+      expect(result.ownerUsername).toBeUndefined();
       expect(result.visibility).toBeUndefined();
     });
   });
@@ -144,7 +144,7 @@ describe('ResourceService', () => {
   describe('getVisibilityOptions', () => {
     it('should return visibility options array', () => {
       const options = service.getVisibilityOptions();
-      
+
       expect(options).toHaveLength(3);
       expect(options[0].value).toBe(ResourceVisibility.PRIVATE);
       expect(options[1].value).toBe(ResourceVisibility.GROUP);
@@ -155,7 +155,7 @@ describe('ResourceService', () => {
   describe('getRoleOptions', () => {
     it('should return role options array', () => {
       const options = service.getRoleOptions();
-      
+
       expect(options).toHaveLength(4);
       expect(options[0].value).toBe(ResourceRole.VIEWER);
       expect(options[1].value).toBe(ResourceRole.EDITOR);

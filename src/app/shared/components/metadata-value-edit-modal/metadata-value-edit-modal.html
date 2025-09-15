@@ -253,7 +253,7 @@
             placeholder="Type to search ontology suggestions..."
             [ngbTypeahead]="searchOntology"
             [resultFormatter]="formatSuggestion"
-            [inputFormatter]="formatSuggestion"
+            [inputFormatter]="inputFormatter"
             (selectItem)="onSuggestionSelected($event)"
             [editable]="true"
             [showHint]="true"

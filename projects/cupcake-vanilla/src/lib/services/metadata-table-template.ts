@@ -115,6 +115,25 @@ export class MetadataTableTemplateService extends BaseApiService {
   }
 
   /**
+   * Start async reordering of template columns by schema
+   */
+  reorderColumnsBySchemaAsync(id: number, schemaIds?: number[]): Observable<{
+    taskId: string;
+    message: string;
+    templateId: number;
+    schemaIds: number[];
+  }> {
+    return this.post<{
+      taskId: string;
+      message: string;
+      templateId: number;
+      schemaIds: number[];
+    }>(`${this.apiUrl}/metadata-table-templates/${id}/reorder_columns_by_schema_async/`, {
+      schemaIds: schemaIds || []
+    });
+  }
+
+  /**
    * Apply this template to a metadata table
    */
   applyToMetadataTable(id: number, request: { metadata_table_id: number }): Observable<{ message: string; applied_columns: MetadataColumn[] }> {
@@ -152,21 +171,21 @@ export class MetadataTableTemplateService extends BaseApiService {
   /**
    * Create a new template from schema definitions
    */
-  createFromSchema(request: { schemaIds: number[]; templateName: string; templateDescription?: string }): Observable<{ message: string; template: MetadataTableTemplate }> {
+  createFromSchema(request: { schemaIds: number[]; name: string; description?: string }): Observable<{ message: string; template: MetadataTableTemplate }> {
     return this.post<{ message: string; template: MetadataTableTemplate }>(`${this.apiUrl}/metadata-table-templates/create_from_schema/`, request);
   }
 
   /**
    * Create a new metadata table from an existing template
    */
-  createTableFromTemplate(request: { templateId: number; tableName: string; tableDescription?: string; sampleCount: number }): Observable<{ message: string; table: MetadataTable }> {
-    return this.post<{ message: string; table: MetadataTable }>(`${this.apiUrl}/metadata-table-templates/create_table_from_template/`, request);
+  createTableFromTemplate(request: { templateId: number; name: string; description?: string; sampleCount: number }): Observable<MetadataTable> {
+    return this.post<MetadataTable>(`${this.apiUrl}/metadata-table-templates/create_table_from_template/`, request);
   }
 
   /**
    * Create a new metadata table directly from schema definitions
    */
-  createTableFromSchemas(request: { schemaIds: number[]; tableName: string; tableDescription?: string; sampleCount: number }): Observable<{ message: string; table: MetadataTable }> {
-    return this.post<{ message: string; table: MetadataTable }>(`${this.apiUrl}/metadata-table-templates/create_table_from_schemas/`, request);
+  createTableFromSchemas(request: { schemaIds: number[]; name: string; description?: string; sampleCount: number }): Observable<MetadataTable> {
+    return this.post<MetadataTable>(`${this.apiUrl}/metadata-table-templates/create_table_from_schemas/`, request);
   }
 }

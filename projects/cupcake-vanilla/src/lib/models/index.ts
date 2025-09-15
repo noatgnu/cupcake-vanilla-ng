@@ -8,5 +8,7 @@ export * from './metadata-table-template';
 export * from './favourite-metadata-option';
 export * from './ontology';
 export * from './ontology-utils';
+export * from './ontology-config';
+export * from './sdrf-config';
 export * from './async-task';
 export * from './chunked-upload';

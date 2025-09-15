@@ -6,10 +6,10 @@ import { MetadataTableTemplate, LabGroup } from '../../../shared/models';
 
 export interface TableCreationData {
   name: string;
-  template_id: number;
-  sample_count?: number;
+  templateId: number;
+  sampleCount?: number;
   description?: string;
-  lab_group_id?: number;
+  labGroupId?: number;
 }
 
 @Component({
@@ -35,9 +35,9 @@ export class TableCreationModalComponent implements OnInit {
   ) {
     this.tableForm = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(2)]],
-      sample_count: [1, [Validators.required, Validators.min(1), Validators.max(10000)]],
+      sampleCount: [1, [Validators.required, Validators.min(1), Validators.max(10000)]],
       description: [''],
-      lab_group_id: [null]
+      labGroupId: [null]
     });
   }
 
@@ -46,7 +46,7 @@ export class TableCreationModalComponent implements OnInit {
     if (this.template) {
       this.tableForm.patchValue({
         name: `${this.template.name} - Table`,
-        lab_group_id: this.selectedLabGroupId
+        labGroupId: this.selectedLabGroupId
       });
     }
   }
@@ -59,10 +59,10 @@ export class TableCreationModalComponent implements OnInit {
       const formValue = this.tableForm.value;
       const tableData: TableCreationData = {
         name: formValue.name,
-        template_id: this.template.id!,
-        sample_count: formValue.sample_count || 1,
+        templateId: this.template.id!,
+        sampleCount: formValue.sampleCount || 1,
         description: formValue.description || undefined,
-        lab_group_id: formValue.lab_group_id || undefined
+        labGroupId: formValue.labGroupId || undefined
       };
 
       this.tableCreated.emit(tableData);
@@ -103,9 +103,9 @@ export class TableCreationModalComponent implements OnInit {
   private getFieldLabel(fieldName: string): string {
     const labels: { [key: string]: string } = {
       name: 'Table name',
-      sample_count: 'Sample count',
+      sampleCount: 'Sample count',
       description: 'Description',
-      lab_group_id: 'Lab group'
+      labGroupId: 'Lab group'
     };
     return labels[fieldName] || fieldName;
   }

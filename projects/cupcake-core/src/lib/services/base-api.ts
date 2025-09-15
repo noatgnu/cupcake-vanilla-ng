@@ -26,6 +26,11 @@ export class BaseApiService {
       return obj;
     }
 
+    // Skip FormData objects - they should not be transformed
+    if (obj instanceof FormData) {
+      return obj;
+    }
+
     if (Array.isArray(obj)) {
       return obj.map(item => this.transformToSnakeCase(item));
     }

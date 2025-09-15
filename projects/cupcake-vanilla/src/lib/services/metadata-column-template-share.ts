@@ -28,34 +28,34 @@ export class MetadataColumnTemplateShareService extends BaseApiService {
    */
   getMetadataColumnTemplateShares(params?: MetadataColumnTemplateShareQueryParams): Observable<PaginatedResponse<MetadataColumnTemplateShare>> {
     const httpParams = this.buildHttpParams(params);
-    return this.get<PaginatedResponse<MetadataColumnTemplateShare>>(`${this.apiUrl}/metadata-column-template-shares/`, { params: httpParams });
+    return this.get<PaginatedResponse<MetadataColumnTemplateShare>>(`${this.apiUrl}/template-shares/`, { params: httpParams });
   }
 
   /**
    * Get a single template share by ID
    */
   getMetadataColumnTemplateShare(id: number): Observable<MetadataColumnTemplateShare> {
-    return this.get<MetadataColumnTemplateShare>(`${this.apiUrl}/metadata-column-template-shares/${id}/`);
+    return this.get<MetadataColumnTemplateShare>(`${this.apiUrl}/template-shares/${id}/`);
   }
 
   /**
    * Create a new template share
    */
   createMetadataColumnTemplateShare(share: MetadataColumnTemplateShareCreateRequest): Observable<MetadataColumnTemplateShare> {
-    return this.post<MetadataColumnTemplateShare>(`${this.apiUrl}/metadata-column-template-shares/`, share);
+    return this.post<MetadataColumnTemplateShare>(`${this.apiUrl}/template-shares/`, share);
   }
 
   /**
    * Update an existing template share
    */
   updateMetadataColumnTemplateShare(id: number, share: { canEdit?: boolean }): Observable<MetadataColumnTemplateShare> {
-    return this.put<MetadataColumnTemplateShare>(`${this.apiUrl}/metadata-column-template-shares/${id}/`, share);
+    return this.put<MetadataColumnTemplateShare>(`${this.apiUrl}/template-shares/${id}/`, share);
   }
 
   /**
    * Delete a template share
    */
   deleteMetadataColumnTemplateShare(id: number): Observable<void> {
-    return this.delete<void>(`${this.apiUrl}/metadata-column-template-shares/${id}/`);
+    return this.delete<void>(`${this.apiUrl}/template-shares/${id}/`);
   }
 }

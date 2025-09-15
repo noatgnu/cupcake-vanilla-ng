@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { MetadataTableDetails } from './metadata-table-details';
+import { MetadataTableDetailsComponent } from './metadata-table-details';
 
-describe('MetadataTableDetails', () => {
-  let component: MetadataTableDetails;
-  let fixture: ComponentFixture<MetadataTableDetails>;
+describe('MetadataTableDetailsComponent', () => {
+  let component: MetadataTableDetailsComponent;
+  let fixture: ComponentFixture<MetadataTableDetailsComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [MetadataTableDetails]
+      imports: [MetadataTableDetailsComponent]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(MetadataTableDetails);
+    fixture = TestBed.createComponent(MetadataTableDetailsComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

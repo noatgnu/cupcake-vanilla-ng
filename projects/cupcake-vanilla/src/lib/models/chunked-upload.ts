@@ -39,23 +39,9 @@ export interface ChunkedUploadCompletionRequest {
 }
 
 export interface ChunkedUploadCompletionResponse {
-  message: string;
+  message?: string;
   filename?: string;
   warning?: string;
   error?: string;
-  createdColumns?: number;
-  createdPools?: number;
-  sampleRows?: number;
-  metadataColumns?: Array<{
-    id: number;
-    name: string;
-    type: string;
-    position: number;
-  }>;
-  samplePools?: Array<{
-    id: number;
-    name: string;
-    totalSamples: number;
-    isReference: boolean;
-  }>;
+  taskId?: string;
 }

@@ -14,3 +14,4 @@ export * from './async-export';
 export * from './async-import';
 export * from './async-validation';
 export * from './chunked-upload';
+export * from './chunked-import';

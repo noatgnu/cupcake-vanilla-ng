@@ -36,77 +36,77 @@ export class MetadataColumnTemplateService extends BaseApiService {
    */
   getMetadataColumnTemplates(params?: MetadataColumnTemplateQueryParams): Observable<PaginatedResponse<MetadataColumnTemplate>> {
     const httpParams = this.buildHttpParams(params);
-    return this.get<PaginatedResponse<MetadataColumnTemplate>>(`${this.apiUrl}/metadata-column-templates/`, { params: httpParams });
+    return this.get<PaginatedResponse<MetadataColumnTemplate>>(`${this.apiUrl}/column-templates/`, { params: httpParams });
   }
 
   /**
    * Get a single metadata column template by ID
    */
   getMetadataColumnTemplate(id: number): Observable<MetadataColumnTemplate> {
-    return this.get<MetadataColumnTemplate>(`${this.apiUrl}/metadata-column-templates/${id}/`);
+    return this.get<MetadataColumnTemplate>(`${this.apiUrl}/column-templates/${id}/`);
   }
 
   /**
    * Create a new metadata column template
    */
   createMetadataColumnTemplate(template: MetadataColumnTemplateCreateRequest): Observable<MetadataColumnTemplate> {
-    return this.post<MetadataColumnTemplate>(`${this.apiUrl}/metadata-column-templates/`, template);
+    return this.post<MetadataColumnTemplate>(`${this.apiUrl}/column-templates/`, template);
   }
 
   /**
    * Update an existing metadata column template
    */
   updateMetadataColumnTemplate(id: number, template: MetadataColumnTemplateUpdateRequest): Observable<MetadataColumnTemplate> {
-    return this.put<MetadataColumnTemplate>(`${this.apiUrl}/metadata-column-templates/${id}/`, template);
+    return this.put<MetadataColumnTemplate>(`${this.apiUrl}/column-templates/${id}/`, template);
   }
 
   /**
    * Partially update a metadata column template
    */
   patchMetadataColumnTemplate(id: number, template: Partial<MetadataColumnTemplateUpdateRequest>): Observable<MetadataColumnTemplate> {
-    return this.patch<MetadataColumnTemplate>(`${this.apiUrl}/metadata-column-templates/${id}/`, template);
+    return this.patch<MetadataColumnTemplate>(`${this.apiUrl}/column-templates/${id}/`, template);
   }
 
   /**
    * Delete a metadata column template
    */
   deleteMetadataColumnTemplate(id: number): Observable<void> {
-    return this.delete<void>(`${this.apiUrl}/metadata-column-templates/${id}/`);
+    return this.delete<void>(`${this.apiUrl}/column-templates/${id}/`);
   }
 
   /**
    * Create a MetadataColumn from this template
    */
   createMetadataColumn(id: number, request: { metadataTableId: number; columnPosition?: number }): Observable<{ message: string; column: MetadataColumn }> {
-    return this.post<{ message: string; column: MetadataColumn }>(`${this.apiUrl}/metadata-column-templates/${id}/create_metadata_column/`, request);
+    return this.post<{ message: string; column: MetadataColumn }>(`${this.apiUrl}/column-templates/${id}/create_metadata_column/`, request);
   }
 
   /**
    * Share this template with another user
    */
   shareTemplate(id: number, request: { userId: number; canEdit?: boolean }): Observable<{ message: string }> {
-    return this.post<{ message: string }>(`${this.apiUrl}/metadata-column-templates/${id}/share_template/`, request);
+    return this.post<{ message: string }>(`${this.apiUrl}/column-templates/${id}/share_template/`, request);
   }
 
   /**
    * Remove template sharing for a user
    */
   unshareTemplate(id: number, request: { userId: number }): Observable<{ message: string }> {
-    return this.delete<{ message: string }>(`${this.apiUrl}/metadata-column-templates/${id}/unshare_template/`, { body: request });
+    return this.delete<{ message: string }>(`${this.apiUrl}/column-templates/${id}/unshare_template/`, { body: request });
   }
 
   /**
    * Get templates created by the current user
    */
   getMyTemplates(): Observable<MetadataColumnTemplate[]> {
-    return this.get<MetadataColumnTemplate[]>(`${this.apiUrl}/metadata-column-templates/my_templates/`);
+    return this.get<MetadataColumnTemplate[]>(`${this.apiUrl}/column-templates/my_templates/`);
   }
 
   /**
    * Get most popular public templates
    */
   getPopularTemplates(): Observable<MetadataColumnTemplate[]> {
-    return this.get<MetadataColumnTemplate[]>(`${this.apiUrl}/metadata-column-templates/popular_templates/`);
+    return this.get<MetadataColumnTemplate[]>(`${this.apiUrl}/column-templates/popular_templates/`);
   }
 
   /**
@@ -142,6 +142,6 @@ export class MetadataColumnTemplateService extends BaseApiService {
       count: number;
       customFilters: any;
       hasMore: boolean;
-    }>(`${this.apiUrl}/metadata-column-templates/ontology_suggestions/`, { params: httpParams });
+    }>(`${this.apiUrl}/column-templates/ontology_suggestions/`, { params: httpParams });
   }
 }

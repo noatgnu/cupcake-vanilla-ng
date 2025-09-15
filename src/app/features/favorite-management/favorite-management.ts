@@ -5,14 +5,15 @@ import { RouterModule } from '@angular/router';
 import { NgbModule, NgbModal, NgbTypeahead } from '@ng-bootstrap/ng-bootstrap';
 import { Observable, OperatorFunction, debounceTime, distinctUntilChanged, filter, map, switchMap, of, catchError, forkJoin, firstValueFrom } from 'rxjs';
 import { LabGroup } from '../../shared/models';
-import { 
-  FavouriteMetadataOption, 
+import {
+  FavouriteMetadataOption,
   FavouriteMetadataOptionService,
   FavouriteMetadataOptionCreateRequest,
-  MetadataColumn, 
-  MetadataColumnTemplate, 
+  MetadataColumn,
+  MetadataColumnTemplate,
   MetadataColumnTemplateService,
-  OntologySuggestion
+  OntologySuggestion,
+  ColumnType
 } from '@cupcake/vanilla';
 import { ToastService } from '../../shared/services/toast';
 import { AuthService, User, LabGroupService } from '@cupcake/core';
@@ -142,11 +143,11 @@ export class FavoriteManagementComponent implements OnInit {
   // Column types for filtering
   columnTypes = [
     { value: '', label: 'All Types' },
-    { value: 'characteristics', label: 'Characteristics' },
-    { value: 'factor', label: 'Factor Value' },
-    { value: 'comment', label: 'Comment' },
-    { value: 'source', label: 'Source Name' },
-    { value: 'special', label: 'Special' }
+    { value: ColumnType.CHARACTERISTICS, label: 'Characteristics' },
+    { value: ColumnType.FACTOR_VALUE, label: 'Factor Value' },
+    { value: ColumnType.COMMENT, label: 'Comment' },
+    { value: ColumnType.SOURCE_NAME, label: 'Source Name' },
+    { value: ColumnType.SPECIAL, label: 'Special' }
   ];
 
   constructor(
@@ -171,8 +172,8 @@ export class FavoriteManagementComponent implements OnInit {
       value: ['', [Validators.maxLength(500)]],
       displayValue: ['', [Validators.maxLength(500)]],
       scope: ['personal', Validators.required],
-      labGroup_id: [null],
-      template_id: [null] // Store the selected template ID for value autocompletion
+      labGroupId: [null],
+      templateId: [null] // Store the selected template ID for value autocompletion
     });
 
     // Watch for manual input changes (clear ontology value when user types)
@@ -283,7 +284,7 @@ export class FavoriteManagementComponent implements OnInit {
       value: '',
       displayValue: '',
       scope: 'personal',
-      template_id: null
+      templateId: null
     });
   }
 
@@ -309,8 +310,8 @@ export class FavoriteManagementComponent implements OnInit {
       value: favorite.value,
       displayValue: favorite.displayValue || '',
       scope: scope,
-      labGroup_id: favorite.labGroup || null,
-      template_id: templateId
+      labGroupId: favorite.labGroup || null,
+      templateId: templateId
     });
 
     // Check for special SDRF syntax and activate enhanced editor
@@ -336,7 +337,7 @@ export class FavoriteManagementComponent implements OnInit {
           t.columnName === favorite.name && t.columnType === favorite.type
         );
         if (matchingTemplate?.id) {
-          this.editForm.patchValue({ template_id: matchingTemplate.id });
+          this.editForm.patchValue({ templateId: matchingTemplate.id });
         }
       });
     }
@@ -353,18 +354,18 @@ export class FavoriteManagementComponent implements OnInit {
     // Ensure value is always a string, not an object
     if (typeof value === 'object' && value !== null) {
       // If somehow an object got into the form, extract the value property
-      value = value.value || value.display_name || String(value);
+      value = value.value || value.displayName || String(value);
     }
     
     const favoriteData: FavouriteMetadataOptionCreateRequest = {
       name: formValue.name,
       type: formValue.type,
-      columnTemplate: formValue.template_id || undefined,
+      columnTemplate: formValue.templateId || undefined,
       value: value,
       displayValue: formValue.displayValue || value,
       isGlobal: formValue.scope === 'global',
       user: formValue.scope === 'personal' ? this.currentUserId() || undefined : undefined,
-      labGroup: formValue.scope === 'labGroup' ? formValue.labGroup_id || this.userLabGroups()[0]?.id : undefined
+      labGroup: formValue.scope === 'labGroup' ? formValue.labGroupId || this.userLabGroups()[0]?.id : undefined
     };
 
     const operation = this.isEditMode()
@@ -596,20 +597,20 @@ export class FavoriteManagementComponent implements OnInit {
             const firstTemplate = templatesForName[0];
             this.editForm.patchValue({
               type: firstTemplate.columnType,
-              template_id: firstTemplate.id // Set template ID for value autocompletion
+              templateId: firstTemplate.id // Set template ID for value autocompletion
             });
           } else {
             // If current type is valid, find the template with matching name and type
             const matchingTemplate = templatesForName.find(t => t.columnType === currentType);
             if (matchingTemplate) {
-              this.editForm.patchValue({ template_id: matchingTemplate.id });
+              this.editForm.patchValue({ templateId: matchingTemplate.id });
             } else {
-              this.editForm.patchValue({ template_id: null });
+              this.editForm.patchValue({ templateId: null });
             }
           }
         } else {
-          // Clear template_id if no matching templates found
-          this.editForm.patchValue({ template_id: null });
+          // Clear templateId if no matching templates found
+          this.editForm.patchValue({ templateId: null });
         }
 
         // Check for special SDRF syntax after name selection
@@ -659,9 +660,9 @@ export class FavoriteManagementComponent implements OnInit {
         );
 
         if (matchingTemplate && matchingTemplate.id) {
-          this.editForm.patchValue({ template_id: matchingTemplate.id });
+          this.editForm.patchValue({ templateId: matchingTemplate.id });
         } else {
-          this.editForm.patchValue({ template_id: null });
+          this.editForm.patchValue({ templateId: null });
         }
       }
 
@@ -677,7 +678,7 @@ export class FavoriteManagementComponent implements OnInit {
       distinctUntilChanged(),
       filter(term => term.length >= 2),
       switchMap(term => {
-        const templateId = this.editForm.get('template_id')?.value;
+        const templateId = this.editForm.get('templateId')?.value;
         if (!templateId) {
           return of([]);
         }
@@ -698,12 +699,12 @@ export class FavoriteManagementComponent implements OnInit {
     );
 
   formatValueSuggestion = (suggestion: OntologySuggestion): string => {
-    return suggestion.display_name || suggestion.value;
+    return suggestion.displayName || suggestion.value;
   };
 
   // Input formatter should return the display name for better UX
   inputValueFormatter = (suggestion: OntologySuggestion): string => {
-    return suggestion.display_name || suggestion.value;
+    return suggestion.displayName || suggestion.value;
   };
 
   onValueSuggestionSelected = (event: any): void => {
@@ -717,8 +718,8 @@ export class FavoriteManagementComponent implements OnInit {
       
       // Update displayValue if it's empty
       const currentDisplayValue = this.editForm.get('displayValue')?.value;
-      if (!currentDisplayValue && suggestion.display_name && suggestion.display_name !== suggestion.value) {
-        this.editForm.get('displayValue')?.setValue(suggestion.display_name);
+      if (!currentDisplayValue && suggestion.displayName && suggestion.displayName !== suggestion.value) {
+        this.editForm.get('displayValue')?.setValue(suggestion.displayName);
       }
       
       console.log('Stored ontology value:', this.selectedOntologyValue);
@@ -927,21 +928,21 @@ export class FavoriteManagementComponent implements OnInit {
 
   getColumnTypeClass(favouriteOption: FavouriteMetadataOption): string {
     const type = favouriteOption.type?.toLowerCase() || '';
-    if (type.includes('characteristics')) return 'text-primary';
-    if (type.includes('factor')) return 'text-success';
-    if (type.includes('comment')) return 'text-info';
-    if (type.includes('source')) return 'text-warning';
-    if (type === 'special') return 'text-danger';
+    if (type.includes(ColumnType.CHARACTERISTICS)) return 'text-primary';
+    if (type.includes(ColumnType.FACTOR_VALUE.replace('_', ' '))) return 'text-success';
+    if (type.includes(ColumnType.COMMENT)) return 'text-info';
+    if (type.includes(ColumnType.SOURCE_NAME.replace('_', ' '))) return 'text-warning';
+    if (type === ColumnType.SPECIAL) return 'text-danger';
     return 'text-muted';
   }
 
   getColumnTypeIcon(favouriteMetadataOption: FavouriteMetadataOption): string {
     const type = favouriteMetadataOption.type?.toLowerCase() || '';
-    if (type.includes('characteristics')) return 'bi-tags';
-    if (type.includes('factor')) return 'bi-sliders';
-    if (type.includes('comment')) return 'bi-chat-left-text';
-    if (type.includes('source')) return 'bi-diagram-3';
-    if (type === 'special') return 'bi-star';
+    if (type.includes(ColumnType.CHARACTERISTICS)) return 'bi-tags';
+    if (type.includes(ColumnType.FACTOR_VALUE.replace('_', ' '))) return 'bi-sliders';
+    if (type.includes(ColumnType.COMMENT)) return 'bi-chat-left-text';
+    if (type.includes(ColumnType.SOURCE_NAME.replace('_', ' '))) return 'bi-diagram-3';
+    if (type === ColumnType.SPECIAL) return 'bi-star';
     return 'bi-circle';
   }
 }

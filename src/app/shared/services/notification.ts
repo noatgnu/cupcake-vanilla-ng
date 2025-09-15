@@ -111,6 +111,39 @@ export class Notification {
       const notification = this.createNotificationFromWebSocket(message, NotificationType.ASYNC_TASK);
       this.addNotification(notification);
     });
+
+    // Direct notification messages from backend
+    this.websocketService.filterMessages('notification_message').subscribe(message => {
+      const notificationData = message['message'] || message;
+
+      // Type guard for notification data
+      let notificationType = 'info';
+      let title = 'Notification';
+      let messageText = '';
+
+      if (typeof notificationData === 'object' && notificationData !== null) {
+        notificationType = (notificationData as any)['type'] || 'info';
+        title = (notificationData as any)['title'] || 'Notification';
+        messageText = (notificationData as any)['message'] || '';
+      } else if (typeof notificationData === 'string') {
+        messageText = notificationData;
+      }
+
+      // Create notification for the panel
+      const notification = this.createNotificationFromWebSocket(message, NotificationType.SYSTEM);
+      this.addNotification(notification);
+
+      // Show toast notification
+      if (notificationType === 'error') {
+        this.toastService.error(`${title}: ${messageText}`, 8000);
+      } else if (notificationType === 'warning') {
+        this.toastService.warning(`${title}: ${messageText}`, 6000);
+      } else if (notificationType === 'success') {
+        this.toastService.success(`${title}: ${messageText}`, 5000);
+      } else {
+        this.toastService.info(`${title}: ${messageText}`, 4000);
+      }
+    });
   }
 
   private handleWebSocketMessage(message: WebSocketMessage): void {
@@ -201,20 +234,34 @@ export class Notification {
     const status = message['status'];
     
     let operation = 'Task';
-    if (taskType === 'EXPORT_EXCEL') {
-      operation = 'Excel Export';
-    } else if (taskType === 'EXPORT_SDRF') {
-      operation = 'SDRF Export';
-    } else if (taskType === 'IMPORT_SDRF') {
-      operation = 'SDRF Import';
-    } else if (taskType === 'IMPORT_EXCEL') {
-      operation = 'Excel Import';
-    } else if (taskType === 'EXPORT_MULTIPLE_SDRF') {
-      operation = 'Bulk SDRF Export';
-    } else if (taskType === 'EXPORT_MULTIPLE_EXCEL') {
-      operation = 'Bulk Excel Export';
-    } else if (taskType === 'VALIDATE_TABLE') {
-      operation = 'Table Validation';
+    switch (taskType) {
+      case 'EXPORT_EXCEL':
+        operation = 'Excel Export';
+        break;
+      case 'EXPORT_SDRF':
+        operation = 'SDRF Export';
+        break;
+      case 'IMPORT_SDRF':
+        operation = 'SDRF Import';
+        break;
+      case 'IMPORT_EXCEL':
+        operation = 'Excel Import';
+        break;
+      case 'EXPORT_MULTIPLE_SDRF':
+        operation = 'Bulk SDRF Export';
+        break;
+      case 'EXPORT_MULTIPLE_EXCEL':
+        operation = 'Bulk Excel Export';
+        break;
+      case 'VALIDATE_TABLE':
+        operation = 'Table Validation';
+        break;
+      case 'REORDER_TABLE_COLUMNS':
+        operation = 'Column Reordering';
+        break;
+      case 'REORDER_TEMPLATE_COLUMNS':
+        operation = 'Template Column Reordering';
+        break;
     }
     
     switch (status) {

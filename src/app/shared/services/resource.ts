@@ -10,7 +10,7 @@ import { BaseResource, ResourceVisibility, ResourceRole } from '../models';
 export class ResourceService {
 
   /**
-   * Convert legacy is_public field to new visibility enum
+   * Convert legacy isPublic field to new visibility enum
    */
   convertLegacyVisibility(isPublic: boolean | undefined, isDefault: boolean = false): ResourceVisibility {
     if (isDefault || isPublic) {
@@ -20,7 +20,7 @@ export class ResourceService {
   }
 
   /**
-   * Convert new visibility enum to legacy is_public for backward compatibility
+   * Convert new visibility enum to legacy isPublic for backward compatibility
    */
   convertToLegacyVisibility(visibility: ResourceVisibility): boolean {
     return visibility === ResourceVisibility.PUBLIC;
@@ -144,21 +144,21 @@ export class ResourceService {
       delete transformed.creator_username;
     }
 
-    // Transform is_public to visibility
-    if (legacyData.is_public !== undefined) {
-      transformed.visibility = this.convertLegacyVisibility(legacyData.is_public, legacyData.is_default);
-      delete transformed.is_public;
+    // Transform isPublic to visibility
+    if (legacyData.isPublic !== undefined) {
+      transformed.visibility = this.convertLegacyVisibility(legacyData.isPublic, legacyData.isDefault);
+      delete transformed.isPublic;
     }
 
     // Set default values for new fields if not present
     if (transformed.visibility === undefined) {
       transformed.visibility = ResourceVisibility.PRIVATE;
     }
-    if (transformed.is_active === undefined) {
-      transformed.is_active = true;
+    if (transformed.isActive === undefined) {
+      transformed.isActive = true;
     }
-    if (transformed.is_locked === undefined) {
-      transformed.is_locked = false;
+    if (transformed.isLocked === undefined) {
+      transformed.isLocked = false;
     }
 
     return transformed as T;
@@ -180,9 +180,9 @@ export class ResourceService {
       delete prepared.owner_username;
     }
 
-    // Convert visibility back to is_public for legacy API compatibility
+    // Convert visibility back to isPublic for legacy API compatibility
     if (prepared.visibility !== undefined) {
-      prepared.is_public = this.convertToLegacyVisibility(prepared.visibility);
+      prepared.isPublic = this.convertToLegacyVisibility(prepared.visibility);
       delete prepared.visibility;
     }
 

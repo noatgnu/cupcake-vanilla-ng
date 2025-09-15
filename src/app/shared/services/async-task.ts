@@ -128,6 +128,13 @@ export class AsyncTaskService implements OnDestroy {
     return this.initiatedTasks.has(taskId);
   }
 
+  /**
+   * Mark a task as initiated by this tab for tracking purposes
+   */
+  monitorTask(taskId: string): void {
+    this.initiatedTasks.add(taskId);
+  }
+
   queueExcelExport(request: MetadataExportRequest): Observable<AsyncTaskCreateResponse> {
     return this.asyncExportService.excelTemplate(request).pipe(
       tap(response => {
@@ -233,6 +240,10 @@ export class AsyncTaskService implements OnDestroy {
           if (updatedTask.taskType === 'VALIDATE_TABLE' && updatedTask.metadataTable) {
             this.metadataTableRefreshSubject.next(updatedTask.metadataTable);
           }
+
+          if ((updatedTask.taskType === 'REORDER_TABLE_COLUMNS') && updatedTask.metadataTable) {
+            this.metadataTableRefreshSubject.next(updatedTask.metadataTable);
+          }
         }
 
         if (isTaskFromThisTab) {
@@ -264,6 +275,10 @@ export class AsyncTaskService implements OnDestroy {
             if (refreshedTask.taskType === 'VALIDATE_TABLE' && refreshedTask.metadataTable) {
               this.metadataTableRefreshSubject.next(refreshedTask.metadataTable);
             }
+
+            if ((refreshedTask.taskType === 'REORDER_TABLE_COLUMNS') && refreshedTask.metadataTable) {
+              this.metadataTableRefreshSubject.next(refreshedTask.metadataTable);
+            }
           }
 
           if (isTaskFromThisTab) {
@@ -278,7 +293,7 @@ export class AsyncTaskService implements OnDestroy {
     const taskName = this.getTaskDisplayName(updatedTask.taskType);
     const tableName = updatedTask.metadataTableName ? ` for "${updatedTask.metadataTableName}"` : '';
 
-    const progressChanged = Math.floor(updatedTask.progressPercentage || 0 / 25) !== Math.floor(previousTask.progressPercentage || 0 / 25);
+    const progressChanged = Math.floor((updatedTask.progressPercentage || 0) / 25) !== Math.floor((previousTask.progressPercentage || 0) / 25);
     const descriptionChanged = updatedTask.progressDescription !== previousTask.progressDescription;
 
     if (progressChanged || (descriptionChanged && updatedTask.progressDescription)) {
@@ -305,6 +320,11 @@ export class AsyncTaskService implements OnDestroy {
 
     if (task.taskType === 'IMPORT_SDRF' || task.taskType === 'IMPORT_EXCEL') {
       this.handleImportTaskCompletion(task);
+      return;
+    }
+
+    if (task.taskType === 'REORDER_TABLE_COLUMNS' || task.taskType === 'REORDER_TEMPLATE_COLUMNS') {
+      this.handleReorderTaskCompletion(task);
       return;
     }
 
@@ -339,6 +359,8 @@ export class AsyncTaskService implements OnDestroy {
       'EXPORT_MULTIPLE_SDRF': 'Bulk SDRF export',
       'EXPORT_MULTIPLE_EXCEL': 'Bulk Excel export',
       'VALIDATE_TABLE': 'Table validation',
+      'REORDER_TABLE_COLUMNS': 'Column reordering',
+      'REORDER_TEMPLATE_COLUMNS': 'Template column reordering',
     };
     return typeMap[taskType] || taskType;
   }
@@ -483,14 +505,14 @@ export class AsyncTaskService implements OnDestroy {
 
         if (result) {
           const details = [];
-          if (result.columns_created || result.total_columns) {
-            details.push(`${result.columns_created || result.total_columns || 0} columns processed`);
+          if (result.columnsCreated || result.totalColumns) {
+            details.push(`${result.columnsCreated || result.totalColumns || 0} columns processed`);
           }
-          if (result.pools_created) {
-            details.push(`${result.pools_created} pools created`);
+          if (result.poolsCreated) {
+            details.push(`${result.poolsCreated} pools created`);
           }
-          if (result.samples_processed) {
-            details.push(`${result.samples_processed} samples processed`);
+          if (result.samplesProcessed) {
+            details.push(`${result.samplesProcessed} samples processed`);
           }
 
           if (details.length > 0) {
@@ -512,6 +534,51 @@ export class AsyncTaskService implements OnDestroy {
       case 'CANCELLED':
         this.toastService.warning(
           `${taskName} Cancelled${progressInfo}: Import was cancelled${progressDesc}`
+        );
+        break;
+    }
+  }
+
+  private handleReorderTaskCompletion(task: AsyncTaskStatus): void {
+    const taskName = this.getTaskDisplayName(task.taskType);
+    const tableName = task.metadataTableName ? ` for "${task.metadataTableName}"` : '';
+    const progressInfo = task.progressPercentage && task.progressPercentage > 0 ? ` (${task.progressPercentage}%)` : '';
+    const progressDesc = task.progressDescription ? `: ${task.progressDescription}` : '';
+
+    switch (task.status) {
+      case 'SUCCESS':
+        const result = task.result as any;
+        let message = `${taskName}${tableName} completed successfully!`;
+
+        if (result) {
+          const details = [];
+          if (result.reorderedColumns) {
+            details.push(`${result.reorderedColumns} columns reordered`);
+          }
+          if (result.reorderedPools) {
+            details.push(`${result.reorderedPools} pools updated`);
+          }
+          if (result.schemaIdsUsed && result.schemaIdsUsed.length > 0) {
+            details.push(`using ${result.schemaIdsUsed.length} schema(s)`);
+          }
+
+          if (details.length > 0) {
+            message += `\n${details.join(', ')}`;
+          }
+        }
+
+        this.toastService.success(message, 5000);
+        break;
+
+      case 'FAILURE':
+        this.toastService.error(
+          `${taskName} Failed: ${task.errorMessage || 'Unknown error'}${progressInfo}${progressDesc}`
+        );
+        break;
+
+      case 'CANCELLED':
+        this.toastService.warning(
+          `${taskName} Cancelled: ${taskName}${tableName} was cancelled`
         );
         break;
     }

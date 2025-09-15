@@ -8,7 +8,10 @@ import {
   MetadataTableUpdateRequest,
   MetadataTableQueryResponse,
   MetadataColumn,
-  PaginatedResponse
+  PaginatedResponse,
+  SampleCountValidationRequest,
+  SampleCountValidationResponse,
+  SampleCountConfirmationError
 } from '../models';
 
 export interface MetadataTableQueryParams {
@@ -115,6 +118,25 @@ export class MetadataTableService extends BaseApiService {
   }
 
   /**
+   * Start async reordering of table columns by schema
+   */
+  reorderColumnsBySchemaAsync(id: number, schemaIds?: number[]): Observable<{
+    taskId: string;
+    message: string;
+    metadataTableId: number;
+    schemaIds: number[];
+  }> {
+    return this.post<{
+      taskId: string;
+      message: string;
+      metadataTableId: number;
+      schemaIds: number[];
+    }>(`${this.apiUrl}/metadata-tables/${id}/reorder_columns_by_schema_async/`, {
+      schemaIds: schemaIds || []
+    });
+  }
+
+  /**
    * Get all tables (admin only)
    */
   getAdminAllTables(): Observable<MetadataTable[]> {
@@ -154,5 +176,16 @@ export class MetadataTableService extends BaseApiService {
    */
   combineRowwise(request: { columnIds: number[] }): Observable<{ message: string; combinedColumn: any }> {
     return this.post<{ message: string; combinedColumn: any }>(`${this.apiUrl}/metadata-tables/combine_rowwise/`, request);
+  }
+
+  validateSampleCountChange(id: number, request: SampleCountValidationRequest): Observable<SampleCountValidationResponse> {
+    return this.post<SampleCountValidationResponse>(`${this.apiUrl}/metadata-tables/${id}/validate_sample_count_change/`, request);
+  }
+
+  updateSampleCount(id: number, newSampleCount: number, confirmed: boolean = false): Observable<{ message: string; oldSampleCount: number; newSampleCount: number; cleanupPerformed: boolean }> {
+    return this.post<{ message: string; oldSampleCount: number; newSampleCount: number; cleanupPerformed: boolean }>(`${this.apiUrl}/metadata-tables/${id}/update_sample_count/`, {
+      newSampleCount,
+      confirmed
+    });
   }
 }

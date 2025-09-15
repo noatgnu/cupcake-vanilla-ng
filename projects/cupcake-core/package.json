@@ -1,5 +1,5 @@
 {
-  "name": "@cupcake/core",
+  "name": "@noatgnu/cupcake-core",
   "version": "1.0.0",
   "description": "A reusable Angular library that provides user management, authentication, and site configuration functionality for cupcake applications.",
   "keywords": [
@@ -10,15 +10,15 @@
     "library",
     "components"
   ],
-  "author": "Cupcake Team",
+  "author": "Toan Phung",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-org/cupcake-core"
+    "url": "https://github.com/noatgnu/cupcake-vanilla-ng"
   },
-  "homepage": "https://github.com/your-org/cupcake-core#readme",
+  "homepage": "https://github.com/noatgnu/cupcake-vanilla-ng#readme",
   "bugs": {
-    "url": "https://github.com/your-org/cupcake-core/issues"
+    "url": "https://github.com/noatgnu/cupcake-vanilla-ng/issues"
   },
   "peerDependencies": {
     "@angular/common": "^20.1.0",

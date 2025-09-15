@@ -39,13 +39,22 @@ export interface SpikedCompound {
   CF?: string; // chemical formula
 }
 
+export interface PooledSample {
+  value: 'not pooled' | 'pooled' | string; // string for SN=sample1,sample2 format
+  sourceNames?: string[]; // parsed source names when SN= format is used
+}
+
+export interface SyntheticPeptide {
+  value: 'synthetic' | 'not synthetic';
+}
+
 export interface ValidationResult {
   isValid: boolean;
   errors: string[];
   warnings?: string[];
 }
 
-export type SyntaxType = 'age' | 'modification' | 'cleavage' | 'spiked_compound';
+export type SyntaxType = 'age' | 'modification' | 'cleavage' | 'spiked_compound' | 'pooled_sample' | 'synthetic_peptide';
 
 @Injectable({
   providedIn: 'root'
@@ -53,15 +62,19 @@ export type SyntaxType = 'age' | 'modification' | 'cleavage' | 'spiked_compound'
 export class SdrfSyntaxService {
 
   private readonly SPECIAL_COLUMN_PATTERNS = {
-    age: /\bage\b/i,
-    modification: /modification|mod/i,
-    cleavage: /cleavage|protease/i,
-    spiked_compound: /spike|compound|standard/i
+    age: /^characteristics\[age\]$/i,
+    modification: /^comment\[modification parameters\]$/i,
+    cleavage: /^comment\[cleavage agent details\]$/i,
+    spiked_compound: /^characteristics\[spiked compound\]$/i,
+    pooled_sample: /^characteristics\[pooled sample\]$/i,
+    synthetic_peptide: /^characteristics\[synthetic peptide\]$/i
   };
 
   private readonly MODIFICATION_KEYS = ['NT', 'AC', 'CF', 'MT', 'PP', 'TA', 'MM', 'TS'];
   private readonly CLEAVAGE_KEYS = ['NT', 'AC', 'CS'];
   private readonly SPIKED_COMPOUND_KEYS = ['SP', 'CT', 'QY', 'PS', 'AC', 'CN', 'CV', 'CS', 'CF'];
+  private readonly POOLED_SAMPLE_VALUES = ['not pooled', 'pooled'];
+  private readonly SYNTHETIC_PEPTIDE_VALUES = ['synthetic', 'not synthetic'];
 
   /**
    * Detects if a column requires special SDRF syntax handling
@@ -375,5 +388,14 @@ export class SdrfSyntaxService {
     }
 
     return result;
+  }
+
+  // Public getters for accessing special column values
+  getPooledSampleValues(): string[] {
+    return [...this.POOLED_SAMPLE_VALUES];
+  }
+
+  getSyntheticPeptideValues(): string[] {
+    return [...this.SYNTHETIC_PEPTIDE_VALUES];
   }
 }

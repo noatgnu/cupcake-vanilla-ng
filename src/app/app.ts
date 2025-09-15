@@ -59,6 +59,12 @@ export class App implements OnInit {
         this.updatePrimaryColorTheme(config.primaryColor || '#1976d2');
       });
 
+      // Initialize async task service and WebSocket connection
+      if (environment.features?.asyncTasks) {
+        console.log('Initializing async task service with WebSocket connection');
+        this.asyncTaskService.startRealtimeUpdates();
+      }
+
       // Mark app as initialized
       this.appInitializedSubject.next(true);
     } catch (error) {

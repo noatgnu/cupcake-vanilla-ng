@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgbActiveModal, NgbModule, NgbNavModule } from '@ng-bootstrap/ng-bootstrap';
 import { Observable, of, catchError, debounceTime, distinctUntilChanged, tap, switchMap, map } from 'rxjs';
-import { MetadataColumn, OntologySuggestion, FavouriteMetadataOption, FavouriteMetadataOptionService, FavouriteMetadataOptionCreateRequest, MetadataColumnService, MetadataColumnTemplateService } from '@cupcake/vanilla';
+import { MetadataColumn, OntologySuggestion, FavouriteMetadataOption, FavouriteMetadataOptionService, FavouriteMetadataOptionCreateRequest, MetadataColumnService, MetadataColumnTemplateService, OntologyType } from '@cupcake/vanilla';
 import { AuthService, User, LabGroupService } from '@cupcake/core';
 import { SdrfSyntaxService, SyntaxType } from '../../services/sdrf-syntax';
 import { SdrfAgeInput } from '../sdrf-age-input/sdrf-age-input';
@@ -22,6 +22,7 @@ export interface MetadataValueEditConfig {
   templateId?: number;
   tableId?: number;
   poolId?: number;
+  customOntologyFilters?: Record<string, any>;
   // Multi-sample editing support
   enableMultiSampleEdit?: boolean;
   sampleData?: { index: number; value: string; sourceName?: string }[];
@@ -64,7 +65,7 @@ export class MetadataValueEditModal implements OnInit {
   currentUser = signal<User | null>(null);
   userLabGroups = signal<number[]>([]);
 
-  // Favorites tab management  
+  // Favorites tab management
   activeFavoritesTab: 'user' | 'lab_group' | 'global' = 'user';
 
   // SDRF special syntax support
@@ -209,12 +210,50 @@ export class MetadataValueEditModal implements OnInit {
   };
 
   formatSuggestion = (suggestion: OntologySuggestion): string => {
-    return suggestion.display_name || suggestion.value;
+    return suggestion.displayName || suggestion.value;
+  };
+
+  inputFormatter = (suggestion: OntologySuggestion): string => {
+    // For MS Unique Vocabularies, use SDRF formatting
+    if (suggestion && suggestion.ontologyType === OntologyType.MS_UNIQUE_VOCABULARIES && suggestion.fullData && suggestion.fullData.name) {
+      if (suggestion.fullData.accession) {
+        return `NT=${suggestion.fullData.name};AC=${suggestion.fullData.accession}`;
+      } else {
+        return suggestion.fullData.name;
+      }
+    }
+
+    // For other ontology types, use regular value
+    return suggestion.displayName || suggestion.value || String(suggestion);
   };
 
   onSuggestionSelected = (event: any): void => {
-    if (event.item && event.item.value) {
-      this.editForm.get('value')?.setValue(event.item.value);
+    if (event.item) {
+      const suggestion = event.item;
+      let displayValue: string;
+
+      // Extract the proper display value based on suggestion type
+      if (suggestion.fullData && suggestion.fullData.name) {
+        // For ontology suggestions with fullData, format according to SDRF syntax
+        if (suggestion.fullData.accession) {
+          // Use SDRF syntax: NT={name};AC={accession}
+          displayValue = `NT=${suggestion.fullData.name};AC=${suggestion.fullData.accession}`;
+        } else {
+          // Only name available, use just the name
+          displayValue = suggestion.fullData.name;
+        }
+      } else if (suggestion.displayName) {
+        // For standard ontology suggestions, use displayName
+        displayValue = suggestion.displayName;
+      } else if (suggestion.value) {
+        // Fallback to basic value
+        displayValue = suggestion.value;
+      } else {
+        // Last resort
+        displayValue = String(suggestion);
+      }
+
+      this.editForm.get('value')?.setValue(displayValue);
       this.editForm.get('value')?.markAsTouched();
     }
   };
@@ -235,13 +274,18 @@ export class MetadataValueEditModal implements OnInit {
 
     this.isLoadingFavorites.set(true);
 
+    // Build base query parameters for column type
+    const baseQueryParams = {
+      type: this.config.columnType,
+      limit: 10
+    };
+
     // Load user favorites
     const currentUser = this.currentUser();
     if (currentUser?.id) {
       this.favouriteMetadataOptionService.getFavouriteMetadataOptions({
-        type: this.config.columnType,
-        userId: currentUser.id,
-        limit: 10
+        ...baseQueryParams,
+        userId: currentUser.id
       }).subscribe({
         next: (response) => {
           this.userFavorites.set(response.results);
@@ -254,9 +298,8 @@ export class MetadataValueEditModal implements OnInit {
     const userLabGroups = this.userLabGroups();
     if (userLabGroups.length > 0) {
       this.favouriteMetadataOptionService.getFavouriteMetadataOptions({
-        type: this.config.columnType,
-        labGroupId: userLabGroups[0], // Use first lab group for now
-        limit: 10
+        ...baseQueryParams,
+        labGroupId: userLabGroups[0] // Use first lab group for now
       }).subscribe({
         next: (response) => {
           this.labGroupFavorites.set(response.results);
@@ -269,9 +312,8 @@ export class MetadataValueEditModal implements OnInit {
 
     // Load global favorites
     this.favouriteMetadataOptionService.getFavouriteMetadataOptions({
-      type: this.config.columnType,
-      isGlobal: true,
-      limit: 10
+      ...baseQueryParams,
+      isGlobal: true
     }).subscribe({
       next: (response) => {
         this.globalFavorites.set(response.results);
@@ -290,23 +332,20 @@ export class MetadataValueEditModal implements OnInit {
 
   selectFavorite(favorite: FavouriteMetadataOption): void {
     const favoriteValue = favorite.value || '';
-    
+
     // Set the form value
     this.editForm.get('value')?.setValue(favoriteValue);
     this.editForm.get('value')?.markAsTouched();
     this.selectedFavorite.set(favorite);
 
-    // If we have special syntax and enhanced editor is enabled, update special input value too
     if (this.showSpecialInput() && this.specialSyntaxType()) {
       this.specialInputValue.set(favoriteValue);
     }
 
-    // If the favorite has a stored template ID, update our config to use it for typeahead
     if (favorite.columnTemplate && favorite.columnTemplate !== this.config.templateId) {
       this.config.templateId = favorite.columnTemplate;
     }
 
-    // Optional: Show a brief toast if display name differs from actual value
     if (this.hasCustomDisplayValue(favorite)) {
       console.log(`Selected "${favorite.displayValue}" (value: ${favorite.value})`);
     }
@@ -315,7 +354,7 @@ export class MetadataValueEditModal implements OnInit {
   onFavoriteSelected(event: Event, favoritesList: FavouriteMetadataOption[]): void {
     const selectElement = event.target as HTMLSelectElement;
     const favoriteId = selectElement.value;
-    
+
     if (!favoriteId) {
       return; // No selection made
     }
@@ -499,8 +538,27 @@ export class MetadataValueEditModal implements OnInit {
   onSubmit(): void {
     if (this.editForm.valid) {
       this.isLoading.set(true);
-      const value = this.editForm.get('value')?.value || '';
-      
+      const rawValue = this.editForm.get('value')?.value || '';
+
+      // If the form contains an object (ontology suggestion), format it properly
+      let value: string;
+      if (typeof rawValue === 'object' && rawValue !== null) {
+        // For MS Unique Vocabularies, use SDRF formatting
+        if (rawValue.ontologyType === OntologyType.MS_UNIQUE_VOCABULARIES && rawValue.fullData && rawValue.fullData.name) {
+          if (rawValue.fullData.accession) {
+            value = `NT=${rawValue.fullData.name};AC=${rawValue.fullData.accession}`;
+          } else {
+            value = rawValue.fullData.name;
+          }
+        } else {
+          // For other ontology types, use the regular value
+          value = rawValue.displayName || rawValue.value || String(rawValue);
+        }
+      } else {
+        value = String(rawValue);
+      }
+
+
       // If multi-sample editing is enabled and samples are selected, include the sample indices
       if (this.hasMultiSampleEdit && this.selectedSampleCount > 0) {
         const selectedIndices = Array.from(this.selectedSampleIndices());

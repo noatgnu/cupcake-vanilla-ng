@@ -1,8 +1,8 @@
 import { Component, Input, Output, EventEmitter, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { NgbActiveModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
-import { MetadataTable, MetadataTableService, MetadataTableUpdateRequest } from '@cupcake/vanilla';
+import { NgbActiveModal, NgbModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import { MetadataTable, MetadataTableService, MetadataTableUpdateRequest, SampleCountConfirmationError } from '@cupcake/vanilla';
 import { LabGroupService, LabGroup } from '@cupcake/core';
 
 @Component({
@@ -24,15 +24,16 @@ export class MetadataTableEditModal implements OnInit {
   constructor(
     private fb: FormBuilder,
     private activeModal: NgbActiveModal,
+    private modalService: NgbModal,
     private metadataTableService: MetadataTableService,
     private labGroupService: LabGroupService
   ) {
     this.editForm = this.fb.group({
       name: ['', [Validators.required, Validators.maxLength(255)]],
       description: [''],
-      sample_count: [1, [Validators.required, Validators.min(1), Validators.max(10000)]],
+      sampleCount: [1, [Validators.required, Validators.min(1), Validators.max(10000)]],
       version: ['', [Validators.maxLength(50)]],
-      lab_group: [null]
+      labGroup: [null]
     });
   }
 
@@ -41,9 +42,9 @@ export class MetadataTableEditModal implements OnInit {
       this.editForm.patchValue({
         name: this.table.name,
         description: this.table.description || '',
-        sample_count: this.table.sampleCount,
+        sampleCount: this.table.sampleCount,
         version: this.table.version,
-        lab_group: this.table.labGroup || null
+        labGroup: this.table.labGroup || null
       });
     }
     
@@ -69,27 +70,90 @@ export class MetadataTableEditModal implements OnInit {
   onSubmit(): void {
     if (this.editForm.valid && this.table.id) {
       this.isLoading.set(true);
-      
+
       const formValue = this.editForm.value;
-      const updateData: Partial<MetadataTable> = {
+      const updateData: MetadataTableUpdateRequest = {
         name: formValue.name.trim(),
         description: formValue.description?.trim() || undefined,
-        sampleCount: formValue.sample_count,
+        sampleCount: formValue.sampleCount,
         version: formValue.version?.trim() || undefined,
-        labGroup: formValue.lab_group || undefined
+        labGroup: formValue.labGroup || undefined
       };
 
-      this.metadataTableService.updateMetadataTable(this.table.id, updateData).subscribe({
-        next: (updatedTable) => {
-          this.tableSaved.emit(updatedTable);
-          this.activeModal.close(updatedTable);
-        },
-        error: (error) => {
+      this.performUpdate(updateData);
+    }
+  }
+
+  private performUpdate(updateData: MetadataTableUpdateRequest, confirmed: boolean = false): void {
+    if (!this.table.id) return;
+
+    if (confirmed) {
+      updateData.sampleCountConfirmed = true;
+    }
+
+    this.metadataTableService.updateMetadataTable(this.table.id, updateData).subscribe({
+      next: (updatedTable) => {
+        this.tableSaved.emit(updatedTable);
+        this.activeModal.close(updatedTable);
+      },
+      error: (error) => {
+        if (this.isSampleCountConfirmationError(error)) {
+          this.handleSampleCountConfirmation(error.error, updateData);
+        } else {
           console.error('Error updating metadata table:', error);
           this.isLoading.set(false);
         }
-      });
+      }
+    });
+  }
+
+  private handleSampleCountConfirmation(errorData: SampleCountConfirmationError, updateData: MetadataTableUpdateRequest): void {
+    this.isLoading.set(false);
+    const details = errorData.sampleCountConfirmationDetails;
+
+    const message = `Reducing sample count from ${details.currentSampleCount} to ${details.newSampleCount} will remove data:
+
+${details.validationResult.warnings.join('\n')}
+
+${this.formatAffectedData(details.validationResult)}
+
+Do you want to continue?`;
+
+    if (confirm(message)) {
+      this.isLoading.set(true);
+      this.performUpdate(updateData, true);
     }
+  }
+
+  private formatAffectedData(validationResult: any): string {
+    let message = '';
+
+    if (validationResult.affectedModifiers?.length > 0) {
+      message += `\nAffected column modifiers (${validationResult.affectedModifiers.length}):`;
+      validationResult.affectedModifiers.slice(0, 5).forEach((modifier: any) => {
+        message += `\n- ${modifier.columnName} (samples: ${modifier.samples})`;
+      });
+      if (validationResult.affectedModifiers.length > 5) {
+        message += `\n- ... and ${validationResult.affectedModifiers.length - 5} more`;
+      }
+    }
+
+    if (validationResult.affectedPools?.length > 0) {
+      message += `\nAffected sample pools (${validationResult.affectedPools.length}):`;
+      validationResult.affectedPools.slice(0, 5).forEach((pool: any) => {
+        message += `\n- ${pool.poolName}`;
+      });
+      if (validationResult.affectedPools.length > 5) {
+        message += `\n- ... and ${validationResult.affectedPools.length - 5} more`;
+      }
+    }
+
+    return message;
+  }
+
+  private isSampleCountConfirmationError(error: any): error is { error: SampleCountConfirmationError } {
+    return error?.error?.sampleCountConfirmationDetails &&
+           error?.error?.sampleCountConfirmationDetails?.requiresConfirmation === true;
   }
 
   onCancel(): void {
@@ -107,9 +171,9 @@ export class MetadataTableEditModal implements OnInit {
     return (
       formValue.name !== this.table.name ||
       formValue.description !== (this.table.description || '') ||
-      formValue.sample_count !== this.table.sampleCount ||
+      formValue.sampleCount !== this.table.sampleCount ||
       formValue.version !== this.table.version ||
-      formValue.lab_group !== this.table.labGroup
+      formValue.labGroup !== this.table.labGroup
     );
   }
 
@@ -145,9 +209,9 @@ export class MetadataTableEditModal implements OnInit {
     const displayNames: Record<string, string> = {
       'name': 'Table name',
       'description': 'Description', 
-      'sample_count': 'Sample count',
+      'sampleCount': 'Sample count',
       'version': 'Version',
-      'lab_group': 'Lab group'
+      'labGroup': 'Lab group'
     };
     return displayNames[fieldName] || fieldName;
   }

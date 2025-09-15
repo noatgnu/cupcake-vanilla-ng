@@ -22,14 +22,14 @@ export class ChunkedUploadService extends BaseApiService {
    * Initialize or continue a chunked upload
    */
   uploadChunk(
-    request: ChunkedUploadRequest, 
+    request: ChunkedUploadRequest,
     uploadId?: string,
     offset?: number,
     totalSize?: number
   ): Observable<ChunkedUploadResponse> {
     const formData = new FormData();
     formData.append('file', request.file);
-    
+
     if (request.filename) {
       formData.append('filename', request.filename);
     }
@@ -46,22 +46,25 @@ export class ChunkedUploadService extends BaseApiService {
       formData.append('replace_existing', request.replaceExisting.toString());
     }
 
-    const url = uploadId 
+    const url = uploadId
       ? `${this.apiUrl}/chunked-upload/${uploadId}/`
       : `${this.apiUrl}/chunked-upload/`;
 
-    // Add Content-Range header for chunked uploads
-    const headers: any = {};
+    // Add Content-Range header for chunked uploads, but preserve FormData Content-Type
+    const httpOptions: any = {};
     if (offset !== undefined && totalSize !== undefined) {
       const chunkEnd = offset + request.file.size - 1;
-      headers['Content-Range'] = `bytes ${offset}-${chunkEnd}/${totalSize}`;
+      httpOptions.headers = {
+        'Content-Range': `bytes ${offset}-${chunkEnd}/${totalSize}`
+      };
+      // Don't set Content-Type - let browser handle multipart/form-data boundary
     }
 
-    // Use POST for first chunk, PUT for subsequent chunks
+    // Use POST for first chunk (creates and completes), PUT for subsequent chunks
     if (uploadId) {
-      return this.put<ChunkedUploadResponse>(url, formData, { headers });
+      return this.put<ChunkedUploadResponse>(url, formData, httpOptions);
     } else {
-      return this.post<ChunkedUploadResponse>(url, formData, { headers });
+      return this.post<ChunkedUploadResponse>(url, formData, httpOptions);
     }
   }
 
@@ -77,7 +80,7 @@ export class ChunkedUploadService extends BaseApiService {
    */
   completeUpload(uploadId: string, request?: ChunkedUploadCompletionRequest): Observable<ChunkedUploadCompletionResponse> {
     const formData = new FormData();
-    
+
     if (request?.sha256) {
       formData.append('sha256', request.sha256);
     }
@@ -95,6 +98,45 @@ export class ChunkedUploadService extends BaseApiService {
   }
 
   /**
+   * Complete the chunked upload by uploading the entire file at once
+   */
+  completeUploadWithFile(request: ChunkedUploadRequest): Observable<ChunkedUploadCompletionResponse> {
+    const formData = new FormData();
+    formData.append('file', request.file);
+
+    if (request.filename) {
+      formData.append('filename', request.filename);
+    }
+    const hasher = new jsSHA('SHA-256', 'ARRAYBUFFER');
+    const arrayBufferPromise = request.file.arrayBuffer();
+    // Calculate SHA-256 hash of the entire file
+    arrayBufferPromise.then(arrayBuffer => {
+      hasher.update(arrayBuffer);
+    })
+    return from(arrayBufferPromise).pipe(
+      switchMap(() => {
+        const hash = hasher.getHash('HEX');
+        formData.append('sha256', hash);
+        if (request.uploadSessionId) {
+          formData.append('upload_session_id', request.uploadSessionId);
+        }
+        if (request.metadataTableId) {
+          formData.append('metadata_table_id', request.metadataTableId.toString());
+        }
+        if (request.createPools !== undefined) {
+          formData.append('create_pools', request.createPools.toString());
+        }
+        if (request.replaceExisting !== undefined) {
+          formData.append('replace_existing', request.replaceExisting.toString());
+        }
+
+        return this.post<ChunkedUploadCompletionResponse>(`${this.apiUrl}/chunked-upload/`, formData);
+      })
+    );
+
+  }
+
+  /**
    * Delete/cancel a chunked upload
    */
   cancelUpload(uploadId: string): Observable<void> {
@@ -105,7 +147,7 @@ export class ChunkedUploadService extends BaseApiService {
    * Helper method to upload a file in chunks with progress tracking
    */
   uploadFileInChunks(
-    file: File, 
+    file: File,
     chunkSize: number = 1024 * 1024, // 1MB chunks by default
     options?: {
       metadataTableId?: number;
@@ -120,7 +162,23 @@ export class ChunkedUploadService extends BaseApiService {
       let offset = 0;
       const totalSize = file.size;
       const sha256 = new jsSHA('SHA-256', 'ARRAYBUFFER');
-      
+      // if file size is smaller than chunk size, finish immediately with the whole file
+      if (totalSize <= chunkSize) {
+        this.completeUploadWithFile({
+          file: file,
+          filename: file.name,
+          uploadSessionId: options?.uploadSessionId,
+          metadataTableId: options?.metadataTableId,
+          createPools: options?.createPools,
+          replaceExisting: options?.replaceExisting
+        }).subscribe({
+          next: (result) => {
+            subscriber.next(result);
+            subscriber.complete();
+          }
+        })
+        return;
+      }
       const uploadNextChunk = () => {
         if (offset >= totalSize) {
           // Upload complete, finalize with calculated hash
@@ -151,7 +209,7 @@ export class ChunkedUploadService extends BaseApiService {
         // Add chunk to hash calculation
         chunk.arrayBuffer().then(arrayBuffer => {
           sha256.update(arrayBuffer);
-          
+
           this.uploadChunk({
             file: chunkFile,
             filename: file.name,
@@ -163,7 +221,7 @@ export class ChunkedUploadService extends BaseApiService {
             next: (response) => {
               uploadId = response.id;
               offset = response.offset;
-              
+
               // Report progress
               const progress = (offset / totalSize) * 100;
               if (options?.onProgress) {

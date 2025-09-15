@@ -48,6 +48,7 @@ export class AsyncTaskService extends BaseApiService {
    * Direct download endpoint (returns blob for file download)
    */
   downloadTaskFile(id: string, token: string): Observable<Blob> {
-    return this.get(`${this.apiUrl}/async-tasks/${id}/download/?token=${token}`, { responseType: 'blob' });
+    const httpParams = this.buildHttpParams({ token });
+    return this.get(`${this.apiUrl}/async-tasks/${id}/download/`, { params: httpParams, responseType: 'blob' });
   }
 }

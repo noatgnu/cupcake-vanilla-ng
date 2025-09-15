@@ -120,8 +120,8 @@
                   <th style="width: 120px;">Actions</th>
                 </tr>
               </thead>
-              <tbody cdkDropList (cdkDropListDropped)="onColumnDrop($event)" [cdkDropListData]="templateColumns()">
-                @for (column of templateColumns(); track column.id; let i = $index) {
+              <tbody cdkDropList (cdkDropListDropped)="onColumnDrop($event)" [cdkDropListData]="_templateColumns()">
+                @for (column of _templateColumns(); track column.id; let i = $index) {
                   <tr cdkDrag [cdkDragData]="column" class="column-row" [attr.data-column-id]="column.id">
                     <td class="text-center">
                       <i class="bi bi-grip-vertical drag-handle" cdkDragHandle></i>

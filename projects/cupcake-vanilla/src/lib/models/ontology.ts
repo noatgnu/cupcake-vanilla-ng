@@ -86,6 +86,7 @@ export interface CellOntology {
 export interface Schema {
   id: number;
   name: string;
+  displayName?: string;
   description?: string;
   category?: string;
   version?: string;
@@ -97,10 +98,10 @@ export interface Schema {
 export interface OntologySuggestion {
   id: string;
   value: string;
-  display_name: string;
+  displayName: string;
   description?: string;
-  ontology_type: string;
-  full_data?: any;
+  ontologyType: string;
+  fullData?: any;
 }
 
 export interface OntologySuggestionResponse {

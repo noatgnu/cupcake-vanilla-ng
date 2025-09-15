@@ -51,7 +51,7 @@
               <select
                 class="form-select"
                 id="labGroupSelect"
-                formControlName="lab_group_id"
+                formControlName="labGroupId"
                 (change)="onLabGroupChange($event)">
                 <option [ngValue]="null">All Lab Groups</option>
                 @if (hasLabGroups()) {
@@ -68,7 +68,7 @@
               <select
                 class="form-select"
                 id="statusSelect"
-                formControlName="is_published">
+                formControlName="isPublished">
                 <option [ngValue]="null">All Status</option>
                 <option [ngValue]="true">Published</option>
                 <option [ngValue]="false">Draft</option>
@@ -82,7 +82,7 @@
                 class="form-check-input"
                 type="checkbox"
                 id="lockedFilter"
-                formControlName="is_locked">
+                formControlName="isLocked">
               <label class="form-check-label" for="lockedFilter">
                 <i class="bi bi-lock me-1"></i>Show Locked Only
               </label>
@@ -142,22 +142,22 @@
         <div class="d-flex align-items-center gap-2">
           @if (hasSelectedTables()) {
             <div class="btn-group btn-group-sm" role="group">
-              <button 
-                type="button" 
+              <button
+                type="button"
                 class="btn btn-outline-success"
                 (click)="bulkExportSdrf()"
                 title="Export selected tables as SDRF files">
                 <i class="bi bi-download me-1"></i>Bulk Export SDRF
               </button>
-              <button 
-                type="button" 
+              <button
+                type="button"
                 class="btn btn-outline-primary"
                 (click)="bulkExportExcel()"
                 title="Export selected tables as Excel templates">
                 <i class="bi bi-file-earmark-excel me-1"></i>Bulk Export Excel
               </button>
-              <button 
-                type="button" 
+              <button
+                type="button"
                 class="btn btn-outline-secondary"
                 (click)="clearSelection()"
                 title="Clear selection">
@@ -179,8 +179,8 @@
               <thead>
                 <tr>
                   <th class="text-center" style="width: 50px;">
-                    <input 
-                      type="checkbox" 
+                    <input
+                      type="checkbox"
                       class="form-check-input"
                       [checked]="selectAllChecked()"
                       [indeterminate]="selectAllIndeterminate()"
@@ -202,8 +202,8 @@
                 @for (table of tablesData().results; track table.id) {
                   <tr [class.table-active]="isTableSelected(table)">
                     <td class="text-center">
-                      <input 
-                        type="checkbox" 
+                      <input
+                        type="checkbox"
                         class="form-check-input"
                         [checked]="isTableSelected(table)"
                         (change)="toggleTableSelection(table, $event)"
@@ -331,7 +331,7 @@
             <i class="bi bi-table fs-1 text-muted mb-3"></i>
             <h5 class="text-muted">No Metadata Tables Found</h5>
             <p class="text-muted">
-              @if (searchForm.get('search')?.value || searchForm.get('lab_group_id')?.value) {
+              @if (searchForm.get('search')?.value || searchForm.get('labGroupId')?.value) {
                 Try adjusting your search criteria or create a new table.
               } @else {
                 Get started by creating your first metadata table.

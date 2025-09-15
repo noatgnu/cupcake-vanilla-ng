@@ -526,8 +526,8 @@ describe('MetadataColumnService', () => {
           max_length: 10
         },
         choice_options: [
-          { value: 'option1', display_name: 'Option 1' },
-          { value: 'option2', display_name: 'Option 2' }
+          { value: 'option1', displayName: 'Option 1' },
+          { value: 'option2', displayName: 'Option 2' }
         ],
         created_at: '2023-01-01T00:00:00Z'
       };

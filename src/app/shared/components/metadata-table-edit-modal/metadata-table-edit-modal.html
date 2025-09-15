@@ -7,14 +7,14 @@
 
 <div class="modal-body">
   <form [formGroup]="editForm" (ngSubmit)="onSubmit()">
-    
+
     <!-- Table Name -->
     <div class="mb-3">
       <label for="tableName" class="form-label">
         Table Name *
       </label>
-      <input 
-        type="text" 
+      <input
+        type="text"
         class="form-control"
         id="tableName"
         formControlName="name"
@@ -31,7 +31,7 @@
       <label for="tableDescription" class="form-label">
         Description
       </label>
-      <textarea 
+      <textarea
         class="form-control"
         id="tableDescription"
         formControlName="description"
@@ -48,17 +48,17 @@
         <label for="sampleCount" class="form-label">
           Sample Count *
         </label>
-        <input 
-          type="number" 
+        <input
+          type="number"
           class="form-control"
           id="sampleCount"
-          formControlName="sample_count"
-          [class.is-invalid]="isFieldInvalid('sample_count')"
+          formControlName="sampleCount"
+          [class.is-invalid]="isFieldInvalid('sampleCount')"
           placeholder="Number of samples"
           min="1"
           max="10000">
-        <div class="invalid-feedback" *ngIf="isFieldInvalid('sample_count')">
-          {{ getFieldError('sample_count') }}
+        <div class="invalid-feedback" *ngIf="isFieldInvalid('sampleCount')">
+          {{ getFieldError('sampleCount') }}
         </div>
         <div class="form-text">
           Number of samples in this metadata table (1-10,000).
@@ -69,8 +69,8 @@
         <label for="version" class="form-label">
           Version
         </label>
-        <input 
-          type="text" 
+        <input
+          type="text"
           class="form-control"
           id="version"
           formControlName="version"
@@ -99,7 +99,7 @@
           <span class="text-muted">Loading lab groups...</span>
         </div>
       } @else {
-        <select 
+        <select
           class="form-select"
           id="labGroup"
           formControlName="lab_group">
@@ -165,9 +165,9 @@
   <button type="button" class="btn btn-outline-secondary" (click)="onCancel()">
     <i class="bi bi-x-circle me-1"></i>Cancel
   </button>
-  <button 
-    type="button" 
-    class="btn btn-primary" 
+  <button
+    type="button"
+    class="btn btn-primary"
     (click)="onSubmit()"
     [disabled]="editForm.invalid || isLoading() || !hasChanges">
     @if (isLoading()) {

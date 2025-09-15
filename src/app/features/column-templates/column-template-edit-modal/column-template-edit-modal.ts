@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgbActiveModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { MetadataColumnTemplate, LabGroup } from '../../../shared/models';
+import { ONTOLOGY_TYPE_CONFIGS, COLUMN_TYPE_CONFIGS, OntologyTypeConfig, ColumnTypeConfig } from '@cupcake/vanilla';
 
 @Component({
   selector: 'app-column-template-edit-modal',
@@ -23,13 +24,7 @@ export class ColumnTemplateEditModal implements OnInit {
   Object = Object;
 
   // Available options for dropdowns
-  columnTypes = [
-    { value: 'characteristics', label: 'Characteristics' },
-    { value: 'comment', label: 'Comment' },
-    { value: 'factor_value', label: 'Factor Value' },
-    { value: 'source_name', label: 'Source Name' },
-    { value: 'special', label: 'Special' }
-  ];
+  columnTypes: ColumnTypeConfig[] = COLUMN_TYPE_CONFIGS;
 
   visibilityOptions = [
     { value: 'private', label: 'Private' },
@@ -38,27 +33,7 @@ export class ColumnTemplateEditModal implements OnInit {
     { value: 'global', label: 'Global' }
   ];
 
-  ontologyTypes = [
-    { value: '', label: 'None', customFilter: {} },
-    { value: 'species', label: 'Species (UniProt)', customFilter: {} },
-    { value: 'ncbi_taxonomy', label: 'NCBI Taxonomy', customFilter: {} },
-    { value: 'tissue', label: 'Tissue (UniProt)', customFilter: {} },
-    { value: 'human_disease', label: 'Human Disease (UniProt)', customFilter: {} },
-    { value: 'mondo', label: 'MONDO Disease', customFilter: {} },
-    { value: 'ms_unique_vocabularies', label: 'Sample Attribute (MS)', customFilter: { 'ms_unique_vocabularies': {'term_type': 'sample attribute'} } },
-    { value: 'ms_unique_vocabularies', label: 'MS2 Analyzer Type (MS)', customFilter: { 'ms_unique_vocabularies': {'term_type': 'ms analyzer type'} } },
-    { value: 'ms_unique_vocabularies', label: 'Cleavage Agent (MS)', customFilter: { 'ms_unique_vocabularies': {'term_type': 'cleavage agent'} } },
-    { value: 'ms_unique_vocabularies', label: 'Ancestry category (MS)', customFilter: { 'ms_unique_vocabularies': {'term_type': 'ancestral category'} } },
-    { value: 'ms_unique_vocabularies', label: 'Developmental stage (MS)', customFilter: { 'ms_unique_vocabularies': {'term_type': 'developmental stage'} } },
-    { value: 'ms_unique_vocabularies', label: 'Sex (MS)', customFilter: { 'ms_unique_vocabularies': {'term_type': 'sex'} } },
-    { value: 'unimod', label: 'Modification (Unimod)', customFilter: {} },
-    { value: 'uberon', label: 'Uberon Anatomy', customFilter: {} },
-    { value: 'subcellular_location', label: 'Subcellular Location (UniProt)', customFilter: {} },
-    { value: 'chebi', label: 'ChEbi', customFilter: {} },
-    { value: 'cell_ontology', label: 'Cell Ontology', customFilter: {} },
-    { value: 'go', label: 'Gene Ontology', customFilter: {} },
-    { value: 'instrument', label: 'Instrument', customFilter: {} }
-  ];
+  ontologyTypes: OntologyTypeConfig[] = ONTOLOGY_TYPE_CONFIGS;
 
   constructor(
     private fb: FormBuilder,
@@ -140,9 +115,9 @@ export class ColumnTemplateEditModal implements OnInit {
     // Find the selected ontology type configuration
     const selectedOntology = this.ontologyTypes.find(ont => ont.value === ontologyType);
     
-    if (selectedOntology && selectedOntology.customFilter) {
+    if (selectedOntology && selectedOntology.customFilters) {
       // Apply the custom filter from the ontology type
-      customFiltersControl?.setValue(selectedOntology.customFilter);
+      customFiltersControl?.setValue(selectedOntology.customFilters);
     } else {
       // Clear custom filters if no ontology type selected or no custom filter defined
       customFiltersControl?.setValue({});

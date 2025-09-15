@@ -7,14 +7,15 @@ import { ResourceVisibility } from '../../../shared/models';
 export interface SchemaSelectionResult {
   name: string;
   description: string;
-  schema_ids: number[];
-  lab_group_id?: number;
+  schemaIds: number[];
+  labGroupId?: number;
   visibility: ResourceVisibility;
-  is_default: boolean;
+  isDefault: boolean;
 }
 
 @Component({
   selector: 'app-schema-selection-modal',
+  standalone: true,
   imports: [CommonModule, ReactiveFormsModule, NgbModule],
   templateUrl: './schema-selection-modal.html',
   styleUrl: './schema-selection-modal.scss'
@@ -37,9 +38,9 @@ export class SchemaSelectionModal {
     this.templateForm = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(1)]],
       description: [''],
-      lab_group_id: [null],
+      labGroupId: [null],
       visibility: [ResourceVisibility.PRIVATE],
-      is_default: [false]
+      isDefault: [false]
     });
   }
 
@@ -68,7 +69,7 @@ export class SchemaSelectionModal {
   }
 
   getSelectedSchemas(): number[] {
-    return Array.from(this.selectedSchemas());
+    return [...this.selectedSchemas()];
   }
 
   removeSchema(schemaId: number) {
@@ -81,7 +82,7 @@ export class SchemaSelectionModal {
 
   getSchemaDisplayName(schemaId: number): string {
     const schema = this.availableSchemas.find(s => s.id === schemaId);
-    return schema?.display_name || schema?.name || `Schema ${schemaId}`;
+    return schema?.displayName || schema?.name || `Schema ${schemaId}`;
   }
 
   private updateDescription() {
@@ -95,7 +96,23 @@ export class SchemaSelectionModal {
   }
 
   canCreateTemplate(): boolean {
-    return this.templateForm.valid && this.selectedSchemasCount() > 0;
+    const formValid = this.templateForm.valid;
+    const hasSchemas = this.selectedSchemasCount() > 0;
+    
+    // Debug logging
+    if (!formValid) {
+      console.log('Form errors:', this.templateForm.errors);
+      console.log('Form controls errors:', Object.keys(this.templateForm.controls).reduce((acc, key) => {
+        const control = this.templateForm.get(key);
+        if (control?.errors) {
+          acc[key] = control.errors;
+        }
+        return acc;
+      }, {} as any));
+    }
+    
+    console.log('canCreateTemplate:', { formValid, hasSchemas, result: formValid && hasSchemas });
+    return formValid && hasSchemas;
   }
 
   onCreateTemplate() {
@@ -109,10 +126,10 @@ export class SchemaSelectionModal {
     const result: SchemaSelectionResult = {
       name: formValue.name,
       description: formValue.description || '',
-      schema_ids: this.getSelectedSchemas(),
-      lab_group_id: formValue.lab_group_id || undefined,
+      schemaIds: this.getSelectedSchemas(),
+      labGroupId: formValue.labGroupId || undefined,
       visibility: formValue.visibility || ResourceVisibility.PRIVATE,
-      is_default: formValue.is_default || false
+      isDefault: formValue.isDefault || false
     };
 
     this.templateCreated.emit(result);
