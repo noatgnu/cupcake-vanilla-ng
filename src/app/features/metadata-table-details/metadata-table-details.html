@@ -525,6 +525,7 @@
                       <td>
                         <div class="btn-group btn-group-sm">
                           <button type="button" class="btn btn-outline-primary"
+                                  (click)="viewColumnDetails(column)"
                                   title="View column details">
                             <i class="bi bi-eye"></i>
                           </button>
@@ -542,6 +543,7 @@
                               <i class="bi bi-pencil-square"></i>
                             </button>
                             <button type="button" class="btn btn-outline-secondary"
+                                    (click)="editColumnSettings(column)"
                                     title="Edit column settings">
                               <i class="bi bi-gear"></i>
                             </button>

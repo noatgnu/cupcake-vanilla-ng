@@ -18,10 +18,7 @@ import {
 import { ToastService } from '../../shared/services/toast';
 import { AuthService, User, LabGroupService } from '@cupcake/core';
 import { SdrfSyntaxService, SyntaxType } from '../../shared/services/sdrf-syntax';
-import { SdrfAgeInput } from '../../shared/components/sdrf-age-input/sdrf-age-input';
-import { SdrfModificationInput } from '../../shared/components/sdrf-modification-input/sdrf-modification-input';
-import { SdrfCleavageInput } from '../../shared/components/sdrf-cleavage-input/sdrf-cleavage-input';
-import { SdrfSpikedCompoundInput } from '../../shared/components/sdrf-spiked-compound-input/sdrf-spiked-compound-input';
+import { MetadataValueEditModal, MetadataValueEditConfig } from '../../shared/components/metadata-value-edit-modal/metadata-value-edit-modal';
 
 @Component({
   selector: 'app-favorite-management',
@@ -31,11 +28,7 @@ import { SdrfSpikedCompoundInput } from '../../shared/components/sdrf-spiked-com
     ReactiveFormsModule,
     RouterModule,
     NgbModule,
-    NgbTypeahead,
-    SdrfAgeInput,
-    SdrfModificationInput,
-    SdrfCleavageInput,
-    SdrfSpikedCompoundInput
+    NgbTypeahead
   ],
   templateUrl: './favorite-management.html',
   styleUrl: './favorite-management.scss'
@@ -95,7 +88,7 @@ export class FavoriteManagementComponent implements OnInit {
   // Pagination (server-side)
   currentPage = signal(1);
   pageSize = signal(10);
-  
+
   // With server-side pagination, filtered favorites are what we get from the server
   paginatedFavorites = computed(() => this.filteredFavorites());
 
@@ -111,7 +104,6 @@ export class FavoriteManagementComponent implements OnInit {
   isEditMode = signal(false);
   editingFavorite = signal<FavouriteMetadataOption | null>(null);
   showEditModal = signal(false);
-  searchType = signal<'icontains' | 'istartswith'>('icontains');
 
   // SDRF special syntax support
   private sdrfSyntaxService = inject(SdrfSyntaxService);
@@ -173,7 +165,9 @@ export class FavoriteManagementComponent implements OnInit {
       displayValue: ['', [Validators.maxLength(500)]],
       scope: ['personal', Validators.required],
       labGroupId: [null],
-      templateId: [null] // Store the selected template ID for value autocompletion
+      templateId: [null], // Store the selected template ID for value autocompletion
+      ontologyType: [''], // Store ontology type from template
+      enableTypeahead: [false] // Store whether typeahead is enabled
     });
 
     // Watch for manual input changes (clear ontology value when user types)
@@ -234,7 +228,7 @@ export class FavoriteManagementComponent implements OnInit {
     const page = this.currentPage();
     const size = this.pageSize();
     const offset = (page - 1) * size;
-    
+
     this.favouriteMetadataOptionService.getFavouriteMetadataOptions({
       limit: size,
       offset: offset
@@ -303,7 +297,7 @@ export class FavoriteManagementComponent implements OnInit {
 
     // Use stored columnTemplate ID if available, otherwise try to find matching template
     let templateId = favorite.columnTemplate || null;
-    
+
     this.editForm.patchValue({
       name: favorite.name,
       type: favorite.type,
@@ -311,7 +305,9 @@ export class FavoriteManagementComponent implements OnInit {
       displayValue: favorite.displayValue || '',
       scope: scope,
       labGroupId: favorite.labGroup || null,
-      templateId: templateId
+      templateId: templateId,
+      ontologyType: '', // Will be populated when template is found
+      enableTypeahead: false // Will be populated when template is found
     });
 
     // Check for special SDRF syntax and activate enhanced editor
@@ -333,11 +329,15 @@ export class FavoriteManagementComponent implements OnInit {
     // If no stored template ID, try to find one as fallback for future use
     if (!templateId) {
       this.findTemplatesForColumnName(favorite.name).then(templates => {
-        const matchingTemplate = templates.find(t => 
+        const matchingTemplate = templates.find(t =>
           t.columnName === favorite.name && t.columnType === favorite.type
         );
         if (matchingTemplate?.id) {
-          this.editForm.patchValue({ templateId: matchingTemplate.id });
+          this.editForm.patchValue({
+            templateId: matchingTemplate.id,
+            ontologyType: matchingTemplate.ontologyType || '',
+            enableTypeahead: matchingTemplate.enableTypeahead || false
+          });
         }
       });
     }
@@ -347,16 +347,16 @@ export class FavoriteManagementComponent implements OnInit {
     if (this.editForm.invalid) return;
 
     const formValue = this.editForm.value;
-    
+
     // Use the stored ontology value if available, otherwise use form value
     let value = this.selectedOntologyValue || formValue.value;
-    
+
     // Ensure value is always a string, not an object
     if (typeof value === 'object' && value !== null) {
       // If somehow an object got into the form, extract the value property
       value = value.value || value.displayName || String(value);
     }
-    
+
     const favoriteData: FavouriteMetadataOptionCreateRequest = {
       name: formValue.name,
       type: formValue.type,
@@ -597,20 +597,34 @@ export class FavoriteManagementComponent implements OnInit {
             const firstTemplate = templatesForName[0];
             this.editForm.patchValue({
               type: firstTemplate.columnType,
-              templateId: firstTemplate.id // Set template ID for value autocompletion
+              templateId: firstTemplate.id, // Set template ID for value autocompletion
+              ontologyType: firstTemplate.ontologyType || '',
+              enableTypeahead: firstTemplate.enableTypeahead || false
             });
           } else {
             // If current type is valid, find the template with matching name and type
             const matchingTemplate = templatesForName.find(t => t.columnType === currentType);
             if (matchingTemplate) {
-              this.editForm.patchValue({ templateId: matchingTemplate.id });
+              this.editForm.patchValue({
+                templateId: matchingTemplate.id,
+                ontologyType: matchingTemplate.ontologyType || '',
+                enableTypeahead: matchingTemplate.enableTypeahead || false
+              });
             } else {
-              this.editForm.patchValue({ templateId: null });
+              this.editForm.patchValue({
+                templateId: null,
+                ontologyType: '',
+                enableTypeahead: false
+              });
             }
           }
         } else {
           // Clear templateId if no matching templates found
-          this.editForm.patchValue({ templateId: null });
+          this.editForm.patchValue({
+            templateId: null,
+            ontologyType: '',
+            enableTypeahead: false
+          });
         }
 
         // Check for special SDRF syntax after name selection
@@ -660,9 +674,17 @@ export class FavoriteManagementComponent implements OnInit {
         );
 
         if (matchingTemplate && matchingTemplate.id) {
-          this.editForm.patchValue({ templateId: matchingTemplate.id });
+          this.editForm.patchValue({
+            templateId: matchingTemplate.id,
+            ontologyType: matchingTemplate.ontologyType || '',
+            enableTypeahead: matchingTemplate.enableTypeahead || false
+          });
         } else {
-          this.editForm.patchValue({ templateId: null });
+          this.editForm.patchValue({
+            templateId: null,
+            ontologyType: '',
+            enableTypeahead: false
+          });
         }
       }
 
@@ -671,66 +693,37 @@ export class FavoriteManagementComponent implements OnInit {
     }
   }
 
-  // Typeahead for values using template ontology suggestions
-  searchTemplateValues: OperatorFunction<string, readonly OntologySuggestion[]> = (text$: Observable<string>) =>
-    text$.pipe(
-      debounceTime(200),
-      distinctUntilChanged(),
-      filter(term => term.length >= 2),
-      switchMap(term => {
-        const templateId = this.editForm.get('templateId')?.value;
-        if (!templateId) {
-          return of([]);
-        }
+  // Open value edit modal for advanced editing
+  openValueEditModal(): void {
+    const formValue = this.editForm.value;
 
-        return this.metadataColumnTemplateService.getOntologySuggestions({
-          templateId: templateId,
-          search: term,
-          limit: 10,
-          searchType: this.searchType()
-        }).pipe(
-          map(response => response.suggestions || []),
-          catchError(error => {
-            console.warn(`Failed to get ontology suggestions for template ${templateId}:`, error);
-            return of([]);
-          })
-        );
-      })
-    );
+    const config: MetadataValueEditConfig = {
+      columnName: formValue.name || 'Column',
+      columnType: formValue.type || '',
+      ontologyType: formValue.ontologyType || '',
+      enableTypeahead: formValue.enableTypeahead || false,
+      currentValue: formValue.value || '',
+      context: 'favorite_management',
+      templateId: formValue.templateId || undefined
+    };
 
-  formatValueSuggestion = (suggestion: OntologySuggestion): string => {
-    return suggestion.displayName || suggestion.value;
-  };
 
-  // Input formatter should return the display name for better UX
-  inputValueFormatter = (suggestion: OntologySuggestion): string => {
-    return suggestion.displayName || suggestion.value;
-  };
+    const modalRef = this.modalService.open(MetadataValueEditModal, {
+      size: 'lg',
+      backdrop: 'static'
+    });
 
-  onValueSuggestionSelected = (event: any): void => {
-    const suggestion = event.item || event;
-    
-    if (suggestion && typeof suggestion === 'object' && suggestion.value) {
-      console.log('Ontology suggestion selected:', suggestion);
-      
-      // Store the actual value for form submission
-      this.selectedOntologyValue = suggestion.value;
-      
-      // Update displayValue if it's empty
-      const currentDisplayValue = this.editForm.get('displayValue')?.value;
-      if (!currentDisplayValue && suggestion.displayName && suggestion.displayName !== suggestion.value) {
-        this.editForm.get('displayValue')?.setValue(suggestion.displayName);
-      }
-      
-      console.log('Stored ontology value:', this.selectedOntologyValue);
-    }
-  };
-
-  onSearchTypeChange(type: 'icontains' | 'istartswith'): void {
-    this.searchType.set(type);
+    modalRef.componentInstance.config = config;
+    modalRef.componentInstance.valueSaved.subscribe((result: string | { value: string; sampleIndices: number[] }) => {
+      // Extract the actual value from the result
+      const newValue = typeof result === 'string' ? result : result.value;
+      this.editForm.get('value')?.setValue(newValue);
+      this.editForm.get('value')?.markAsTouched();
+      this.selectedOntologyValue = newValue; // Store the selected value
+      modalRef.componentInstance.onClose();
+    });
   }
 
-  // Lab Group typeahead for filtering
   searchLabGroups: OperatorFunction<string, readonly {id: number, name: string}[]> = (text$: Observable<string>) =>
     text$.pipe(
       debounceTime(200),
@@ -784,27 +777,22 @@ export class FavoriteManagementComponent implements OnInit {
     if (selectedGroup && selectedGroup.id) {
       // Set both the form value (ID) and update the input display (name)
       this.searchForm.patchValue({ labGroup: selectedGroup.id.toString() });
-      
+
       // The input formatter will handle displaying the name correctly
     }
   };
 
-  // Clean up column name display for table
   getCleanColumnName(name: string): string {
     if (!name) return '';
 
-    // Extract content inside brackets if it exists
-    // e.g., "comment[modification parameters]" becomes "modification parameters"
     const bracketMatch = name.match(/\[(.+?)\]/);
     if (bracketMatch) {
       return bracketMatch[1];
     }
 
-    // If no brackets, return the name as is
     return name;
   }
 
-  // Clean up column type display for table
   getCleanColumnType(type: string): string {
     if (!type) return '';
 

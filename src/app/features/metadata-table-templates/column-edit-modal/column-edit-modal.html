@@ -359,7 +359,7 @@
           </label>
           <div class="form-text">
             <i class="bi bi-info-circle me-1"></i>
-            Show advanced options for manual ontology type configuration
+            Show advanced options for ontology configuration and column settings
           </div>
         </div>
       </div>
@@ -408,6 +408,69 @@
             </div>
           </div>
         }
+
+        <!-- Column Options - Advanced Mode Only -->
+        <div class="col-12 mb-3">
+          <h6 class="text-muted border-bottom pb-2">
+            <i class="bi bi-sliders me-2"></i>Column Options
+            <span class="badge bg-warning ms-2">
+              <i class="bi bi-exclamation-triangle me-1"></i>Advanced
+            </span>
+          </h6>
+        </div>
+
+        <div class="col-12 mb-3">
+          <div class="row">
+            <div class="col-md-3">
+              <div class="form-check form-switch">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  id="mandatory"
+                  formControlName="mandatory">
+                <label class="form-check-label" for="mandatory">
+                  <i class="bi bi-exclamation-circle me-1"></i>Mandatory
+                </label>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="form-check form-switch">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  id="hidden"
+                  formControlName="hidden">
+                <label class="form-check-label" for="hidden">
+                  <i class="bi bi-eye-slash me-1"></i>Hidden
+                </label>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="form-check form-switch">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  id="readonly"
+                  formControlName="readonly">
+                <label class="form-check-label" for="readonly">
+                  <i class="bi bi-lock me-1"></i>Read Only
+                </label>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="form-check form-switch">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  id="notApplicable"
+                  formControlName="notApplicable">
+                <label class="form-check-label" for="notApplicable">
+                  <i class="bi bi-dash-circle me-1"></i>N/A
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
       }
 
       <div class="col-12 mb-3">
@@ -454,65 +517,6 @@
         </div>
       </div>
 
-      <!-- Column Options -->
-      <div class="col-12 mb-3">
-        <h6 class="text-muted border-bottom pb-2">
-          <i class="bi bi-sliders me-2"></i>Column Options
-        </h6>
-      </div>
-
-      <div class="col-12 mb-3">
-        <div class="row">
-          <div class="col-md-3">
-            <div class="form-check form-switch">
-              <input 
-                class="form-check-input" 
-                type="checkbox" 
-                id="mandatory"
-                formControlName="mandatory">
-              <label class="form-check-label" for="mandatory">
-                <i class="bi bi-exclamation-circle me-1"></i>Mandatory
-              </label>
-            </div>
-          </div>
-          <div class="col-md-3">
-            <div class="form-check form-switch">
-              <input 
-                class="form-check-input" 
-                type="checkbox" 
-                id="hidden"
-                formControlName="hidden">
-              <label class="form-check-label" for="hidden">
-                <i class="bi bi-eye-slash me-1"></i>Hidden
-              </label>
-            </div>
-          </div>
-          <div class="col-md-3">
-            <div class="form-check form-switch">
-              <input 
-                class="form-check-input" 
-                type="checkbox" 
-                id="readonly"
-                formControlName="readonly">
-              <label class="form-check-label" for="readonly">
-                <i class="bi bi-lock me-1"></i>Read Only
-              </label>
-            </div>
-          </div>
-          <div class="col-md-3">
-            <div class="form-check form-switch">
-              <input 
-                class="form-check-input" 
-                type="checkbox" 
-                id="notApplicable"
-                formControlName="notApplicable">
-              <label class="form-check-label" for="notApplicable">
-                <i class="bi bi-dash-circle me-1"></i>N/A
-              </label>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   </form>
 </div>

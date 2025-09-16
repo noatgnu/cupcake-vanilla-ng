@@ -406,7 +406,7 @@
 
 <div class="modal-footer">
   <div class="me-auto">
-    @if (editForm.get('value')?.value && !isLoading()) {
+    @if (editForm.get('value')?.value && !isLoading() && !isFromFavoriteManagement) {
       <div class="btn-group dropup" ngbDropdown>
         <button
           type="button"

@@ -18,7 +18,7 @@ export interface MetadataValueEditConfig {
   ontologyType?: string;
   enableTypeahead?: boolean;
   currentValue?: string;
-  context: 'template' | 'table' | 'pool';
+  context: 'template' | 'table' | 'pool' | 'favorite_management';
   templateId?: number;
   tableId?: number;
   poolId?: number;
@@ -93,6 +93,7 @@ export class MetadataValueEditModal implements OnInit {
   }
 
   ngOnInit() {
+
     // Check for special SDRF syntax
     const syntaxType = this.sdrfSyntaxService.detectSpecialSyntax(
       this.config.columnName,
@@ -165,6 +166,10 @@ export class MetadataValueEditModal implements OnInit {
     return this.config?.ontologyType || '';
   }
 
+  get isFromFavoriteManagement(): boolean {
+    return this.config?.context === 'favorite_management';
+  }
+
   // Ontology autocomplete methods
   searchOntology = (text$: Observable<string>): Observable<OntologySuggestion[]> => {
     return text$.pipe(
@@ -189,7 +194,7 @@ export class MetadataValueEditModal implements OnInit {
             catchError(() => of([])),
             tap(() => this.isLoadingSuggestions.set(false))
           );
-        } else if (this.config.context === 'template' && this.config.templateId) {
+        } else if ((this.config.context === 'template' || this.config.context === 'favorite_management') && this.config.templateId) {
           return this.metadataColumnTemplateService.getOntologySuggestions({
             templateId: this.config.templateId,
             search: term,
@@ -197,7 +202,10 @@ export class MetadataValueEditModal implements OnInit {
             searchType: this.searchType()
           }).pipe(
             map(response => response.suggestions || []),
-            catchError(() => of([])),
+            catchError(error => {
+              console.error('Error getting ontology suggestions:', error);
+              return of([]);
+            }),
             tap(() => this.isLoadingSuggestions.set(false))
           );
         } else {

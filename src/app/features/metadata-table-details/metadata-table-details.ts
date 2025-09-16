@@ -934,6 +934,71 @@ export class MetadataTableDetailsComponent implements OnInit, OnDestroy {
     });
   }
 
+  // View column details
+  viewColumnDetails(column: MetadataColumn): void {
+    // For now, we'll show an alert with column details
+    // This can be enhanced with a proper modal later
+    const details = [
+      `Name: ${column.name}`,
+      `Type: ${column.type}`,
+      `Hidden: ${column.hidden ? 'Yes' : 'No'}`,
+      `Mandatory: ${column.mandatory ? 'Yes' : 'No'}`,
+      `Read Only: ${column.readonly ? 'Yes' : 'No'}`,
+      `Default Value: ${column.value || 'None'}`,
+      `Ontology Type: ${column.ontologyType || 'None'}`,
+      `Enable Typeahead: ${column.enableTypeahead ? 'Yes' : 'No'}`
+    ].join('\n');
+
+    alert(`Column Details:\n\n${details}`);
+  }
+
+  // Edit column settings
+  editColumnSettings(column: MetadataColumn): void {
+    const table = this.table();
+    if (!table || !table.canEdit || !column.id) return;
+
+    const modalRef = this.modalService.open(ColumnEditModal, {
+      size: 'lg',
+      backdrop: 'static',
+      keyboard: false
+    });
+
+    // Configure modal for editing existing column
+    modalRef.componentInstance.column = column;
+    modalRef.componentInstance.templateId = null;
+    modalRef.componentInstance.isEdit = true;
+
+    // Handle column save
+    modalRef.componentInstance.columnSaved.subscribe((columnData: Partial<MetadataColumn>) => {
+      this.updateColumnSettings(column.id!, columnData);
+      modalRef.componentInstance.onClose();
+    });
+  }
+
+  // Update column settings
+  private updateColumnSettings(columnId: number, columnData: Partial<MetadataColumn>): void {
+    this.metadataColumnService.patchMetadataColumn(columnId, columnData).subscribe({
+      next: (updatedColumn) => {
+        // Update the local column data
+        const currentTable = this.table();
+        if (currentTable && currentTable.columns) {
+          const updatedColumns = currentTable.columns.map(col =>
+            col.id === columnId ? updatedColumn : col
+          );
+          this.table.set({ ...currentTable, columns: updatedColumns });
+        }
+        this.toastService.success(`Column "${updatedColumn.name}" updated successfully!`);
+
+        // Reload the table to sync any changes
+        this.loadTable(currentTable!.id);
+      },
+      error: (error) => {
+        console.error('Error updating column settings:', error);
+        this.toastService.error('Failed to update column settings');
+      }
+    });
+  }
+
   // Pool metadata value editing method
   editPoolColumnValue(pool: SamplePool, column: any): void {
     const table = this.table();

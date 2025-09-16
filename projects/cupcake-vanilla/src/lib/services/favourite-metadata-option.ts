@@ -30,41 +30,41 @@ export class FavouriteMetadataOptionService extends BaseApiService {
    */
   getFavouriteMetadataOptions(params?: FavouriteMetadataOptionQueryParams): Observable<PaginatedResponse<FavouriteMetadataOption>> {
     const httpParams = this.buildHttpParams(params);
-    return this.get<PaginatedResponse<FavouriteMetadataOption>>(`${this.apiUrl}/favourite-metadata-options/`, { params: httpParams });
+    return this.get<PaginatedResponse<FavouriteMetadataOption>>(`${this.apiUrl}/favourite-options/`, { params: httpParams });
   }
 
   /**
    * Get a single favourite metadata option by ID
    */
   getFavouriteMetadataOption(id: number): Observable<FavouriteMetadataOption> {
-    return this.get<FavouriteMetadataOption>(`${this.apiUrl}/favourite-metadata-options/${id}/`);
+    return this.get<FavouriteMetadataOption>(`${this.apiUrl}/favourite-options/${id}/`);
   }
 
   /**
    * Create a new favourite metadata option
    */
   createFavouriteMetadataOption(option: FavouriteMetadataOptionCreateRequest): Observable<FavouriteMetadataOption> {
-    return this.post<FavouriteMetadataOption>(`${this.apiUrl}/favourite-metadata-options/`, option);
+    return this.post<FavouriteMetadataOption>(`${this.apiUrl}/favourite-options/`, option);
   }
 
   /**
    * Update an existing favourite metadata option
    */
   updateFavouriteMetadataOption(id: number, option: FavouriteMetadataOptionUpdateRequest): Observable<FavouriteMetadataOption> {
-    return this.put<FavouriteMetadataOption>(`${this.apiUrl}/favourite-metadata-options/${id}/`, option);
+    return this.put<FavouriteMetadataOption>(`${this.apiUrl}/favourite-options/${id}/`, option);
   }
 
   /**
    * Partially update a favourite metadata option
    */
   patchFavouriteMetadataOption(id: number, option: Partial<FavouriteMetadataOptionUpdateRequest>): Observable<FavouriteMetadataOption> {
-    return this.patch<FavouriteMetadataOption>(`${this.apiUrl}/favourite-metadata-options/${id}/`, option);
+    return this.patch<FavouriteMetadataOption>(`${this.apiUrl}/favourite-options/${id}/`, option);
   }
 
   /**
    * Delete a favourite metadata option
    */
   deleteFavouriteMetadataOption(id: number): Observable<void> {
-    return this.delete<void>(`${this.apiUrl}/favourite-metadata-options/${id}/`);
+    return this.delete<void>(`${this.apiUrl}/favourite-options/${id}/`);
   }
 }

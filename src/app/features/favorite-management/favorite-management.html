@@ -365,140 +365,50 @@
             </div>
 
             <div class="mb-3">
-              <div class="d-flex justify-content-between align-items-center mb-2">
-                <label for="favValue" class="form-label mb-0">
-                  Value
-                  @if (editForm.get('template_id')?.value && !specialSyntaxType()) {
-                    <small class="text-success ms-1">
-                      <i class="bi bi-search"></i> Autocomplete Available
-                    </small>
-                  }
-                  @if (specialSyntaxType()) {
-                    <span class="badge bg-info ms-2">
-                      <i class="bi bi-gear me-1"></i>{{ getSpecialInputTitle() }}
-                    </span>
-                  }
-                </label>
-
-                @if (specialSyntaxType()) {
-                  <div class="form-check form-switch">
-                    <input
-                      class="form-check-input"
-                      type="checkbox"
-                      id="specialInputToggle"
-                      [checked]="showSpecialInput()"
-                      (change)="toggleSpecialInput()">
-                    <label class="form-check-label small text-muted" for="specialInputToggle">
-                      Enhanced Editor
-                    </label>
-                  </div>
+              <label for="favValue" class="form-label">
+                Value
+                @if (editForm.get('templateId')?.value) {
+                  <span class="badge bg-success ms-2">
+                    <i class="bi bi-search me-1"></i>Advanced Editor Available
+                  </span>
                 }
-              </div>
+                @if (specialSyntaxType()) {
+                  <span class="badge bg-info ms-2">
+                    <i class="bi bi-gear me-1"></i>{{ getSpecialInputTitle() }}
+                  </span>
+                }
+              </label>
 
-              <!-- Special SDRF Syntax Input Components -->
-              @if (showSpecialInput() && specialSyntaxType()) {
-                <div class="border rounded p-3 mb-3 bg-body-secondary">
-                  <div class="mb-2">
-                    <small class="text-muted fw-semibold">
-                      <i class="bi bi-gear me-1"></i>{{ getSpecialInputTitle() }}
-                    </small>
-                  </div>
-
-                  @switch (specialSyntaxType()) {
-                    @case ('age') {
-                      <app-sdrf-age-input
-                        [value]="specialInputValue()"
-                        (valueChange)="onSpecialInputChange($event)">
-                      </app-sdrf-age-input>
-                    }
-                    @case ('modification') {
-                      <app-sdrf-modification-input
-                        [value]="specialInputValue()"
-                        [templateId]="editForm.get('template_id')?.value"
-                        (valueChange)="onSpecialInputChange($event)">
-                      </app-sdrf-modification-input>
-                    }
-                    @case ('cleavage') {
-                      <app-sdrf-cleavage-input
-                        [value]="specialInputValue()"
-                        [templateId]="editForm.get('template_id')?.value"
-                        (valueChange)="onSpecialInputChange($event)">
-                      </app-sdrf-cleavage-input>
-                    }
-                    @case ('spiked_compound') {
-                      <app-sdrf-spiked-compound-input
-                        [value]="specialInputValue()"
-                        (valueChange)="onSpecialInputChange($event)">
-                      </app-sdrf-spiked-compound-input>
-                    }
-                  }
-
-                  <div class="form-text mt-2">
-                    <i class="bi bi-info-circle me-1"></i>
-                    Use the enhanced editor for structured input, or toggle off for manual text entry.
-                  </div>
-                </div>
-              }
-
-              @if (editForm.get('template_id')?.value && !showSpecialInput()) {
-                <!-- Search type selection for ontology -->
-                <div class="mb-2">
-                  <small class="text-muted d-block mb-1">Search Mode:</small>
-                  <div class="btn-group btn-group-sm" role="group">
-                    <button
-                      type="button"
-                      class="btn"
-                      [class]="searchType() === 'icontains' ? 'btn-primary' : 'btn-outline-primary'"
-                      (click)="onSearchTypeChange('icontains')">
-                      <i class="bi bi-search me-1"></i>Contains
-                    </button>
-                    <button
-                      type="button"
-                      class="btn"
-                      [class]="searchType() === 'istartswith' ? 'btn-primary' : 'btn-outline-primary'"
-                      (click)="onSearchTypeChange('istartswith')">
-                      <i class="bi bi-arrow-right me-1"></i>Starts with
-                    </button>
-                  </div>
-                </div>
-
-                <!-- Use input with typeahead when template is selected -->
+              <div class="input-group">
                 <input
                   type="text"
                   class="form-control"
                   id="favValue"
                   formControlName="value"
                   [class.is-invalid]="editForm.get('value')?.invalid && editForm.get('value')?.touched"
-                  placeholder="Type to search ontology suggestions..."
-                  [ngbTypeahead]="searchTemplateValues"
-                  [resultFormatter]="formatValueSuggestion"
-                  [inputFormatter]="inputValueFormatter"
-                  (selectItem)="onValueSuggestionSelected($event)"
-                  [editable]="true"
-                  [showHint]="true"
-                  [focusFirst]="false"
-                  container="body">
-                <div class="form-text">
+                  placeholder="Enter favorite value"
+                  readonly>
+                <button
+                  type="button"
+                  class="btn btn-outline-primary"
+                  (click)="openValueEditModal()"
+                  title="Open advanced value editor">
+                  <i class="bi bi-pencil me-1"></i>Edit
+                </button>
+              </div>
+
+              <div class="form-text">
+                @if (editForm.get('templateId')?.value) {
                   <i class="bi bi-info-circle me-1"></i>
-                  Search {{ searchType() === 'icontains' ? 'contains' : 'starts with' }} for ontology suggestions
-                </div>
-              } @else if (!showSpecialInput()) {
-                <!-- Use textarea when no template is selected or special input is disabled -->
-                <textarea
-                  class="form-control"
-                  id="favValue"
-                  formControlName="value"
-                  rows="3"
-                  [class.is-invalid]="editForm.get('value')?.invalid && editForm.get('value')?.touched"
-                  placeholder="The favorite value"></textarea>
-                <div class="form-text">
-                  @if (specialSyntaxType()) {
-                    Manual text entry mode. Use the Enhanced Editor toggle for structured {{ specialSyntaxType() }} input.
-                  } @else {
-                    Select a column name and type to enable value suggestions
-                  }
-                </div>
-              }
+                  Click "Edit" to use advanced value editor with ontology autocomplete suggestions
+                } @else if (specialSyntaxType()) {
+                  <i class="bi bi-info-circle me-1"></i>
+                  Click "Edit" to use enhanced {{ specialSyntaxType() }} editor for structured input
+                } @else {
+                  <i class="bi bi-info-circle me-1"></i>
+                  Click "Edit" to set the value (select column name and type for smart suggestions)
+                }
+              </div>
               <div class="invalid-feedback">
                 @if (editForm.get('value')?.errors?.['maxlength']) {
                   Value must be less than 500 characters
