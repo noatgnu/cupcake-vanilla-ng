@@ -50,17 +50,14 @@ export class ChunkedUploadService extends BaseApiService {
       ? `${this.apiUrl}/chunked-upload/${uploadId}/`
       : `${this.apiUrl}/chunked-upload/`;
 
-    // Add Content-Range header for chunked uploads, but preserve FormData Content-Type
     const httpOptions: any = {};
     if (offset !== undefined && totalSize !== undefined) {
       const chunkEnd = offset + request.file.size - 1;
       httpOptions.headers = {
         'Content-Range': `bytes ${offset}-${chunkEnd}/${totalSize}`
       };
-      // Don't set Content-Type - let browser handle multipart/form-data boundary
     }
 
-    // Use POST for first chunk (creates and completes), PUT for subsequent chunks
     if (uploadId) {
       return this.put<ChunkedUploadResponse>(url, formData, httpOptions);
     } else {
@@ -109,7 +106,6 @@ export class ChunkedUploadService extends BaseApiService {
     }
     const hasher = new jsSHA('SHA-256', 'ARRAYBUFFER');
     const arrayBufferPromise = request.file.arrayBuffer();
-    // Calculate SHA-256 hash of the entire file
     arrayBufferPromise.then(arrayBuffer => {
       hasher.update(arrayBuffer);
     })
@@ -162,7 +158,6 @@ export class ChunkedUploadService extends BaseApiService {
       let offset = 0;
       const totalSize = file.size;
       const sha256 = new jsSHA('SHA-256', 'ARRAYBUFFER');
-      // if file size is smaller than chunk size, finish immediately with the whole file
       if (totalSize <= chunkSize) {
         this.completeUploadWithFile({
           file: file,
@@ -181,7 +176,6 @@ export class ChunkedUploadService extends BaseApiService {
       }
       const uploadNextChunk = () => {
         if (offset >= totalSize) {
-          // Upload complete, finalize with calculated hash
           if (uploadId) {
             const calculatedHash = sha256.getHash('HEX');
             this.completeUpload(uploadId, {
@@ -206,7 +200,6 @@ export class ChunkedUploadService extends BaseApiService {
         const chunk = file.slice(offset, end);
         const chunkFile = new File([chunk], file.name, { type: file.type });
 
-        // Add chunk to hash calculation
         chunk.arrayBuffer().then(arrayBuffer => {
           sha256.update(arrayBuffer);
 
@@ -222,13 +215,11 @@ export class ChunkedUploadService extends BaseApiService {
               uploadId = response.id;
               offset = response.offset;
 
-              // Report progress
               const progress = (offset / totalSize) * 100;
               if (options?.onProgress) {
                 options.onProgress(progress);
               }
 
-              // Upload next chunk
               uploadNextChunk();
             },
             error: (error) => subscriber.error(error)

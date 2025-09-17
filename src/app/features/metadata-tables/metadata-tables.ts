@@ -32,7 +32,6 @@ export class MetadataTablesComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   searchForm: FormGroup;
 
-  // Signals for reactive state management
   private searchParams = signal({
     search: '',
     labGroupId: null as number | null,
@@ -49,7 +48,6 @@ export class MetadataTablesComponent implements OnInit, OnDestroy {
     offset: 0
   });
 
-  // State signals
   isLoading = signal(false);
   selectedLabGroup = signal<LabGroup | null>(null);
   currentPage = signal(1);
@@ -60,22 +58,18 @@ export class MetadataTablesComponent implements OnInit, OnDestroy {
   labGroupsPageSize = signal(10);
   labGroupsTotalItems = signal(0);
 
-  // Data signals
   tablesData = signal<MetadataTableQueryResponse>({ count: 0, results: [] });
   labGroupsData = signal<LabGroupQueryResponse>({ count: 0, results: [] });
 
-  // Bulk selection signals
   selectedTables = signal<Set<number>>(new Set());
   selectAllChecked = signal<boolean>(false);
   selectAllIndeterminate = signal<boolean>(false);
 
-  // User and permission state
   currentUser = signal<User | null>(null);
   isStaff = computed(() => this.currentUser()?.isStaff === true);
   showSharedTables = signal(false);
   showAdminView = signal(false);
 
-  // Computed values
   hasTables = computed(() => this.tablesData().results.length > 0);
   hasLabGroups = computed(() => this.labGroupsData().results.length > 0);
   showTablesPagination = computed(() => this.tablesData().count > this.pageSize());
@@ -102,13 +96,11 @@ export class MetadataTablesComponent implements OnInit, OnDestroy {
       adminView: [false]
     });
 
-    // Effect to automatically reload tables when search params change
     effect(() => {
       const params = this.searchParams();
       this.loadTablesWithParams(params);
     });
 
-    // Effect to update search params when permission toggles change
     effect(() => {
       const showShared = this.showSharedTables();
       const adminView = this.showAdminView();
@@ -121,13 +113,11 @@ export class MetadataTablesComponent implements OnInit, OnDestroy {
       }));
     });
 
-    // Effect to automatically reload lab groups when params change
     effect(() => {
       const params = this.labGroupParams();
       this.loadLabGroupsWithParams(params);
     });
 
-    // Effect to update select all state when tables change
     effect(() => {
       this.tablesData(); // React to changes
       this.updateSelectAllState();
@@ -142,11 +132,9 @@ export class MetadataTablesComponent implements OnInit, OnDestroy {
   }
 
   private initializeUser(): void {
-    // Get current user and set up user state
     const user = this.authService.getCurrentUser();
     this.currentUser.set(user);
 
-    // Subscribe to user changes
     this.authService.currentUser$.pipe(
       takeUntil(this.destroy$)
     ).subscribe(user => {
@@ -160,7 +148,6 @@ export class MetadataTablesComponent implements OnInit, OnDestroy {
   }
 
   private setupAsyncTaskRefreshListener(): void {
-    // Listen for metadata table refresh events when import tasks complete
     this.asyncTaskService.metadataTableRefresh$.pipe(
       takeUntil(this.destroy$)
     ).subscribe((tableId: number) => {
@@ -171,13 +158,11 @@ export class MetadataTablesComponent implements OnInit, OnDestroy {
   }
 
   private loadInitialData() {
-    // Load lab groups first
     this.labGroupParams.set({
       limit: this.labGroupsPageSize(),
       offset: 0
     });
 
-    // Load tables
     this.searchParams.set({
       search: '',
       labGroupId: null,
@@ -337,14 +322,12 @@ export class MetadataTablesComponent implements OnInit, OnDestroy {
     const visibleTables = this.tablesData().results;
 
     if (isChecked) {
-      // Select all visible tables
       const newSelection = new Set(currentSelected);
       visibleTables.forEach(table => {
         if (table.id) newSelection.add(table.id);
       });
       this.selectedTables.set(newSelection);
     } else {
-      // Deselect all visible tables
       const newSelection = new Set(currentSelected);
       visibleTables.forEach(table => {
         if (table.id) newSelection.delete(table.id);

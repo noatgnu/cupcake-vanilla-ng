@@ -69,35 +69,24 @@ export class AuthService {
     if (token && !this.isTokenExpired(token)) {
       this.isAuthenticatedSubject.next(true);
       
-      // Try to get basic user info from token first (for immediate display)
       const user = this.getUserFromToken();
       if (user) {
         this.currentUserSubject.next(user);
       }
-      
-      // Then fetch complete user profile from backend to ensure we have latest data
+
       this.fetchUserProfile().subscribe({
         next: (fullUser) => {
-          // Profile fetched successfully
         },
         error: (error) => {
-          // Don't clear auth state on profile fetch failure - user might still be authenticated
         }
       });
     } else if (refreshToken && token && this.isTokenExpired(token)) {
-      // Token is expired but we have refresh token
-      // Don't try to refresh here - let the interceptor handle it when needed
-      // Just clear the auth state for now but keep the tokens
       this.isAuthenticatedSubject.next(false);
       this.currentUserSubject.next(null);
     } else if (refreshToken && !token) {
-      // We have refresh token but no access token
-      // Keep the refresh token, clear auth state
       this.isAuthenticatedSubject.next(false);
       this.currentUserSubject.next(null);
     } else {
-      // No tokens at all, just set auth state to false without clearing
-      // (tokens might be missing for other reasons, let auth guard handle redirect)
       this.isAuthenticatedSubject.next(false);
       this.currentUserSubject.next(null);
     }
@@ -249,25 +238,20 @@ export class AuthService {
       tap((response) => {
         localStorage.setItem('ccvAccessToken', response.access);
         this.isAuthenticatedSubject.next(true);
-        
-        // Try to get basic user info from new token first (for immediate display)
+
         const user = this.getUserFromToken();
         if (user) {
           this.currentUserSubject.next(user);
         }
-        
-        // Fetch complete user profile from backend after successful token refresh
+
         this.fetchUserProfile().subscribe({
           next: (fullUser) => {
-            // Profile fetched successfully
           },
           error: (error) => {
-            // Failed to fetch user profile after token refresh
           }
         });
       }),
       catchError((error) => {
-        // Refresh failed, clear all auth data
         this.clearAuthData();
         return throwError(() => error);
       })
@@ -286,14 +270,11 @@ export class AuthService {
       tap(response => {
         localStorage.setItem('ccvAccessToken', response.access);
         this.isAuthenticatedSubject.next(true);
-        
-        // Fetch complete user profile from backend after successful token refresh
+
         this.fetchUserProfile().subscribe({
           next: (fullUser) => {
-            // Profile fetched successfully
           },
           error: (error) => {
-            // Failed to fetch user profile after token refresh
           }
         });
       })
@@ -304,20 +285,16 @@ export class AuthService {
     const token = this.getAccessToken();
     if (token && !this.isTokenExpired(token)) {
       this.isAuthenticatedSubject.next(true);
-      
-      // Try to get basic user info from new token first (for immediate display)
+
       const user = this.getUserFromToken();
       if (user) {
         this.currentUserSubject.next(user);
       }
-      
-      // Fetch complete user profile from backend after token refresh
+
       this.fetchUserProfile().subscribe({
         next: (fullUser) => {
-          // Profile fetched successfully
         },
         error: (error) => {
-          // Don't clear auth state on profile fetch failure - token refresh was successful
         }
       });
     }

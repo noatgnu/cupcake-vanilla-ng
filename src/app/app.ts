@@ -30,13 +30,10 @@ export class App implements OnInit {
   private asyncTaskService = inject(AsyncTaskService);
   private toastService = inject(ToastService);
 
-  // App initialization state
   private appInitializedSubject = new BehaviorSubject<boolean>(false);
   public appInitialized$ = this.appInitializedSubject.asObservable();
 
-  // React to theme changes to adjust colors for dark mode
   private themeEffect = effect(() => {
-    // This effect will run whenever the theme changes
     this.themeService.isDark();
     this.siteConfigService.getCurrentConfig().subscribe(currentConfig => {
       if (currentConfig) {
@@ -54,22 +51,18 @@ export class App implements OnInit {
    */
   private async initializeApp(): Promise<void> {
     try {
-      // Subscribe to site config changes and update CSS custom properties
       this.siteConfigService.config$.subscribe(config => {
         this.updatePrimaryColorTheme(config.primaryColor || '#1976d2');
       });
 
-      // Initialize async task service and WebSocket connection
       if (environment.features?.asyncTasks) {
         console.log('Initializing async task service with WebSocket connection');
         this.asyncTaskService.startRealtimeUpdates();
       }
 
-      // Mark app as initialized
       this.appInitializedSubject.next(true);
     } catch (error) {
       console.error('Failed to initialize app:', error);
-      // Even if there's an error, mark as initialized to show the app
       this.appInitializedSubject.next(true);
     }
   }
@@ -82,20 +75,15 @@ export class App implements OnInit {
     const root = this.document.documentElement;
     const isDark = this.themeService.isDark();
 
-    // Adjust primary color for dark mode - make it lighter for better contrast
     let adjustedPrimary = primaryColor;
     if (isDark) {
       adjustedPrimary = this.adjustColorForDarkMode(primaryColor);
     }
 
-    // Convert hex to RGB values for rgba usage
     const rgbValues = this.hexToRgb(adjustedPrimary);
-
-    // Calculate darker and lighter variants
     const darkerColor = this.adjustColorBrightness(adjustedPrimary, isDark ? -15 : -20);
     const lighterColor = this.adjustColorBrightness(adjustedPrimary, isDark ? 15 : 20);
 
-    // Update CSS custom properties
     root.style.setProperty('--cupcake-primary', adjustedPrimary);
     root.style.setProperty('--cupcake-primary-rgb', rgbValues);
     root.style.setProperty('--cupcake-primary-dark', darkerColor);
@@ -107,7 +95,7 @@ export class App implements OnInit {
    */
   private hexToRgb(hex: string): string {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    if (!result) return '25, 118, 210'; // fallback
+    if (!result) return '25, 118, 210';
 
     const r = parseInt(result[1], 16);
     const g = parseInt(result[2], 16);
@@ -138,17 +126,13 @@ export class App implements OnInit {
     const rgb = this.hexToRgb(hex).split(', ').map(Number);
     const [r, g, b] = rgb;
 
-    // Calculate luminance to determine if color is too dark
     const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
 
-    // If the color is too dark (low luminance), make it lighter for dark mode
     if (luminance < 0.5) {
-      // Increase brightness by 40-60% depending on how dark it is
       const brightnessIncrease = Math.max(40, 80 * (0.5 - luminance));
       return this.adjustColorBrightness(hex, brightnessIncrease);
     }
 
-    // If color is already bright enough, use it as-is or make it slightly lighter
     return this.adjustColorBrightness(hex, 10);
   }
 

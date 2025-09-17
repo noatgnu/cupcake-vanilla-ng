@@ -26,10 +26,8 @@ export class RegisterComponent implements OnInit {
   error = signal<string | null>(null);
   success = signal<string | null>(null);
   
-  // Observable for site configuration
   siteConfig$ = this.siteConfigService.config$;
-  
-  // Registration status signals
+
   registrationStatus = signal<RegistrationStatus | null>(null);
   registrationEnabled = signal(false);
 
@@ -47,10 +45,8 @@ export class RegisterComponent implements OnInit {
   }
 
   ngOnInit() {
-    // Check registration status
     this.checkRegistrationStatus();
-    
-    // Get return URL from query params
+
     this.route.queryParams.subscribe(params => {
       this.returnUrl = params['returnUrl'] || '/login';
     });
@@ -110,7 +106,6 @@ export class RegisterComponent implements OnInit {
           this.loading.set(false);
           this.success.set(response.message || 'Registration successful! You can now log in with your credentials.');
           
-          // Redirect to login after successful registration
           setTimeout(() => {
             this.router.navigate(['/login'], {
               queryParams: { 
@@ -124,7 +119,6 @@ export class RegisterComponent implements OnInit {
         error: (error) => {
           this.loading.set(false);
           
-          // Handle specific validation errors
           if (error.error && typeof error.error === 'object') {
             const errors = [];
             for (const [field, messages] of Object.entries(error.error)) {

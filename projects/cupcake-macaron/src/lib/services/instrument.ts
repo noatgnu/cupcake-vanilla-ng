@@ -87,7 +87,6 @@ export class InstrumentService extends BaseApiService {
    * Prepare instrument data for API submission, handling file uploads
    */
   private prepareInstrumentData(instrument: any): FormData | any {
-    // If there's a file (image), use FormData
     if (instrument.image && instrument.image instanceof File) {
       const formData = new FormData();
       
@@ -103,8 +102,7 @@ export class InstrumentService extends BaseApiService {
       
       return formData;
     }
-    
-    // Otherwise, return regular JSON
+
     return instrument;
   }
 
@@ -170,7 +168,6 @@ export class InstrumentService extends BaseApiService {
     const transformed: any = {};
     
     Object.entries(data).forEach(([key, value]) => {
-      // Convert camelCase to snake_case
       const snakeKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
       transformed[snakeKey] = value;
     });

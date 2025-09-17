@@ -27,11 +27,9 @@ export class LoginComponent implements OnInit {
   loading = signal(false);
   error = signal<string | null>(null);
   success = signal<string | null>(null);
-  
-  // Observable for site configuration
+
   siteConfig$ = this.siteConfigService.config$;
-  
-  // Auth configuration signals
+
   authConfig = signal<AuthConfig | null>(null);
   registrationStatus = signal<RegistrationStatus | null>(null);
 
@@ -45,21 +43,17 @@ export class LoginComponent implements OnInit {
   private returnUrl: string = '/';
 
   ngOnInit() {
-    // Load auth configuration
     this.loadAuthConfig();
 
-    // Get return URL from query params
     this.route.queryParams.subscribe(params => {
       this.returnUrl = this.cleanReturnUrl(params['returnUrl']) || '/';
 
-      // Check for ORCID callback parameters
       if (params['code'] && params['state']) {
         this.handleORCIDCallback(params['code'], params['state']);
       } else if (params['error']) {
         this.error.set(`ORCID authentication failed: ${params['error']}`);
       }
 
-      // Check for registration success message
       if (params['registered'] === 'true') {
         this.success.set('Registration successful! You can now log in with your credentials.');
         if (params['username']) {
@@ -68,7 +62,6 @@ export class LoginComponent implements OnInit {
       }
     });
 
-    // Subscribe to authentication state changes to handle token refresh scenarios
     this.authService.isAuthenticated$.subscribe(isAuthenticated => {
       if (isAuthenticated) {
         this.router.navigate([this.returnUrl]);
@@ -85,24 +78,17 @@ export class LoginComponent implements OnInit {
     try {
       const url = new URL(returnUrl, window.location.origin);
 
-      // If it's a login URL, extract the original returnUrl from its query params
       if (url.pathname === '/login') {
         const innerReturnUrl = url.searchParams.get('returnUrl');
         if (innerReturnUrl) {
-          // Recursively clean in case of multiple nested login URLs
           return this.cleanReturnUrl(innerReturnUrl);
         }
-        // If login URL has no returnUrl, redirect to home
         return '/';
       }
 
-      // Return the pathname with search params (but without origin)
       return url.pathname + url.search;
     } catch (error) {
-      // If URL parsing fails, treat as a relative path
-      // Remove any login paths to prevent loops
       if (returnUrl.startsWith('/login')) {
-        // Try to extract returnUrl parameter
         const urlParams = new URLSearchParams(returnUrl.split('?')[1]);
         const innerReturnUrl = urlParams.get('returnUrl');
         if (innerReturnUrl) {
@@ -124,7 +110,6 @@ export class LoginComponent implements OnInit {
       },
       error: (error) => {
         console.warn('Could not load auth config:', error);
-        // Use defaults if config loading fails
         this.authConfig.set({
           registrationEnabled: false,
           orcidLoginEnabled: false,

@@ -37,7 +37,6 @@ export class BaseApiService {
 
     const transformed: any = {};
     Object.entries(obj).forEach(([key, value]) => {
-      // Convert camelCase to snake_case
       const snakeKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
       transformed[snakeKey] = this.transformToSnakeCase(value);
     });
@@ -59,7 +58,6 @@ export class BaseApiService {
 
     const transformed: any = {};
     Object.entries(obj).forEach(([key, value]) => {
-      // Convert snake_case to camelCase
       const camelKey = key.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
       transformed[camelKey] = this.transformToCamelCase(value);
     });
@@ -124,7 +122,6 @@ export class BaseApiService {
     let httpParams = new HttpParams();
     
     if (params) {
-      // Transform to snake_case before creating params
       const transformedParams = this.transformToSnakeCase(params);
       Object.entries(transformedParams).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {

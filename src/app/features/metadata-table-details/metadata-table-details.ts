@@ -29,10 +29,7 @@ export class MetadataTableDetailsComponent implements OnInit, OnDestroy {
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
   @ViewChild('excelInput') excelInput!: ElementRef<HTMLInputElement>;
 
-  // Expose Math to template
   Math = Math;
-
-  // Column filter methods
   onColumnFilterChange(value: string): void {
     this.columnFilter.set(value);
   }
@@ -50,16 +47,13 @@ export class MetadataTableDetailsComponent implements OnInit, OnDestroy {
     return columns.filter(col => col && col.name).length;
   }
 
-  // Sorting methods
   sortBy(field: string): void {
     const currentField = this.sortField();
     const currentDirection = this.sortDirection();
 
     if (currentField === field) {
-      // Toggle direction if same field
       this.sortDirection.set(currentDirection === 'asc' ? 'desc' : 'asc');
     } else {
-      // New field, default to ascending
       this.sortField.set(field);
       this.sortDirection.set('asc');
     }
@@ -70,7 +64,7 @@ export class MetadataTableDetailsComponent implements OnInit, OnDestroy {
     const currentDirection = this.sortDirection();
 
     if (currentField !== field) {
-      return 'bi-arrow-down-up'; // Default unsorted icon
+      return 'bi-arrow-down-up';
     }
 
     return currentDirection === 'asc' ? 'bi-sort-alpha-down' : 'bi-sort-alpha-up';
@@ -80,7 +74,6 @@ export class MetadataTableDetailsComponent implements OnInit, OnDestroy {
     return this.sortField() === field;
   }
 
-  // State signals
   isLoading = signal(false);
   table = signal<MetadataTable | null>(null);
   tableId = signal<number | null>(null);
@@ -89,11 +82,8 @@ export class MetadataTableDetailsComponent implements OnInit, OnDestroy {
   pageSize = signal(10);
   columnFilter = signal('');
 
-  // Sorting
   sortField = signal<string>('');
   sortDirection = signal<'asc' | 'desc'>('asc');
-
-  // Computed values
   hasColumns = computed(() => {
     const table = this.table();
     return table?.columns && table.columns.length > 0;
@@ -119,18 +109,16 @@ export class MetadataTableDetailsComponent implements OnInit, OnDestroy {
     return [...pools].sort((a, b) => a.poolName.localeCompare(b.poolName));
   });
 
-  // Table data generation
   tableRows = computed(() => {
     const table = this.table();
     if (!table || !this.hasColumns()) return [];
 
     const rows: any[] = [];
     for (let i = 0; i < table.sampleCount; i++) {
-      const sampleIndex = i + 1; // 1-based sample index
+      const sampleIndex = i + 1;
       const row: any = { _sampleIndex: sampleIndex };
 
       this.sortedColumns().forEach(column => {
-        // Use column ID as key to avoid name collisions
         const value = this.getSampleColumnValue(column, sampleIndex);
         row[`col_${column.id}`] = value;
       });
@@ -141,7 +129,6 @@ export class MetadataTableDetailsComponent implements OnInit, OnDestroy {
     return rows;
   });
 
-  // Pool table data - separate table for pools
   poolTableRows = computed(() => {
     const table = this.table();
     if (!table || !this.hasPools() || !this.hasColumns()) return [];
@@ -154,12 +141,9 @@ export class MetadataTableDetailsComponent implements OnInit, OnDestroy {
         _poolData: pool
       };
 
-      // For each column, get the value from the pool's metadataColumns
       this.sortedColumns().forEach(column => {
         let value = '';
 
-        // Find the corresponding metadata column in this pool by matching column IDs if available
-        // or fall back to name matching for compatibility
         const poolColumn = pool.metadataColumns?.find((pc: any) =>
           (pc.id && column.id && pc.id === column.id) || pc.name === column.name
         );
@@ -167,7 +151,6 @@ export class MetadataTableDetailsComponent implements OnInit, OnDestroy {
           value = poolColumn.value || '';
         }
 
-        // Use column ID as key to avoid name collisions
         row[`col_${column.id}`] = value;
       });
 
@@ -177,7 +160,6 @@ export class MetadataTableDetailsComponent implements OnInit, OnDestroy {
     return rows;
   });
 
-  // Paginated table data (only for samples, pools shown separately)
   paginatedRows = computed(() => {
     const rows = this.tableRows();
     const page = this.currentPage();
@@ -229,7 +211,6 @@ export class MetadataTableDetailsComponent implements OnInit, OnDestroy {
   }
 
   private setupAsyncTaskRefreshListener(tableId: number): void {
-    // Listen for metadata table refresh events when import tasks complete for this specific table
     this.asyncTaskService.metadataTableRefresh$.pipe(
       takeUntil(this.destroy$)
     ).subscribe((refreshedTableId: number) => {

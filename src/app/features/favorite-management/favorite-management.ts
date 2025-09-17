@@ -35,15 +35,12 @@ import { MetadataValueEditModal, MetadataValueEditConfig } from '../../shared/co
 })
 export class FavoriteManagementComponent implements OnInit {
 
-  // Expose Math to template
   Math = Math;
 
-  // State management
   isLoading = signal(false);
   favorites = signal<FavouriteMetadataOption[]>([]);
-  totalFavoritesCount = signal(0); // Total count from backend
+  totalFavoritesCount = signal(0);
 
-  // Search filter signals - these will be updated when form changes
   searchTerm = signal('');
   scopeFilter = signal('');
   labGroupFilter = signal('');
@@ -56,13 +53,11 @@ export class FavoriteManagementComponent implements OnInit {
     const columnTypeFilter = this.columnTypeFilter();
 
     return this.favorites().filter(fav => {
-      // Search filter
       const matchesSearch = !searchTerm ||
         fav.name.toLowerCase().includes(searchTerm) ||
         fav.value.toLowerCase().includes(searchTerm) ||
         (fav.displayValue?.toLowerCase().includes(searchTerm) ?? false);
 
-      // Scope filter
       let matchesScope = true;
       if (scopeFilter) {
         if (scopeFilter === 'personal') {
@@ -74,22 +69,18 @@ export class FavoriteManagementComponent implements OnInit {
         }
       }
 
-      // Specific lab group filter
       const matchesLabGroup = !labGroupFilter ||
         (fav.labGroup && fav.labGroup.toString() === labGroupFilter);
 
-      // Column type filter
       const matchesType = !columnTypeFilter || fav.type.includes(columnTypeFilter);
 
       return matchesSearch && matchesScope && matchesLabGroup && matchesType;
     });
   });
 
-  // Pagination (server-side)
   currentPage = signal(1);
   pageSize = signal(10);
 
-  // With server-side pagination, filtered favorites are what we get from the server
   paginatedFavorites = computed(() => this.filteredFavorites());
 
   totalPages = computed(() => {
@@ -98,20 +89,17 @@ export class FavoriteManagementComponent implements OnInit {
     return Math.ceil(totalCount / size);
   });
 
-  // Forms
   searchForm: FormGroup;
   editForm: FormGroup;
   isEditMode = signal(false);
   editingFavorite = signal<FavouriteMetadataOption | null>(null);
   showEditModal = signal(false);
 
-  // SDRF special syntax support
   private sdrfSyntaxService = inject(SdrfSyntaxService);
   specialSyntaxType = signal<SyntaxType | null>(null);
   showSpecialInput = signal(false);
   specialInputValue = signal('');
 
-  // User permissions
   currentUser = signal<User | null>(null);
   isAdmin = computed(() => {
     const user = this.currentUser();
@@ -121,18 +109,14 @@ export class FavoriteManagementComponent implements OnInit {
   userLabGroups = signal<LabGroup[]>([]);
   userLabGroupsLoaded = signal(false);
 
-  // Ontology value storage (decoupled from display)
   selectedOntologyValue: string | null = null;
 
-  // Lab groups for filtering
   availableLabGroups = signal<{id: number, name: string}[]>([]);
-  allLabGroups = signal<{id: number, name: string}[]>([]); // For typeahead search
+  allLabGroups = signal<{id: number, name: string}[]>([]);
 
-  // Column templates for typeahead
   availableColumnTemplates = signal<MetadataColumnTemplate[]>([]);
   columnTemplatesLoaded = signal(false);
 
-  // Column types for filtering
   columnTypes = [
     { value: '', label: 'All Types' },
     { value: ColumnType.CHARACTERISTICS, label: 'Characteristics' },
@@ -165,58 +149,46 @@ export class FavoriteManagementComponent implements OnInit {
       displayValue: ['', [Validators.maxLength(500)]],
       scope: ['personal', Validators.required],
       labGroupId: [null],
-      templateId: [null], // Store the selected template ID for value autocompletion
-      ontologyType: [''], // Store ontology type from template
-      enableTypeahead: [false] // Store whether typeahead is enabled
+      templateId: [null],
+      ontologyType: [''],
+      enableTypeahead: [false]
     });
 
-    // Watch for manual input changes (clear ontology value when user types)
     this.editForm.get('value')?.valueChanges.subscribe(value => {
-      // Only clear selectedOntologyValue if user is manually typing a different string
-      // Don't interfere with objects (typeahead suggestions) - let them be handled naturally
       if (typeof value === 'string' && value !== this.selectedOntologyValue) {
-        // User typed something different than the stored ontology value
         console.log('Manual input detected, clearing stored ontology value');
         this.selectedOntologyValue = null;
       }
-      // Objects from typeahead are handled by inputFormatter automatically
     });
   }
 
   ngOnInit() {
-    // Initialize user from auth service
     this.currentUser.set(this.authService.getCurrentUser());
 
-    // Subscribe to auth changes
+
     this.authService.currentUser$.subscribe(user => {
       this.currentUser.set(user);
       if (user) {
         this.loadUserLabGroups();
       } else {
-        // No user, just load favorites (only global ones will be accessible)
         this.loadFavorites();
       }
     });
 
-    // Load user's lab groups if user is already available
     if (this.currentUser()) {
       this.loadUserLabGroups();
     } else {
-      // No user, just load favorites (only global ones will be accessible)
       this.loadFavorites();
     }
 
     this.loadAvailableColumnTemplates();
 
-    // Watch for search form changes and update filter signals
     this.searchForm.valueChanges.subscribe(formValues => {
-      // Update filter signals to trigger computed recalculation
       this.searchTerm.set(formValues.search || '');
       this.scopeFilter.set(formValues.scope || '');
       this.labGroupFilter.set(formValues.labGroup || '');
       this.columnTypeFilter.set(formValues.columnType || '');
 
-      // Reset to first page on filter change
       this.currentPage.set(1);
     });
   }
@@ -224,7 +196,6 @@ export class FavoriteManagementComponent implements OnInit {
   loadFavorites(): void {
     this.isLoading.set(true);
 
-    // Load favorites with proper pagination
     const page = this.currentPage();
     const size = this.pageSize();
     const offset = (page - 1) * size;
@@ -250,12 +221,10 @@ export class FavoriteManagementComponent implements OnInit {
   canEditFavorite(favorite: FavouriteMetadataOption): boolean {
     const userId = this.currentUserId();
 
-    // User can edit their own favorites (handle type mismatch)
     if (favorite.user && userId && Number(favorite.user) === Number(userId)) {
       return true;
     }
 
-    // Admin can edit global favorites
     if (favorite.isGlobal && this.isAdmin()) {
       return true;
     }
@@ -271,7 +240,7 @@ export class FavoriteManagementComponent implements OnInit {
     this.isEditMode.set(false);
     this.editingFavorite.set(null);
     this.showEditModal.set(true);
-    this.selectedOntologyValue = null; // Clear stored ontology value
+    this.selectedOntologyValue = null;
     this.editForm.reset({
       name: '',
       type: '',
@@ -290,12 +259,10 @@ export class FavoriteManagementComponent implements OnInit {
     this.showEditModal.set(true);
     this.selectedOntologyValue = favorite.value; // Store the original value
 
-    // Determine scope
     let scope = 'personal';
     if (favorite.isGlobal) scope = 'global';
     else if (favorite.labGroup) scope = 'labGroup';
 
-    // Use stored columnTemplate ID if available, otherwise try to find matching template
     let templateId = favorite.columnTemplate || null;
 
     this.editForm.patchValue({
@@ -306,11 +273,10 @@ export class FavoriteManagementComponent implements OnInit {
       scope: scope,
       labGroupId: favorite.labGroup || null,
       templateId: templateId,
-      ontologyType: '', // Will be populated when template is found
-      enableTypeahead: false // Will be populated when template is found
+      ontologyType: '',
+      enableTypeahead: false
     });
 
-    // Check for special SDRF syntax and activate enhanced editor
     const syntaxType = this.sdrfSyntaxService.detectSpecialSyntax(
       favorite.name,
       favorite.type
@@ -326,7 +292,6 @@ export class FavoriteManagementComponent implements OnInit {
       this.specialInputValue.set('');
     }
 
-    // If no stored template ID, try to find one as fallback for future use
     if (!templateId) {
       this.findTemplatesForColumnName(favorite.name).then(templates => {
         const matchingTemplate = templates.find(t =>
@@ -348,12 +313,9 @@ export class FavoriteManagementComponent implements OnInit {
 
     const formValue = this.editForm.value;
 
-    // Use the stored ontology value if available, otherwise use form value
     let value = this.selectedOntologyValue || formValue.value;
 
-    // Ensure value is always a string, not an object
     if (typeof value === 'object' && value !== null) {
-      // If somehow an object got into the form, extract the value property
       value = value.value || value.displayName || String(value);
     }
 
@@ -376,7 +338,7 @@ export class FavoriteManagementComponent implements OnInit {
       next: (favorite) => {
         const action = this.isEditMode() ? 'updated' : 'created';
         this.toastService.success(`Favorite ${action} successfully!`);
-        this.loadFavorites(); // Reload data
+        this.loadFavorites();
         this.closeEditModal();
       },
       error: (error) => {
@@ -426,7 +388,6 @@ export class FavoriteManagementComponent implements OnInit {
 
   clearFilters(): void {
     this.searchForm.reset();
-    // Manually reset filter signals to ensure they're cleared
     this.searchTerm.set('');
     this.scopeFilter.set('');
     this.labGroupFilter.set('');
@@ -507,14 +468,12 @@ export class FavoriteManagementComponent implements OnInit {
     });
   }
 
-  // Typeahead for column names
   searchColumnNames: OperatorFunction<string, readonly string[]> = (text$: Observable<string>) =>
     text$.pipe(
       debounceTime(200),
       distinctUntilChanged(),
       switchMap(term => {
         if (term.length === 0) {
-          // Show initial cached results when no search term
           return of(this.getColumnNameSuggestions(''));
         } else if (term.length >= 1) {
           return this.metadataColumnTemplateService.getMetadataColumnTemplates({
@@ -540,7 +499,6 @@ export class FavoriteManagementComponent implements OnInit {
     const uniqueNames = [...new Set(templates.map(template => template.columnName))];
 
     if (!term) {
-      // Return initial list when no term
       return uniqueNames.sort().slice(0, 10);
     }
 
@@ -550,7 +508,6 @@ export class FavoriteManagementComponent implements OnInit {
       .slice(0, 10);
   }
 
-  // Typeahead for column types
   searchColumnTypes: OperatorFunction<string, readonly string[]> = (text$: Observable<string>) =>
     text$.pipe(
       debounceTime(200),
@@ -563,14 +520,12 @@ export class FavoriteManagementComponent implements OnInit {
     const selectedName = this.editForm.get('name')?.value;
     const templates = this.availableColumnTemplates();
 
-    // If a name is selected, filter types to those available for that name
     let availableTypes: string[];
     if (selectedName) {
       availableTypes = templates
         .filter(template => template.columnName === selectedName)
         .map(template => template.columnType);
     } else {
-      // Otherwise show all available types
       availableTypes = [...new Set(templates.map(template => template.columnType))];
     }
 
@@ -580,16 +535,13 @@ export class FavoriteManagementComponent implements OnInit {
       .slice(0, 10);
   }
 
-  // Handle column name selection to update type suggestions
   onColumnNameSelected(event: any): void {
     const selectedName = event.item || event;
     if (typeof selectedName === 'string') {
       this.editForm.patchValue({ name: selectedName });
 
-      // Find templates for this column name - check both cached and make API call if needed
       this.findTemplatesForColumnName(selectedName).then(templatesForName => {
         if (templatesForName.length > 0) {
-          // Use the first (most common) type as suggestion
           const currentType = this.editForm.get('type')?.value;
           const typesForName = templatesForName.map(template => template.columnType);
 
@@ -597,12 +549,11 @@ export class FavoriteManagementComponent implements OnInit {
             const firstTemplate = templatesForName[0];
             this.editForm.patchValue({
               type: firstTemplate.columnType,
-              templateId: firstTemplate.id, // Set template ID for value autocompletion
+              templateId: firstTemplate.id,
               ontologyType: firstTemplate.ontologyType || '',
               enableTypeahead: firstTemplate.enableTypeahead || false
             });
           } else {
-            // If current type is valid, find the template with matching name and type
             const matchingTemplate = templatesForName.find(t => t.columnType === currentType);
             if (matchingTemplate) {
               this.editForm.patchValue({
@@ -619,7 +570,6 @@ export class FavoriteManagementComponent implements OnInit {
             }
           }
         } else {
-          // Clear templateId if no matching templates found
           this.editForm.patchValue({
             templateId: null,
             ontologyType: '',
@@ -627,15 +577,12 @@ export class FavoriteManagementComponent implements OnInit {
           });
         }
 
-        // Check for special SDRF syntax after name selection
         this.checkForSpecialSyntax();
       });
     }
   }
 
-  // Helper method to find templates for a column name
   private async findTemplatesForColumnName(columnName: string): Promise<MetadataColumnTemplate[]> {
-    // First check cached templates
     const cached = this.availableColumnTemplates();
     const cachedMatches = cached.filter(template => template.columnName === columnName);
 
@@ -665,7 +612,6 @@ export class FavoriteManagementComponent implements OnInit {
     if (typeof selectedType === 'string') {
       this.editForm.patchValue({ type: selectedType });
 
-      // Find the template ID for the selected name and type combination
       const selectedName = this.editForm.get('name')?.value;
       if (selectedName) {
         const templates = this.availableColumnTemplates();
@@ -688,12 +634,10 @@ export class FavoriteManagementComponent implements OnInit {
         }
       }
 
-      // Check for special SDRF syntax after type selection
       this.checkForSpecialSyntax();
     }
   }
 
-  // Open value edit modal for advanced editing
   openValueEditModal(): void {
     const formValue = this.editForm.value;
 
@@ -715,11 +659,10 @@ export class FavoriteManagementComponent implements OnInit {
 
     modalRef.componentInstance.config = config;
     modalRef.componentInstance.valueSaved.subscribe((result: string | { value: string; sampleIndices: number[] }) => {
-      // Extract the actual value from the result
       const newValue = typeof result === 'string' ? result : result.value;
       this.editForm.get('value')?.setValue(newValue);
       this.editForm.get('value')?.markAsTouched();
-      this.selectedOntologyValue = newValue; // Store the selected value
+      this.selectedOntologyValue = newValue;
       modalRef.componentInstance.onClose();
     });
   }
@@ -730,7 +673,6 @@ export class FavoriteManagementComponent implements OnInit {
       distinctUntilChanged(),
       switchMap(term => {
         if (term.length === 0) {
-          // Show initial cached user lab groups when no search term
           return of(this.availableLabGroups().slice(0, 10));
         } else if (term.length >= 1) {
           return this.labGroupService.getLabGroups({
@@ -767,7 +709,6 @@ export class FavoriteManagementComponent implements OnInit {
     return group.name;
   };
 
-  // Input formatter for lab group should return the name for display in the input field
   inputLabGroupFormatter = (group: {id: number, name: string}): string => {
     return group.name;
   };
@@ -775,10 +716,7 @@ export class FavoriteManagementComponent implements OnInit {
   onLabGroupSelected = (event: any): void => {
     const selectedGroup = event.item;
     if (selectedGroup && selectedGroup.id) {
-      // Set both the form value (ID) and update the input display (name)
       this.searchForm.patchValue({ labGroup: selectedGroup.id.toString() });
-
-      // The input formatter will handle displaying the name correctly
     }
   };
 
@@ -796,35 +734,25 @@ export class FavoriteManagementComponent implements OnInit {
   getCleanColumnType(type: string): string {
     if (!type) return '';
 
-    // Remove brackets and content inside them
-    // e.g., "characteristics[organism]" becomes "characteristics"
     const cleanType = type.replace(/\[.*?\]/g, '').trim();
 
-    // Capitalize first letter for better display
     return cleanType.charAt(0).toUpperCase() + cleanType.slice(1);
   }
 
-  // Check if value contains multiple key-value pairs (complex value)
   isComplexValue(value: string): boolean {
     if (!value) return false;
 
-    // Check for SDRF-style key=value pairs separated by semicolons
-    // e.g., "AC=UNIMOD:21;CF=H O(3) P;PP=Anywhere;TA=T,S;MM=79.966331"
     const sdrfPattern = /^[A-Z]{2,3}=[^;]+(?:;[A-Z]{2,3}=[^;]+)+$/;
-
-    // Check for other common key-value patterns
     const keyValuePattern = /\w+[:=][^;,]+[;,]\w+[:=]/;
 
     return sdrfPattern.test(value) || keyValuePattern.test(value);
   }
 
-  // Parse complex value into key-value pairs
   parseComplexValue(value: string): {key: string, value: string}[] {
     if (!value) return [];
 
     const pairs: {key: string, value: string}[] = [];
 
-    // Handle SDRF-style format (key=value;key=value)
     if (value.includes('=') && value.includes(';')) {
       const parts = value.split(';');
       parts.forEach(part => {
@@ -837,7 +765,6 @@ export class FavoriteManagementComponent implements OnInit {
         }
       });
     }
-    // Handle other key:value formats
     else if (value.includes(':') && (value.includes(';') || value.includes(','))) {
       const separator = value.includes(';') ? ';' : ',';
       const parts = value.split(separator);
@@ -855,7 +782,6 @@ export class FavoriteManagementComponent implements OnInit {
     return pairs;
   }
 
-  // SDRF Special Syntax Methods
   checkForSpecialSyntax(): void {
     const columnName = this.editForm.get('name')?.value;
     const columnType = this.editForm.get('type')?.value;

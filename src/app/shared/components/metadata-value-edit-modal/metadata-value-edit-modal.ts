@@ -23,7 +23,6 @@ export interface MetadataValueEditConfig {
   tableId?: number;
   poolId?: number;
   customOntologyFilters?: Record<string, any>;
-  // Multi-sample editing support
   enableMultiSampleEdit?: boolean;
   sampleData?: { index: number; value: string; sourceName?: string }[];
   maxSampleCount?: number;
@@ -54,27 +53,22 @@ export class MetadataValueEditModal implements OnInit {
   isLoadingSuggestions = signal(false);
   searchType = signal<'icontains' | 'istartswith'>('icontains');
 
-  // Favorite options
   isLoadingFavorites = signal(false);
   userFavorites = signal<FavouriteMetadataOption[]>([]);
   labGroupFavorites = signal<FavouriteMetadataOption[]>([]);
   globalFavorites = signal<FavouriteMetadataOption[]>([]);
   selectedFavorite = signal<FavouriteMetadataOption | null>(null);
 
-  // User info
   currentUser = signal<User | null>(null);
   userLabGroups = signal<number[]>([]);
 
-  // Favorites tab management
   activeFavoritesTab: 'user' | 'lab_group' | 'global' = 'user';
 
-  // SDRF special syntax support
   private sdrfSyntaxService = inject(SdrfSyntaxService);
   specialSyntaxType = signal<SyntaxType | null>(null);
   showSpecialInput = signal(false);
   specialInputValue = signal('');
 
-  // Multi-sample editing support
   selectedSampleIndices = signal<Set<number>>(new Set());
   showSamplePanel = signal(false);
 
@@ -94,7 +88,6 @@ export class MetadataValueEditModal implements OnInit {
 
   ngOnInit() {
 
-    // Check for special SDRF syntax
     const syntaxType = this.sdrfSyntaxService.detectSpecialSyntax(
       this.config.columnName,
       this.config.columnType
@@ -112,18 +105,15 @@ export class MetadataValueEditModal implements OnInit {
       });
     }
 
-    // Initialize user from auth service
     this.currentUser.set(this.authService.getCurrentUser());
 
-    // Load user's lab groups if authenticated
     if (this.currentUser()) {
       this.loadUserLabGroups();
     }
 
-    // Load favorite options
     this.loadFavoriteOptions();
 
-    // Initialize multi-sample editing if enabled
+
     if (this.config?.enableMultiSampleEdit && this.config?.sampleData) {
       this.showSamplePanel.set(true);
       console.log('Multi-sample editing enabled with', this.config.sampleData.length, 'samples');
@@ -135,7 +125,6 @@ export class MetadataValueEditModal implements OnInit {
       });
     }
 
-    // Clear selected favorite when value is manually changed
     this.editForm.get('value')?.valueChanges.subscribe((newValue) => {
       const selected = this.selectedFavorite();
       if (selected && selected.value !== newValue) {
@@ -182,7 +171,6 @@ export class MetadataValueEditModal implements OnInit {
           return of([]);
         }
 
-        // Use appropriate API endpoint based on context
         if (this.config.context === 'table' && this.config.columnId) {
           return this.metadataColumnService.getOntologySuggestions({
             columnId: this.config.columnId,
@@ -209,7 +197,6 @@ export class MetadataValueEditModal implements OnInit {
             tap(() => this.isLoadingSuggestions.set(false))
           );
         } else {
-          // Fallback - no suggestions available
           this.isLoadingSuggestions.set(false);
           return of([]);
         }
@@ -222,7 +209,6 @@ export class MetadataValueEditModal implements OnInit {
   };
 
   inputFormatter = (suggestion: OntologySuggestion): string => {
-    // For MS Unique Vocabularies, use SDRF formatting
     if (suggestion && suggestion.ontologyType === OntologyType.MS_UNIQUE_VOCABULARIES && suggestion.fullData && suggestion.fullData.name) {
       if (suggestion.fullData.accession) {
         return `NT=${suggestion.fullData.name};AC=${suggestion.fullData.accession}`;
