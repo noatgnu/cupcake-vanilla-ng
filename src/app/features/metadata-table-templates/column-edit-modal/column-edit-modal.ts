@@ -106,7 +106,7 @@ export class ColumnEditModal implements OnInit {
     if (this.column) {
       this.editForm.patchValue({
         name: this.column.name,
-        type: this.column.type,
+        type: this.getCorrectedColumnType(this.column.name, this.column.type),
         value: this.column.value || '',
         ontologyType: this.column.ontologyType || '',
         enableTypeahead: this.column.enableTypeahead || false,

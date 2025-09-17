@@ -268,9 +268,9 @@ export class MetadataValueEditModal implements OnInit {
 
     this.isLoadingFavorites.set(true);
 
-    // Build base query parameters for column type
+    // Build base query parameters for column name
     const baseQueryParams = {
-      type: this.config.columnType,
+      name: this.config.columnName,
       limit: 10
     };
 

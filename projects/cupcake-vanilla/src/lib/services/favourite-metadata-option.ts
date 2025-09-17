@@ -11,6 +11,7 @@ import {
 
 export interface FavouriteMetadataOptionQueryParams {
   search?: string;
+  name?: string;
   type?: string;
   userId?: number;
   labGroupId?: number;
