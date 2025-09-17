@@ -31,33 +31,26 @@ export class NavbarComponent implements OnInit, OnDestroy {
   private webSocketService = inject(Websocket);
   private asyncTaskService = inject(AsyncTaskService);
 
-  // Observable for authentication state
   isAuthenticated$ = this.authService.isAuthenticated$;
   currentUser$ = this.authService.currentUser$;
   
-  // Observable for site configuration
   siteConfig$ = this.siteConfigService.config$;
   
-  // Async task observables
   activeTasks$ = this.asyncTaskService.activeTasks$;
   activeTaskCount$ = this.activeTasks$.pipe(
     map(tasks => tasks.length)
   );
   
-  // Environment for template access
   protected readonly environment = environment;
   
-  // Notification state
   unreadCount = this.notificationService.unreadCount;
   
   private subscriptions = new Subscription();
 
   ngOnInit(): void {
-    // Initialize WebSocket connection when user is authenticated
     this.subscriptions.add(
       this.isAuthenticated$.subscribe(isAuthenticated => {
         if (isAuthenticated && this.webSocketService.shouldConnect()) {
-          // Only connect if we should connect and are not already connected/connecting
           const currentState = this.webSocketService.connectionState$();
           if (currentState === 'disconnected' || currentState === 'error') {
             console.log('Navbar: Initiating WebSocket connection');
@@ -87,7 +80,6 @@ export class NavbarComponent implements OnInit, OnDestroy {
       },
       error: (error) => {
         console.error('NavbarComponent: logout error:', error);
-        // Still navigate to login even if logout API fails
         this.router.navigate(['/login']);
       },
       complete: () => {

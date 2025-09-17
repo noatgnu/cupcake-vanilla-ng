@@ -40,7 +40,6 @@ export class Notification {
   private notificationSubject = new Subject<NotificationItem>();
   private isConnected = signal(false);
 
-  // Public computed signals
   readonly allNotifications = computed(() => this.notifications());
   readonly unreadNotifications = computed(() => 
     this.notifications().filter(n => !n.read)
@@ -48,7 +47,6 @@ export class Notification {
   readonly unreadCount = computed(() => this.unreadNotifications().length);
   readonly isWebSocketConnected = computed(() => this.isConnected());
 
-  // Public observables
   readonly notification$ = this.notificationSubject.asObservable();
 
   constructor(
@@ -59,7 +57,6 @@ export class Notification {
   }
 
   private initializeWebSocket(): void {
-    // Listen for WebSocket connection status
     this.websocketService.isConnected$.subscribe(connected => {
       this.isConnected.set(connected);
       if (connected) {
@@ -67,22 +64,18 @@ export class Notification {
       }
     });
 
-    // Listen for all WebSocket messages and convert to notifications
     this.websocketService.messages$.subscribe(message => {
       this.handleWebSocketMessage(message);
     });
 
-    // Listen for specific notification types
     this.setupNotificationHandlers();
   }
 
   private setupNotificationHandlers(): void {
-    // System notifications
     this.websocketService.getSystemNotifications().subscribe(message => {
       const notification = this.createNotificationFromWebSocket(message, NotificationType.SYSTEM);
       this.addNotification(notification);
       
-      // Show toast for system notifications
       if (message['level'] === 'error') {
         this.toastService.error(message.message || message['title']);
       } else if (message['level'] === 'warning') {
@@ -94,29 +87,24 @@ export class Notification {
       }
     });
 
-    // Metadata table updates
     this.websocketService.getMetadataTableUpdates().subscribe(message => {
       const notification = this.createNotificationFromWebSocket(message, NotificationType.METADATA_TABLE);
       this.addNotification(notification);
     });
 
-    // Lab group updates
     this.websocketService.getLabGroupUpdates().subscribe(message => {
       const notification = this.createNotificationFromWebSocket(message, NotificationType.LAB_GROUP);
       this.addNotification(notification);
     });
 
-    // Async task updates
     this.websocketService.filterMessages('async_task.update').subscribe(message => {
       const notification = this.createNotificationFromWebSocket(message, NotificationType.ASYNC_TASK);
       this.addNotification(notification);
     });
 
-    // Direct notification messages from backend
     this.websocketService.filterMessages('notification_message').subscribe(message => {
       const notificationData = message['message'] || message;
 
-      // Type guard for notification data
       let notificationType = 'info';
       let title = 'Notification';
       let messageText = '';
@@ -129,11 +117,9 @@ export class Notification {
         messageText = notificationData;
       }
 
-      // Create notification for the panel
       const notification = this.createNotificationFromWebSocket(message, NotificationType.SYSTEM);
       this.addNotification(notification);
 
-      // Show toast notification
       if (notificationType === 'error') {
         this.toastService.error(`${title}: ${messageText}`, 8000);
       } else if (notificationType === 'warning') {
@@ -147,13 +133,11 @@ export class Notification {
   }
 
   private handleWebSocketMessage(message: WebSocketMessage): void {
-    // Handle connection established message
     if (message.type === 'connection.established') {
       console.log('WebSocket connection established:', message);
       return;
     }
 
-    // Handle specific message types that don't have dedicated handlers
     if (message.type.includes('file.upload')) {
       const notification = this.createNotificationFromWebSocket(message, NotificationType.FILE_UPLOAD);
       this.addNotification(notification);
@@ -182,7 +166,6 @@ export class Notification {
     let title = '';
     let level: 'info' | 'success' | 'warning' | 'error' = 'info';
     
-    // Determine title and level based on message type
     switch (type) {
       case NotificationType.SYSTEM:
         title = message['title'] || 'System Notification';
@@ -299,20 +282,16 @@ export class Notification {
 
   private addNotification(notification: NotificationItem): void {
     this.notifications.update(notifications => {
-      // Add new notification at the beginning
       const updated = [notification, ...notifications];
       
-      // Keep only last 100 notifications to prevent memory issues
       return updated.slice(0, 100);
     });
 
-    // Emit to subscribers
     this.notificationSubject.next(notification);
     
     console.log('Notification added:', notification);
   }
 
-  // Public methods for managing notifications
   
   markAsRead(notificationId: string): void {
     this.notifications.update(notifications => 
@@ -344,7 +323,6 @@ export class Notification {
     );
   }
 
-  // WebSocket connection management
   connect(): void {
     this.websocketService.connect();
   }
@@ -353,12 +331,10 @@ export class Notification {
     this.websocketService.disconnect();
   }
 
-  // Subscribe to specific notification channels
   subscribeToMetadataTable(tableId: number): void {
     this.websocketService.subscribe('metadata_table_updates', { table_id: tableId });
   }
 
-  // Manual notification creation (for testing or local notifications)
   createLocalNotification(
     type: NotificationType,
     title: string,

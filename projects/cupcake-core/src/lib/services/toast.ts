@@ -14,7 +14,6 @@ export interface ToastMessage {
 export class ToastService {
   private toastsSignal = signal<ToastMessage[]>([]);
   
-  // Public readonly signal for components to subscribe to
   readonly toasts = this.toastsSignal.asReadonly();
 
   show(message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info', duration = 5000) {
@@ -29,7 +28,6 @@ export class ToastService {
 
     this.toastsSignal.update(toasts => [...toasts, toast]);
 
-    // Auto-remove after duration
     if (duration > 0) {
       setTimeout(() => {
         this.remove(id);

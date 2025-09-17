@@ -27,17 +27,14 @@ export class Websocket {
   private config: WebSocketConfig;
   private destroy$ = new Subject<void>();
   private reconnectAttempts = 0;
-  private isConnecting = false; // Prevent multiple simultaneous connection attempts
+  private isConnecting = false;
 
-  // Connection state management
   private connectionState = signal<'disconnected' | 'connecting' | 'connected' | 'error'>('disconnected');
   private lastError = signal<string | null>(null);
 
-  // Message streams
   private messageSubject = new Subject<WebSocketMessage>();
   private connectionSubject = new BehaviorSubject<boolean>(false);
 
-  // Public observables and computed signals
   readonly messages$ = this.messageSubject.asObservable();
   readonly isConnected$ = this.connectionSubject.asObservable();
   readonly connectionState$ = computed(() => this.connectionState());
@@ -50,7 +47,6 @@ export class Websocket {
       maxReconnectAttempts: 3
     };
 
-    // Subscribe to authentication changes to handle reconnections
     this.authService.isAuthenticated$.subscribe(isAuthenticated => {
       if (!isAuthenticated && this.ws) {
         console.log('User logged out - disconnecting WebSocket');
@@ -58,17 +54,14 @@ export class Websocket {
       }
     });
 
-    // Handle browser resource constraints
     this.setupBrowserResourceHandling();
   }
 
   private getWebSocketUrl(): string {
-    // Use dedicated WebSocket URL from environment if available
     if ((environment as any).websocketUrl) {
       return (environment as any).websocketUrl;
     }
 
-    // Fallback: construct URL from API URL
     const apiUrl = environment.apiUrl;
 
     try {
@@ -76,12 +69,10 @@ export class Websocket {
       const protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
       const host = url.host;
 
-      // Construct WebSocket URL based on the environment API URL
       return `${protocol}//${host}/ws/notifications/`;
     } catch (error) {
       console.error('Invalid API URL in environment config:', apiUrl);
 
-      // Final fallback to window location based URL
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
       const host = window.location.host;
       return `${protocol}//${host}/ws/notifications/`;
@@ -93,15 +84,6 @@ export class Websocket {
     console.log('🔌 Current connection state:', this.connectionState());
     console.log('🔌 WebSocket URL:', this.config.url);
 
-    // Check browser resource constraints before connecting
-    //if (!this.canConnectSafely()) {
-    //  console.warn('❌ Cannot connect WebSocket - browser resource constraints detected');
-    //  this.lastError.set('Browser resource constraints - too many connections');
-    //  this.connectionState.set('error');
-    //  return;
-    //}
-
-    // Prevent multiple simultaneous connection attempts
     if (this.isConnecting) {
       console.log('WebSocket connection already in progress');
       return;
@@ -112,7 +94,6 @@ export class Websocket {
       return;
     }
 
-    // Close existing connection if it's in a bad state
     if (this.ws && this.ws.readyState !== WebSocket.CLOSED) {
       console.log('Closing existing WebSocket connection');
       this.ws.close();
@@ -132,7 +113,6 @@ export class Websocket {
     this.lastError.set(null);
 
     try {
-      // Include token in URL query parameter for authentication
       const wsUrl = `${this.config.url}?token=${encodeURIComponent(token)}`;
       console.log('Connecting to WebSocket:', wsUrl.replace(token, '[TOKEN_HIDDEN]'));
 
@@ -143,7 +123,6 @@ export class Websocket {
       this.ws.onerror = this.onError.bind(this);
       this.ws.onclose = this.onClose.bind(this);
 
-      // Add connection timeout for resource-constrained browsers
       const connectionTimeout = setTimeout(() => {
         if (this.ws?.readyState === WebSocket.CONNECTING) {
           console.warn('WebSocket connection timeout - closing');
@@ -189,8 +168,6 @@ export class Websocket {
     }
   }
 
-  // Convenience methods for common message types
-
   subscribe(subscriptionType: string, options: any = {}): void {
     this.send({
       type: 'subscribe',
@@ -231,7 +208,6 @@ export class Websocket {
     this.connectionState.set('disconnected');
     this.connectionSubject.next(false);
 
-    // Handle different close codes
     if (event.code === 4001) {
       this.lastError.set('Authentication failed');
       console.error('WebSocket authentication failed');
@@ -242,7 +218,6 @@ export class Websocket {
       return; // Don't attempt reconnection
     }
 
-    // Attempt reconnection if not manually disconnected
     if (event.code !== 1000 && this.reconnectAttempts < (this.config.maxReconnectAttempts || 5)) {
       this.attemptReconnection();
     }
@@ -268,7 +243,6 @@ export class Websocket {
   }
 
 
-  // Message filtering helpers
   filterMessages<T extends WebSocketMessage>(type: string): Observable<T> {
     return this.messages$.pipe(
       tap(msg => console.log('Filtering message:', msg.type, 'looking for:', type)),
@@ -292,7 +266,6 @@ export class Websocket {
     return this.filterMessages('lab_group.update');
   }
 
-  // Public method to refresh connection with new token (useful after token refresh)
   reconnectWithNewToken(): void {
     if (this.ws?.readyState === WebSocket.OPEN) {
       console.log('Reconnecting WebSocket with new token');
@@ -302,12 +275,10 @@ export class Websocket {
     }
   }
 
-  // Public method to check if WebSocket should be connected based on auth state
   shouldConnect(): boolean {
     return this.authService.isAuthenticated() && !!this.authService.getAccessToken();
   }
 
-  // Update WebSocket URL if environment changes
   updateConfig(): void {
     this.config.url = this.getWebSocketUrl();
     console.log('WebSocket URL updated to:', this.config.url);

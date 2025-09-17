@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core';
 
-// Interfaces for different syntax types
 export interface AgeFormat {
   years?: number;
   months?: number;
@@ -192,12 +191,10 @@ export class SdrfSyntaxService {
     return result;
   }
 
-  // Private helper methods
 
   private parseAgeFormat(value: string): AgeFormat {
     const trimmed = value.trim();
     
-    // Check for range format (e.g., "20Y-30Y" or "2Y3M-3Y5M")
     if (trimmed.includes('-')) {
       const [startStr, endStr] = trimmed.split('-').map(s => s.trim());
       return {
@@ -213,7 +210,6 @@ export class SdrfSyntaxService {
   private parseSingleAge(ageStr: string): AgeFormat {
     const age: AgeFormat = {};
     
-    // Match patterns like 25Y, 6M, 15D, 2Y3M, 1Y2M15D
     const yearMatch = ageStr.match(/(\d+)Y/);
     const monthMatch = ageStr.match(/(\d+)M/);
     const dayMatch = ageStr.match(/(\d+)D/);
@@ -250,7 +246,6 @@ export class SdrfSyntaxService {
   private parseKeyValuePairs(value: string, validKeys: string[]): any {
     const result: any = {};
     
-    // Split by semicolon and parse key=value pairs
     const pairs = value.split(';').map(pair => pair.trim()).filter(pair => pair);
     
     for (const pair of pairs) {
@@ -340,14 +335,12 @@ export class SdrfSyntaxService {
   private validateModificationParameters(params: ModificationParameters): ValidationResult {
     const result: ValidationResult = { isValid: true, errors: [], warnings: [] };
 
-    // At least one parameter should be provided
     const hasAnyParam = Object.values(params).some(value => value !== undefined && value !== '');
     if (!hasAnyParam) {
       result.isValid = false;
       result.errors.push('At least one modification parameter is required');
     }
 
-    // Validate specific parameters
     if (params.PP && !/^\d+$/.test(params.PP)) {
       result.errors.push('PP (protein position) must be a number');
       result.isValid = false;
@@ -382,7 +375,6 @@ export class SdrfSyntaxService {
       result.errors.push('At least one spiked compound parameter is required');
     }
 
-    // Validate quantity format if provided
     if (compound.QY && !/^\d+(\.\d+)?\s*(mg|g|kg|μg|ng|pg|M|mM|μM|nM|pM)?$/i.test(compound.QY)) {
       result.warnings?.push('QY (quantity) format may not be standard - consider using standard units');
     }
@@ -390,7 +382,6 @@ export class SdrfSyntaxService {
     return result;
   }
 
-  // Public getters for accessing special column values
   getPooledSampleValues(): string[] {
     return [...this.POOLED_SAMPLE_VALUES];
   }

@@ -4,9 +4,7 @@ import { Router } from '@angular/router';
 import { catchError, throwError, switchMap, BehaviorSubject, filter, take, Observable } from 'rxjs';
 import { CUPCAKE_CORE_CONFIG } from '../services/auth';
 
-// Global flag to prevent multiple simultaneous token refresh attempts
 let isRefreshing = false;
-// Subject to coordinate requests waiting for token refresh
 const refreshTokenSubject: BehaviorSubject<string | null> = new BehaviorSubject<string | null>(null);
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
@@ -62,26 +60,21 @@ function handle401Error(request: HttpRequest<any>, next: HttpHandlerFn, http: Ht
         switchMap((tokenResponse: {access: string}): Observable<HttpEvent<unknown>> => {
           isRefreshing = false;
           
-          // Update stored tokens
           localStorage.setItem('ccvAccessToken', tokenResponse.access);
           refreshTokenSubject.next(tokenResponse.access);
           
-          // Notify AuthService that token was refreshed
           if (typeof window !== 'undefined') {
             window.dispatchEvent(new CustomEvent('tokenRefreshed'));
           }
           
-          // Retry the original request with new token
           return next(addTokenToRequest(request, tokenResponse.access));
         }),
         catchError((refreshError) => {
-          // Refresh failed, clear tokens and redirect to login
           isRefreshing = false;
           localStorage.removeItem('ccvAccessToken');
           localStorage.removeItem('ccvRefreshToken');
           refreshTokenSubject.next(null);
           
-          // Notify AuthService that auth was cleared
           if (typeof window !== 'undefined') {
             window.dispatchEvent(new CustomEvent('authCleared'));
           }
@@ -94,7 +87,6 @@ function handle401Error(request: HttpRequest<any>, next: HttpHandlerFn, http: Ht
         })
       );
     } else {
-      // No refresh token, clear storage and redirect
       isRefreshing = false;
       localStorage.removeItem('ccvAccessToken');
       localStorage.removeItem('ccvRefreshToken');
@@ -111,7 +103,6 @@ function handle401Error(request: HttpRequest<any>, next: HttpHandlerFn, http: Ht
       return throwError(() => new Error('No refresh token available')) as Observable<HttpEvent<unknown>>;
     }
   } else {
-    // If refresh is in progress, wait for it to complete
     return refreshTokenSubject.pipe(
       filter((token): token is string => token !== null),
       take(1),

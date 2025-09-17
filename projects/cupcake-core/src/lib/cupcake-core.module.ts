@@ -5,12 +5,10 @@ import { HttpClientModule, provideHttpClient, withInterceptors } from '@angular/
 import { RouterModule } from '@angular/router';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 
-// Components
 import { LoginComponent } from './components/auth/login/login';
 import { RegisterComponent } from './components/auth/register/register';
 import { ToastContainerComponent } from './components/toast-container/toast-container';
 
-// Services & Configuration
 import { CupcakeCoreConfig, CUPCAKE_CORE_CONFIG } from './services/auth';
 import { authInterceptor } from './interceptors/auth-interceptor';
 
@@ -22,7 +20,6 @@ import { authInterceptor } from './interceptors/auth-interceptor';
     HttpClientModule,
     RouterModule,
     NgbModule,
-    // Standalone components
     LoginComponent,
     RegisterComponent,
     ToastContainerComponent
@@ -31,7 +28,6 @@ import { authInterceptor } from './interceptors/auth-interceptor';
     LoginComponent,
     RegisterComponent, 
     ToastContainerComponent,
-    // Re-export modules that consumers might need
     CommonModule,
     ReactiveFormsModule,
     NgbModule
