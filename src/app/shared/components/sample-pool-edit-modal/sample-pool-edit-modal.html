@@ -18,9 +18,11 @@
         formControlName="poolName"
         [class.is-invalid]="isFieldInvalid('poolName')"
         placeholder="Enter pool name">
-      <div class="invalid-feedback" *ngIf="isFieldInvalid('poolName')">
-        {{ getFieldError('poolName') }}
-      </div>
+      @if (isFieldInvalid('poolName')) {
+        <div class="invalid-feedback">
+          {{ getFieldError('poolName') }}
+        </div>
+      }
     </div>
 
     <!-- Description -->

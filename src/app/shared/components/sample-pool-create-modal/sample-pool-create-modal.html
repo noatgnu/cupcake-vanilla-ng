@@ -26,9 +26,11 @@
           formControlName="poolName"
           [class.is-invalid]="isFieldInvalid('poolName')"
           placeholder="Enter pool name">
-        <div class="invalid-feedback" *ngIf="isFieldInvalid('poolName')">
-          {{ getFieldError('poolName') }}
-        </div>
+        @if (isFieldInvalid('poolName')) {
+          <div class="invalid-feedback">
+            {{ getFieldError('poolName') }}
+          </div>
+        }
       </div>
 
 
@@ -95,9 +97,11 @@
                   min="1"
                   [max]="metadataTable.sampleCount"
                   [class.is-invalid]="isFieldInvalid('range_start')">
-                <div class="invalid-feedback" *ngIf="isFieldInvalid('range_start')">
-                  {{ getFieldError('range_start') }}
-                </div>
+                @if (isFieldInvalid('range_start')) {
+                  <div class="invalid-feedback">
+                    {{ getFieldError('range_start') }}
+                  </div>
+                }
               </div>
               <div class="col-md-4">
                 <label for="rangeEnd" class="form-label">End Sample</label>
@@ -109,9 +113,11 @@
                   min="1"
                   [max]="metadataTable.sampleCount"
                   [class.is-invalid]="isFieldInvalid('range_end')">
-                <div class="invalid-feedback" *ngIf="isFieldInvalid('range_end')">
-                  {{ getFieldError('range_end') }}
-                </div>
+                @if (isFieldInvalid('range_end')) {
+                  <div class="invalid-feedback">
+                    {{ getFieldError('range_end') }}
+                  </div>
+                }
               </div>
               <div class="col-md-4">
                 <button type="button" class="btn btn-success w-100" (click)="selectSamplesInRange()">

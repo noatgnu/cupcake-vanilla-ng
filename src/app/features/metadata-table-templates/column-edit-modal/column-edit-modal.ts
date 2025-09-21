@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormsModule } from '@angular/forms';
 import { NgbActiveModal, NgbModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { MetadataColumn } from '../../../shared/models';
-import { MetadataValueEditModal, MetadataValueEditConfig } from '../../../shared/components/metadata-value-edit-modal/metadata-value-edit-modal';
+import { MetadataValueEditModal, MetadataValueEditConfig } from '@cupcake/vanilla';
 import {
   MetadataColumnTemplateService,
   MetadataColumnTemplate,
@@ -17,7 +17,8 @@ import {
   OFFICIAL_SDRF_COLUMNS,
   SdrfColumnConfig,
   getSdrfColumnsByCategory,
-  getSdrfColumnByName
+  getSdrfColumnByName,
+  SdrfSyntaxService
 } from '@cupcake/vanilla';
 
 @Component({
@@ -73,7 +74,8 @@ export class ColumnEditModal implements OnInit {
     private fb: FormBuilder,
     private activeModal: NgbActiveModal,
     private modalService: NgbModal,
-    private metadataColumnTemplateService: MetadataColumnTemplateService
+    private metadataColumnTemplateService: MetadataColumnTemplateService,
+    private sdrfSyntaxService: SdrfSyntaxService
   ) {
     this.editForm = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(1)]],
@@ -525,5 +527,25 @@ export class ColumnEditModal implements OnInit {
     const selectElement = event.target as HTMLSelectElement;
     const selectedIndex = parseInt(selectElement.value);
     this.selectedOntologyConfig = this.ontologyTypes[selectedIndex] || null;
+  }
+
+  private getCorrectedColumnType(columnName: string, columnType: string): string {
+    const syntaxType = this.sdrfSyntaxService.detectSpecialSyntax(columnName, columnType);
+    if (syntaxType) {
+      // Return a specific type based on SDRF syntax detection
+      switch (syntaxType) {
+        case 'age':
+          return 'characteristics[age]';
+        case 'modification':
+          return 'comment[modification parameters]';
+        case 'cleavage':
+          return 'comment[cleavage agent details]';
+        case 'spiked_compound':
+          return 'characteristics[spiked compound]';
+        default:
+          return columnType;
+      }
+    }
+    return columnType;
   }
 }

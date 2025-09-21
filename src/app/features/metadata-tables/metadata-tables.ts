@@ -14,10 +14,8 @@ import {
 import { User, LabGroupService } from '@cupcake/core';
 import { MetadataTableService, MetadataValidationConfig } from '@cupcake/vanilla';
 import { NavigationState } from '../../shared/services/navigation-state';
-import { AsyncTaskService } from '../../shared/services/async-task';
-import { ToastService } from '../../shared/services/toast';
-import { MetadataValidationModal } from '../../shared/components/metadata-validation-modal/metadata-validation-modal';
-import { ExcelExportModalComponent, ExcelExportOptions } from '../../shared/components/excel-export-modal/excel-export-modal';
+import { ToastService } from '@cupcake/core';
+import { AsyncTaskUIService, MetadataValidationModal, ExcelExportModalComponent, ExcelExportOptions } from '@cupcake/vanilla';
 import { environment } from '../../../environments/environment';
 import { AuthService } from '@cupcake/core';
 
@@ -82,7 +80,7 @@ export class MetadataTablesComponent implements OnInit, OnDestroy {
     private labGroupService: LabGroupService,
     private metadataTableService: MetadataTableService,
     private navigationState: NavigationState,
-    private asyncTaskService: AsyncTaskService,
+    private asyncTaskService: AsyncTaskUIService,
     private toastService: ToastService,
     private modalService: NgbModal,
     private authService: AuthService

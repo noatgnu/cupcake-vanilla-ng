@@ -8,7 +8,7 @@ import { SiteConfigService } from '../../../services/site-config';
 import { UserRegistrationRequest, UserResponse, RegistrationStatus } from '../../../models';
 
 @Component({
-  selector: 'app-register',
+  selector: 'ccc-register',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, NgbAlert],
   templateUrl: './register.html',

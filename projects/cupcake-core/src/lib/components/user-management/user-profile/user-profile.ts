@@ -8,7 +8,7 @@ import { User, UserProfileUpdateRequest, PasswordChangeRequest, EmailChangeReque
 import { UserManagementService } from '../../../services/user-management';
 
 @Component({
-  selector: 'app-user-profile',
+  selector: 'ccc-user-profile',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, NgbModule],
   templateUrl: './user-profile.html',

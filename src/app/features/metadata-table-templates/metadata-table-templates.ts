@@ -8,7 +8,7 @@ import { SchemaSelectionModal as TemplateSchemaSelectionModal, SchemaSelectionRe
 import { SchemaSelectionModal as ReorderSchemaSelectionModal, SchemaSelectionResult as ReorderSchemaSelectionResult } from '../../shared/components/schema-selection-modal/schema-selection-modal';
 import { TableCreationModalComponent, TableCreationData } from './table-creation-modal/table-creation-modal';
 import { LabGroupService } from '@cupcake/core';
-import { AsyncTaskService } from '../../shared/services/async-task';
+import { AsyncTaskUIService } from '@cupcake/vanilla';
 import {
   MetadataTableTemplate,
   MetadataTableTemplateQueryResponse,
@@ -17,7 +17,7 @@ import {
   ResourceVisibility
 } from '../../shared/models';
 import { MetadataTableTemplateService, MetadataTable, MetadataTableTemplateCreateRequest } from '@cupcake/vanilla';
-import { ToastService } from '../../shared/services/toast';
+import { ToastService } from '@cupcake/core';
 
 @Component({
   selector: 'app-metadata-table-templates',
@@ -75,7 +75,7 @@ export class MetadataTableTemplates implements OnInit {
     private labGroupService: LabGroupService,
     private modalService: NgbModal,
     private toastService: ToastService,
-    private asyncTaskService: AsyncTaskService
+    private asyncTaskService: AsyncTaskUIService
   ) {
     this.searchForm = this.fb.group({
       search: [''],

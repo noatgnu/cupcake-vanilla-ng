@@ -4,13 +4,10 @@ import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { CommonModule } from '@angular/common';
 import { NavbarComponent } from './shared/components/navbar/navbar';
 import { PoweredByFooterComponent } from './shared/components/powered-by-footer/powered-by-footer';
-import { AsyncTaskService } from './shared/services/async-task';
-import { SiteConfigService } from '@cupcake/core';
-import { ToastContainerComponent } from './shared/components/toast-container/toast-container';
-import { ToastService } from './shared/services/toast';
+import { AsyncTaskUIService } from '@cupcake/vanilla';
+import { SiteConfigService, ThemeService, ToastService, ToastContainerComponent } from '@cupcake/core';
 
 import { BehaviorSubject } from 'rxjs';
-import {ThemeService} from './shared/services/theme';
 import { environment } from '../environments/environment';
 
 @Component({
@@ -27,7 +24,7 @@ export class App implements OnInit {
   private document = inject(DOCUMENT);
   private siteConfigService = inject(SiteConfigService);
   private themeService = inject(ThemeService);
-  private asyncTaskService = inject(AsyncTaskService);
+  private asyncTaskService = inject(AsyncTaskUIService);
   private toastService = inject(ToastService);
 
   private appInitializedSubject = new BehaviorSubject<boolean>(false);

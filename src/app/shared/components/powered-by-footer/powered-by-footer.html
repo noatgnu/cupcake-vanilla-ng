@@ -1,9 +1,11 @@
-<div class="powered-by-footer" *ngIf="(siteConfig$ | async)?.show_powered_by !== false">
-  <div class="footer-trigger"></div>
-  <div class="footer-content">
-    <span class="footer-text">
-      <i class="bi bi-lightning-charge me-1"></i>
-      Powered by <strong>CUPCAKE Vanilla</strong>
-    </span>
+@if ((siteConfig$ | async)?.showPoweredBy !== false) {
+  <div class="powered-by-footer">
+    <div class="footer-trigger"></div>
+    <div class="footer-content">
+      <span class="footer-text">
+        <i class="bi bi-lightning-charge me-1"></i>
+        Powered by <strong>CUPCAKE Vanilla</strong>
+      </span>
+    </div>
   </div>
-</div>
+}

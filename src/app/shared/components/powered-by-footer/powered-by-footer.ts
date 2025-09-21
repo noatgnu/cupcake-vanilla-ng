@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { SiteConfigService } from '../../services/site-config';
+import { SiteConfigService } from '@cupcake/core';
 
 @Component({
   selector: 'app-powered-by-footer',

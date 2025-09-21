@@ -15,7 +15,7 @@ import { LabGroupService } from '../../../services/lab-group';
 import { ToastService } from '../../../services/toast';
 
 @Component({
-  selector: 'app-lab-groups',
+  selector: 'ccc-lab-groups',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, NgbModule],
   templateUrl: './lab-groups.html',

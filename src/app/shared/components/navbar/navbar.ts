@@ -2,13 +2,10 @@ import { Component, inject, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { NgbDropdownModule } from '@ng-bootstrap/ng-bootstrap';
-import { AuthService, User, SiteConfigService, UserManagementService } from '@cupcake/core';
-import { ThemeService } from '../../services/theme';
-import { AsyncTaskService } from '../../services/async-task';
+import { AuthService, User, SiteConfigService, UserManagementService, ThemeService } from '@cupcake/core';
+import { AsyncTaskUIService, NotificationService, Websocket } from '@cupcake/vanilla';
 import { NotificationPanel } from '../notification-panel/notification-panel';
 import { AsyncTaskMonitorComponent } from '../async-task-monitor/async-task-monitor';
-import { Notification } from '../../services/notification';
-import { Websocket } from '../../services/websocket';
 import { Subscription, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { TaskListItem, TaskType, TaskStatus } from '@cupcake/vanilla';
@@ -27,9 +24,9 @@ export class NavbarComponent implements OnInit, OnDestroy {
   private siteConfigService = inject(SiteConfigService);
   private userManagementService = inject(UserManagementService);
   private themeService = inject(ThemeService);
-  private notificationService = inject(Notification);
+  private notificationService = inject(NotificationService);
   private webSocketService = inject(Websocket);
-  private asyncTaskService = inject(AsyncTaskService);
+  private asyncTaskService = inject(AsyncTaskUIService);
 
   isAuthenticated$ = this.authService.isAuthenticated$;
   currentUser$ = this.authService.currentUser$;

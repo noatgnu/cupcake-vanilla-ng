@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Observable, Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { AsyncTaskStatus, TaskStatus, TaskType, TASK_TYPE_LABELS, TASK_STATUS_LABELS, TASK_STATUS_COLORS } from '@cupcake/vanilla';
-import { AsyncTaskService } from '../../services/async-task';
+import { AsyncTaskUIService } from '@cupcake/vanilla';
 
 @Component({
   selector: 'app-async-task-monitor',
@@ -53,7 +53,7 @@ export class AsyncTaskMonitorComponent implements OnInit, OnDestroy {
   readonly taskStatusLabels = TASK_STATUS_LABELS;
   readonly taskStatusColors = TASK_STATUS_COLORS;
 
-  constructor(private asyncTaskService: AsyncTaskService) {}
+  constructor(private asyncTaskService: AsyncTaskUIService) {}
 
   ngOnInit(): void {
     console.log('AsyncTaskMonitorComponent ngOnInit');

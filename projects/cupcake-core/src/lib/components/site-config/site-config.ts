@@ -7,7 +7,7 @@ import { SiteConfigService } from '../../services/site-config';
 import { SiteConfig } from '../../models';
 
 @Component({
-  selector: 'app-site-config',
+  selector: 'ccc-site-config',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, NgbAlert, ColorSketchModule],
   templateUrl: './site-config.html',

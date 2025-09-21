@@ -5,7 +5,7 @@ import { NgbActiveModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { Schema, SchemaService } from '@cupcake/vanilla';
-import { ToastService } from '../../services/toast';
+import { ToastService } from '@cupcake/core';
 
 export interface SchemaSelectionResult {
   selectedSchemaIds: number[];

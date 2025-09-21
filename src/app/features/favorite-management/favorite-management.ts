@@ -15,10 +15,8 @@ import {
   OntologySuggestion,
   ColumnType
 } from '@cupcake/vanilla';
-import { ToastService } from '../../shared/services/toast';
-import { AuthService, User, LabGroupService } from '@cupcake/core';
-import { SdrfSyntaxService, SyntaxType } from '../../shared/services/sdrf-syntax';
-import { MetadataValueEditModal, MetadataValueEditConfig } from '../../shared/components/metadata-value-edit-modal/metadata-value-edit-modal';
+import { AuthService, User, LabGroupService, ToastService } from '@cupcake/core';
+import { SdrfSyntaxService, SyntaxType, MetadataValueEditModal, MetadataValueEditConfig } from '@cupcake/vanilla';
 
 @Component({
   selector: 'app-favorite-management',

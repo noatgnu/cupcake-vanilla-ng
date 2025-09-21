@@ -6,14 +6,12 @@ import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs';
 import { MetadataTable, MetadataColumn, SamplePool, MetadataTableService, AsyncExportService, SamplePoolService, ChunkedUploadService, MetadataColumnService, MetadataExportRequest, ColumnType } from '@cupcake/vanilla';
-import { ToastService } from '../../shared/services/toast';
-import { AsyncTaskService } from '../../shared/services/async-task';
-import { MetadataValueEditModal, MetadataValueEditConfig } from '../../shared/components/metadata-value-edit-modal/metadata-value-edit-modal';
-import { MetadataTableEditModal } from '../../shared/components/metadata-table-edit-modal/metadata-table-edit-modal';
+import { ToastService } from '@cupcake/core';
+import { AsyncTaskUIService, MetadataValueEditModal, MetadataValueEditConfig, MetadataTableEditModal } from '@cupcake/vanilla';
 import { SamplePoolDetailsModal } from '../../shared/components/sample-pool-details-modal/sample-pool-details-modal';
 import { SamplePoolEditModal } from '../../shared/components/sample-pool-edit-modal/sample-pool-edit-modal';
 import { SamplePoolCreateModal } from '../../shared/components/sample-pool-create-modal/sample-pool-create-modal';
-import { ExcelExportModalComponent, ExcelExportOptions } from '../../shared/components/excel-export-modal/excel-export-modal';
+import { ExcelExportModalComponent, ExcelExportOptions } from '@cupcake/vanilla';
 import { ColumnEditModal } from '../metadata-table-templates/column-edit-modal/column-edit-modal';
 import { SchemaSelectionModal, SchemaSelectionResult } from '../../shared/components/schema-selection-modal/schema-selection-modal';
 
@@ -184,7 +182,7 @@ export class MetadataTableDetailsComponent implements OnInit, OnDestroy {
     private samplePoolService: SamplePoolService,
     private metadataColumnService: MetadataColumnService,
     private toastService: ToastService,
-    private asyncTaskService: AsyncTaskService,
+    private asyncTaskService: AsyncTaskUIService,
     private modalService: NgbModal
   ) {}
 

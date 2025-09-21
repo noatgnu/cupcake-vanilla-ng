@@ -6,7 +6,7 @@ import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-
 import { MetadataTableTemplate, LabGroup, MetadataColumn, ResourceVisibility } from '../../../shared/models';
 import { MetadataTableTemplateService } from '@cupcake/vanilla';
 import { ColumnEditModal } from '../column-edit-modal/column-edit-modal';
-import { ToastService } from '../../../shared/services/toast';
+import { ToastService } from '@cupcake/core';
 
 @Component({
   selector: 'app-metadata-table-template-edit-modal',

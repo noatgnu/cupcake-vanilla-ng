@@ -13,7 +13,7 @@ import {
 } from '../../../models';
 
 @Component({
-  selector: 'app-user-management',
+  selector: 'ccc-user-management',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, FormsModule, NgbModule],
   templateUrl: './user-management.html',

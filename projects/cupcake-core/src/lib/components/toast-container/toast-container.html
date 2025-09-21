@@ -1,4 +1,4 @@
-<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1055;">
+<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 9999;">
   @for (toast of toasts(); track toast.id) {
     <ngb-toast 
       [class]="getToastClass(toast.type)"
@@ -6,15 +6,12 @@
       [delay]="toast.duration || 5000"
       (hidden)="remove(toast)">
       <ng-template ngbToastHeader>
-        <i [class]="'bi ' + getToastIcon(toast.type) + ' me-2'" 
-           [attr.aria-hidden]="true"></i>
+        <i [class]="'bi ' + getToastIcon(toast.type) + ' me-2'"></i>
         <strong class="me-auto">
           {{ toast.type | titlecase }}
         </strong>
       </ng-template>
       {{ toast.message }}
     </ngb-toast>
-  } @empty {
-    <!-- No toasts to display -->
   }
 </div>

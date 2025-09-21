@@ -9,7 +9,7 @@ import { ApiService } from '../../../services/api';
 import { AuthConfig, RegistrationStatus } from '../../../models';
 
 @Component({
-  selector: 'app-login',
+  selector: 'ccc-login',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, NgbAlert],
   templateUrl: './login.html',

@@ -1,7 +1,8 @@
 import { Component, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
-import { Notification, NotificationItem, NotificationType } from '../../services/notification';
+import { NotificationItem } from '@cupcake/core';
+import { NotificationService, NotificationType } from '@cupcake/vanilla';
 
 @Component({
   selector: 'app-notification-panel',
@@ -15,7 +16,7 @@ export class NotificationPanel {
   // Expose enum to template
   NotificationType = NotificationType;
 
-  constructor(public notificationService: Notification) {}
+  constructor(public notificationService: NotificationService) {}
 
   // Computed properties
   filteredNotifications = computed(() => {
