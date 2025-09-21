@@ -1,0 +1,185 @@
+<div class="modal-header">
+  <h4 class="modal-title">
+    <i class="bi bi-table me-2"></i>{{ title }}
+  </h4>
+  <button type="button" class="btn-close" (click)="onCancel()"></button>
+</div>
+
+<div class="modal-body">
+  <form [formGroup]="editForm" (ngSubmit)="onSubmit()">
+
+    <!-- Table Name -->
+    <div class="mb-3">
+      <label for="tableName" class="form-label">
+        Table Name *
+      </label>
+      <input
+        type="text"
+        class="form-control"
+        id="tableName"
+        formControlName="name"
+        [class.is-invalid]="isFieldInvalid('name')"
+        placeholder="Enter table name"
+        maxlength="255">
+      @if (isFieldInvalid('name')) {
+        <div class="invalid-feedback">
+          {{ getFieldError('name') }}
+        </div>
+      }
+    </div>
+
+    <!-- Description -->
+    <div class="mb-3">
+      <label for="tableDescription" class="form-label">
+        Description
+      </label>
+      <textarea
+        class="form-control"
+        id="tableDescription"
+        formControlName="description"
+        rows="3"
+        placeholder="Optional description of the metadata table"></textarea>
+      <div class="form-text">
+        Provide a brief description of what this metadata table contains or its purpose.
+      </div>
+    </div>
+
+    <!-- Sample Count and Version Row -->
+    <div class="row">
+      <div class="col-md-6 mb-3">
+        <label for="sampleCount" class="form-label">
+          Sample Count *
+        </label>
+        <input
+          type="number"
+          class="form-control"
+          id="sampleCount"
+          formControlName="sampleCount"
+          [class.is-invalid]="isFieldInvalid('sampleCount')"
+          placeholder="Number of samples"
+          min="1"
+          max="10000">
+        @if (isFieldInvalid('sampleCount')) {
+          <div class="invalid-feedback">
+            {{ getFieldError('sampleCount') }}
+          </div>
+        }
+        <div class="form-text">
+          Number of samples in this metadata table (1-10,000).
+        </div>
+      </div>
+
+      <div class="col-md-6 mb-3">
+        <label for="version" class="form-label">
+          Version
+        </label>
+        <input
+          type="text"
+          class="form-control"
+          id="version"
+          formControlName="version"
+          [class.is-invalid]="isFieldInvalid('version')"
+          placeholder="e.g., 1.0, v2.1"
+          maxlength="50">
+        @if (isFieldInvalid('version')) {
+          <div class="invalid-feedback">
+            {{ getFieldError('version') }}
+          </div>
+        }
+        <div class="form-text">
+          Version identifier for this table.
+        </div>
+      </div>
+    </div>
+
+    <!-- Lab Group Assignment -->
+    <div class="mb-3">
+      <label for="labGroup" class="form-label">
+        Lab Group Assignment
+      </label>
+      @if (isLoadingLabGroups()) {
+        <div class="d-flex align-items-center">
+          <div class="spinner-border spinner-border-sm me-2" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+          <span class="text-muted">Loading lab groups...</span>
+        </div>
+      } @else {
+        <select
+          class="form-select"
+          id="labGroup"
+          formControlName="lab_group">
+          <option [value]="null">No lab group (Personal)</option>
+          @for (group of availableLabGroups(); track group.id) {
+            <option [value]="group.id">{{ group.name }}</option>
+          }
+        </select>
+      }
+      <div class="form-text">
+        Assign this table to a lab group for shared access, or leave unassigned for personal use.
+      </div>
+    </div>
+
+    <!-- Table Status Info (Read-only) -->
+    @if (table) {
+      <div class="mb-3">
+        <label class="form-label">Current Status</label>
+        <div class="d-flex gap-2">
+          @if (table.isLocked) {
+            <span class="badge bg-warning">
+              <i class="bi bi-lock me-1"></i>Locked
+            </span>
+          } @else {
+            <span class="badge bg-success">
+              <i class="bi bi-unlock me-1"></i>Unlocked
+            </span>
+          }
+          @if (table.isPublished) {
+            <span class="badge bg-info">
+              <i class="bi bi-check-circle me-1"></i>Published
+            </span>
+          } @else {
+            <span class="badge bg-secondary">
+              <i class="bi bi-clock me-1"></i>Draft
+            </span>
+          }
+        </div>
+        <div class="form-text">
+          Lock status and publication state can be managed through advanced options.
+        </div>
+      </div>
+    }
+
+    <!-- Character Count -->
+    <div class="mb-2">
+      <div class="d-flex justify-content-between align-items-center">
+        <small class="text-muted">
+          Name: {{ editForm.get('name')?.value?.length || 0 }}/255 characters
+        </small>
+        @if (hasChanges) {
+          <small class="text-info">
+            <i class="bi bi-info-circle me-1"></i>Changes detected
+          </small>
+        }
+      </div>
+    </div>
+
+  </form>
+</div>
+
+<div class="modal-footer">
+  <button type="button" class="btn btn-outline-secondary" (click)="onCancel()">
+    <i class="bi bi-x-circle me-1"></i>Cancel
+  </button>
+  <button
+    type="button"
+    class="btn btn-primary"
+    (click)="onSubmit()"
+    [disabled]="editForm.invalid || isLoading() || !hasChanges">
+    @if (isLoading()) {
+      <span class="spinner-border spinner-border-sm me-2"></span>
+    }
+    <i class="bi bi-check-circle me-1"></i>
+    Save Changes
+  </button>
+</div>

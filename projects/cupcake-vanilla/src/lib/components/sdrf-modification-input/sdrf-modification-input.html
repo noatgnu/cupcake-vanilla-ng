@@ -1,0 +1,262 @@
+<form [formGroup]="modificationForm" class="modification-input-form">
+
+  <!-- Search Type Selection for Typeahead -->
+  @if (templateId || columnId) {
+    <div class="mb-3">
+      <small class="text-muted d-block mb-1">Search Mode for Name of Term:</small>
+      <div class="btn-group btn-group-sm" role="group">
+        <button
+          type="button"
+          class="btn"
+          [class]="searchType() === 'icontains' ? 'btn-primary' : 'btn-outline-primary'"
+          (click)="onSearchTypeChange('icontains')">
+          <i class="bi bi-search me-1"></i>Contains
+        </button>
+        <button
+          type="button"
+          class="btn"
+          [class]="searchType() === 'istartswith' ? 'btn-primary' : 'btn-outline-primary'"
+          (click)="onSearchTypeChange('istartswith')">
+          <i class="bi bi-arrow-right me-1"></i>Starts with
+        </button>
+      </div>
+    </div>
+  }
+
+  <div class="row g-3">
+
+    <!-- Name of Term (NT) - Required with Typeahead -->
+    <div class="col-md-6">
+      <label for="NT" class="form-label">
+        Name of Term <span class="text-danger">*</span>
+        <small class="text-muted">(NT)</small>
+      </label>
+      <input
+        type="text"
+        class="form-control"
+        id="NT"
+        formControlName="NT"
+        placeholder="e.g., Oxidation, Acetyl, Phospho"
+        [ngbTypeahead]="searchModificationTerms"
+        [resultFormatter]="formatOntologySuggestion"
+        [inputFormatter]="formatOntologySuggestion"
+        (selectItem)="onOntologySuggestionSelected($event)"
+        [editable]="true"
+        [showHint]="true"
+        [focusFirst]="false"
+        container="body"
+        [class.is-invalid]="modificationForm.get('NT')?.invalid && modificationForm.get('NT')?.touched">
+      <div class="form-text">
+        @if (templateId || columnId) {
+          Typeahead search: {{ searchType() === 'icontains' ? 'Contains' : 'Starts with' }} mode
+        } @else {
+          Common modifications: Oxidation, Carbamidomethyl, Acetyl
+        }
+      </div>
+      <div class="invalid-feedback">
+        Name of Term is required
+      </div>
+    </div>
+
+    <!-- Unimod Specification Selection -->
+    @if (showSpecifications() && availableSpecifications().length > 0) {
+      <div class="col-md-12">
+        <div class="mb-3">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <label class="form-label mb-0">
+              Unimod Specifications
+              <small class="text-muted">(Select to auto-fill fields)</small>
+            </label>
+            
+            @if (hiddenSpecificationCount() > 0) {
+              <div class="form-check form-switch">
+                <input 
+                  class="form-check-input" 
+                  type="checkbox" 
+                  id="showHiddenSpecs"
+                  [checked]="showHiddenSpecifications()"
+                  (change)="toggleHiddenSpecifications()">
+                <label class="form-check-label small text-muted" for="showHiddenSpecs">
+                  Show {{ hiddenSpecificationCount() }} hidden spec{{ hiddenSpecificationCount() === 1 ? '' : 's' }}
+                </label>
+              </div>
+            }
+          </div>
+          
+          <div class="border rounded p-2 bg-body-secondary">
+            <div class="mb-2">
+              <small class="text-info fw-semibold">
+                <i class="bi bi-info-circle me-1"></i>
+                {{ showHiddenSpecifications() ? 'All' : 'Visible' }} specifications for {{ selectedUnimodData()?.name }}
+                @if (!showHiddenSpecifications() && hiddenSpecificationCount() > 0) {
+                  <span class="text-muted">({{ hiddenSpecificationCount() }} hidden)</span>
+                }
+              </small>
+            </div>
+            <div class="row g-2">
+              @for (spec of availableSpecifications(); track spec.specNumber) {
+                <div class="col-md-6">
+                  <div class="form-check">
+                    <input
+                      class="form-check-input"
+                      type="radio"
+                      [id]="'spec_' + spec.specNumber"
+                      [value]="spec.specNumber"
+                      [checked]="selectedSpecification() === spec.specNumber"
+                      (change)="onSpecificationSelected(spec.specNumber)">
+                    <label
+                      class="form-check-label small"
+                      [for]="'spec_' + spec.specNumber">
+                      <div class="fw-semibold">
+                        Spec {{ spec.specNumber }}
+                        @if (spec['hidden'] === '1') {
+                          <span class="badge bg-warning text-dark ms-1" title="Hidden specification">Hidden</span>
+                        }
+                      </div>
+                      <div class="text-muted">{{ getSpecificationDisplay(spec) }}</div>
+                    </label>
+                  </div>
+                </div>
+              }
+            </div>
+            @if (selectedSpecification()) {
+              <div class="mt-2 p-2 bg-body border rounded">
+                <small class="text-success">
+                  <i class="bi bi-check-circle me-1"></i>
+                  Fields auto-filled from specification {{ selectedSpecification() }}
+                </small>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Target Amino Acid (TA) - Required -->
+    <div class="col-md-6">
+      <label for="TA" class="form-label">
+        Target Amino Acid <span class="text-danger">*</span>
+        <small class="text-muted">(TA)</small>
+      </label>
+      <input
+        type="text"
+        class="form-control"
+        id="TA"
+        formControlName="TA"
+        placeholder="e.g., M, S,T,Y, C"
+        (input)="onTargetAminoAcidChange($event)"
+        [class.is-invalid]="modificationForm.get('TA')?.invalid && modificationForm.get('TA')?.touched">
+      <div class="form-text">Single letter amino acid codes, comma-separated</div>
+      <div class="invalid-feedback">
+        Target amino acid is required
+      </div>
+    </div>
+
+    <!-- Accession (AC) -->
+    <div class="col-md-6">
+      <label for="AC" class="form-label">
+        Accession <small class="text-muted">(AC)</small>
+      </label>
+      <input
+        type="text"
+        class="form-control"
+        id="AC"
+        formControlName="AC"
+        placeholder="e.g., UNIMOD:35, PSI-MOD:00719">
+      <div class="form-text">UNIMOD or PSI-MOD accession</div>
+    </div>
+
+    <!-- Modification Type (MT) -->
+    <div class="col-md-6">
+      <label for="MT" class="form-label">
+        Modification Type <small class="text-muted">(MT)</small>
+      </label>
+      <select class="form-select" id="MT" formControlName="MT">
+        <option value="">Select type...</option>
+        @for (type of modificationTypes; track type) {
+          <option [value]="type">{{ type }}</option>
+        }
+      </select>
+      <div class="form-text">Fixed, Variable, or Annotated</div>
+    </div>
+
+    <!-- Position (PP) -->
+    <div class="col-md-6">
+      <label for="PP" class="form-label">
+        Position <small class="text-muted">(PP)</small>
+      </label>
+      <select class="form-select" id="PP" formControlName="PP">
+        <option value="">Select position...</option>
+        @for (position of positions; track position) {
+          <option [value]="position">{{ position }}</option>
+        }
+      </select>
+      <div class="form-text">Where the modification occurs</div>
+    </div>
+
+    <!-- Chemical Formula (CF) -->
+    <div class="col-md-6">
+      <label for="CF" class="form-label">
+        Chemical Formula <small class="text-muted">(CF)</small>
+      </label>
+      <input
+        type="text"
+        class="form-control"
+        id="CF"
+        formControlName="CF"
+        placeholder="e.g., H(2)C(2)O">
+      <div class="form-text">Follow UNIMOD format: H(2)C(2)O</div>
+    </div>
+
+    <!-- Monoisotopic Mass (MM) -->
+    <div class="col-md-6">
+      <label for="MM" class="form-label">
+        Monoisotopic Mass <small class="text-muted">(MM)</small>
+      </label>
+      <input
+        type="text"
+        class="form-control"
+        id="MM"
+        formControlName="MM"
+        placeholder="e.g., 42.010565"
+        [class.is-invalid]="modificationForm.get('MM')?.invalid && modificationForm.get('MM')?.touched">
+      <div class="form-text">Mass shift in Da (5+ decimal places)</div>
+      <div class="invalid-feedback">
+        Please enter a valid mass (numbers and decimal point only)
+      </div>
+    </div>
+
+    <!-- Target Site (TS) -->
+    <div class="col-md-6">
+      <label for="TS" class="form-label">
+        Target Site <small class="text-muted">(TS)</small>
+      </label>
+      <input
+        type="text"
+        class="form-control"
+        id="TS"
+        formControlName="TS"
+        placeholder="e.g., N[^P][ST]">
+      <div class="form-text">Regular expression for complex site rules</div>
+    </div>
+
+  </div>
+
+  <!-- Preview -->
+  @if (modificationForm.valid && (modificationForm.get('NT')?.value || modificationForm.get('TA')?.value)) {
+    <div class="mt-3 p-2 bg-body-secondary border rounded">
+      <small class="text-muted fw-semibold">Preview:</small>
+      <div class="font-monospace small">{{ value || 'Building...' }}</div>
+    </div>
+  }
+
+  <!-- Validation Summary -->
+  @if (modificationForm.invalid && modificationForm.touched) {
+    <div class="alert alert-warning mt-3">
+      <small>
+        <i class="bi bi-exclamation-triangle me-1"></i>
+        <strong>Required fields:</strong> Name of Term (NT) and Target Amino Acid (TA) must be filled.
+      </small>
+    </div>
+  }
+</form>
