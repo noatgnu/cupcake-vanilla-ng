@@ -1,0 +1,109 @@
+.powered-by-footer {
+  position: fixed;
+  bottom: 0;
+  right: 20px;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+.footer-trigger {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 60px;
+  height: 20px;
+  pointer-events: all;
+}
+
+.footer-content {
+  position: absolute;
+  bottom: 5px;
+  right: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(8px);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateY(10px) scale(0.95);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+// Dark mode footer content
+.dark-mode .footer-content,
+:root[data-bs-theme="dark"] .footer-content {
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--cupcake-text);
+}
+
+.footer-trigger:hover + .footer-content,
+.footer-content:hover {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: all;
+}
+
+.footer-text {
+  display: flex;
+  align-items: center;
+  color: currentColor;
+}
+
+.footer-text strong {
+  background: linear-gradient(135deg, var(--cupcake-primary), var(--cupcake-primary-dark));
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 600;
+}
+
+// Fallback for dark mode where text-fill-color transparent might not work well
+.dark-mode .footer-text strong,
+:root[data-bs-theme="dark"] .footer-text strong {
+  -webkit-text-fill-color: var(--cupcake-primary);
+  background: none;
+  color: var(--cupcake-primary);
+}
+
+.footer-text i {
+  color: #ffc107;
+  font-size: 0.8rem;
+}
+
+.dark-mode .footer-text i,
+:root[data-bs-theme="dark"] .footer-text i {
+  color: #ffeb3b;
+}
+
+/* Animation for initial appearance */
+.powered-by-footer {
+  animation: slideInFromBottom 0.5s ease-out 2s both;
+}
+
+@keyframes slideInFromBottom {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Hide on mobile devices for cleaner UI */
+@media (max-width: 768px) {
+  .powered-by-footer {
+    display: none;
+  }
+}
+
+/* Ensure it doesn't interfere with page content */
+.powered-by-footer {
+  user-select: none;
+}

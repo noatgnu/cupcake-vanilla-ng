@@ -1,0 +1,181 @@
+<!-- Schema Selection Modal -->
+<div class="modal-header">
+  <h4 class="modal-title">
+    <i class="bi bi-arrows-move me-2"></i>{{ title }}
+  </h4>
+  <button type="button" class="btn-close" aria-label="Close" (click)="onCancel()"></button>
+</div>
+
+<div class="modal-body">
+  <!-- Description -->
+  <div class="alert alert-info mb-4">
+    <div class="d-flex align-items-start">
+      <i class="bi bi-info-circle-fill me-2 mt-1"></i>
+      <div>
+        <small>{{ description }}</small>
+        <br>
+        <small class="text-muted">
+          Leave empty to use all available schemas or select specific ones for custom ordering.
+        </small>
+      </div>
+    </div>
+  </div>
+
+  <!-- Search and Actions -->
+  <div class="row mb-3">
+    <div class="col-md-8">
+      <div class="input-group">
+        <span class="input-group-text">
+          <i class="bi bi-search"></i>
+        </span>
+        <input
+          type="text"
+          class="form-control"
+          placeholder="Search schemas..."
+          [(ngModel)]="searchTerm"
+          [ngModelOptions]="{updateOn: 'change'}"
+        >
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="btn-group w-100" role="group">
+        <button
+          type="button"
+          class="btn btn-outline-primary btn-sm"
+          (click)="selectAll()"
+          [disabled]="filteredSchemas.length === 0"
+          title="Select All Visible">
+          <i class="bi bi-check-all"></i> All
+        </button>
+        <button
+          type="button"
+          class="btn btn-outline-secondary btn-sm"
+          (click)="clearSelection()"
+          [disabled]="selectedSchemaIds().size === 0"
+          title="Clear Selection">
+          <i class="bi bi-x-circle"></i> Clear
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Selection Summary -->
+  @if (selectedSchemaIds().size > 0) {
+    <div class="alert alert-success mb-3">
+      <i class="bi bi-check-circle me-2"></i>
+      <strong>{{ selectedSchemaIds().size }}</strong> schema{{ selectedSchemaIds().size !== 1 ? 's' : '' }} selected
+    </div>
+  }
+
+  <!-- Loading State -->
+  @if (isLoading()) {
+    <div class="text-center py-4">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading schemas...</span>
+      </div>
+      <p class="text-muted mt-2">Loading available schemas...</p>
+    </div>
+  } @else {
+    <!-- Schema List -->
+    <div class="schema-list" style="max-height: 400px; overflow-y: auto;">
+      @if (filteredSchemas.length === 0) {
+        <div class="text-center py-4 text-muted">
+          <i class="bi bi-search fs-1 mb-3 opacity-50"></i>
+          <h6>No schemas found</h6>
+          <p class="small mb-0">
+            @if (searchTerm()) {
+              Try adjusting your search terms
+            } @else {
+              No schemas are currently available
+            }
+          </p>
+        </div>
+      } @else {
+        @for (schema of filteredSchemas; track schema.id) {
+          <div
+            class="schema-item border rounded p-3 mb-2"
+            [class.selected]="isSchemaSelected(schema.id)"
+            (click)="toggleSchemaSelection(schema.id)"
+            role="button">
+
+            <div class="d-flex align-items-start">
+              <!-- Checkbox -->
+              <div class="form-check me-3">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  [checked]="isSchemaSelected(schema.id)"
+                  [id]="'schema-' + schema.id"
+                  (click)="$event.stopPropagation()">
+                <label class="form-check-label visually-hidden" [for]="'schema-' + schema.id">
+                  Select {{ schema.name }}
+                </label>
+              </div>
+
+              <!-- Schema Info -->
+              <div class="flex-grow-1">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                  <h6 class="mb-0 text-truncate me-2">
+                    {{ schema.name }}
+                    @if (schema.version) {
+                      <small class="text-muted">v{{ schema.version }}</small>
+                    }
+                  </h6>
+
+                  <div class="flex-shrink-0">
+                    @if (schema.category) {
+                      <span class="badge" [class]="getBadgeClass(schema.category)">
+                        {{ schema.category }}
+                      </span>
+                    }
+                  </div>
+                </div>
+
+                @if (schema.description) {
+                  <p class="text-muted small mb-1">{{ schema.description }}</p>
+                }
+
+                <div class="d-flex align-items-center justify-content-between">
+                  @if (schema.columnsCount !== undefined) {
+                    <small class="text-muted">
+                      <i class="bi bi-columns me-1"></i>{{ schema.columnsCount }} columns
+                    </small>
+                  }
+
+                  @if (schema.url) {
+                    <a
+                      [href]="schema.url"
+                      target="_blank"
+                      class="btn btn-sm btn-outline-secondary"
+                      title="View Schema Documentation"
+                      (click)="$event.stopPropagation()">
+                      <i class="bi bi-box-arrow-up-right"></i>
+                    </a>
+                  }
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+      }
+    </div>
+  }
+</div>
+
+<div class="modal-footer">
+  <button type="button" class="btn btn-secondary" (click)="onCancel()">
+    <i class="bi bi-x-circle me-1"></i>Cancel
+  </button>
+  <button
+    type="button"
+    class="btn btn-primary"
+    (click)="onConfirm()"
+    [disabled]="isLoading()">
+    <i class="bi bi-arrows-move me-1"></i>
+    @if (selectedSchemaIds().size > 0) {
+      Reorder with {{ selectedSchemaIds().size }} Schema{{ selectedSchemaIds().size !== 1 ? 's' : '' }}
+    } @else {
+      Reorder with All Schemas
+    }
+  </button>
+</div>

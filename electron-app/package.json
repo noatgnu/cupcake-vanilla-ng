@@ -1,0 +1,83 @@
+{
+  "name": "cupcake-vanilla-electron",
+  "version": "1.0.0",
+  "description": "Cupcake Vanilla Electron Desktop Application",
+  "main": "dist/main.js",
+  "scripts": {
+    "compile": "tsc && cp src/*.html dist/ && cp src/*.css dist/",
+    "compile:watch": "tsc --watch & cp src/*.html dist/ & cp src/*.css dist/",
+    "start": "npm run compile && electron .",
+    "dev": "node scripts/dev-simple.js",
+    "dev:auto": "node scripts/dev.js",
+    "dev:https": "node scripts/dev-https.js",
+    "dev:electron-only": "npm run compile && electron . --dev",
+    "build:web": "cd .. && npm run build",
+    "build:backend": "node scripts/build-backend.js",
+    "build": "npm run compile && npm run build:web && npm run build:backend && electron-builder",
+    "build:win": "npm run compile && npm run build:web && npm run build:backend && electron-builder --win",
+    "build:mac": "npm run compile && npm run build:web && npm run build:backend && electron-builder --mac",
+    "build:linux": "npm run compile && npm run build:web && npm run build:backend && electron-builder --linux",
+    "pack": "npm run compile && npm run build:web && npm run build:backend && electron-builder --dir",
+    "dist": "npm run compile && npm run build:web && npm run build:backend && electron-builder --publish=never"
+  },
+  "keywords": [
+    "cupcake",
+    "metadata",
+    "electron",
+    "desktop"
+  ],
+  "author": "Cupcake Team",
+  "license": "MIT",
+  "dependencies": {
+    "bootstrap": "^5.3.0",
+    "bootstrap-icons": "^1.10.0"
+  },
+  "devDependencies": {
+    "@types/electron": "^1.4.38",
+    "@types/node": "^24.5.2",
+    "concurrently": "^9.2.1",
+    "electron": "^38.0.0",
+    "electron-builder": "^26.0.12",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.2",
+    "wait-on": "^9.0.1"
+  },
+  "build": {
+    "appId": "com.cupcake.vanilla",
+    "productName": "Cupcake Vanilla",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "web-dist/**/*",
+      "node_modules/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "../dist/cupcake-vanilla-ng",
+        "to": "web-dist",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "backend-dist",
+        "to": "backend",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "mac": {
+      "category": "public.app-category.productivity",
+      "target": "dmg"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "linux": {
+      "target": "AppImage"
+    }
+  }
+}

@@ -1,0 +1,539 @@
+<div class="modal-header">
+  <h4 class="modal-title">
+    <i class="bi bi-columns-gap me-2"></i>{{ title }}
+  </h4>
+  <button type="button" class="btn-close" (click)="onCancel()"></button>
+</div>
+
+<div class="modal-body">
+  <form [formGroup]="editForm" (ngSubmit)="onSubmit()">
+    <div class="row">
+      <!-- Selection Required Notice for New Columns -->
+      @if (!isEdit) {
+        <div class="col-12 mb-3">
+          <div class="alert alert-warning">
+            <h6 class="alert-heading">
+              <i class="bi bi-exclamation-triangle me-2"></i>Column Selection Required
+            </h6>
+            <p class="mb-0">
+              You must select from official SDRF columns or existing templates to ensure data compliance and consistency.
+            </p>
+          </div>
+        </div>
+      }
+
+      <!-- Official SDRF Columns -->
+      <div class="col-12 mb-3">
+        <h6 class="text-muted border-bottom pb-2">
+          <i class="bi bi-file-earmark-check me-2"></i>Official SDRF Columns
+          <small class="text-muted ms-2">
+            @if (!isEdit) {
+              (Step 1: Select from standardized SDRF-Proteomics column names)
+            } @else {
+              (Recommended - select from standardized SDRF-Proteomics column names)
+            }
+          </small>
+        </h6>
+      </div>
+
+      @if (!isEdit) {
+        <div class="col-12 mb-3">
+          @if (!showOfficialColumns) {
+            <button
+              type="button"
+              class="btn btn-primary mb-3"
+              (click)="toggleOfficialColumns()">
+              <i class="bi bi-list-ul me-2"></i>
+              Select from Official SDRF Columns
+            </button>
+          } @else {
+            <button
+              type="button"
+              class="btn btn-outline-secondary mb-3"
+              (click)="toggleOfficialColumns()">
+              <i class="bi bi-x me-2"></i>
+              Hide Official Columns
+            </button>
+          }
+        </div>
+      } @else {
+        <div class="col-12 mb-3">
+          <button
+            type="button"
+            class="btn btn-outline-info mb-3"
+            (click)="toggleOfficialColumns()">
+            <i class="bi bi-list-ul me-2"></i>
+            {{ showOfficialColumns ? 'Hide' : 'Show' }} Official Column Names
+          </button>
+        </div>
+      }
+
+      @if (showOfficialColumns) {
+        <div class="col-12 mb-3">
+          <div class="border rounded p-3">
+            <p class="mb-3 text-muted">
+              <i class="bi bi-info-circle me-2"></i>
+              Select from official SDRF-Proteomics column names. Only columns without existing templates are shown.
+            </p>
+
+            @if (availableOfficialColumns.length === 0) {
+              <div class="alert alert-warning">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                All official SDRF columns already have templates created.
+              </div>
+            } @else {
+              <div class="row">
+                @for (column of availableOfficialColumns; track column.name) {
+                  <div class="col-md-6 mb-2">
+                    <div class="card h-100 cursor-pointer border-info"
+                         (click)="selectOfficialColumn(column)"
+                         [class.border-primary]="selectedOfficialColumn?.name === column.name">
+                      <div class="card-body py-2">
+                        <h6 class="card-title mb-1 font-monospace">
+                          {{ column.name }}
+                        </h6>
+                        <p class="card-text small mb-1">
+                          <span class="badge"
+                                [class]="column.type === 'characteristics' ? 'bg-primary' :
+                                        column.type === 'comment' ? 'bg-success' :
+                                        column.type === 'factor_value' ? 'bg-warning' : 'bg-secondary'">
+                            {{ column.type }}
+                          </span>
+                        </p>
+                        <p class="card-text small mb-0">{{ column.description }}</p>
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Template Swapping for Edit Mode -->
+      @if (isEdit && showTemplateSwap) {
+        <div class="col-12 mb-3">
+          <div class="alert alert-info">
+            <h6 class="alert-heading">
+              <i class="bi bi-arrow-left-right me-2"></i>Swap to Different Template
+            </h6>
+            <p class="mb-3">
+              Choose a different template to change the column name and settings. Your current value will be preserved.
+            </p>
+
+            <div class="mb-3">
+              <input
+                type="text"
+                class="form-control mb-2"
+                placeholder="Search templates..."
+                [(ngModel)]="templateFilter"
+                [ngModelOptions]="{standalone: true}"
+                (input)="onTemplateFilterChange()">
+
+              <select
+                class="form-select mb-3"
+                size="4"
+                [disabled]="isLoadingTemplates">
+                @if (isLoadingTemplates) {
+                  <option value="" disabled>Loading templates...</option>
+                } @else {
+                  @for (template of templates; track template.id) {
+                    <option
+                      [value]="template.id"
+                      (click)="swapToTemplate(template)"
+                      style="cursor: pointer;">
+                      {{ template.columnName }} - {{ template.columnType }}@if (template.ontologyType) { ({{ getOntologyTypeLabel(template.ontologyType) }})}
+                    </option>
+                  }
+                }
+              </select>
+            </div>
+
+            <div class="d-flex justify-content-between">
+              <button
+                type="button"
+                class="btn btn-success"
+                (click)="showCreateCustomTemplateOption()">
+                <i class="bi bi-plus-circle me-1"></i>Create Custom Template
+              </button>
+              <button
+                type="button"
+                class="btn btn-secondary"
+                (click)="cancelTemplateSwap()">
+                <i class="bi bi-x-circle me-1"></i>Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Custom Template Creation Option -->
+      @if (isEdit && showCreateCustomTemplate) {
+        <div class="col-12 mb-3">
+          <div class="alert alert-warning">
+            <h6 class="alert-heading">
+              <i class="bi bi-plus-circle me-2"></i>Create Custom Template
+            </h6>
+            <p class="mb-3">
+              This will create a new custom template with your desired column name and settings.
+            </p>
+
+            <div class="d-flex justify-content-between">
+              <button
+                type="button"
+                class="btn btn-warning"
+                (click)="createCustomTemplate()">
+                <i class="bi bi-gear me-1"></i>Create & Apply Template
+              </button>
+              <button
+                type="button"
+                class="btn btn-secondary"
+                (click)="cancelTemplateSwap()">
+                <i class="bi bi-x-circle me-1"></i>Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Template Selection -->
+      <div class="col-12 mb-3">
+        <h6 class="text-muted border-bottom pb-2">
+          <i class="bi bi-file-earmark-text me-2"></i>Template Selection
+          <small class="text-muted ms-2">
+            @if (!isEdit) {
+              (Step 2: Or select from existing templates)
+            } @else {
+              (Optional - select a template to auto-fill column settings)
+            }
+          </small>
+        </h6>
+      </div>
+
+      <div class="col-12 mb-3">
+        <div class="input-group mb-3">
+          <span class="input-group-text">
+            <i class="bi bi-search"></i>
+          </span>
+          <input 
+            type="text" 
+            class="form-control" 
+            placeholder="Search column templates..."
+            [(ngModel)]="templateFilter"
+            [ngModelOptions]="{standalone: true}"
+            (input)="onTemplateFilterChange()">
+          @if (templateFilter) {
+            <button class="btn btn-outline-secondary" type="button" (click)="clearTemplateFilter()">
+              <i class="bi bi-x"></i>
+            </button>
+          }
+        </div>
+
+        <select 
+          class="form-select mb-3"
+          size="5"
+          [(ngModel)]="selectedTemplateId"
+          [ngModelOptions]="{standalone: true}"
+          (change)="onTemplateSelectionChange()"
+          [disabled]="isLoadingTemplates">
+          <option value="">No template selected</option>
+          @if (isLoadingTemplates) {
+            <option value="" disabled>Loading templates...</option>
+          } @else {
+            @for (template of templates; track template.id) {
+              <option [value]="template.id">
+                {{ template.columnName }} - {{ template.columnType }}@if (template.ontologyType) { ({{ getOntologyTypeLabel(template.ontologyType) }})}
+              </option>
+            }
+          }
+        </select>
+
+        @if (totalTemplatePages > 1) {
+          <div class="d-flex justify-content-between align-items-center">
+            <small class="text-muted">
+              Showing {{ (currentTemplatePage - 1) * templatePageSize + 1 }}-{{ Math.min(currentTemplatePage * templatePageSize, totalTemplates) }}
+              of {{ totalTemplates }}
+            </small>
+            <ngb-pagination
+              [collectionSize]="totalTemplates"
+              [page]="currentTemplatePage"
+              [pageSize]="templatePageSize"
+              [maxSize]="3"
+              [boundaryLinks]="true"
+              [rotate]="true"
+              (pageChange)="onTemplatePageChange($event)"
+              class="pagination-sm mb-0">
+            </ngb-pagination>
+          </div>
+        }
+
+        @if (selectedTemplate) {
+          <div class="alert alert-info mt-3">
+            <i class="bi bi-info-circle me-2"></i>
+            Template "{{ selectedTemplate.name }}" selected. Settings will be applied automatically.
+            <button type="button" class="btn btn-sm btn-outline-info float-end" (click)="clearTemplate()">
+              Clear Selection
+            </button>
+          </div>
+        }
+      </div>
+
+      <!-- Manual Entry -->
+      <div class="col-12 mb-3">
+        <h6 class="text-muted border-bottom pb-2">
+          <i class="bi bi-pencil me-2"></i>Column Details
+          @if (selectedTemplate) {
+            <small class="text-muted ms-2">(Auto-filled from template - you can modify as needed)</small>
+          }
+        </h6>
+      </div>
+      
+      <div class="col-12 mb-3">
+        <label for="columnName" class="form-label">
+          Column Name *
+          <span class="text-muted ms-2">
+            <i class="bi bi-info-circle"></i>
+            Column names are managed through templates
+          </span>
+        </label>
+        <div class="input-group">
+          <input
+            type="text"
+            class="form-control"
+            id="columnName"
+            formControlName="name"
+            [class.is-invalid]="editForm.get('name')?.invalid && editForm.get('name')?.touched"
+            readonly
+            placeholder="Select from official columns or templates below">
+          @if (isEdit) {
+            <button
+              type="button"
+              class="btn btn-outline-secondary"
+              (click)="showTemplateSwapOptions()"
+              title="Change to different template">
+              <i class="bi bi-arrow-left-right"></i> Swap Template
+            </button>
+          }
+        </div>
+        <div class="form-text">
+          <i class="bi bi-info-circle me-1"></i>
+          @if (isEdit) {
+            To change the column name, swap to a different template or create a new custom template.
+          } @else {
+            Select from official SDRF columns or existing templates below to ensure compliance.
+          }
+        </div>
+      </div>
+
+      <div class="col-md-6 mb-3">
+        <label for="columnType" class="form-label">
+          Column Type *
+          <span class="text-muted ms-2">
+            <i class="bi bi-info-circle"></i>
+            Managed through templates
+          </span>
+        </label>
+        <select
+          class="form-select"
+          id="columnType"
+          formControlName="type"
+          [class.is-invalid]="editForm.get('type')?.invalid && editForm.get('type')?.touched">
+          @for (type of columnTypes; track type.value) {
+            <option [value]="type.value">{{ type.label }}</option>
+          }
+        </select>
+      </div>
+
+      <!-- Advanced Mode Toggle -->
+      <div class="col-12 mb-3">
+        <div class="form-check form-switch">
+          <input
+            class="form-check-input"
+            type="checkbox"
+            id="advancedMode"
+            [checked]="showAdvancedMode()"
+            (change)="toggleAdvancedMode()">
+          <label class="form-check-label" for="advancedMode">
+            <i class="bi bi-gear me-1"></i>Advanced Mode
+          </label>
+          <div class="form-text">
+            <i class="bi bi-info-circle me-1"></i>
+            Show advanced options for ontology configuration and column settings
+          </div>
+        </div>
+      </div>
+
+      @if (showAdvancedMode()) {
+        <div class="col-md-6 mb-3">
+          <label for="ontologyType" class="form-label">
+            Ontology Type
+            <span class="badge bg-warning ms-2">
+              <i class="bi bi-exclamation-triangle me-1"></i>Advanced
+            </span>
+          </label>
+        <select
+          class="form-select"
+          id="ontologyType"
+          formControlName="ontologyType"
+          (change)="onOntologyTypeChange($event)">
+          @for (ontology of ontologyTypes; track $index) {
+            <option [value]="$index">{{ ontology.label }}</option>
+          }
+        </select>
+
+        @if (hasOntologyType) {
+          <div class="form-text mt-2">
+            <i class="bi bi-info-circle me-1"></i>
+            Custom ontology filters will be applied based on the selected type
+          </div>
+        }
+        </div>
+
+        @if (hasOntologyType) {
+          <div class="col-12 mb-3">
+            <div class="form-check form-switch">
+              <input
+                class="form-check-input"
+                type="checkbox"
+                id="enableTypeahead"
+                formControlName="enableTypeahead">
+              <label class="form-check-label" for="enableTypeahead">
+                <i class="bi bi-search me-1"></i>Enable Typeahead Autocomplete
+              </label>
+              <div class="form-text">
+                <i class="bi bi-info-circle me-1"></i>
+                Enable autocomplete suggestions from {{ selectedOntologyConfig?.label || 'selected' }} ontology when editing values
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- Column Options - Advanced Mode Only -->
+        <div class="col-12 mb-3">
+          <h6 class="text-muted border-bottom pb-2">
+            <i class="bi bi-sliders me-2"></i>Column Options
+            <span class="badge bg-warning ms-2">
+              <i class="bi bi-exclamation-triangle me-1"></i>Advanced
+            </span>
+          </h6>
+        </div>
+
+        <div class="col-12 mb-3">
+          <div class="row">
+            <div class="col-md-3">
+              <div class="form-check form-switch">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  id="mandatory"
+                  formControlName="mandatory">
+                <label class="form-check-label" for="mandatory">
+                  <i class="bi bi-exclamation-circle me-1"></i>Mandatory
+                </label>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="form-check form-switch">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  id="hidden"
+                  formControlName="hidden">
+                <label class="form-check-label" for="hidden">
+                  <i class="bi bi-eye-slash me-1"></i>Hidden
+                </label>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="form-check form-switch">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  id="readonly"
+                  formControlName="readonly">
+                <label class="form-check-label" for="readonly">
+                  <i class="bi bi-lock me-1"></i>Read Only
+                </label>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="form-check form-switch">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  id="notApplicable"
+                  formControlName="notApplicable">
+                <label class="form-check-label" for="notApplicable">
+                  <i class="bi bi-dash-circle me-1"></i>N/A
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+
+      <div class="col-12 mb-3">
+        <label for="defaultValue" class="form-label">
+          Default Value
+          @if (hasTypeaheadEnabled) {
+            <span class="badge bg-success ms-2">
+              <i class="bi bi-search me-1"></i>Typeahead Enabled
+            </span>
+          }
+        </label>
+        
+        <div class="input-group">
+          <input 
+            type="text" 
+            class="form-control"
+            id="defaultValue"
+            formControlName="value"
+            placeholder="Enter default value"
+            readonly>
+          <button 
+            type="button" 
+            class="btn btn-outline-primary"
+            (click)="openValueEditModal()"
+            title="Open advanced value editor">
+            <i class="bi bi-pencil me-1"></i>Edit
+          </button>
+        </div>
+        
+        <div class="form-text">
+          @if (hasTypeaheadEnabled) {
+            <i class="bi bi-info-circle me-1"></i>
+            Click "Edit" to use autocomplete suggestions from {{ selectedOntologyConfig?.label || 'selected' }} ontology
+          } @else if (hasOntologyType) {
+            <i class="bi bi-info-circle me-1"></i>
+            Click "Edit" to set default value. Enable typeahead in Advanced Mode for autocomplete suggestions.
+          } @else if (showAdvancedMode()) {
+            <i class="bi bi-info-circle me-1"></i>
+            Click "Edit" to set the default value (select an ontology type above for smart suggestions)
+          } @else {
+            <i class="bi bi-info-circle me-1"></i>
+            Click "Edit" to set the default value (enable Advanced Mode for ontology autocomplete)
+          }
+        </div>
+      </div>
+
+    </div>
+  </form>
+</div>
+
+<div class="modal-footer">
+  <button type="button" class="btn btn-outline-secondary" (click)="onCancel()">
+    <i class="bi bi-x-circle me-1"></i>Cancel
+  </button>
+  <button 
+    type="button" 
+    class="btn btn-primary" 
+    (click)="onSubmit()"
+    [disabled]="editForm.invalid || isLoading()">
+    @if (isLoading()) {
+      <span class="spinner-border spinner-border-sm me-2"></span>
+    }
+    <i class="bi bi-check-circle me-1"></i>
+    {{ isEdit ? 'Update' : 'Add' }} Column
+  </button>
+</div>

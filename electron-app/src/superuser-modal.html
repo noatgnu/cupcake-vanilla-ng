@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Superuser</title>
+  <link href="superuser-modal.css" rel="stylesheet">
+</head>
+<body>
+  <div class="modal-container">
+    <div class="modal-header">
+      <h5 class="modal-title">
+        <i class="bi bi-person-plus me-2"></i>
+        Create Superuser
+      </h5>
+    </div>
+    <div class="modal-body">
+      <p class="text-muted mb-4">No Django superuser found. Please create one to access the application.</p>
+
+      <form id="superuserForm">
+        <div class="mb-3">
+          <label for="username" class="form-label">Username</label>
+          <input type="text" class="form-control" id="username" name="username" required>
+        </div>
+
+        <div class="mb-3">
+          <label for="email" class="form-label">Email</label>
+          <input type="email" class="form-control" id="email" name="email" required>
+        </div>
+
+        <div class="mb-3">
+          <label for="password" class="form-label">Password</label>
+          <input type="password" class="form-control" id="password" name="password" required>
+        </div>
+
+        <div class="mb-3">
+          <label for="confirmPassword" class="form-label">Confirm Password</label>
+          <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" required>
+        </div>
+
+        <div class="alert alert-danger d-none" id="errorMessage" role="alert">
+          <i class="bi bi-exclamation-triangle me-2"></i>
+          <span id="errorText"></span>
+        </div>
+
+        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+          <button type="button" class="btn btn-outline-secondary me-md-2" onclick="cancel()">
+            Cancel
+          </button>
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check-lg me-1"></i>
+            Create Superuser
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // Use secure electronAPI instead of require('electron')
+    document.getElementById('superuserForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+
+      const username = document.getElementById('username').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+
+      if (!username || !email || !password || !confirmPassword) {
+        showError('All fields are required.');
+        return;
+      }
+
+      if (password !== confirmPassword) {
+        showError('Passwords do not match.');
+        return;
+      }
+
+      if (password.length < 8) {
+        showError('Password must be at least 8 characters long.');
+        return;
+      }
+
+      // Use secure API instead of direct ipcRenderer
+      if (window.superuserAPI) {
+        window.superuserAPI.createSuperuser({ username, email, password });
+      } else {
+        showError('Electron API not available');
+      }
+    });
+
+    function showError(message) {
+      const errorElement = document.getElementById('errorMessage');
+      const errorText = document.getElementById('errorText');
+      errorText.textContent = message;
+      errorElement.classList.remove('d-none');
+    }
+
+    function cancel() {
+      if (window.superuserAPI) {
+        window.superuserAPI.cancelSuperuser();
+      } else {
+        console.log('Cancel clicked (fallback mode)');
+      }
+    }
+
+    // Set up secure event listener
+    if (window.superuserAPI) {
+      window.superuserAPI.onSuperuserCreated((event, success, message) => {
+        if (success) {
+          alert('Superuser created successfully!');
+          window.superuserAPI.closeSuperuserWindow();
+        } else {
+          showError('Failed to create superuser: ' + message);
+        }
+      });
+    } else {
+      console.warn('Superuser API not available in superuser modal');
+    }
+  </script>
+</body>
+</html>
