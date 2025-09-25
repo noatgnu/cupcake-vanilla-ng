@@ -46,7 +46,7 @@ RUN npm install
 RUN cd electron-app && npm install
 
 # Create the build script (from current docker-build directory)
-COPY docker-build.sh /app/
+COPY docker-build/docker-build.sh /app/
 RUN chmod +x /app/docker-build.sh
 
 # Default command
