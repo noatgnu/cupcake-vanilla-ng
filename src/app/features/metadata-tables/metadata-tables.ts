@@ -15,7 +15,7 @@ import { User, LabGroupService } from '@cupcake/core';
 import { MetadataTableService, MetadataValidationConfig } from '@cupcake/vanilla';
 import { NavigationState } from '../../shared/services/navigation-state';
 import { ToastService } from '@cupcake/core';
-import { AsyncTaskUIService, MetadataValidationModal, ExcelExportModalComponent, ExcelExportOptions } from '@cupcake/vanilla';
+import { AsyncTaskUIService, MetadataValidationModal, ExcelExportModalComponent, ExcelExportOptions, MetadataTableEditModal } from '@cupcake/vanilla';
 import { environment } from '../../../environments/environment';
 import { AuthService } from '@cupcake/core';
 
@@ -630,5 +630,24 @@ export class MetadataTablesComponent implements OnInit, OnDestroy {
     } else {
       return 'Showing only your tables';
     }
+  }
+
+  /**
+   * Create a new metadata table
+   */
+  createNewTable(): void {
+    const modalRef = this.modalService.open(MetadataTableEditModal, {
+      size: 'lg',
+      backdrop: 'static',
+      keyboard: false
+    });
+
+    modalRef.componentInstance.isCreateMode = true;
+
+    modalRef.componentInstance.tableSaved.subscribe((newTable: MetadataTable) => {
+      this.toastService.success(`Table "${newTable.name}" created successfully!`);
+      this.refreshTables();
+      modalRef.close();
+    });
   }
 }

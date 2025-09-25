@@ -12,3 +12,4 @@ export * from './site-config/site-config';
 
 // Utility components
 export * from './toast-container/toast-container';
+export * from './powered-by-footer/powered-by-footer';

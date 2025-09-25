@@ -12,8 +12,8 @@ import { SamplePoolDetailsModal } from '../../shared/components/sample-pool-deta
 import { SamplePoolEditModal } from '../../shared/components/sample-pool-edit-modal/sample-pool-edit-modal';
 import { SamplePoolCreateModal } from '../../shared/components/sample-pool-create-modal/sample-pool-create-modal';
 import { ExcelExportModalComponent, ExcelExportOptions } from '@cupcake/vanilla';
-import { ColumnEditModal } from '../metadata-table-templates/column-edit-modal/column-edit-modal';
-import { SchemaSelectionModal, SchemaSelectionResult } from '../../shared/components/schema-selection-modal/schema-selection-modal';
+import { ColumnEditModal } from '@cupcake/vanilla';
+import { SchemaSelectionModal, SchemaSelectionResult } from '@cupcake/vanilla';
 
 @Component({
   selector: 'app-metadata-table-details',

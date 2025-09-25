@@ -3,7 +3,7 @@ import { LoginComponent, RegisterComponent, SiteConfigComponent, UserManagementC
 import { MetadataTablesComponent} from './features/metadata-tables/metadata-tables';
 import { MetadataTableDetailsComponent } from './features/metadata-table-details/metadata-table-details';
 import { FavoriteManagementComponent } from './features/favorite-management/favorite-management';
-import {MetadataTableTemplates} from './features/metadata-table-templates/metadata-table-templates';
+import { MetadataTableTemplates } from '@cupcake/vanilla';
 import {ColumnTemplatesComponent} from './features/column-templates/column-templates';
 import {MetadataSelector} from './features/metadata-selector/metadata-selector';
 

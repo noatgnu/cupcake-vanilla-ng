@@ -40,14 +40,12 @@ export class MetadataSelector implements OnInit {
         this.templatesCount = response.templates_count || 0;
         this.loading = false;
 
-        // Don't auto-navigate - let user choose
       },
       error: (error) => {
         this.loading = false;
         this.error = 'Failed to check user data. Please try again.';
         console.error('Error checking user data:', error);
-        
-        // Don't auto-navigate on error - let user choose
+
       }
     });
   }
@@ -74,7 +72,7 @@ export class MetadataSelector implements OnInit {
     if (!this.hasTables && !this.hasTemplates) {
       return 'You haven\'t created any metadata tables or templates yet. We recommend starting with templates to set up reusable configurations.';
     }
-    
+
     if (!this.hasTables && this.hasTemplates) {
       return `You have ${this.templatesCount} ${this.templatesCount === 1 ? 'template' : 'templates'} but no metadata tables yet. We recommend starting with templates to create your first table.`;
     }
@@ -82,7 +80,7 @@ export class MetadataSelector implements OnInit {
     if (this.hasTables && !this.hasTemplates) {
       return `You have ${this.tablesCount} ${this.tablesCount === 1 ? 'table' : 'tables'}. You can work with existing tables or create templates for reusable configurations.`;
     }
-    
+
     return `You have ${this.tablesCount} ${this.tablesCount === 1 ? 'table' : 'tables'} and ${this.templatesCount} ${this.templatesCount === 1 ? 'template' : 'templates'}. Choose where you'd like to continue working.`;
   }
 }

@@ -2,7 +2,7 @@ import { Component, Input, Output, EventEmitter, OnInit, signal } from '@angular
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgbActiveModal, NgbModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
-import { MetadataTable, MetadataTableService, MetadataTableUpdateRequest, SampleCountConfirmationError } from '@cupcake/vanilla';
+import { MetadataTable, MetadataTableService, MetadataTableUpdateRequest, MetadataTableCreateRequest, SampleCountConfirmationError } from '@cupcake/vanilla';
 import { LabGroupService, LabGroup } from '@cupcake/core';
 
 @Component({
@@ -13,7 +13,8 @@ import { LabGroupService, LabGroup } from '@cupcake/core';
   styleUrl: './metadata-table-edit-modal.scss'
 })
 export class MetadataTableEditModal implements OnInit {
-  @Input() table!: MetadataTable;
+  @Input() table?: MetadataTable; // Make optional for creation mode
+  @Input() isCreateMode: boolean = false; // Add flag to determine mode
   @Output() tableSaved = new EventEmitter<MetadataTable>();
 
   editForm: FormGroup;
@@ -68,24 +69,51 @@ export class MetadataTableEditModal implements OnInit {
   }
 
   onSubmit(): void {
-    if (this.editForm.valid && this.table.id) {
+    if (this.editForm.valid) {
       this.isLoading.set(true);
 
       const formValue = this.editForm.value;
-      const updateData: MetadataTableUpdateRequest = {
-        name: formValue.name.trim(),
-        description: formValue.description?.trim() || undefined,
-        sampleCount: formValue.sampleCount,
-        version: formValue.version?.trim() || undefined,
-        labGroup: formValue.labGroup || undefined
-      };
 
-      this.performUpdate(updateData);
+      if (this.isCreateMode) {
+        const createData: MetadataTableCreateRequest = {
+          name: formValue.name.trim(),
+          description: formValue.description?.trim() || undefined,
+          sampleCount: formValue.sampleCount,
+          version: formValue.version?.trim() || undefined,
+          labGroup: formValue.labGroup || undefined,
+          sourceApp: 'cupcake-vanilla'
+        };
+
+        this.performCreate(createData);
+      } else if (this.table?.id) {
+        const updateData: MetadataTableUpdateRequest = {
+          name: formValue.name.trim(),
+          description: formValue.description?.trim() || undefined,
+          sampleCount: formValue.sampleCount,
+          version: formValue.version?.trim() || undefined,
+          labGroup: formValue.labGroup || undefined
+        };
+
+        this.performUpdate(updateData);
+      }
     }
   }
 
+  private performCreate(createData: MetadataTableCreateRequest): void {
+    this.metadataTableService.createMetadataTable(createData).subscribe({
+      next: (newTable) => {
+        this.tableSaved.emit(newTable);
+        this.activeModal.close(newTable);
+      },
+      error: (error) => {
+        console.error('Error creating metadata table:', error);
+        this.isLoading.set(false);
+      }
+    });
+  }
+
   private performUpdate(updateData: MetadataTableUpdateRequest, confirmed: boolean = false): void {
-    if (!this.table.id) return;
+    if (!this.table?.id) return;
 
     if (confirmed) {
       updateData.sampleCountConfirmed = true;
@@ -161,12 +189,19 @@ Do you want to continue?`;
   }
 
   get title(): string {
+    if (this.isCreateMode) {
+      return 'Create New Metadata Table';
+    }
     return `Edit ${this.table?.name || 'Metadata Table'}`;
   }
 
   get hasChanges(): boolean {
+    if (this.isCreateMode) {
+      return this.editForm.dirty; // For creation mode, any change is valid
+    }
+
     if (!this.table) return false;
-    
+
     const formValue = this.editForm.value;
     return (
       formValue.name !== this.table.name ||

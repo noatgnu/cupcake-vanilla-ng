@@ -15,7 +15,7 @@
           <button type="button" class="btn btn-outline-success btn-sm" routerLink="/metadata-table-templates">
             <i class="bi bi-file-earmark-text me-1"></i>Templates
           </button>
-          <button type="button" class="btn btn-primary btn-sm">
+          <button type="button" class="btn btn-primary btn-sm" (click)="createNewTable()">
             <i class="bi bi-plus me-1"></i>New Table
           </button>
         </div>
@@ -338,7 +338,7 @@
               }
             </p>
             <div class="d-flex gap-2 justify-content-center">
-              <button type="button" class="btn btn-primary">
+              <button type="button" class="btn btn-primary" (click)="createNewTable()">
                 <i class="bi bi-plus me-1"></i>Create Table
               </button>
               <button type="button" class="btn btn-outline-success" routerLink="/metadata-table-templates">

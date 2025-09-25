@@ -40,3 +40,8 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
+
+# Electron App
+/electron-app/node_modules
+/electron-app/dist
+/electron-app/web-dist
