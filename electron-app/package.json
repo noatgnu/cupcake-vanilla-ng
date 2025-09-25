@@ -12,13 +12,12 @@
     "dev:https": "node scripts/dev-https.js",
     "dev:electron-only": "npm run compile && electron . --dev",
     "build:web": "cd .. && npm run build",
-    "build:backend": "node scripts/build-backend.js",
-    "build": "npm run compile && npm run build:web && npm run build:backend && electron-builder",
-    "build:win": "npm run compile && npm run build:web && npm run build:backend && electron-builder --win",
-    "build:mac": "npm run compile && npm run build:web && npm run build:backend && electron-builder --mac",
-    "build:linux": "npm run compile && npm run build:web && npm run build:backend && electron-builder --linux",
-    "pack": "npm run compile && npm run build:web && npm run build:backend && electron-builder --dir",
-    "dist": "npm run compile && npm run build:web && npm run build:backend && electron-builder --publish=never"
+    "build": "npm run compile && npm run build:web && electron-builder",
+    "build:win": "npm run compile && npm run build:web && electron-builder --win",
+    "build:mac": "npm run compile && npm run build:web && electron-builder --mac",
+    "build:linux": "npm run compile && npm run build:web && electron-builder --linux",
+    "pack": "npm run compile && npm run build:web && electron-builder --dir",
+    "dist": "npm run compile && npm run build:web && electron-builder --publish=never"
   },
   "keywords": [
     "cupcake",
@@ -62,7 +61,7 @@
         ]
       },
       {
-        "from": "backend-dist",
+        "from": "backend",
         "to": "backend",
         "filter": [
           "**/*"

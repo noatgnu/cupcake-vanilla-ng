@@ -94,8 +94,18 @@
             } else if (readyServices === totalServices) {
                 progressText.textContent = '100% - Ready';
                 // Hide logs and show continue button when all services are ready
-                document.querySelector('.log-section').style.display = 'none';
+                const logSection = document.querySelector('.log-section');
+                if (logSection) {
+                    logSection.style.display = 'none';
+                }
                 continueBtn.style.display = 'block';
+
+                // Auto-close after a short delay to give user time to see completion
+                setTimeout(() => {
+                    if (window.electronAPI) {
+                        window.electronAPI.continueToApp();
+                    }
+                }, 2000);
             } else {
                 progressText.textContent = `${progress}% - ${readyServices}/${totalServices} services ready`;
             }

@@ -2,9 +2,9 @@ name: Build Cupcake Vanilla
 
 on:
   push:
-    branches: [ main ]
+    branches: [ master ]
   pull_request:
-    branches: [ main ]
+    branches: [ master ]
   release:
     types: [ published ]
   workflow_dispatch:
@@ -16,46 +16,22 @@ on:
       backend_branch:
         description: 'Backend branch to use'
         required: false
-        default: 'main'
+        default: 'master'
 
 env:
   BACKEND_REPO_URL: ${{ github.event.inputs.backend_repo_url || secrets.BACKEND_REPO_URL }}
-  BACKEND_BRANCH: ${{ github.event.inputs.backend_branch || 'main' }}
+  BACKEND_BRANCH: ${{ github.event.inputs.backend_branch || 'master' }}
 
 jobs:
-  build-linux:
-    name: Build Linux
+  build-all-platforms:
+    name: Build All Platforms
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Build Linux AppImage
+      - name: Build for All Platforms
         working-directory: ./docker-build
         run: |
           chmod +x build-docker.sh
-          ./build-docker.sh linux
-
-  build-windows:
-    name: Build Windows
-    runs-on: windows-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Build Windows Executable
-        working-directory: ./docker-build
-        run: ./build-docker.bat win
-
-  build-macos:
-    name: Build macOS
-    runs-on: macos-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Build macOS DMG
-        working-directory: ./docker-build
-        run: |
-          chmod +x build-docker.sh
-          ./build-docker.sh mac
+          ./build-docker.sh all

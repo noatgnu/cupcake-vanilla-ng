@@ -76,23 +76,36 @@ async function createVirtualEnvironmentWithLogging(pythonCmd: string): Promise<s
   }
 }
 
+// Helper function to get backend directory path
+function getBackendPath(): string {
+  if (isDev) {
+    // Development: backend is in electron-app/backend
+    return path.join(__dirname, '..', 'backend');
+  } else {
+    // Production: backend is packaged in resources/backend
+    return path.join(process.resourcesPath, 'backend');
+  }
+}
+
 async function installDependenciesWithLogging(backendDir: string, venvPython: string): Promise<void> {
   sendBackendStatus('dependencies', 'starting', 'Installing Python dependencies...');
   sendBackendLog('Installing dependencies in virtual environment...');
 
   const requirementsPath = path.join(backendDir, 'requirements.txt');
-  if (!fs.existsSync(requirementsPath)) {
+
+  if (fs.existsSync(requirementsPath)) {
+    sendBackendLog('Found requirements.txt, installing dependencies with pip...');
+    try {
+      await pythonManager.installDependencies(venvPython, requirementsPath);
+      sendBackendStatus('dependencies', 'ready', 'Dependencies installation completed');
+      sendBackendLog('All dependencies installed successfully with pip', 'success');
+    } catch (error) {
+      sendBackendStatus('dependencies', 'error', `Dependency installation error: ${error.message}`);
+      throw error;
+    }
+  } else {
     sendBackendStatus('dependencies', 'error', 'requirements.txt not found');
     throw new Error('requirements.txt not found');
-  }
-
-  try {
-    await pythonManager.installDependencies(venvPython, requirementsPath);
-    sendBackendStatus('dependencies', 'ready', 'Dependencies installation completed');
-    sendBackendLog('All dependencies installed successfully', 'success');
-  } catch (error) {
-    sendBackendStatus('dependencies', 'error', `Installation error: ${error.message}`);
-    throw error;
   }
 }
 
@@ -366,7 +379,15 @@ async function initializeBackend(createNewVenv: boolean = true, selectedPython: 
     config.pythonPath = pythonPath;
     pythonManager.saveConfig(config);
 
-    const backendDir = path.join(__dirname, '..', 'backend');
+    // Get correct backend directory path based on environment
+    const backendDir = getBackendPath();
+
+    // Verify backend directory exists
+    if (!fs.existsSync(backendDir)) {
+      throw new Error(`Backend directory not found: ${backendDir}`);
+    }
+
+    sendBackendLog(`Using backend directory: ${backendDir}`, 'info');
 
     // Step 2: Handle virtual environment
     if (createNewVenv) {
