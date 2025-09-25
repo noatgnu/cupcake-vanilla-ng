@@ -1,0 +1,61 @@
+name: Build Cupcake Vanilla
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  release:
+    types: [ published ]
+  workflow_dispatch:
+    inputs:
+      backend_repo_url:
+        description: 'Backend repository URL'
+        required: true
+        default: 'https://github.com/noatgnu/cupcake_vanilla.git'
+      backend_branch:
+        description: 'Backend branch to use'
+        required: false
+        default: 'main'
+
+env:
+  BACKEND_REPO_URL: ${{ github.event.inputs.backend_repo_url || secrets.BACKEND_REPO_URL }}
+  BACKEND_BRANCH: ${{ github.event.inputs.backend_branch || 'main' }}
+
+jobs:
+  build-linux:
+    name: Build Linux
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build Linux AppImage
+        working-directory: ./docker-build
+        run: |
+          chmod +x build-docker.sh
+          ./build-docker.sh linux
+
+  build-windows:
+    name: Build Windows
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build Windows Executable
+        working-directory: ./docker-build
+        run: ./build-docker.bat win
+
+  build-macos:
+    name: Build macOS
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build macOS DMG
+        working-directory: ./docker-build
+        run: |
+          chmod +x build-docker.sh
+          ./build-docker.sh mac

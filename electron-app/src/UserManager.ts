@@ -48,8 +48,8 @@ export class UserManager {
   private async showSuperuserCreationModal(backendDir: string, venvPath: string, parentWindow?: BrowserWindow): Promise<void> {
     return new Promise<void>((resolve) => {
       let promptWindow: BrowserWindow | null = new BrowserWindow({
-        width: 400,
-        height: 500,
+        width: 500,
+        height: 650,
         modal: true,
         parent: parentWindow,
         show: false,

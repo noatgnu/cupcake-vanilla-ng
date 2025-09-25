@@ -25,7 +25,7 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   background-color: var(--cupcake-bg-secondary);
   margin: 0;
-  padding: 20px;
+  padding: 0;
   height: 100vh;
   display: flex;
   align-items: center;
@@ -34,21 +34,61 @@ body {
 
 .modal-container {
   background: var(--cupcake-card-bg);
-  border-radius: 0.5rem;
+  border-radius: 0;
   box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
   width: 100%;
-  max-width: 400px;
+  height: 100%;
   padding: 0;
-  border: 1px solid var(--cupcake-border);
+  border: none;
+  display: flex;
+  flex-direction: column;
 }
 
 .modal-header {
-  padding: 1.5rem 1.5rem 0;
-  border-bottom: none;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--cupcake-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  -webkit-app-region: drag;
+  cursor: move;
+}
+
+.modal-title {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--cupcake-text);
+  -webkit-app-region: drag;
+  pointer-events: none;
+}
+
+.btn-close {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  color: var(--cupcake-text-muted);
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  -webkit-app-region: no-drag;
 }
 
 .modal-body {
   padding: 1.5rem;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 /* Custom Bootstrap overrides with Cupcake variables */

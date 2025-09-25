@@ -13,6 +13,9 @@
         <i class="bi bi-person-plus me-2"></i>
         Create Superuser
       </h5>
+      <button type="button" class="btn-close" onclick="closeModal()" aria-label="Close">
+        <i class="bi bi-x-lg"></i>
+      </button>
     </div>
     <div class="modal-body">
       <p class="text-muted mb-4">No Django superuser found. Please create one to access the application.</p>
@@ -101,6 +104,14 @@
         window.superuserAPI.cancelSuperuser();
       } else {
         console.log('Cancel clicked (fallback mode)');
+      }
+    }
+
+    function closeModal() {
+      if (window.superuserAPI) {
+        window.superuserAPI.closeSuperuserWindow();
+      } else {
+        console.log('Close clicked (fallback mode)');
       }
     }
 

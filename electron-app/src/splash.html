@@ -93,7 +93,9 @@
                 progressText.textContent = '0% - Starting...';
             } else if (readyServices === totalServices) {
                 progressText.textContent = '100% - Ready';
-                continueBtn.classList.add('show');
+                // Hide logs and show continue button when all services are ready
+                document.querySelector('.log-section').style.display = 'none';
+                continueBtn.style.display = 'block';
             } else {
                 progressText.textContent = `${progress}% - ${readyServices}/${totalServices} services ready`;
             }
