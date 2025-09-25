@@ -7,20 +7,10 @@ on:
     branches: [ master ]
   release:
     types: [ published ]
-  workflow_dispatch:
-    inputs:
-      backend_repo_url:
-        description: 'Backend repository URL'
-        required: true
-        default: 'https://github.com/noatgnu/cupcake_vanilla.git'
-      backend_branch:
-        description: 'Backend branch to use'
-        required: false
-        default: 'master'
 
 env:
-  BACKEND_REPO_URL: ${{ github.event.inputs.backend_repo_url || secrets.BACKEND_REPO_URL }}
-  BACKEND_BRANCH: ${{ github.event.inputs.backend_branch || 'master' }}
+  BACKEND_REPO_URL: ${{ secrets.BACKEND_REPO_URL || 'https://github.com/noatgnu/cupcake_vanilla.git' }}
+  BACKEND_BRANCH: 'master'
 
 jobs:
   build-all-platforms:
