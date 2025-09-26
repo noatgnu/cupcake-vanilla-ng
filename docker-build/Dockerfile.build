@@ -5,6 +5,9 @@ FROM ubuntu:24.04
 ENV DEBIAN_FRONTEND=noninteractive
 ENV NODE_VERSION=24.9.0
 
+# Enable multiarch for 32-bit support (required for Wine)
+RUN dpkg --add-architecture i386
+
 # Install system dependencies (updated for Ubuntu 24.04)
 RUN apt-get update && apt-get install -y \
     curl \
@@ -26,10 +29,19 @@ RUN apt-get update && apt-get install -y \
     zip \
     unzip \
     wine \
+    wine32:i386 \
     && rm -rf /var/lib/apt/lists/*
 
+# Set Wine environment for headless operation
+ENV WINEDLLOVERRIDES="mscoree,mshtml="
+ENV DISPLAY=:99
+
 # Initialize Wine (required for electron-builder Windows builds)
-RUN wine --version
+RUN Xvfb :99 -screen 0 1024x768x16 & \
+    sleep 2 && \
+    wine --version && \
+    wineboot --init && \
+    pkill Xvfb
 
 # Install Node.js and npm
 RUN curl -fsSL https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.xz | tar -xJ -C /opt/ \
