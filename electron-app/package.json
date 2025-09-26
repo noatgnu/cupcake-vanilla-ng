@@ -48,7 +48,7 @@
       "output": "dist"
     },
     "files": [
-      "src/**/*",
+      "dist/**/*",
       "web-dist/**/*",
       "node_modules/**/*"
     ],
