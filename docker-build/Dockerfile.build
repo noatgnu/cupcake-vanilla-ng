@@ -25,7 +25,11 @@ RUN apt-get update && apt-get install -y \
     libgdk-pixbuf2.0-0 \
     zip \
     unzip \
+    wine \
     && rm -rf /var/lib/apt/lists/*
+
+# Initialize Wine (required for electron-builder Windows builds)
+RUN wine --version
 
 # Install Node.js and npm
 RUN curl -fsSL https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.xz | tar -xJ -C /opt/ \

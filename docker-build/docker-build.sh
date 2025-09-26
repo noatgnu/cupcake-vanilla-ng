@@ -33,22 +33,43 @@ cd electron-app
 npm run compile
 
 BUILD_TARGET=${BUILD_TARGET:-"linux"}
+
+# Check if we're running in a container and adjust target accordingly
+if [ -f /.dockerenv ] || [ "${CONTAINER:-false}" = "true" ]; then
+    echo "Running in container, defaulting to Linux build unless Wine is available for Windows builds..."
+    if [ "${BUILD_TARGET}" = "win" ] && ! command -v wine >/dev/null 2>&1; then
+        echo "Warning: Wine not available for Windows build, switching to Linux build"
+        BUILD_TARGET="linux"
+    fi
+fi
+
 case ${BUILD_TARGET} in
     "win")
+        echo "Building for Windows..."
         npm run build:win
         ;;
     "mac")
+        echo "Building for macOS..."
         npm run build:mac
         ;;
     "linux")
+        echo "Building for Linux..."
         npm run build:linux
         ;;
     "all")
-        npm run build:win
-        npm run build:mac
+        echo "Building for all platforms..."
         npm run build:linux
+        # Only build Windows if Wine is available
+        if command -v wine >/dev/null 2>&1; then
+            npm run build:win
+        else
+            echo "Skipping Windows build - Wine not available"
+        fi
+        # Skip macOS build in container (requires macOS host)
+        echo "Skipping macOS build - requires macOS host"
         ;;
     *)
+        echo "Building for Linux (default)..."
         npm run build:linux
         ;;
 esac
