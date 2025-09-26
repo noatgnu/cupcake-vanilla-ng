@@ -1,9 +1,9 @@
 # Dockerfile for building the complete Cupcake Vanilla Electron application
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 
 # Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive
-ENV NODE_VERSION=18.17.0
+ENV NODE_VERSION=20.19
 
 # Install system dependencies (removed Python and Poetry)
 RUN apt-get update && apt-get install -y \
