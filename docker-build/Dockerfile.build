@@ -45,6 +45,9 @@ COPY ../electron-app/package*.json ./electron-app/
 RUN npm install
 RUN cd electron-app && npm install
 
+# Make sure ng CLI is available globally (it should be available through node_modules/.bin/)
+ENV PATH="${PATH}:/app/node_modules/.bin"
+
 # Copy the entire codebase
 COPY ../src ./src
 COPY ../projects ./projects
@@ -53,6 +56,9 @@ COPY ../electron-app ./electron-app
 COPY ../angular.json ./angular.json
 COPY ../tsconfig*.json ./
 COPY ../build-all.sh ./build-all.sh
+
+# Make build scripts executable
+RUN chmod +x ./build-all.sh
 
 # Create the build script (from current docker-build directory)
 COPY docker-build/docker-build.sh /app/
