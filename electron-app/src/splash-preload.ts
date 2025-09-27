@@ -2,7 +2,7 @@ import { contextBridge, ipcRenderer } from 'electron';
 import { IpcRendererEvent } from 'electron';
 
 // Define types for the exposed API
-interface ElectronAPI {
+interface SplashElectronAPI {
   // Backend status updates
   onBackendStatus: (callback: (event: IpcRendererEvent, data: BackendStatus) => void) => void;
 
@@ -40,7 +40,7 @@ interface SplashEvents {
 
 // Expose protected methods that allow the renderer process to use
 // the ipcRenderer without exposing the entire object
-const electronAPI: ElectronAPI = {
+const electronAPI: SplashElectronAPI = {
   // Backend status updates
   onBackendStatus: (callback) => ipcRenderer.on('backend-status', callback),
 
@@ -59,7 +59,7 @@ const electronAPI: ElectronAPI = {
   removeAllListeners: (channel) => ipcRenderer.removeAllListeners(channel)
 };
 
-contextBridge.exposeInMainWorld('electronAPI', electronAPI);
+contextBridge.exposeInMainWorld('splashElectronAPI', electronAPI);
 
 // Also expose a simple event system for direct communication
 const events = new Map<string, Array<(data: any) => void>>();
@@ -95,7 +95,7 @@ contextBridge.exposeInMainWorld('splashEvents', splashEvents);
 // Declare global types for the renderer process
 declare global {
   interface Window {
-    electronAPI: ElectronAPI;
+    splashElectronAPI: SplashElectronAPI;
     splashEvents: SplashEvents;
   }
 }

@@ -22,13 +22,12 @@
     "publish:red-velvet": "cd dist/cupcake-red-velvet && npm publish --access public",
     "publish:salted-caramel": "cd dist/cupcake-salted-caramel && npm publish --access public",
     "publish:all": "npm run build:all && npm run publish:core && npm run publish:vanilla && npm run publish:macaron && npm run publish:mint-chocolate && npm run publish:red-velvet && npm run publish:salted-caramel",
-    "electron:dev": "cd electron-app && npm run dev",
-    "electron:dev:auto": "cd electron-app && npm run dev:auto",
-    "electron:dev:https": "cd electron-app && npm run dev:https",
-    "electron:build": "cd electron-app && npm run build",
-    "electron:build:win": "cd electron-app && npm run build:win",
-    "electron:build:mac": "cd electron-app && npm run build:mac",
-    "electron:build:linux": "cd electron-app && npm run build:linux"
+    "electron:dev:server": "cd electron-app && npm run dev:server",
+    "electron:dev:built": "ng build --configuration=electron && cd electron-app && npm run dev:built",
+    "electron:build": "npm run build:libs && cd electron-app && npm run build",
+    "electron:build:win": "npm run build:libs && cd electron-app && npm run build:win",
+    "electron:build:mac": "npm run build:libs && cd electron-app && npm run build:mac",
+    "electron:build:linux": "npm run build:libs && cd electron-app && npm run build:linux"
   },
   "prettier": {
     "printWidth": 100,

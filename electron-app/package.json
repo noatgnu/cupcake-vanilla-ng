@@ -6,18 +6,14 @@
   "scripts": {
     "compile": "tsc && cp src/*.html dist/ && cp src/*.css dist/",
     "compile:watch": "tsc --watch & cp src/*.html dist/ & cp src/*.css dist/",
-    "start": "npm run compile && electron .",
-    "dev": "node scripts/dev-simple.js",
-    "dev:auto": "node scripts/dev.js",
-    "dev:https": "node scripts/dev-https.js",
-    "dev:electron-only": "npm run compile && electron . --dev",
-    "build:web": "cd .. && npm run build",
+    "dev:server": "node scripts/dev-simple.js",
+    "dev:built": "npm run compile && electron . --dev",
+    "build:web": "cd .. && ng build --configuration=electron",
     "build": "npm run compile && npm run build:web && electron-builder",
     "build:win": "npm run compile && npm run build:web && electron-builder --win",
     "build:mac": "npm run compile && npm run build:web && electron-builder --mac",
     "build:linux": "npm run compile && npm run build:web && electron-builder --linux",
-    "pack": "npm run compile && npm run build:web && electron-builder --dir",
-    "dist": "npm run compile && npm run build:web && electron-builder --publish=never"
+    "pack": "npm run compile && npm run build:web && electron-builder --dir"
   },
   "keywords": [
     "cupcake",

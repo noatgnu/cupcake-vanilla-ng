@@ -16,6 +16,16 @@ let splashReady: boolean = false;
 let pythonPath: string | null = null;
 let venvPath: string | null = null;
 
+function getVenvPath(): Promise<string> {
+  return new Promise((resolve, reject) => {
+    if (!venvPath) {
+      reject(new Error('Virtual environment path not available'));
+    } else {
+      resolve(venvPath);
+    }
+  });
+}
+
 // Configuration storage paths
 const userDataPath: string = app.getPath('userData');
 const configPath: string = path.join(userDataPath, 'cupcake-config.json');
@@ -42,12 +52,17 @@ if (allowSelfSignedCerts) {
   app.commandLine.appendSwitch('ignore-urlfetcher-cert-requests');
 }
 
-// Helper function to send status updates to splash screen
+// Helper function to send status updates to splash screen and main window
 function sendBackendStatus(service: string, status: 'starting' | 'ready' | 'error', message: string): void {
   console.log(`[${service}] ${status}: ${message}`);
+  const backendStatus: BackendStatus = { service, status, message };
+
   if (splashWindow && !splashWindow.isDestroyed() && splashReady) {
-    const backendStatus: BackendStatus = { service, status, message };
     splashWindow.webContents.send('backend-status', backendStatus);
+  }
+
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('backend-status-change', backendStatus);
   }
 }
 
@@ -175,10 +190,10 @@ function createSplashWindow(): void {
     width: 600,
     height: 500,
     show: false,
-    frame: false,
     alwaysOnTop: false,
     resizable: false,
-    transparent: false,
+    titleBarStyle: 'hidden',
+    titleBarOverlay: process.platform !== 'darwin',
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -321,15 +336,26 @@ function createWindow(): void {
     width: 1200,
     height: 800,
     show: false,
+    titleBarStyle: 'hiddenInset',
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      webSecurity: !isDev
+      webSecurity: !isDev,
+      preload: path.join(__dirname, 'main-preload.js')
     }
   });
 
-  // Always load Angular application (dev server in development, compiled files in production)
-  const startUrl = isDev ? 'http://localhost:4200' : 'file://' + path.join(__dirname, '..', 'web-dist', 'index.html');
+  // Load Angular application based on environment
+  let startUrl: string;
+  if (isDev) {
+    // Development: Use built files (built with electron configuration)
+    const indexPath = path.join(__dirname, '..', '..', 'dist', 'cupcake-vanilla-ng', 'browser', 'index.html');
+    startUrl = 'file://' + indexPath;
+  } else {
+    // Production: Use packaged files in resources
+    const indexPath = path.join(process.resourcesPath, 'web-dist', 'browser', 'index.html');
+    startUrl = 'file://' + indexPath;
+  }
   console.log(`Loading main application from: ${startUrl}`);
 
   mainWindow.loadURL(startUrl);
@@ -356,6 +382,15 @@ function createWindow(): void {
 
   mainWindow.on('closed', () => {
     mainWindow = null;
+  });
+
+  // Send window state changes to renderer
+  mainWindow.on('maximize', () => {
+    mainWindow.webContents.send('window-state-change', 'maximized');
+  });
+
+  mainWindow.on('unmaximize', () => {
+    mainWindow.webContents.send('window-state-change', 'unmaximized');
   });
 }
 
@@ -473,6 +508,73 @@ ipcMain.on('splash-close', () => {
   app.quit();
 });
 
+// IPC handlers for main window ElectronAPI
+ipcMain.handle('get-app-version', () => {
+  return app.getVersion();
+});
+
+ipcMain.handle('get-electron-version', () => {
+  return process.versions.electron;
+});
+
+ipcMain.on('window-minimize', () => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.minimize();
+  }
+});
+
+ipcMain.on('window-maximize', () => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    if (mainWindow.isMaximized()) {
+      mainWindow.unmaximize();
+    } else {
+      mainWindow.maximize();
+    }
+  }
+});
+
+ipcMain.on('window-close', () => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.close();
+  }
+});
+
+ipcMain.handle('window-is-maximized', () => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    return mainWindow.isMaximized();
+  }
+  return false;
+});
+
+ipcMain.handle('show-open-dialog', async (event, options) => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    return await dialog.showOpenDialog(mainWindow, options);
+  }
+  return await dialog.showOpenDialog(options);
+});
+
+ipcMain.handle('show-save-dialog', async (event, options) => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    return await dialog.showSaveDialog(mainWindow, options);
+  }
+  return await dialog.showSaveDialog(options);
+});
+
+ipcMain.handle('show-message-box', async (event, options) => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    return await dialog.showMessageBox(mainWindow, options);
+  }
+  return await dialog.showMessageBox(options);
+});
+
+ipcMain.handle('get-backend-port', () => {
+  return backendPort;
+});
+
+ipcMain.handle('is-backend-ready', () => {
+  return backendReady;
+});
+
 // App event handlers
 app.whenReady().then(() => {
   createSplashWindow();
@@ -501,34 +603,48 @@ app.on('before-quit', () => {
   backendManager.stopServices();
 });
 
+// Management panel functions
+async function openManagementPanel(): Promise<void> {
+  if (!userManager || !backendManager) {
+    console.log('[Management] UserManager or BackendManager not initialized');
+    return;
+  }
+
+  try {
+    const backendDir = path.join(__dirname, '..', 'backend');
+    const venvPath = await getVenvPath();
+
+    const needsSchemas = !(await backendManager.checkSchemas(backendDir, venvPath));
+    const needsColumnTemplates = !(await backendManager.checkColumnTemplates(backendDir, venvPath));
+
+    if (needsSchemas || needsColumnTemplates) {
+      await userManager.showManagementPanel(backendDir, venvPath, needsSchemas, needsColumnTemplates, mainWindow);
+    } else {
+      dialog.showMessageBox(mainWindow, {
+        type: 'info',
+        title: 'Database Setup',
+        message: 'Database setup is complete',
+        detail: 'All required schemas and column templates are already loaded.',
+        buttons: ['OK']
+      });
+    }
+  } catch (error) {
+    console.error('[Management] Error opening management panel:', error);
+    dialog.showErrorBox('Management Panel Error', `Failed to open management panel: ${error.message}`);
+  }
+}
+
+
 // Menu setup
 function createMenu(): void {
   const template: Electron.MenuItemConstructorOptions[] = [
     {
-      label: 'File',
+      label: 'Management',
       submenu: [
-        process.platform === 'darwin' ? { role: 'close' } : { role: 'quit' }
-      ]
-    },
-    {
-      label: 'View',
-      submenu: [
-        { role: 'reload' },
-        { role: 'forceReload' },
-        { role: 'toggleDevTools' },
-        { type: 'separator' },
-        { role: 'resetZoom' },
-        { role: 'zoomIn' },
-        { role: 'zoomOut' },
-        { type: 'separator' },
-        { role: 'togglefullscreen' }
-      ]
-    },
-    {
-      label: 'Window',
-      submenu: [
-        { role: 'minimize' },
-        { role: 'close' }
+        {
+          label: 'Database Setup',
+          click: () => openManagementPanel()
+        }
       ]
     }
   ];

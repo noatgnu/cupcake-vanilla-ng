@@ -54,6 +54,18 @@
               "optimization": false,
               "extractLicenses": false,
               "sourceMap": true
+            },
+            "electron": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true,
+              "baseHref": "./",
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.electron.ts"
+                }
+              ]
             }
           },
           "defaultConfiguration": "production"

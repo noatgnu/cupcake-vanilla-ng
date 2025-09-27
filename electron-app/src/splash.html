@@ -10,14 +10,8 @@
 </head>
 <body>
     <div class="splash-container">
-        <div class="titlebar" id="titlebar">
-            <div class="window-controls" id="window-controls">
-                <!-- Controls will be dynamically inserted based on OS -->
-            </div>
-        </div>
-
         <div class="header">
-            <div class="logo">🧁 Cupcake Vanilla</div>
+            <div class="logo">Cupcake Vanilla</div>
             <div class="subtitle">Starting backend services...</div>
         </div>
 
@@ -44,41 +38,11 @@
         document.body.className = `theme-${selectedTheme}`;
         console.log(`Selected theme: ${selectedTheme}`);
 
-        const platform = window.electronAPI ? window.electronAPI.platform : 'win32';
-        console.log('Detected platform:', platform);
-
-        const titlebar = document.getElementById('titlebar');
-        const windowControls = document.getElementById('window-controls');
-
-        function setupWindowControls() {
-            if (platform === 'darwin') {
-                titlebar.className = 'titlebar macos';
-                windowControls.innerHTML = `
-                    <div class="window-control close" id="close-btn"></div>
-                    <div class="window-control minimize" id="minimize-btn"></div>
-                `;
-            } else if (platform === 'win32') {
-                // Windows style
-                titlebar.className = 'titlebar windows';
-                windowControls.innerHTML = `
-                    <div class="window-control minimize" id="minimize-btn">‒</div>
-                    <div class="window-control close" id="close-btn">✕</div>
-                `;
-            } else {
-                // Linux/other style
-                titlebar.className = 'titlebar linux';
-                windowControls.innerHTML = `
-                    <div class="window-control minimize" id="minimize-btn">‒</div>
-                    <div class="window-control close" id="close-btn">✕</div>
-                `;
-            }
-        }
-
-        setupWindowControls();
 
         let totalServices = 7;
         let readyServices = 0;
         let completedServices = new Set();
+        let allServicesReady = false;
 
         const progressFill = document.getElementById('progress-fill');
         const progressText = document.getElementById('progress-text');
@@ -93,6 +57,7 @@
                 progressText.textContent = '0% - Starting...';
             } else if (readyServices === totalServices) {
                 progressText.textContent = '100% - Ready';
+                allServicesReady = true;
                 // Hide logs and show continue button when all services are ready
                 const logSection = document.querySelector('.log-section');
                 if (logSection) {
@@ -102,8 +67,8 @@
 
                 // Auto-close after a short delay to give user time to see completion
                 setTimeout(() => {
-                    if (window.electronAPI) {
-                        window.electronAPI.continueToApp();
+                    if (window.splashElectronAPI) {
+                        window.splashElectronAPI.continueToApp();
                     }
                 }, 2000);
             } else {
@@ -112,7 +77,10 @@
         }
 
         function addLogMessage(message, type = 'info') {
-            document.querySelector('.log-section').style.display = 'block';
+            // Only show log section if all services are not ready yet
+            if (!allServicesReady) {
+                document.querySelector('.log-section').style.display = 'block';
+            }
             const logLine = document.createElement('div');
             logLine.className = `log-line ${type}`;
             logLine.textContent = message;
@@ -152,18 +120,18 @@
         }
 
         // Set up event listeners using the secure API
-        if (window.electronAPI) {
+        if (window.splashElectronAPI) {
             console.log('Setting up secure Electron API listeners...');
 
             // Backend status updates
-            window.electronAPI.onBackendStatus((event, data) => {
+            window.splashElectronAPI.onBackendStatus((event, data) => {
                 console.log('Received backend status:', data);
                 const { service, status, message } = data;
                 updateServiceStatus(service, status, message);
             });
 
             // Backend log messages
-            window.electronAPI.onBackendLog((event, data) => {
+            window.splashElectronAPI.onBackendLog((event, data) => {
                 console.log('Received backend log:', data);
                 const { message, type = 'info' } = data;
                 const timestamp = new Date().toLocaleTimeString();
@@ -172,26 +140,9 @@
 
             // Handle continue button
             continueBtn.addEventListener('click', () => {
-                window.electronAPI.continueToApp();
+                window.splashElectronAPI.continueToApp();
             });
 
-            // Handle window controls (set up after DOM is ready)
-            setTimeout(() => {
-                const closeBtn = document.getElementById('close-btn');
-                const minimizeBtn = document.getElementById('minimize-btn');
-
-                if (closeBtn) {
-                    closeBtn.addEventListener('click', () => {
-                        window.electronAPI.closeSplash();
-                    });
-                }
-
-                if (minimizeBtn) {
-                    minimizeBtn.addEventListener('click', () => {
-                        window.electronAPI.minimizeSplash();
-                    });
-                }
-            }, 100);
 
             console.log('Electron API listeners set up successfully');
         } else {

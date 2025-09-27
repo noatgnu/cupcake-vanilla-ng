@@ -363,4 +363,132 @@ export class BackendManager {
     return this.backendPort;
   }
 
+  async runManagementCommand(backendDir: string, venvPython: string, command: string, args: string[] = []): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const cmdArgs = ['manage.py', command, ...args];
+      const childProcess = spawn(venvPython, cmdArgs, {
+        cwd: backendDir,
+        stdio: ['pipe', 'pipe', 'pipe'],
+        env: this.getDjangoEnvironment()
+      });
+
+      let stdout = '';
+      let stderr = '';
+
+      childProcess.stdout?.on('data', (data) => {
+        const output = data.toString();
+        stdout += output;
+        console.log(`[${command.toUpperCase()}]`, output.trim());
+      });
+
+      childProcess.stderr?.on('data', (data) => {
+        const output = data.toString();
+        stderr += output;
+        console.log(`[${command.toUpperCase()}]`, output.trim());
+      });
+
+      childProcess.on('close', (code) => {
+        if (code === 0) {
+          resolve();
+        } else {
+          reject(new Error(`Management command ${command} failed with code ${code}\nStdout: ${stdout}\nStderr: ${stderr}`));
+        }
+      });
+
+      childProcess.on('error', (error) => {
+        reject(error);
+      });
+    });
+  }
+
+  async checkSchemas(backendDir: string, venvPython: string): Promise<boolean> {
+    return new Promise((resolve, reject) => {
+      const pythonCode = `
+from ccv.models import Schema
+schema_count = Schema.objects.count()
+print(f"SCHEMA_COUNT:{schema_count}")
+`;
+
+      const checkProcess = spawn(venvPython, ['manage.py', 'shell', '-c', pythonCode], {
+        cwd: backendDir,
+        stdio: ['pipe', 'pipe', 'pipe'],
+        env: this.getDjangoEnvironment()
+      });
+
+      let stdout = '';
+      let stderr = '';
+
+      checkProcess.stdout?.on('data', (data) => {
+        stdout += data.toString();
+      });
+
+      checkProcess.stderr?.on('data', (data) => {
+        stderr += data.toString();
+      });
+
+      checkProcess.on('close', (code) => {
+        if (code === 0) {
+          const match = stdout.match(/SCHEMA_COUNT:(\d+)/);
+          if (match) {
+            const count = parseInt(match[1]);
+            resolve(count > 0);
+          } else {
+            resolve(false);
+          }
+        } else {
+          reject(new Error(`Schema check failed with code ${code}\nStdout: ${stdout}\nStderr: ${stderr}`));
+        }
+      });
+
+      checkProcess.on('error', (error) => {
+        reject(error);
+      });
+    });
+  }
+
+  async checkColumnTemplates(backendDir: string, venvPython: string): Promise<boolean> {
+    return new Promise((resolve, reject) => {
+      const pythonCode = `
+from ccv.models import MetadataColumnTemplate
+template_count = MetadataColumnTemplate.objects.count()
+print(f"TEMPLATE_COUNT:{template_count}")
+`;
+
+      const templateProcess = spawn(venvPython, ['manage.py', 'shell', '-c', pythonCode], {
+        cwd: backendDir,
+        stdio: ['pipe', 'pipe', 'pipe'],
+        env: this.getDjangoEnvironment()
+      });
+
+      let stdout = '';
+      let stderr = '';
+
+      templateProcess.stdout?.on('data', (data) => {
+        stdout += data.toString();
+      });
+
+      templateProcess.stderr?.on('data', (data) => {
+        stderr += data.toString();
+      });
+
+      templateProcess.on('close', (code) => {
+        if (code === 0) {
+          const match = stdout.match(/TEMPLATE_COUNT:(\d+)/);
+          if (match) {
+            const count = parseInt(match[1]);
+            resolve(count > 0);
+          } else {
+            resolve(false);
+          }
+        } else {
+          reject(new Error(`Column template check failed with code ${code}\nStdout: ${stdout}\nStderr: ${stderr}`));
+        }
+      });
+
+      templateProcess.on('error', (error) => {
+        reject(error);
+      });
+    });
+  }
+
 }

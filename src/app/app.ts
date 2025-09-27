@@ -8,6 +8,7 @@ import { SiteConfigService, ThemeService, ToastService, ToastContainerComponent,
 
 import { BehaviorSubject } from 'rxjs';
 import { environment } from '../environments/environment';
+import {ElectronService} from './shared/services/electron';
 
 @Component({
   selector: 'app-root',
@@ -25,6 +26,7 @@ export class App implements OnInit {
   private themeService = inject(ThemeService);
   private asyncTaskService = inject(AsyncTaskUIService);
   private toastService = inject(ToastService);
+  private electronService = inject(ElectronService);
 
   private appInitializedSubject = new BehaviorSubject<boolean>(false);
   public appInitialized$ = this.appInitializedSubject.asObservable();
@@ -57,6 +59,10 @@ export class App implements OnInit {
       }
 
       this.appInitializedSubject.next(true);
+      this.electronService.getAppVersion().then(appVersion => {
+        console.log('App Version:', appVersion);
+        this.toastService.show("Application initialized")
+      })
     } catch (error) {
       console.error('Failed to initialize app:', error);
       this.appInitializedSubject.next(true);
