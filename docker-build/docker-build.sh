@@ -4,31 +4,17 @@ set -e
 
 echo "Starting Cupcake Vanilla Docker Build Process..."
 
-echo "Step 1: Cloning backend repository..."
-BACKEND_REPO_URL=${BACKEND_REPO_URL:-"https://github.com/noatgnu/cupcake_vanilla.git"}
-BACKEND_BRANCH=${BACKEND_BRANCH:-"master"}
-
-if [ ! -d "electron-app/backend" ]; then
-    echo "Cloning backend from ${BACKEND_REPO_URL} (branch: ${BACKEND_BRANCH})"
-    git clone --branch ${BACKEND_BRANCH} ${BACKEND_REPO_URL} electron-app/backend
-else
-    echo "Backend directory exists, pulling latest changes..."
-    cd electron-app/backend
-    git pull origin ${BACKEND_BRANCH}
-    cd ../..
-fi
-
-echo "Step 2: Installing dependencies..."
+echo "Step 1: Installing dependencies..."
 npm ci
 cd electron-app
 npm ci
 cd ..
 
-echo "Step 3: Building Angular libraries and application..."
+echo "Step 2: Building Angular libraries and application..."
 npm run build:libs
 npm run build
 
-echo "Step 4: Building Electron application..."
+echo "Step 3: Building Electron application..."
 cd electron-app
 npm run compile
 

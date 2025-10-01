@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cupcake Vanilla - Starting</title>
 
-    <!-- Import local splash CSS with Bootstrap and themes -->
-    <link href="splash.css" rel="stylesheet">
+    <!-- Import splash CSS - use production version for built app -->
+    <link href="splash-prod.css" rel="stylesheet">
 </head>
 <body>
     <div class="splash-container">
@@ -39,7 +39,7 @@
         console.log(`Selected theme: ${selectedTheme}`);
 
 
-        let totalServices = 7;
+        let totalServices = 8;
         let readyServices = 0;
         let completedServices = new Set();
         let allServicesReady = false;

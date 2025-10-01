@@ -16,7 +16,8 @@ import {
   AsyncExportService,
   AsyncImportService,
   AsyncValidationService,
-  Websocket
+  Websocket,
+  ElectronService
 } from '../services';
 import { ToastService } from '@cupcake/core';
 import { ValidationResultsModal, ValidationResults } from './validation-results-modal/validation-results-modal';
@@ -42,6 +43,7 @@ export class AsyncTaskUIService implements OnDestroy {
   private toastService = inject(ToastService);
   private websocket = inject(Websocket);
   private modalService = inject(NgbModal);
+  private electronService = inject(ElectronService);
 
   public tasks$ = this.tasksSubject.asObservable();
   public activeTasks$ = this.tasks$.pipe(
@@ -180,7 +182,26 @@ export class AsyncTaskUIService implements OnDestroy {
   downloadTaskResult(taskId: string): void {
     this.libraryAsyncTaskService.getDownloadUrl(taskId).subscribe({
       next: (response) => {
-        window.open(response.downloadUrl, '_blank');
+        console.log('Download task result - checking Electron service:', {
+          isElectron: this.electronService.isElectron,
+          downloadUrl: response.downloadUrl
+        });
+
+        if (this.electronService.isElectron) {
+          console.log('Using Electron download for:', response.downloadUrl);
+          this.electronService.downloadFile(response.downloadUrl)
+            .then((filePath: string) => {
+              console.log('Electron download successful:', filePath);
+              this.toastService.success(`File downloaded to: ${filePath}`);
+            })
+            .catch((error: any) => {
+              console.error('Error downloading file with Electron:', error);
+              this.toastService.error('Failed to download file');
+            });
+        } else {
+          console.log('Using browser fallback for:', response.downloadUrl);
+          window.open(response.downloadUrl, '_blank');
+        }
       },
       error: (error) => {
         console.error('Error getting download URL:', error);

@@ -18,6 +18,7 @@ export interface ElectronAPI {
   showOpenDialog(options?: any): Promise<any>;
   showSaveDialog(options?: any): Promise<any>;
   showMessageBox(options: any): Promise<any>;
+  downloadFile(url: string, filename?: string): Promise<string>;
 
   // Backend communication
   getBackendPort(): Promise<number>;
@@ -46,6 +47,7 @@ const electronAPI: ElectronAPI = {
   showOpenDialog: (options?: any) => ipcRenderer.invoke('show-open-dialog', options),
   showSaveDialog: (options?: any) => ipcRenderer.invoke('show-save-dialog', options),
   showMessageBox: (options: any) => ipcRenderer.invoke('show-message-box', options),
+  downloadFile: (url: string, filename?: string) => ipcRenderer.invoke('download-file', url, filename),
 
   // Backend communication
   getBackendPort: () => ipcRenderer.invoke('get-backend-port'),

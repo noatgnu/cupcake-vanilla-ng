@@ -8,10 +8,6 @@ on:
   release:
     types: [ published ]
 
-env:
-  BACKEND_REPO_URL: ${{ secrets.BACKEND_REPO_URL || 'https://github.com/noatgnu/cupcake_vanilla.git' }}
-  BACKEND_BRANCH: 'master'
-
 jobs:
   build-all-platforms:
     name: Build All Platforms

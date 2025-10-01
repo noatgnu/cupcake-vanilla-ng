@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu, shell, dialog, ipcMain } from 'electron';
+import { app, BrowserWindow, Menu, shell, dialog, ipcMain, net } from 'electron';
 import { spawn, ChildProcess } from 'child_process';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -6,6 +6,12 @@ import * as os from 'os';
 import { PythonManager, Config, PythonCandidate, ValidationResult } from './PythonManager';
 import { BackendManager, BackendStatus, LogMessage } from './BackendManager';
 import { UserManager } from './UserManager';
+import { DownloaderManager, DownloadTask } from './DownloaderManager';
+import { BackendDownloader } from './BackendDownloader';
+import { BackendSetupManager } from './BackendSetupManager';
+
+// Set environment variable to indicate we're running in Electron
+process.env.IS_ELECTRON_ENVIRONMENT = 'true';
 
 // Keep a global reference of the window objects
 let mainWindow: BrowserWindow | null = null;
@@ -39,6 +45,40 @@ const backendManager = new BackendManager(userDataPath, isDev);
 
 // Initialize User Manager
 const userManager = new UserManager(backendManager, userDataPath, isDev);
+
+// Initialize Downloader Manager
+const downloaderManager = new DownloaderManager();
+
+// Initialize Backend Setup Manager
+const backendSetupManager = new BackendSetupManager(
+  userDataPath,
+  isDev,
+  () => {
+    const config = pythonManager.loadConfig();
+    const pythonPath = config.pythonPath;
+    return {
+      version: config.pythonVersion,
+      path: pythonPath
+    };
+  },
+  async (pythonPath: string) => {
+    // Set Python configuration when portable backend is installed
+    const config = pythonManager.loadConfig();
+    config.pythonPath = pythonPath;
+
+    // Detect and store Python version
+    try {
+      const result = await pythonManager.verifyPython(pythonPath);
+      config.pythonVersion = result.version;
+      console.log('Detected portable Python version:', result.version);
+    } catch (error) {
+      console.error('Failed to detect Python version:', error);
+    }
+
+    pythonManager.saveConfig(config);
+    console.log('Python configuration updated to portable backend:', pythonPath);
+  }
+);
 
 // Configuration
 const allowSelfSignedCerts: boolean = isDev || process.argv.includes('--allow-self-signed');
@@ -93,12 +133,84 @@ async function createVirtualEnvironmentWithLogging(pythonCmd: string): Promise<s
 
 // Helper function to get backend directory path
 function getBackendPath(): string {
-  if (isDev) {
-    // Development: backend is in electron-app/backend
-    return path.join(__dirname, '..', 'backend');
-  } else {
-    // Production: backend is packaged in resources/backend
-    return path.join(process.resourcesPath, 'backend');
+  // Backend is always in userdata directory
+  return path.join(userDataPath, 'backend');
+}
+
+// Check if backend exists and prompt for download if needed
+async function checkAndDownloadBackend(): Promise<boolean> {
+  const backendPath = getBackendPath();
+  const backendDownloader = new BackendDownloader();
+
+  if (backendDownloader.backendExists(backendPath)) {
+    console.log('Backend already exists at:', backendPath);
+    return true;
+  }
+
+  console.log('Backend not found at:', backendPath);
+
+  const choice = dialog.showMessageBoxSync(splashWindow, {
+    type: 'question',
+    buttons: ['Download Portable (with Python)', 'Download Source Only', 'Cancel'],
+    defaultId: 0,
+    cancelId: 2,
+    title: 'Backend Not Found',
+    message: 'Backend files are not installed. Would you like to download them?',
+    detail: 'Portable: Includes pre-configured Python environment (recommended)\nSource: Requires you to set up Python environment manually'
+  });
+
+  if (choice === 2) {
+    return false;
+  }
+
+  const isPortable = choice === 0;
+
+  try {
+    if (isPortable) {
+      const releases = await backendDownloader.getAvailableReleases();
+      if (releases.length === 0) {
+        dialog.showErrorBox('No Releases', 'No backend releases found on GitHub.');
+        return false;
+      }
+
+      const latestRelease = releases[0];
+      sendBackendLog(`Downloading backend version ${latestRelease.tag}...`, 'info');
+
+      const task: DownloadTask = {
+        title: 'Downloading Backend',
+        description: `Downloading Cupcake Vanilla Backend ${latestRelease.tag}`,
+        execute: async (window) => {
+          const downloader = new BackendDownloader(window);
+          await downloader.downloadPortable({
+            version: latestRelease.tag,
+            isPortable: true,
+            pythonVersion: '3.11',
+            destPath: backendPath
+          });
+        }
+      };
+
+      await downloaderManager.startDownload(task);
+    } else {
+      const task: DownloadTask = {
+        title: 'Cloning Backend',
+        description: 'Cloning Cupcake Vanilla Backend from GitHub',
+        execute: async (window) => {
+          const downloader = new BackendDownloader(window);
+          await downloader.downloadSource(backendPath);
+        }
+      };
+
+      await downloaderManager.startDownload(task);
+    }
+
+    sendBackendLog('Backend downloaded successfully', 'success');
+    return true;
+  } catch (error: any) {
+    console.error('Backend download error:', error);
+    sendBackendLog(`Backend download failed: ${error.message}`, 'error');
+    dialog.showErrorBox('Download Failed', `Failed to download backend: ${error.message}`);
+    return false;
   }
 }
 
@@ -212,6 +324,36 @@ function createSplashWindow(): void {
     // Set up BackendManager with splash window
     backendManager.setSplashWindow(splashWindow);
 
+    // Check if backend exists, download if needed
+    const backendAvailable = await checkAndDownloadBackend();
+    if (!backendAvailable) {
+      sendBackendLog('Backend download cancelled or failed', 'error');
+      if (splashWindow && !splashWindow.isDestroyed()) {
+        splashWindow.close();
+      }
+      app.quit();
+      return;
+    }
+
+    // Check if we have a portable backend (includes venv)
+    const backendPath = getBackendPath();
+    const backendDownloader = new BackendDownloader();
+    const isPortableBackend = backendDownloader.isPortableBackend(backendPath);
+
+    if (isPortableBackend) {
+      // Portable backend - use bundled Python
+      const portablePython = path.join(
+        backendPath,
+        'python',
+        process.platform === 'win32' ? 'python.exe' : 'bin/python3'
+      );
+      if (fs.existsSync(portablePython)) {
+        sendBackendLog('Using portable backend with bundled Python', 'success');
+        initializeBackend(false, portablePython);
+        return;
+      }
+    }
+
     // Check if we have valid saved configuration
     const hasValidConfig = await pythonManager.isConfigurationValid();
     if (hasValidConfig) {
@@ -233,44 +375,105 @@ function createSplashWindow(): void {
   });
 }
 
-// Show Python selection dialog
-async function showPythonSelectionDialog(): Promise<void> {
-  sendBackendLog('Detecting Python installations...', 'info');
-  const candidates = await pythonManager.detectPythonCandidates();
+// Python selection window
+let pythonSelectionWindow: BrowserWindow | null = null;
+let pythonCandidatesCache: PythonCandidate[] = [];
 
-  let buttons = [];
-  let message = 'Choose Python installation for Cupcake Vanilla:\n\n';
-
-  if (candidates.length > 0) {
-    candidates.forEach((python, index) => {
-      buttons.push(`Use ${python.version}`);
-      message += `${index + 1}. ${python.version} (${python.command})\n`;
-    });
-    message += '\n';
-  } else {
-    message += 'No suitable Python 3.11+ installations found automatically.\n\n';
-  }
-
-  buttons.push('Browse for Python...', 'Cancel');
-
-  const choice = dialog.showMessageBoxSync(splashWindow, {
-    type: 'question',
-    buttons: buttons,
-    defaultId: 0,
-    cancelId: buttons.length - 1,
-    title: 'Select Python Installation',
-    message: 'Choose Python installation for Cupcake Vanilla:',
-    detail: message + 'Python 3.11 or higher is required.'
+// Setup Python selection IPC handlers
+function setupPythonSelectionIPC(): void {
+  ipcMain.handle('python-selection-get-candidates', async () => {
+    return pythonCandidatesCache;
   });
 
-  if (choice < candidates.length) {
-    // User selected a detected Python
-    const selectedPython = candidates[choice];
-    sendBackendLog(`Selected Python: ${selectedPython.version}`, 'success');
-    showEnvironmentSetupDialog(selectedPython.command);
-  } else if (choice === candidates.length) {
-    // User wants to browse for Python
-    const result = dialog.showOpenDialogSync(splashWindow, {
+  ipcMain.on('python-selection-select', (_event, pythonPath: string) => {
+    if (pythonSelectionWindow) {
+      pythonSelectionWindow.close();
+      pythonSelectionWindow = null;
+    }
+    sendBackendLog(`Selected Python: ${pythonPath}`, 'success');
+    showEnvironmentSetupDialog(pythonPath);
+  });
+
+  ipcMain.on('python-selection-download-portable', async () => {
+    if (pythonSelectionWindow) {
+      pythonSelectionWindow.close();
+      pythonSelectionWindow = null;
+    }
+
+    // Check if backend already exists
+    const backendPath = getBackendPath();
+    const backendDownloader = new BackendDownloader();
+
+    if (backendDownloader.backendExists(backendPath)) {
+      // Backend exists, ask if user wants to replace it
+      const choice = dialog.showMessageBoxSync(splashWindow, {
+        type: 'warning',
+        buttons: ['Replace with Portable', 'Cancel'],
+        defaultId: 0,
+        cancelId: 1,
+        title: 'Backend Already Exists',
+        message: 'Backend files already exist. Replace with portable backend?',
+        detail: 'Warning: This will delete the existing backend and download a new portable version with bundled Python.\n\nExisting backend location:\n' + backendPath
+      });
+
+      if (choice === 1) {
+        // User canceled, show Python selection again
+        showPythonSelectionDialog();
+        return;
+      }
+    }
+
+    // Download portable backend
+    try {
+      const releases = await backendDownloader.getAvailableReleases();
+      if (releases.length === 0) {
+        dialog.showErrorBox('No Releases', 'No backend releases found on GitHub.');
+        showPythonSelectionDialog();
+        return;
+      }
+
+      const latestRelease = releases[0];
+      sendBackendLog(`Downloading portable backend version ${latestRelease.tag}...`, 'info');
+
+      const task: DownloadTask = {
+        title: 'Downloading Backend',
+        description: `Downloading Cupcake Vanilla Backend ${latestRelease.tag}`,
+        execute: async (window) => {
+          const downloader = new BackendDownloader(window);
+          await downloader.downloadPortable({
+            version: latestRelease.tag,
+            isPortable: true,
+            pythonVersion: '3.11',
+            destPath: backendPath
+          });
+        }
+      };
+
+      await downloaderManager.startDownload(task);
+
+      // Backend downloaded successfully, use portable Python
+      const portablePython = path.join(
+        backendPath,
+        'python',
+        process.platform === 'win32' ? 'python.exe' : 'bin/python3'
+      );
+
+      if (fs.existsSync(portablePython)) {
+        sendBackendLog('Using portable backend with bundled Python', 'success');
+        initializeBackend(false, portablePython);
+      } else {
+        dialog.showErrorBox('Error', 'Portable Python not found after download. Please try again.');
+        showPythonSelectionDialog();
+      }
+    } catch (error: any) {
+      console.error('Backend download error:', error);
+      dialog.showErrorBox('Download Failed', `Failed to download portable backend: ${error.message}`);
+      showPythonSelectionDialog();
+    }
+  });
+
+  ipcMain.on('python-selection-browse', async () => {
+    const result = dialog.showOpenDialogSync(pythonSelectionWindow, {
       title: 'Select Python Executable',
       filters: [
         { name: 'Python Executable', extensions: process.platform === 'win32' ? ['exe'] : [''] },
@@ -285,21 +488,67 @@ async function showPythonSelectionDialog(): Promise<void> {
 
       const verification = await pythonManager.verifyPython(pythonPath);
       if (verification.valid) {
-        sendBackendLog(`Selected Python: ${verification.version}`, 'success');
-        showEnvironmentSetupDialog(pythonPath);
+        // Send custom Python to the window
+        if (pythonSelectionWindow && !pythonSelectionWindow.isDestroyed()) {
+          pythonSelectionWindow.webContents.send('python-selection-custom', pythonPath, verification.version, true);
+        }
       } else {
         dialog.showErrorBox('Invalid Python', `The selected Python installation is not valid or is older than 3.11.\n\nFound: ${verification.version}\nRequired: Python 3.11+`);
-        showPythonSelectionDialog(); // Try again
       }
-    } else {
-      showPythonSelectionDialog(); // Try again
     }
-  } else {
-    // Cancel - close splash window
+  });
+
+  ipcMain.on('python-selection-cancel', () => {
+    if (pythonSelectionWindow) {
+      pythonSelectionWindow.close();
+      pythonSelectionWindow = null;
+    }
     if (splashWindow && !splashWindow.isDestroyed()) {
       splashWindow.close();
     }
+  });
+}
+
+// Show Python selection dialog
+async function showPythonSelectionDialog(): Promise<void> {
+  sendBackendLog('Detecting Python installations...', 'info');
+  pythonCandidatesCache = await pythonManager.detectPythonCandidates();
+
+  if (pythonSelectionWindow && !pythonSelectionWindow.isDestroyed()) {
+    pythonSelectionWindow.focus();
+    return;
   }
+
+  pythonSelectionWindow = new BrowserWindow({
+    width: 520,
+    height: 450,
+    modal: true,
+    parent: splashWindow,
+    show: false,
+    resizable: false,
+    minimizable: false,
+    maximizable: false,
+    titleBarStyle: 'hidden',
+    titleBarOverlay: process.platform !== 'darwin',
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: path.join(__dirname, 'python-selection-panel-preload.js')
+    }
+  });
+
+  const htmlPath = path.join(__dirname, 'python-selection-panel.html');
+  pythonSelectionWindow.loadFile(htmlPath);
+
+  pythonSelectionWindow.once('ready-to-show', () => {
+    if (pythonSelectionWindow && !pythonSelectionWindow.isDestroyed()) {
+      pythonSelectionWindow.show();
+    }
+  });
+
+  pythonSelectionWindow.on('closed', () => {
+    pythonSelectionWindow = null;
+  });
 }
 
 // Show environment setup dialog
@@ -371,9 +620,10 @@ function createWindow(): void {
     // Check for Django users and show superuser creation modal if needed
     try {
       const config = pythonManager.loadConfig();
+      const backendDir = getBackendPath();
       if (config.pythonPath && venvPath) {
         // Use UserManager to handle user checking and superuser creation
-        await userManager.checkAndHandleUsers(config.pythonPath, venvPath, mainWindow);
+        await userManager.checkAndHandleUsers(backendDir, config.pythonPath, mainWindow);
       }
     } catch (error) {
       console.error('Error checking users:', error);
@@ -425,7 +675,15 @@ async function initializeBackend(createNewVenv: boolean = true, selectedPython: 
     sendBackendLog(`Using backend directory: ${backendDir}`, 'info');
 
     // Step 2: Handle virtual environment
-    if (createNewVenv) {
+    const backendDownloader = new BackendDownloader();
+    const isPortable = backendDownloader.isPortableBackend(backendDir);
+
+    if (isPortable) {
+      // Portable backend has venv bundled
+      venvPath = pythonPath;
+      sendBackendStatus('venv', 'ready', 'Using portable virtual environment');
+      sendBackendLog('Using bundled portable virtual environment', 'success');
+    } else if (createNewVenv) {
       venvPath = await createVirtualEnvironmentWithLogging(pythonPath);
     } else {
       venvPath = pythonManager.checkVirtualEnvironment();
@@ -438,9 +696,14 @@ async function initializeBackend(createNewVenv: boolean = true, selectedPython: 
       sendBackendLog('Using existing virtual environment', 'success');
     }
 
-    // Step 3: Install dependencies
-    await installDependenciesWithLogging(backendDir, venvPath);
-    sendBackendLog('All dependencies installed successfully', 'success');
+    // Step 3: Install dependencies (skip for portable)
+    if (!isPortable) {
+      await installDependenciesWithLogging(backendDir, venvPath);
+      sendBackendLog('All dependencies installed successfully', 'success');
+    } else {
+      sendBackendLog('Skipping dependency installation for portable backend', 'info');
+      sendBackendStatus('dependencies', 'ready', 'Dependencies pre-installed in portable backend');
+    }
     console.log('[DEBUG] Dependencies completed, starting migrations...');
     console.log("test")
     // Step 4: Run migrations using BackendManager
@@ -452,14 +715,19 @@ async function initializeBackend(createNewVenv: boolean = true, selectedPython: 
     // Step 5: Collect static files
     console.log('[DEBUG] About to collect static files...');
     await backendManager.collectStaticFiles(backendDir, venvPath);
-    console.log('[DEBUG] Static files completed, starting Django server...');
+    console.log('[DEBUG] Static files completed, starting Redis server...');
 
-    // Step 6: Start Django server
+    // Step 6: Start Redis server
+    console.log('[DEBUG] About to start Redis server...');
+    await backendManager.startRedisServer();
+    console.log('[DEBUG] Redis server started, starting Django server...');
+
+    // Step 7: Start Django server
     console.log('[DEBUG] About to start Django server...');
     await backendManager.startDjangoServer(backendDir, venvPath);
     console.log('[DEBUG] Django server started, starting RQ worker...');
 
-    // Step 7: Start RQ worker
+    // Step 8: Start RQ worker
     console.log('[DEBUG] About to start RQ worker...');
     await backendManager.startRQWorker(backendDir, venvPath);
     console.log('[DEBUG] RQ worker started, all services ready!');
@@ -498,13 +766,13 @@ ipcMain.on('splash-minimize', () => {
   }
 });
 
-ipcMain.on('splash-close', () => {
+ipcMain.on('splash-close', async () => {
   console.log('Splash window close requested');
   if (splashWindow && !splashWindow.isDestroyed()) {
     splashWindow.close();
   }
   // Clean up and quit the application
-  backendManager.stopServices();
+  await backendManager.stopServices();
   app.quit();
 });
 
@@ -575,8 +843,123 @@ ipcMain.handle('is-backend-ready', () => {
   return backendReady;
 });
 
+ipcMain.handle('download-file', async (event, url: string, filename?: string) => {
+  try {
+    // Get the main window to use for the download
+    const window = mainWindow || BrowserWindow.getFocusedWindow() || BrowserWindow.getAllWindows()[0];
+
+    if (!window) {
+      throw new Error('No window available for download');
+    }
+
+    // Default filename if none provided
+    let downloadFilename = filename;
+    if (!downloadFilename) {
+      try {
+        const urlPath = new URL(url).pathname;
+        downloadFilename = path.basename(urlPath) || 'download.file';
+      } catch {
+        downloadFilename = 'download.file';
+      }
+    }
+
+    // Show save dialog to let user choose location and filename
+    const saveResult = await (dialog.showSaveDialog as any)(window, {
+      defaultPath: path.join(app.getPath('downloads'), downloadFilename),
+      filters: [
+        { name: 'Tab-separated values', extensions: ['tsv'] }
+      ]
+    });
+
+    // Handle both possible return types (string or object)
+    let savePath: string;
+    if (typeof saveResult === 'string') {
+      savePath = saveResult;
+    } else if (saveResult && typeof saveResult === 'object' && 'filePath' in saveResult) {
+      if (saveResult.canceled) {
+        throw new Error('Download cancelled by user');
+      }
+      savePath = saveResult.filePath;
+    } else {
+      throw new Error('Download cancelled by user or no save path selected');
+    }
+
+    if (!savePath) {
+      throw new Error('Download cancelled by user or no save path selected');
+    }
+
+    // Use Electron's net module with session context for better reliability
+    return new Promise((resolve, reject) => {
+      console.log(`Starting download from ${url} to ${savePath}`);
+
+      const request = net.request({
+        method: 'GET',
+        url: url,
+        session: window.webContents.session
+      });
+
+      const chunks: Buffer[] = [];
+
+      request.on('response', (response) => {
+        console.log(`Response status: ${response.statusCode}`);
+        console.log(`Response headers:`, response.headers);
+
+        if (response.statusCode !== 200) {
+          reject(new Error(`Download failed with status ${response.statusCode}`));
+          return;
+        }
+
+        response.on('data', (chunk: Buffer) => {
+          chunks.push(chunk);
+          console.log(`Received chunk: ${chunk.length} bytes, total: ${Buffer.concat(chunks).length} bytes`);
+        });
+
+        response.on('end', () => {
+          clearTimeout(timeout);
+          const buffer = Buffer.concat(chunks);
+          console.log(`Download completed - Total bytes received: ${buffer.length}`);
+
+          try {
+            fs.writeFileSync(savePath, buffer);
+            console.log(`File written successfully to: ${savePath}`);
+            resolve(savePath);
+          } catch (writeError: any) {
+            console.error('File write error:', writeError);
+            reject(new Error(`Failed to write file: ${writeError.message}`));
+          }
+        });
+
+        response.on('error', (error: any) => {
+          clearTimeout(timeout);
+          console.error('Response error:', error);
+          reject(new Error(`Download failed: ${error.message}`));
+        });
+      });
+
+      request.on('error', (error: any) => {
+        clearTimeout(timeout);
+        console.error('Request error:', error);
+        reject(new Error(`Request failed: ${error.message}`));
+      });
+
+      // Set timeout to prevent hanging
+      const timeout = setTimeout(() => {
+        console.log('Request timeout - aborting');
+        request.abort();
+        reject(new Error('Download timeout after 60 seconds'));
+      }, 60000);
+
+      console.log('Sending request...');
+      request.end();
+    });
+  } catch (error) {
+    throw error;
+  }
+});
+
 // App event handlers
 app.whenReady().then(() => {
+  setupPythonSelectionIPC();
   createSplashWindow();
 
   app.on('activate', () => {
@@ -592,45 +975,90 @@ app.whenReady().then(() => {
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
-    // Kill backend processes before quitting
-    backendManager.stopServices();
     app.quit();
   }
 });
 
-app.on('before-quit', () => {
-  // Kill backend processes
-  backendManager.stopServices();
+let isQuitting = false;
+
+app.on('before-quit', async (event) => {
+  if (!isQuitting) {
+    event.preventDefault();
+    isQuitting = true;
+
+    console.log('Application quitting, stopping backend services...');
+
+    try {
+      await backendManager.stopServices();
+      console.log('Backend services stopped successfully');
+    } catch (error) {
+      console.error('Error stopping backend services:', error);
+    }
+
+    // Force quit after cleanup
+    app.exit(0);
+  }
 });
 
 // Management panel functions
 async function openManagementPanel(): Promise<void> {
+  console.log('[Management] Opening management panel...');
+
   if (!userManager || !backendManager) {
     console.log('[Management] UserManager or BackendManager not initialized');
     return;
   }
 
+  if (!mainWindow) {
+    console.log('[Management] Main window not available');
+    return;
+  }
+
   try {
-    const backendDir = path.join(__dirname, '..', 'backend');
-    const venvPath = await getVenvPath();
+    const backendDir = getBackendPath();
+    console.log('[Management] Backend directory:', backendDir);
 
-    const needsSchemas = !(await backendManager.checkSchemas(backendDir, venvPath));
-    const needsColumnTemplates = !(await backendManager.checkColumnTemplates(backendDir, venvPath));
-
-    if (needsSchemas || needsColumnTemplates) {
-      await userManager.showManagementPanel(backendDir, venvPath, needsSchemas, needsColumnTemplates, mainWindow);
-    } else {
-      dialog.showMessageBox(mainWindow, {
-        type: 'info',
-        title: 'Database Setup',
-        message: 'Database setup is complete',
-        detail: 'All required schemas and column templates are already loaded.',
-        buttons: ['OK']
-      });
+    // Use the global venvPath directly instead of the promise wrapper
+    if (!venvPath) {
+      throw new Error('Virtual environment path not available');
     }
+    console.log('[Management] Virtual environment path:', venvPath);
+
+    // Always allow access to management panel, regardless of setup status
+    // Set both to false since we're not restricting access based on setup completion
+    const needsSchemas = false;
+    const needsColumnTemplates = false;
+
+    console.log('[Management] Opening management panel with full access');
+
+    await userManager.showManagementPanel(backendDir, venvPath, needsSchemas, needsColumnTemplates, mainWindow);
+    console.log('[Management] Management panel opened successfully');
   } catch (error) {
     console.error('[Management] Error opening management panel:', error);
     dialog.showErrorBox('Management Panel Error', `Failed to open management panel: ${error.message}`);
+  }
+}
+
+function openDebugPanel(): void {
+  if (!userManager) {
+    console.log('[Debug] UserManager not initialized');
+    return;
+  }
+
+  try {
+    userManager.showDebugPanel(mainWindow);
+  } catch (error) {
+    console.error('[Debug] Error opening debug panel:', error);
+    dialog.showErrorBox('Debug Panel Error', `Failed to open debug panel: ${error.message}`);
+  }
+}
+
+function openBackendSetup(): void {
+  try {
+    backendSetupManager.showSetupPanel(mainWindow);
+  } catch (error: any) {
+    console.error('[Backend Setup] Error opening backend setup panel:', error);
+    dialog.showErrorBox('Backend Setup Error', `Failed to open backend setup panel: ${error.message}`);
   }
 }
 
@@ -644,6 +1072,20 @@ function createMenu(): void {
         {
           label: 'Database Setup',
           click: () => openManagementPanel()
+        },
+        {
+          label: 'Backend Setup',
+          click: () => openBackendSetup()
+        },
+        { type: 'separator' },
+        {
+          label: 'Open User Data Folder',
+          click: () => shell.openPath(userDataPath)
+        },
+        { type: 'separator' },
+        {
+          label: 'Debug Panel',
+          click: () => openDebugPanel()
         }
       ]
     }

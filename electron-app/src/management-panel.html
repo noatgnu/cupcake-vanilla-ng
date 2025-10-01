@@ -17,7 +17,7 @@
       <div class="commands-table">
         <div id="schemas-section" class="command-row" style="display: none;">
           <div class="command-info">
-            <div class="command-name">Schema Synchronization</div>
+            <div class="command-name">Schema Synchronization <span id="schemas-count" class="count-badge">0</span></div>
             <div class="command-description">Load initial database schemas for metadata management</div>
           </div>
           <div class="command-actions">
@@ -29,7 +29,7 @@
 
         <div id="templates-section" class="command-row" style="display: none;">
           <div class="command-info">
-            <div class="command-name">Column Templates</div>
+            <div class="command-name">Column Templates <span id="templates-count" class="count-badge">0</span></div>
             <div class="command-description">Load default metadata column templates</div>
           </div>
           <div class="command-actions">
@@ -101,8 +101,11 @@
 
         <div id="ontologies-section" class="command-row" style="display: none;">
           <div class="command-info">
-            <div class="command-name">Ontologies</div>
-            <div class="command-description">Load ontology data with no limit option</div>
+            <div class="command-name">Ontologies <span id="ontologies-count" class="count-badge">0</span></div>
+            <div class="command-description">
+              Load ontology data (MONDO, UBERON, NCBI, ChEBI, PSI-MS, Cell Ontology)
+              <div id="ontologies-breakdown" class="count-breakdown" style="display: none;"></div>
+            </div>
           </div>
           <div class="command-actions">
             <button id="run-ontologies-btn" class="btn btn-primary">Run load_ontologies --no-limit</button>
@@ -110,6 +113,9 @@
           </div>
           <div id="ontologies-progress" class="progress-message" style="display: none;"></div>
         </div>
+      </div>
+
+      <div class="footer-actions">
       </div>
 
     </div>
@@ -122,6 +128,7 @@
     let needsColumnTemplates = false;
     let completedTasks = 0;
     let totalTasks = 0;
+    let commandHistory = {};
 
     // Set up event listeners using the secure API
     if (window.managementAPI) {
@@ -132,14 +139,26 @@
         console.log('Received setup data:', data);
         needsSchemas = data.needsSchemas;
         needsColumnTemplates = data.needsColumnTemplates;
+        commandHistory = data.commandHistory || {};
 
         setupPanel();
+
+        // Update counts if provided
+        if (data.counts) {
+          updateCounts(data.counts);
+        }
       });
 
       // Listen for command progress updates
       window.managementAPI.onCommandProgress((event, command, status, message) => {
         console.log('Command progress:', command, status, message);
         updateCommandStatus(command, status, message);
+      });
+
+      // Listen for live command output
+      window.managementAPI.onCommandOutput((event, command, output, type) => {
+        console.log('Command output:', command, output, type);
+        updateCommandOutput(command, output, type);
       });
 
       // Set up button event listeners
@@ -191,15 +210,6 @@
         document.getElementById('run-ontologies-btn').disabled = true;
       });
 
-      document.getElementById('skip-btn').addEventListener('click', () => {
-        console.log('Skipping management setup...');
-        window.managementAPI.skipManagement();
-      });
-
-
-      document.getElementById('close-btn-footer').addEventListener('click', () => {
-        window.managementAPI.closeManagementWindow();
-      });
 
       console.log('Management API listeners set up successfully');
     } else {
@@ -207,22 +217,93 @@
     }
 
     function setupPanel() {
-      if (needsSchemas) {
-        document.getElementById('schemas-section').style.display = 'block';
-        totalTasks++;
-      }
+      // Always show all management options regardless of setup status
+      document.getElementById('schemas-section').style.display = 'block';
+      document.getElementById('templates-section').style.display = 'block';
+      document.getElementById('ms-mod-section').style.display = 'block';
+      document.getElementById('ms-term-section').style.display = 'block';
+      document.getElementById('species-section').style.display = 'block';
+      document.getElementById('subcellular-section').style.display = 'block';
+      document.getElementById('tissue-section').style.display = 'block';
+      document.getElementById('ontologies-section').style.display = 'block';
 
-      if (needsColumnTemplates) {
-        document.getElementById('templates-section').style.display = 'block';
-        totalTasks++;
-      }
+      totalTasks = 8; // All management commands are available
 
-      if (totalTasks === 0) {
-        // No tasks needed, close immediately
-        if (window.managementAPI) {
-          window.managementAPI.closeManagementWindow();
+      // Display command history for each command
+      displayCommandHistory();
+    }
+
+    function displayCommandHistory() {
+      const commands = [
+        'sync-schemas', 'load-column-templates', 'load-ms-mod', 'load-ms-term',
+        'load-species', 'load-subcellular-location', 'load-tissue', 'load-ontologies'
+      ];
+
+      commands.forEach(command => {
+        const history = commandHistory[command];
+        if (history) {
+          const statusElement = document.getElementById(getStatusElementId(command));
+          const progressElement = document.getElementById(getProgressElementId(command));
+
+          if (statusElement && progressElement) {
+            const lastRun = new Date(history.lastRun);
+            const timeAgo = getTimeAgo(lastRun);
+
+            statusElement.className = 'status-indicator';
+            if (history.success) {
+              statusElement.classList.add('completed');
+              statusElement.innerHTML = '<i class="bi bi-check-circle"></i> Last run successful';
+            } else {
+              statusElement.classList.add('error');
+              statusElement.innerHTML = '<i class="bi bi-x-circle"></i> Last run failed';
+            }
+
+            progressElement.style.display = 'block';
+            progressElement.textContent = `Last run: ${timeAgo} - ${history.message}`;
+          }
         }
-      }
+      });
+    }
+
+    function getStatusElementId(command) {
+      const mapping = {
+        'sync-schemas': 'schemas-status',
+        'load-column-templates': 'templates-status',
+        'load-ms-mod': 'ms-mod-status',
+        'load-ms-term': 'ms-term-status',
+        'load-species': 'species-status',
+        'load-subcellular-location': 'subcellular-status',
+        'load-tissue': 'tissue-status',
+        'load-ontologies': 'ontologies-status'
+      };
+      return mapping[command];
+    }
+
+    function getProgressElementId(command) {
+      const mapping = {
+        'sync-schemas': 'schemas-progress',
+        'load-column-templates': 'templates-progress',
+        'load-ms-mod': 'ms-mod-progress',
+        'load-ms-term': 'ms-term-progress',
+        'load-species': 'species-progress',
+        'load-subcellular-location': 'subcellular-progress',
+        'load-tissue': 'tissue-progress',
+        'load-ontologies': 'ontologies-progress'
+      };
+      return mapping[command];
+    }
+
+    function getTimeAgo(date) {
+      const now = new Date();
+      const diffMs = now - date;
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMs / 3600000);
+      const diffDays = Math.floor(diffMs / 86400000);
+
+      if (diffMins < 1) return 'just now';
+      if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
+      if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+      return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
     }
 
     function updateCommandStatus(command, status, message) {
@@ -270,23 +351,102 @@
 
         if (status === 'running') {
           statusElement.classList.add('running');
-          statusElement.textContent = '⏳ Running...';
+          statusElement.innerHTML = '<i class="bi bi-hourglass-split"></i> Running...';
         } else if (status === 'completed') {
           statusElement.classList.add('completed');
-          statusElement.textContent = '✅ Completed';
+          statusElement.innerHTML = '<i class="bi bi-check-circle"></i> Completed';
           completedTasks++;
 
           if (completedTasks === totalTasks) {
             // All tasks completed
-            document.getElementById('skip-btn').style.display = 'none';
-            document.getElementById('close-btn-footer').style.display = 'inline-block';
           }
         } else if (status === 'error') {
           statusElement.classList.add('error');
-          statusElement.textContent = '❌ Error';
+          statusElement.innerHTML = '<i class="bi bi-x-circle"></i> Error';
           if (buttonElement) {
             buttonElement.disabled = false;
           }
+        }
+      }
+    }
+
+    function updateCommandOutput(command, output, type) {
+      let progressElement = null;
+
+      if (command === 'sync-schemas') {
+        progressElement = document.getElementById('schemas-progress');
+      } else if (command === 'load-column-templates') {
+        progressElement = document.getElementById('templates-progress');
+      } else if (command === 'load-ms-mod') {
+        progressElement = document.getElementById('ms-mod-progress');
+      } else if (command === 'load-ms-term') {
+        progressElement = document.getElementById('ms-term-progress');
+      } else if (command === 'load-species') {
+        progressElement = document.getElementById('species-progress');
+      } else if (command === 'load-subcellular-location') {
+        progressElement = document.getElementById('subcellular-progress');
+      } else if (command === 'load-tissue') {
+        progressElement = document.getElementById('tissue-progress');
+      } else if (command === 'load-ontologies') {
+        progressElement = document.getElementById('ontologies-progress');
+      }
+
+      if (progressElement && output.trim()) {
+        progressElement.style.display = 'block';
+        progressElement.textContent = output.trim();
+        progressElement.className = 'progress-message';
+
+        // Add type-specific styling
+        if (type === 'error') {
+          progressElement.style.color = '#dc3545';
+        } else if (type === 'success') {
+          progressElement.style.color = '#198754';
+        } else {
+          progressElement.style.color = '';
+        }
+      }
+    }
+
+    function updateCounts(counts) {
+      console.log('Updating counts:', counts);
+
+      // Update schema count
+      if (counts.schemas !== undefined) {
+        const schemasCountEl = document.getElementById('schemas-count');
+        if (schemasCountEl) {
+          schemasCountEl.textContent = counts.schemas.toLocaleString();
+        }
+      }
+
+      // Update column templates count
+      if (counts.templates !== undefined) {
+        const templatesCountEl = document.getElementById('templates-count');
+        if (templatesCountEl) {
+          templatesCountEl.textContent = counts.templates.toLocaleString();
+        }
+      }
+
+      // Update ontologies count
+      if (counts.ontologies) {
+        const ontologiesCountEl = document.getElementById('ontologies-count');
+        const ontologiesBreakdownEl = document.getElementById('ontologies-breakdown');
+
+        if (ontologiesCountEl) {
+          ontologiesCountEl.textContent = counts.ontologies.total.toLocaleString();
+        }
+
+        if (ontologiesBreakdownEl && counts.ontologies.total > 0) {
+          const breakdown = [
+            `MONDO: ${counts.ontologies.mondo.toLocaleString()}`,
+            `UBERON: ${counts.ontologies.uberon.toLocaleString()}`,
+            `NCBI: ${counts.ontologies.ncbi.toLocaleString()}`,
+            `ChEBI: ${counts.ontologies.chebi.toLocaleString()}`,
+            `PSI-MS: ${counts.ontologies.psims.toLocaleString()}`,
+            `Cell: ${counts.ontologies.cell.toLocaleString()}`
+          ].join(' | ');
+
+          ontologiesBreakdownEl.textContent = breakdown;
+          ontologiesBreakdownEl.style.display = 'block';
         }
       }
     }

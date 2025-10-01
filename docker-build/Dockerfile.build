@@ -70,10 +70,6 @@ COPY ../public ./public
 COPY ../electron-app ./electron-app
 COPY ../angular.json ./angular.json
 COPY ../tsconfig*.json ./
-COPY ../build-all.sh ./build-all.sh
-
-# Make build scripts executable
-RUN chmod +x ./build-all.sh
 
 # Create the build script (from current docker-build directory)
 COPY docker-build/docker-build.sh /app/

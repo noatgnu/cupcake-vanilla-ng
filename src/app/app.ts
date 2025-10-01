@@ -3,12 +3,11 @@ import { RouterOutlet } from '@angular/router';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { CommonModule } from '@angular/common';
 import { NavbarComponent } from './shared/components/navbar/navbar';
-import { AsyncTaskUIService } from '@cupcake/vanilla';
+import { AsyncTaskUIService, ElectronService } from '@cupcake/vanilla';
 import { SiteConfigService, ThemeService, ToastService, ToastContainerComponent, PoweredByFooterComponent } from '@cupcake/core';
 
 import { BehaviorSubject } from 'rxjs';
 import { environment } from '../environments/environment';
-import {ElectronService} from './shared/services/electron';
 
 @Component({
   selector: 'app-root',

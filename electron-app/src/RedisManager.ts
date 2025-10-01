@@ -1,0 +1,422 @@
+import { spawn, ChildProcess } from 'child_process';
+import * as path from 'path';
+import * as fs from 'fs';
+import * as os from 'os';
+import { app } from 'electron';
+import { execSync } from 'child_process';
+import * as net from 'net';
+
+export interface RedisManagerOptions {
+  userDataPath: string;
+  isDev: boolean;
+  port?: number;
+  configFile?: string;
+}
+
+export class RedisManager {
+  private redisProcess: ChildProcess | null = null;
+  private userDataPath: string;
+  private isDev: boolean;
+  private port: number;
+  private configFile: string;
+  private platform: string;
+  private redisDir: string;
+  private logCallback?: (message: string, type?: 'info' | 'warning' | 'error' | 'success') => void;
+
+  constructor(options: RedisManagerOptions) {
+    this.userDataPath = options.userDataPath;
+    this.isDev = options.isDev;
+    this.port = options.port || 6379;
+    this.configFile = options.configFile || 'redis.conf';
+    this.platform = os.platform();
+    this.redisDir = path.join(this.userDataPath, 'redis');
+
+    // Ensure redis directory exists
+    fs.mkdirSync(this.redisDir, { recursive: true });
+  }
+
+  private async findAvailablePort(startPort: number = 6379): Promise<number> {
+    return new Promise((resolve, reject) => {
+      const server = net.createServer();
+      server.listen(startPort, () => {
+        const port = (server.address() as net.AddressInfo).port;
+        server.close(() => resolve(port));
+      });
+      server.on('error', () => {
+        this.findAvailablePort(startPort + 1).then(resolve).catch(reject);
+      });
+    });
+  }
+
+  setLogCallback(callback: (message: string, type?: 'info' | 'warning' | 'error' | 'success') => void): void {
+    this.logCallback = callback;
+  }
+
+  private log(message: string, type: 'info' | 'warning' | 'error' | 'success' = 'info'): void {
+    console.log(`[RedisManager] ${message}`);
+    if (this.logCallback) {
+      this.logCallback(message, type);
+    }
+  }
+
+  private findExecutableInPath(executable: string): string | null {
+    try {
+      const command = this.platform === 'win32' ? 'where' : 'which';
+      const result = execSync(`${command} ${executable}`, {
+        encoding: 'utf8',
+        stdio: ['pipe', 'pipe', 'ignore'] // Suppress stderr
+      });
+      const path = result.trim().split('\n')[0]; // Take first result
+      return path && fs.existsSync(path) ? path : null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  private getRedisExecutablePath(): string {
+    const platform = this.platform;
+
+    if (this.isDev) {
+      // Development mode - look for system Redis/Valkey
+      if (platform === 'win32') {
+        // Check for Memurai in PATH first
+        const memuraiInPath = this.findExecutableInPath('memurai') || this.findExecutableInPath('memurai.exe');
+        if (memuraiInPath) {
+          return memuraiInPath;
+        }
+
+        // Fallback to bundled binary
+        return path.join(this.redisDir, 'memurai.exe');
+      } else {
+        // Check for system Valkey or Redis
+        const homeBin = path.join(os.homedir(), 'bin', 'valkey-server');
+        const systemPaths = [homeBin, '/usr/local/bin/valkey-server', '/usr/bin/valkey-server', '/usr/local/bin/redis-server', '/usr/bin/redis-server'];
+        for (const systemPath of systemPaths) {
+          if (fs.existsSync(systemPath)) {
+            return systemPath;
+          }
+        }
+
+        // Fallback to bundled binary
+        return path.join(this.redisDir, platform === 'darwin' ? 'valkey-server' : 'valkey-server');
+      }
+    } else {
+      // Production mode - use bundled binaries
+      if (platform === 'win32') {
+        // Windows: Look for Memurai in PATH first
+        const memuraiInPath = this.findExecutableInPath('memurai') || this.findExecutableInPath('memurai.exe');
+        if (memuraiInPath) {
+          return memuraiInPath;
+        }
+        // If no Memurai found in PATH, show error
+        throw new Error('Memurai not found. Please install Memurai from https://www.memurai.com/get-memurai');
+      } else {
+        // Mac/Linux: Use bundled Valkey binary
+        const platformDir = platform === 'darwin' ? 'darwin' : 'linux';
+        return path.join(process.resourcesPath, 'redis', platformDir, 'valkey-server');
+      }
+    }
+  }
+
+  private async createRedisConfig(): Promise<string> {
+    const configPath = path.join(this.redisDir, this.configFile);
+    const logPath = path.join(this.redisDir, 'redis.log');
+
+    const config = `# Valkey configuration for Electron app
+port ${this.port}
+bind 127.0.0.1
+protected-mode yes
+daemonize no
+loglevel notice
+logfile "${logPath.replace(/\\/g, '/')}"
+databases 16
+save 900 1
+save 300 10
+save 60 10000
+dbfilename dump.rdb
+dir "${this.redisDir.replace(/\\/g, '/')}"
+maxmemory-policy allkeys-lru
+appendonly no
+`;
+
+    fs.writeFileSync(configPath, config);
+    this.log(`Redis config created at ${configPath}`, 'success');
+    return configPath;
+  }
+
+  async startRedis(): Promise<void> {
+    if (this.redisProcess && !this.redisProcess.killed) {
+      this.log('Redis server is already running', 'warning');
+      return;
+    }
+
+    const executablePath = this.getRedisExecutablePath();
+
+    if (!fs.existsSync(executablePath)) {
+      throw new Error(`Redis/Valkey binary not found at: ${executablePath}. Please install Valkey for Mac/Linux or Memurai for Windows.`);
+    }
+
+    // Find an available port
+    this.port = await this.findAvailablePort(this.port);
+
+    this.log(`Starting Redis server from ${executablePath}`, 'info');
+    this.log(`Port: ${this.port}`, 'info');
+
+    return new Promise<void>((resolve, reject) => {
+      this.redisProcess = spawn(executablePath, ['--port', this.port.toString(), '--bind', '127.0.0.1'], {
+        stdio: ['ignore', 'pipe', 'pipe'],
+        cwd: this.redisDir
+      });
+
+      let resolved = false;
+
+      this.redisProcess.stdout?.on('data', (data) => {
+        const output = data.toString().trim();
+        this.log(`Redis stdout: ${output}`, 'info');
+
+        // Check for Redis ready indicators
+        if (!resolved && (
+          output.includes('Ready to accept connections') ||
+          output.includes('Server started') ||
+          output.includes('The server is now ready to accept connections')
+        )) {
+          resolved = true;
+          this.log('Redis server is ready', 'success');
+          resolve();
+        }
+      });
+
+      this.redisProcess.stderr?.on('data', (data) => {
+        const output = data.toString().trim();
+        this.log(`Redis stderr: ${output}`, 'warning');
+
+        // Some Redis messages go to stderr but are not errors
+        if (!resolved && (
+          output.includes('Ready to accept connections') ||
+          output.includes('Server started') ||
+          output.includes('The server is now ready to accept connections')
+        )) {
+          resolved = true;
+          this.log('Redis server is ready', 'success');
+          resolve();
+        }
+      });
+
+      this.redisProcess.on('error', (error) => {
+        this.log(`Redis process error: ${error.message}`, 'error');
+        if (!resolved) {
+          resolved = true;
+          reject(error);
+        }
+      });
+
+      this.redisProcess.on('exit', (code, signal) => {
+        this.log(`Redis process exited with code ${code} and signal ${signal}`, code === 0 ? 'info' : 'error');
+        this.redisProcess = null;
+        if (!resolved) {
+          resolved = true;
+          if (code === 0) {
+            resolve();
+          } else {
+            reject(new Error(`Redis process exited with code ${code}`));
+          }
+        }
+      });
+
+      // Set a timeout in case Redis doesn't output ready message
+      setTimeout(() => {
+        if (!resolved) {
+          resolved = true;
+          if (this.redisProcess && !this.redisProcess.killed) {
+            this.log('Redis server started (timeout check)', 'success');
+            resolve();
+          } else {
+            reject(new Error('Redis server failed to start within timeout'));
+          }
+        }
+      }, 10000); // 10 second timeout
+    });
+  }
+
+  async stopRedis(): Promise<void> {
+    if (!this.redisProcess || this.redisProcess.killed) {
+      this.log('Redis server is not running', 'info');
+      return;
+    }
+
+    this.log('Stopping Redis server', 'info');
+
+    return new Promise<void>((resolve) => {
+      if (!this.redisProcess) {
+        resolve();
+        return;
+      }
+
+      const pid = this.redisProcess.pid;
+      let resolved = false;
+
+      const cleanup = () => {
+        if (!resolved) {
+          resolved = true;
+          this.log('Redis server stopped', 'success');
+          this.redisProcess = null;
+          resolve();
+        }
+      };
+
+      this.redisProcess.on('exit', cleanup);
+
+      // Try graceful shutdown first using redis-cli SHUTDOWN
+      const serverPath = this.getRedisExecutablePath();
+      const isWindows = process.platform === 'win32';
+      const cliPath = isWindows
+        ? serverPath.replace('redis-server.exe', 'redis-cli.exe')
+        : serverPath.replace('valkey-server', 'valkey-cli');
+
+      if (fs.existsSync(cliPath)) {
+        try {
+          const { execSync } = require('child_process');
+          const command = isWindows
+            ? `"${cliPath}" -p ${this.port} SHUTDOWN NOSAVE`
+            : `"${cliPath}" -p ${this.port} SHUTDOWN NOSAVE`;
+          execSync(command, { timeout: 2000, stdio: 'ignore' });
+          this.log('Sent SHUTDOWN command to Redis/Valkey', 'info');
+        } catch (error) {
+          // SHUTDOWN command failed, fall back to SIGTERM
+          this.log('SHUTDOWN command failed, using SIGTERM', 'warning');
+        }
+      }
+
+      // Send SIGTERM as backup
+      setTimeout(() => {
+        if (this.redisProcess && !this.redisProcess.killed) {
+          this.log('Sending SIGTERM to Redis', 'info');
+          this.redisProcess.kill('SIGTERM');
+        }
+      }, 1000);
+
+      // Force kill after 3 seconds if still running
+      setTimeout(() => {
+        if (this.redisProcess && !this.redisProcess.killed) {
+          this.log('Force killing Redis server with SIGKILL', 'warning');
+          this.redisProcess.kill('SIGKILL');
+
+          // Extra safety: kill by PID if process object failed
+          if (pid) {
+            setTimeout(() => {
+              try {
+                process.kill(pid, 'SIGKILL');
+              } catch (e) {
+                // Process already dead
+              }
+              cleanup();
+            }, 500);
+          }
+        }
+      }, 3000);
+
+      // Absolute timeout to prevent hanging
+      setTimeout(() => {
+        cleanup();
+      }, 5000);
+    });
+  }
+
+  isRunning(): boolean {
+    return this.redisProcess !== null && !this.redisProcess.killed;
+  }
+
+  getConnectionInfo(): { host: string; port: number; url: string } {
+    return {
+      host: '127.0.0.1',
+      port: this.port,
+      url: `redis://127.0.0.1:${this.port}`
+    };
+  }
+
+  async testConnection(): Promise<boolean> {
+    try {
+      // Simple test to see if Redis is responding
+      const { spawn } = require('child_process');
+      const executablePath = this.getRedisExecutablePath();
+
+      if (!fs.existsSync(executablePath)) {
+        return false;
+      }
+
+      return new Promise<boolean>((resolve) => {
+        const testProcess = spawn(executablePath.replace('server', 'cli'), ['ping'], {
+          stdio: ['ignore', 'pipe', 'pipe']
+        });
+
+        let output = '';
+        testProcess.stdout?.on('data', (data) => {
+          output += data.toString();
+        });
+
+        testProcess.on('exit', (code) => {
+          resolve(code === 0 && output.includes('PONG'));
+        });
+
+        setTimeout(() => {
+          testProcess.kill();
+          resolve(false);
+        }, 3000);
+      });
+    } catch (error) {
+      this.log(`Redis connection test failed: ${error.message}`, 'error');
+      return false;
+    }
+  }
+
+  // Method to get environment variables for Django
+  getEnvironmentVariables(): Record<string, string> {
+    const connectionInfo = this.getConnectionInfo();
+    const envVars: Record<string, string> = {
+      REDIS_HOST: connectionInfo.host,
+      REDIS_PORT: connectionInfo.port.toString(),
+      REDIS_URL: connectionInfo.url
+    };
+
+    // Add password if provided (optional)
+    const password = process.env.REDIS_PASSWORD;
+    if (password) {
+      envVars.REDIS_PASSWORD = password;
+    }
+
+    return envVars;
+  }
+
+  // Kill any orphaned Redis/Valkey processes from previous runs
+  async killOrphanedProcesses(): Promise<void> {
+    try {
+      const { execSync } = require('child_process');
+      const isWindows = process.platform === 'win32';
+
+      if (isWindows) {
+        // Kill orphaned redis-server.exe processes
+        try {
+          execSync('taskkill /F /IM redis-server.exe', { stdio: 'ignore' });
+          this.log('Killed orphaned redis-server.exe processes', 'info');
+        } catch (e) {
+          // No orphaned processes
+        }
+      } else {
+        // Kill orphaned valkey-server processes
+        try {
+          execSync('pkill -9 valkey-server', { stdio: 'ignore' });
+          this.log('Killed orphaned valkey-server processes', 'info');
+        } catch (e) {
+          // No orphaned processes
+        }
+      }
+    } catch (error) {
+      this.log(`Could not kill orphaned processes: ${error.message}`, 'warning');
+    }
+  }
+
+  // Cleanup method
+  async cleanup(): Promise<void> {
+    await this.stopRedis();
+  }
+}

@@ -4,8 +4,6 @@ set -e
 
 DOCKER_IMAGE="cupcake-vanilla-builder"
 BUILD_TARGET=${1:-"linux"}
-BACKEND_REPO_URL=${BACKEND_REPO_URL:-""}
-BACKEND_BRANCH=${BACKEND_BRANCH:-"main"}
 OUTPUT_DIR="../docker-dist"
 
 RED='\033[0;31m'
@@ -22,7 +20,6 @@ log_error() { echo -e "${RED}$1${NC}"; }
 show_help() {
     echo "Usage: $0 [BUILD_TARGET]"
     echo "BUILD_TARGET: linux (default), win, mac, all"
-    echo "Environment: BACKEND_REPO_URL (required), BACKEND_BRANCH (default: main)"
 }
 
 if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
@@ -37,11 +34,6 @@ case ${BUILD_TARGET} in
         exit 1
         ;;
 esac
-
-if [ -z "$BACKEND_REPO_URL" ]; then
-    log_error "BACKEND_REPO_URL environment variable is required"
-    exit 1
-fi
 
 log_info "Building for target: ${BUILD_TARGET}"
 
@@ -63,8 +55,6 @@ docker run \
     --rm \
     -v "$(cd .. && pwd)/docker-dist:/app/dist-output" \
     -e BUILD_TARGET="${BUILD_TARGET}" \
-    -e BACKEND_REPO_URL="${BACKEND_REPO_URL}" \
-    -e BACKEND_BRANCH="${BACKEND_BRANCH}" \
     ${DOCKER_IMAGE}
 
 if [ $? -eq 0 ]; then

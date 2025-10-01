@@ -19,3 +19,4 @@ export * from './chunked-import';
 export * from './sdrf-syntax';
 export * from './websocket';
 export * from './admin-websocket';
+export * from './electron';

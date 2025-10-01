@@ -4,7 +4,7 @@
   "description": "Cupcake Vanilla Electron Desktop Application",
   "main": "dist/main.js",
   "scripts": {
-    "compile": "tsc && cp src/*.html dist/ && cp src/*.css dist/",
+    "compile": "tsc && cp src/*.html dist/ && cp src/*.css dist/ && mkdir -p dist/fonts && cp -r node_modules/bootstrap-icons/font/fonts/* dist/fonts/ 2>/dev/null || true && mkdir -p dist/css && cp node_modules/bootstrap/dist/css/bootstrap.min.css dist/css/ 2>/dev/null || true",
     "compile:watch": "tsc --watch & cp src/*.html dist/ & cp src/*.css dist/",
     "dev:server": "node scripts/dev-simple.js",
     "dev:built": "npm run compile && electron . --dev",
@@ -55,24 +55,40 @@
         "filter": [
           "**/*"
         ]
-      },
-      {
-        "from": "backend",
-        "to": "backend",
-        "filter": [
-          "**/*"
-        ]
       }
     ],
     "mac": {
       "category": "public.app-category.productivity",
-      "target": "dmg"
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["x64", "arm64"]
+        }
+      ]
     },
     "win": {
-      "target": "nsis"
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ]
     },
     "linux": {
-      "target": "AppImage"
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": ["x64"]
+        },
+        {
+          "target": "tar.gz",
+          "arch": ["x64"]
+        }
+      ]
     }
   }
 }

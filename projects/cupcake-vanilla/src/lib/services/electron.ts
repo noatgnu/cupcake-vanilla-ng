@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Observable, fromEvent, NEVER } from 'rxjs';
+import { Observable, NEVER } from 'rxjs';
 
 export interface ElectronAPI {
   platform: string;
@@ -13,6 +13,7 @@ export interface ElectronAPI {
   showOpenDialog(options?: any): Promise<any>;
   showSaveDialog(options?: any): Promise<any>;
   showMessageBox(options: any): Promise<any>;
+  downloadFile(url: string, filename?: string): Promise<string>;
   getBackendPort(): Promise<number>;
   isBackendReady(): Promise<boolean>;
   onBackendStatusChange(callback: (status: any) => void): () => void;
@@ -86,6 +87,11 @@ export class ElectronService {
   async showMessageBox(options: any): Promise<any> {
     if (!this.electronAPI) throw new Error('Not running in Electron');
     return this.electronAPI.showMessageBox(options);
+  }
+
+  async downloadFile(url: string, filename?: string): Promise<string> {
+    if (!this.electronAPI) throw new Error('Not running in Electron');
+    return this.electronAPI.downloadFile(url, filename);
   }
 
   async getBackendPort(): Promise<number> {

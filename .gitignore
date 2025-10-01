@@ -45,3 +45,12 @@ Thumbs.db
 /electron-app/node_modules
 /electron-app/dist
 /electron-app/web-dist
+
+# Font files and folders
+*.woff
+*.woff2
+*.ttf
+*.otf
+*.eot
+**/fonts/
+**/font/

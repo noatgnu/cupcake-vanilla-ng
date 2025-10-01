@@ -1,7 +1,9 @@
-/* Import Bootstrap CSS - works in both dev and production */
-@import url('./css/bootstrap.min.css');
+/* Production splash CSS - uses local font paths instead of node_modules */
 
-/* Bootstrap Icons */
+/* Bootstrap CSS - inline critical styles only */
+/* We'll include only the essential Bootstrap utilities we need for the splash */
+
+/* Bootstrap Icons - point to local fonts */
 @font-face {
   font-family: "bootstrap-icons";
   src: url("./fonts/bootstrap-icons.woff2") format("woff2"),

@@ -1,6 +1,8 @@
 import { spawn, ChildProcess } from 'child_process';
 import * as path from 'path';
+import * as fs from 'fs';
 import { BrowserWindow, ipcMain, dialog } from 'electron';
+import { RedisManager } from './RedisManager';
 
 export interface BackendStatus {
   service: string;
@@ -20,10 +22,19 @@ export class BackendManager {
   private userDataPath: string;
   private isDev: boolean;
   private splashWindow: BrowserWindow | null = null;
+  private outputListeners: Array<(data: string) => void> = [];
+  private redisManager: RedisManager;
 
   constructor(userDataPath: string, isDev: boolean) {
     this.userDataPath = userDataPath;
     this.isDev = isDev;
+    this.redisManager = new RedisManager({
+      userDataPath: this.userDataPath,
+      isDev: this.isDev
+    });
+    this.redisManager.setLogCallback((message, type) => {
+      this.sendBackendLog(`redis: ${message}`, type || 'info');
+    });
   }
 
   setSplashWindow(splashWindow: BrowserWindow) {
@@ -43,6 +54,7 @@ export class BackendManager {
   }
 
   private getDjangoEnvironment(): NodeJS.ProcessEnv {
+    const redisEnv = this.redisManager.getEnvironmentVariables();
     return {
       ...process.env,
       DJANGO_SETTINGS_MODULE: 'cupcake_vanilla.settings_electron',
@@ -50,7 +62,12 @@ export class BackendManager {
       ELECTRON_STATIC_ROOT: path.join(this.userDataPath, 'static'),
       ELECTRON_MEDIA_ROOT: path.join(this.userDataPath, 'media'),
       ELECTRON_DEBUG: this.isDev ? 'true' : 'false',
-      PYTHONUNBUFFERED: '1'
+      ENABLE_CUPCAKE_MACARON: 'true',
+      ENABLE_CUPCAKE_MINT_CHOCOLATE: 'false',
+      ENABLE_CUPCAKE_SALTED_CARAMEL: 'true',
+      ENABLE_CUPCAKE_RED_VELVET: 'true',
+      PYTHONUNBUFFERED: '1',
+      ...redisEnv
     };
   }
 
@@ -71,7 +88,13 @@ export class BackendManager {
         lowerOutput.includes('starting development server') ||
         lowerOutput.includes('quit the server') ||
         lowerOutput.includes('django version') ||
-        lowerOutput.includes('autoreload')) {
+        lowerOutput.includes('autoreload') ||
+        lowerOutput.includes('listening at:') ||
+        lowerOutput.includes('using worker:') ||
+        lowerOutput.includes('booting worker') ||
+        lowerOutput.includes('application startup complete') ||
+        lowerOutput.includes('started server process') ||
+        lowerOutput.includes('waiting for application startup')) {
       return 'info';
     }
 
@@ -105,7 +128,24 @@ export class BackendManager {
       this.sendBackendStatus('migrations', 'starting', 'Running Django migrations...');
       this.sendBackendLog('Running Django migrations...');
 
-      const migrationsProcess = spawn(venvPython, ['manage.py', 'migrate'], {
+      // Check if run.sh exists (portable backend)
+      const runScript = process.platform === 'win32' ? 'run.bat' : 'run.sh';
+      const runScriptPath = path.join(backendDir, runScript);
+
+      let command: string;
+      let args: string[];
+
+      if (fs.existsSync(runScriptPath)) {
+        // Use run.sh/run.bat for portable backend
+        command = runScriptPath;
+        args = ['manage.py', 'migrate'];
+      } else {
+        // Use Python path directly for non-portable backend
+        command = venvPython;
+        args = ['manage.py', 'migrate'];
+      }
+
+      const migrationsProcess = spawn(command, args, {
         cwd: backendDir,
         stdio: ['ignore', 'pipe', 'pipe'],
         env: this.getDjangoEnvironment()
@@ -143,7 +183,24 @@ export class BackendManager {
 
   async runDjangoShellCommand(backendDir: string, venvPython: string, pythonCode: string): Promise<string> {
     return new Promise<string>((resolve, reject) => {
-      const process = spawn(venvPython, ['manage.py', 'shell', '-c', pythonCode], {
+      // Check if run.sh exists (portable backend)
+      const runScript = process.platform === 'win32' ? 'run.bat' : 'run.sh';
+      const runScriptPath = path.join(backendDir, runScript);
+
+      let command: string;
+      let args: string[];
+
+      if (fs.existsSync(runScriptPath)) {
+        // Use run.sh/run.bat for portable backend
+        command = runScriptPath;
+        args = ['manage.py', 'shell', '-c', pythonCode];
+      } else {
+        // Use Python path directly for non-portable backend
+        command = venvPython;
+        args = ['manage.py', 'shell', '-c', pythonCode];
+      }
+
+      const shellProcess = spawn(command, args, {
         cwd: backendDir,
         stdio: ['ignore', 'pipe', 'pipe'],
         env: this.getDjangoEnvironment()
@@ -152,15 +209,15 @@ export class BackendManager {
       let output = '';
       let errorOutput = '';
 
-      process.stdout.on('data', (data) => {
+      shellProcess.stdout.on('data', (data) => {
         output += data.toString();
       });
 
-      process.stderr.on('data', (data) => {
+      shellProcess.stderr.on('data', (data) => {
         errorOutput += data.toString();
       });
 
-      process.on('close', (code) => {
+      shellProcess.on('close', (code) => {
         if (code === 0) {
           resolve(output);
         } else {
@@ -168,10 +225,26 @@ export class BackendManager {
         }
       });
 
-      process.on('error', (error) => {
+      shellProcess.on('error', (error) => {
         reject(error);
       });
     });
+  }
+
+  async startRedisServer(): Promise<void> {
+    try {
+      this.sendBackendStatus('redis', 'starting', 'Starting Redis server...');
+      this.sendBackendLog('Cleaning up orphaned Redis/Valkey processes...');
+      await this.redisManager.killOrphanedProcesses();
+      this.sendBackendLog('Starting Redis server...');
+      await this.redisManager.startRedis();
+      this.sendBackendStatus('redis', 'ready', 'Redis server started successfully');
+      this.sendBackendLog('Redis server ready', 'success');
+    } catch (error) {
+      this.sendBackendStatus('redis', 'error', `Redis server failed: ${error.message}`);
+      this.sendBackendLog(`Redis server error: ${error.message}`, 'error');
+      throw error;
+    }
   }
 
   async collectStaticFiles(backendDir: string, venvPython: string): Promise<void> {
@@ -212,24 +285,64 @@ export class BackendManager {
 
   async startDjangoServer(backendDir: string, venvPython: string): Promise<void> {
     return new Promise<void>((resolve) => {
-      this.sendBackendStatus('django', 'starting', 'Starting Django server...');
-      this.sendBackendLog('Starting Django server...');
+      this.sendBackendStatus('django', 'starting', 'Starting Django server with Gunicorn...');
+      this.sendBackendLog('Starting Django server with Gunicorn...');
 
       this.backendPort = 8000;
 
-      this.backendProcess = spawn(venvPython, ['manage.py', 'runserver', `127.0.0.1:${this.backendPort}`], {
+      // Check if run.sh exists (portable backend)
+      const runScript = process.platform === 'win32' ? 'run.bat' : 'run.sh';
+      const runScriptPath = path.join(backendDir, runScript);
+
+      let command: string;
+      let args: string[];
+
+      if (fs.existsSync(runScriptPath)) {
+        // Use run.sh/run.bat for portable backend
+        command = runScriptPath;
+        args = [
+          '-m', 'gunicorn',
+          'cupcake_vanilla.asgi_electron:application',
+          '--bind', `127.0.0.1:${this.backendPort}`,
+          '--worker-class', 'uvicorn.workers.UvicornWorker',
+          '--workers', '1',
+          '--timeout', '120',
+          '--access-logfile', '-',
+          '--error-logfile', '-'
+        ];
+      } else {
+        // Use Python path directly for non-portable backend
+        command = venvPython;
+        args = [
+          '-m', 'gunicorn',
+          'cupcake_vanilla.asgi_electron:application',
+          '--bind', `127.0.0.1:${this.backendPort}`,
+          '--worker-class', 'uvicorn.workers.UvicornWorker',
+          '--workers', '1',
+          '--timeout', '120',
+          '--access-logfile', '-',
+          '--error-logfile', '-'
+        ];
+      }
+
+      // Use gunicorn with the electron-specific ASGI application
+      this.backendProcess = spawn(command, args, {
         cwd: backendDir,
         stdio: ['ignore', 'pipe', 'pipe'],
         env: this.getDjangoEnvironment()
       });
 
+      let serverStarted = false;
+
       this.backendProcess.stdout.on('data', (data) => {
         const output = data.toString().trim();
-        this.sendBackendLog(`django: ${output}`);
+        this.sendBackendLog(`gunicorn: ${output}`);
+        this.notifyOutputListeners(`gunicorn: ${output}`);
 
-        if (output.includes('Starting development server') || output.includes('Django version')) {
+        if (!serverStarted && (output.includes('Listening at:') || output.includes('Using worker:'))) {
+          serverStarted = true;
           this.sendBackendStatus('django', 'ready', `Server running on port ${this.backendPort}`);
-          this.sendBackendLog(`Django server ready on http://127.0.0.1:${this.backendPort}`, 'success');
+          this.sendBackendLog(`Gunicorn server ready on http://127.0.0.1:${this.backendPort}`, 'success');
           resolve();
         }
       });
@@ -237,19 +350,38 @@ export class BackendManager {
       this.backendProcess.stderr.on('data', (data) => {
         const output = data.toString().trim();
         const messageType = this.classifyProcessOutput(output, true);
-        this.sendBackendLog(`django: ${output}`, messageType);
+        this.sendBackendLog(`gunicorn: ${output}`, messageType);
+        this.notifyOutputListeners(`gunicorn: ${output}`);
+
+        // Gunicorn often outputs startup info to stderr
+        if (!serverStarted && (output.includes('Listening at:') || output.includes('Booting worker') || output.includes('Application startup complete'))) {
+          serverStarted = true;
+          this.sendBackendStatus('django', 'ready', `Server running on port ${this.backendPort}`);
+          this.sendBackendLog(`Gunicorn server ready on http://127.0.0.1:${this.backendPort}`, 'success');
+          resolve();
+        }
       });
 
       this.backendProcess.on('close', (code) => {
-        this.sendBackendLog(`Django server exited with code ${code}`, 'error');
+        this.sendBackendLog(`Gunicorn server exited with code ${code}`, 'error');
         this.backendProcess = null;
       });
 
       this.backendProcess.on('error', (error) => {
         this.sendBackendStatus('django', 'error', `Server start error: ${error.message}`);
-        this.sendBackendLog(`Django server error: ${error.message}`, 'error');
+        this.sendBackendLog(`Gunicorn server error: ${error.message}`, 'error');
         resolve();
       });
+
+      // Fallback timeout in case we don't detect startup messages
+      setTimeout(() => {
+        if (!serverStarted) {
+          serverStarted = true;
+          this.sendBackendStatus('django', 'ready', `Server running on port ${this.backendPort}`);
+          this.sendBackendLog(`Gunicorn server ready on http://127.0.0.1:${this.backendPort}`, 'success');
+          resolve();
+        }
+      }, 5000);
     });
   }
 
@@ -261,7 +393,24 @@ export class BackendManager {
       let hasOutput = false;
       let resolved = false;
 
-      this.rqWorkerProcess = spawn(venvPython, ['manage.py', 'rqworker', 'default'], {
+      // Check if run.sh exists (portable backend)
+      const runScript = process.platform === 'win32' ? 'run.bat' : 'run.sh';
+      const runScriptPath = path.join(backendDir, runScript);
+
+      let command: string;
+      let args: string[];
+
+      if (fs.existsSync(runScriptPath)) {
+        // Use run.sh/run.bat for portable backend
+        command = runScriptPath;
+        args = ['manage.py', 'rqworker', 'high', 'default'];
+      } else {
+        // Use Python path directly for non-portable backend
+        command = venvPython;
+        args = ['manage.py', 'rqworker', 'high', 'default'];
+      }
+
+      this.rqWorkerProcess = spawn(command, args, {
         cwd: backendDir,
         stdio: ['ignore', 'pipe', 'pipe'],
         env: this.getDjangoEnvironment()
@@ -346,7 +495,7 @@ export class BackendManager {
     });
   }
 
-  stopServices(): void {
+  async stopServices(): Promise<void> {
     if (this.backendProcess) {
       console.log('Stopping Django server...');
       this.backendProcess.kill('SIGTERM');
@@ -357,13 +506,23 @@ export class BackendManager {
       this.rqWorkerProcess.kill('SIGTERM');
       this.rqWorkerProcess = null;
     }
+    if (this.redisManager.isRunning()) {
+      console.log('Stopping Redis server...');
+      await this.redisManager.stopRedis();
+    }
   }
 
   getBackendPort(): number {
     return this.backendPort;
   }
 
-  async runManagementCommand(backendDir: string, venvPython: string, command: string, args: string[] = []): Promise<void> {
+  async runManagementCommand(
+    backendDir: string,
+    venvPython: string,
+    command: string,
+    args: string[] = [],
+    outputCallback?: (output: string, isError: boolean) => void
+  ): Promise<void> {
     return new Promise((resolve, reject) => {
       const cmdArgs = ['manage.py', command, ...args];
       const childProcess = spawn(venvPython, cmdArgs, {
@@ -379,12 +538,20 @@ export class BackendManager {
         const output = data.toString();
         stdout += output;
         console.log(`[${command.toUpperCase()}]`, output.trim());
+
+        if (outputCallback) {
+          outputCallback(output.trim(), false);
+        }
       });
 
       childProcess.stderr?.on('data', (data) => {
         const output = data.toString();
         stderr += output;
         console.log(`[${command.toUpperCase()}]`, output.trim());
+
+        if (outputCallback) {
+          outputCallback(output.trim(), true);
+        }
       });
 
       childProcess.on('close', (code) => {
@@ -488,6 +655,79 @@ print(f"TEMPLATE_COUNT:{template_count}")
       templateProcess.on('error', (error) => {
         reject(error);
       });
+    });
+  }
+
+  async getSchemaCount(backendDir: string, venvPython: string): Promise<number> {
+    const pythonCode = `
+from ccv.models import Schema
+count = Schema.objects.filter(is_builtin=True, is_active=True).count()
+print(count)
+`;
+    const output = await this.runDjangoShellCommand(backendDir, venvPython, pythonCode);
+    return parseInt(output.trim()) || 0;
+  }
+
+  async getColumnTemplateCount(backendDir: string, venvPython: string): Promise<number> {
+    const pythonCode = `
+from ccv.models import MetadataColumnTemplate
+count = MetadataColumnTemplate.objects.filter(is_system_template=True).count()
+print(count)
+`;
+    const output = await this.runDjangoShellCommand(backendDir, venvPython, pythonCode);
+    return parseInt(output.trim()) || 0;
+  }
+
+  async getOntologyCounts(backendDir: string, venvPython: string): Promise<{
+    mondo: number;
+    uberon: number;
+    ncbi: number;
+    chebi: number;
+    psims: number;
+    cell: number;
+    total: number;
+  }> {
+    const pythonCode = `
+from ccv.models import MondoDisease, UberonAnatomy, NCBITaxonomy, ChEBICompound, PSIMSOntology, CellOntology
+
+mondo_count = MondoDisease.objects.count()
+uberon_count = UberonAnatomy.objects.count()
+ncbi_count = NCBITaxonomy.objects.count()
+chebi_count = ChEBICompound.objects.count()
+psims_count = PSIMSOntology.objects.count()
+cell_count = CellOntology.objects.count()
+
+print(f"{mondo_count}|{uberon_count}|{ncbi_count}|{chebi_count}|{psims_count}|{cell_count}")
+`;
+    const output = await this.runDjangoShellCommand(backendDir, venvPython, pythonCode);
+    const parts = output.trim().split('|').map(p => parseInt(p) || 0);
+
+    return {
+      mondo: parts[0] || 0,
+      uberon: parts[1] || 0,
+      ncbi: parts[2] || 0,
+      chebi: parts[3] || 0,
+      psims: parts[4] || 0,
+      cell: parts[5] || 0,
+      total: parts.reduce((sum, count) => sum + count, 0)
+    };
+  }
+
+  isRunning(): boolean {
+    return this.backendProcess !== null && !this.backendProcess.killed;
+  }
+
+  onOutput(callback: (data: string) => void): void {
+    this.outputListeners.push(callback);
+  }
+
+  private notifyOutputListeners(data: string): void {
+    this.outputListeners.forEach(listener => {
+      try {
+        listener(data);
+      } catch (error) {
+        console.error('[BackendManager] Error in output listener:', error);
+      }
     });
   }
 
