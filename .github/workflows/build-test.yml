@@ -1,4 +1,4 @@
-name: Build Cupcake Vanilla
+name: Build and Release
 
 on:
   push:
@@ -10,7 +10,7 @@ on:
 
 jobs:
   build-all-platforms:
-    name: Build All Platforms
+    name: Build and Upload Release Assets
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -21,3 +21,23 @@ jobs:
         run: |
           chmod +x build-docker.sh
           ./build-docker.sh all
+
+      - name: Upload artifacts
+        if: github.event_name == 'release'
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: docker-dist/**/*
+          retention-days: 7
+
+      - name: Upload Release Assets
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            docker-dist/**/*.AppImage
+            docker-dist/**/*.tar.gz
+            docker-dist/**/*.exe
+            docker-dist/**/*.dmg
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
