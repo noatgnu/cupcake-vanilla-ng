@@ -56,9 +56,14 @@
               "sourceMap": true
             },
             "electron": {
-              "optimization": false,
-              "extractLicenses": false,
-              "sourceMap": true,
+              "optimization": {
+                "scripts": true,
+                "styles": true,
+                "fonts": true
+              },
+              "extractLicenses": true,
+              "sourceMap": false,
+              "namedChunks": false,
               "baseHref": "./",
               "fileReplacements": [
                 {
