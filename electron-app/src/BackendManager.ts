@@ -71,6 +71,30 @@ export class BackendManager {
     };
   }
 
+  private getCommandAndArgs(backendDir: string, venvPython: string, scriptArgs: string[]): { command: string; args: string[] } {
+    const runScript = process.platform === 'win32' ? 'run.bat' : 'run.sh';
+    const runScriptPath = path.join(backendDir, runScript);
+
+    if (fs.existsSync(runScriptPath)) {
+      if (process.platform === 'win32') {
+        return {
+          command: 'cmd.exe',
+          args: ['/c', runScriptPath, ...scriptArgs]
+        };
+      } else {
+        return {
+          command: runScriptPath,
+          args: scriptArgs
+        };
+      }
+    } else {
+      return {
+        command: venvPython,
+        args: scriptArgs
+      };
+    }
+  }
+
   private classifyProcessOutput(output: string, isStderr: boolean = false): 'info' | 'warning' | 'error' | 'success' {
     const lowerOutput = output.toLowerCase();
 
@@ -128,22 +152,7 @@ export class BackendManager {
       this.sendBackendStatus('migrations', 'starting', 'Running Django migrations...');
       this.sendBackendLog('Running Django migrations...');
 
-      // Check if run.sh exists (portable backend)
-      const runScript = process.platform === 'win32' ? 'run.bat' : 'run.sh';
-      const runScriptPath = path.join(backendDir, runScript);
-
-      let command: string;
-      let args: string[];
-
-      if (fs.existsSync(runScriptPath)) {
-        // Use run.sh/run.bat for portable backend
-        command = runScriptPath;
-        args = ['manage.py', 'migrate'];
-      } else {
-        // Use Python path directly for non-portable backend
-        command = venvPython;
-        args = ['manage.py', 'migrate'];
-      }
+      const { command, args } = this.getCommandAndArgs(backendDir, venvPython, ['manage.py', 'migrate']);
 
       const migrationsProcess = spawn(command, args, {
         cwd: backendDir,
@@ -183,22 +192,7 @@ export class BackendManager {
 
   async runDjangoShellCommand(backendDir: string, venvPython: string, pythonCode: string): Promise<string> {
     return new Promise<string>((resolve, reject) => {
-      // Check if run.sh exists (portable backend)
-      const runScript = process.platform === 'win32' ? 'run.bat' : 'run.sh';
-      const runScriptPath = path.join(backendDir, runScript);
-
-      let command: string;
-      let args: string[];
-
-      if (fs.existsSync(runScriptPath)) {
-        // Use run.sh/run.bat for portable backend
-        command = runScriptPath;
-        args = ['manage.py', 'shell', '-c', pythonCode];
-      } else {
-        // Use Python path directly for non-portable backend
-        command = venvPython;
-        args = ['manage.py', 'shell', '-c', pythonCode];
-      }
+      const { command, args } = this.getCommandAndArgs(backendDir, venvPython, ['manage.py', 'shell', '-c', pythonCode]);
 
       const shellProcess = spawn(command, args, {
         cwd: backendDir,
@@ -290,42 +284,17 @@ export class BackendManager {
 
       this.backendPort = 8000;
 
-      // Check if run.sh exists (portable backend)
-      const runScript = process.platform === 'win32' ? 'run.bat' : 'run.sh';
-      const runScriptPath = path.join(backendDir, runScript);
+      const { command, args } = this.getCommandAndArgs(backendDir, venvPython, [
+        '-m', 'gunicorn',
+        'cupcake_vanilla.asgi_electron:application',
+        '--bind', `127.0.0.1:${this.backendPort}`,
+        '--worker-class', 'uvicorn.workers.UvicornWorker',
+        '--workers', '1',
+        '--timeout', '120',
+        '--access-logfile', '-',
+        '--error-logfile', '-'
+      ]);
 
-      let command: string;
-      let args: string[];
-
-      if (fs.existsSync(runScriptPath)) {
-        // Use run.sh/run.bat for portable backend
-        command = runScriptPath;
-        args = [
-          '-m', 'gunicorn',
-          'cupcake_vanilla.asgi_electron:application',
-          '--bind', `127.0.0.1:${this.backendPort}`,
-          '--worker-class', 'uvicorn.workers.UvicornWorker',
-          '--workers', '1',
-          '--timeout', '120',
-          '--access-logfile', '-',
-          '--error-logfile', '-'
-        ];
-      } else {
-        // Use Python path directly for non-portable backend
-        command = venvPython;
-        args = [
-          '-m', 'gunicorn',
-          'cupcake_vanilla.asgi_electron:application',
-          '--bind', `127.0.0.1:${this.backendPort}`,
-          '--worker-class', 'uvicorn.workers.UvicornWorker',
-          '--workers', '1',
-          '--timeout', '120',
-          '--access-logfile', '-',
-          '--error-logfile', '-'
-        ];
-      }
-
-      // Use gunicorn with the electron-specific ASGI application
       this.backendProcess = spawn(command, args, {
         cwd: backendDir,
         stdio: ['ignore', 'pipe', 'pipe'],
@@ -353,7 +322,6 @@ export class BackendManager {
         this.sendBackendLog(`gunicorn: ${output}`, messageType);
         this.notifyOutputListeners(`gunicorn: ${output}`);
 
-        // Gunicorn often outputs startup info to stderr
         if (!serverStarted && (output.includes('Listening at:') || output.includes('Booting worker') || output.includes('Application startup complete'))) {
           serverStarted = true;
           this.sendBackendStatus('django', 'ready', `Server running on port ${this.backendPort}`);
@@ -373,7 +341,6 @@ export class BackendManager {
         resolve();
       });
 
-      // Fallback timeout in case we don't detect startup messages
       setTimeout(() => {
         if (!serverStarted) {
           serverStarted = true;
@@ -393,22 +360,7 @@ export class BackendManager {
       let hasOutput = false;
       let resolved = false;
 
-      // Check if run.sh exists (portable backend)
-      const runScript = process.platform === 'win32' ? 'run.bat' : 'run.sh';
-      const runScriptPath = path.join(backendDir, runScript);
-
-      let command: string;
-      let args: string[];
-
-      if (fs.existsSync(runScriptPath)) {
-        // Use run.sh/run.bat for portable backend
-        command = runScriptPath;
-        args = ['manage.py', 'rqworker', 'high', 'default'];
-      } else {
-        // Use Python path directly for non-portable backend
-        command = venvPython;
-        args = ['manage.py', 'rqworker', 'high', 'default'];
-      }
+      const { command, args } = this.getCommandAndArgs(backendDir, venvPython, ['manage.py', 'rqworker', 'high', 'default']);
 
       this.rqWorkerProcess = spawn(command, args, {
         cwd: backendDir,
@@ -416,7 +368,6 @@ export class BackendManager {
         env: this.getDjangoEnvironment()
       });
 
-      // Set a timeout to resolve after a reasonable period if the process is running
       const timeout = setTimeout(() => {
         if (!resolved && this.rqWorkerProcess && !this.rqWorkerProcess.killed) {
           resolved = true;
@@ -424,7 +375,7 @@ export class BackendManager {
           this.sendBackendLog('RQ worker ready (process running)', 'success');
           resolve();
         }
-      }, 3000); // 3 second timeout
+      }, 3000);
 
       this.rqWorkerProcess.stdout.on('data', (data) => {
         hasOutput = true;
@@ -432,7 +383,6 @@ export class BackendManager {
         const messageType = this.classifyProcessOutput(output, false);
         this.sendBackendLog(`rq stdout: ${output}`, messageType);
 
-        // Check for common RQ worker ready indicators
         if (!resolved && (
           output.includes('Worker started') ||
           output.includes('started with PID') ||
@@ -453,7 +403,6 @@ export class BackendManager {
         const messageType = this.classifyProcessOutput(output, true);
         this.sendBackendLog(`rq stderr: ${output}`, messageType);
 
-        // RQ workers often output startup info to stderr
         if (!resolved && (
           output.includes('Worker started') ||
           output.includes('started with PID') ||
