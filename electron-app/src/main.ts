@@ -306,6 +306,7 @@ function createSplashWindow(): void {
     resizable: false,
     titleBarStyle: 'hidden',
     titleBarOverlay: process.platform !== 'darwin',
+    icon: path.join(__dirname, '..', 'public', 'cupcake_logo.png'),
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -530,6 +531,7 @@ async function showPythonSelectionDialog(): Promise<void> {
     maximizable: false,
     titleBarStyle: 'hidden',
     titleBarOverlay: process.platform !== 'darwin',
+    icon: path.join(__dirname, '..', 'public', 'cupcake_logo.png'),
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -586,6 +588,7 @@ function createWindow(): void {
     height: 800,
     show: false,
     titleBarStyle: 'hiddenInset',
+    icon: path.join(__dirname, '..', 'public', 'cupcake_logo.png'),
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -717,17 +720,21 @@ async function initializeBackend(createNewVenv: boolean = true, selectedPython: 
     await backendManager.collectStaticFiles(backendDir, venvPath);
     console.log('[DEBUG] Static files completed, starting Redis server...');
 
-    // Step 6: Start Redis server
+    // Step 6: Kill any orphaned Django/RQ processes
+    console.log('[DEBUG] Cleaning up orphaned processes...');
+    await backendManager.killOrphanedDjangoProcesses();
+
+    // Step 7: Start Redis server
     console.log('[DEBUG] About to start Redis server...');
     await backendManager.startRedisServer();
     console.log('[DEBUG] Redis server started, starting Django server...');
 
-    // Step 7: Start Django server
+    // Step 8: Start Django server
     console.log('[DEBUG] About to start Django server...');
     await backendManager.startDjangoServer(backendDir, venvPath);
     console.log('[DEBUG] Django server started, starting RQ worker...');
 
-    // Step 8: Start RQ worker
+    // Step 9: Start RQ worker
     console.log('[DEBUG] About to start RQ worker...');
     await backendManager.startRQWorker(backendDir, venvPath);
     console.log('[DEBUG] RQ worker started, all services ready!');

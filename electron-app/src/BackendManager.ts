@@ -15,6 +15,12 @@ export interface LogMessage {
   type?: 'info' | 'warning' | 'error' | 'success';
 }
 
+interface ProcessTracking {
+  pid: number;
+  type: 'django' | 'rqworker' | 'redis';
+  timestamp: number;
+}
+
 export class BackendManager {
   private backendProcess: ChildProcess | null = null;
   private rqWorkerProcess: ChildProcess | null = null;
@@ -24,10 +30,12 @@ export class BackendManager {
   private splashWindow: BrowserWindow | null = null;
   private outputListeners: Array<(data: string) => void> = [];
   private redisManager: RedisManager;
+  private pidFilePath: string;
 
   constructor(userDataPath: string, isDev: boolean) {
     this.userDataPath = userDataPath;
     this.isDev = isDev;
+    this.pidFilePath = path.join(this.userDataPath, 'cupcake-processes.json');
     this.redisManager = new RedisManager({
       userDataPath: this.userDataPath,
       isDev: this.isDev
@@ -35,6 +43,72 @@ export class BackendManager {
     this.redisManager.setLogCallback((message, type) => {
       this.sendBackendLog(`redis: ${message}`, type || 'info');
     });
+  }
+
+  private getTrackedProcesses(): ProcessTracking[] {
+    try {
+      if (fs.existsSync(this.pidFilePath)) {
+        const data = fs.readFileSync(this.pidFilePath, 'utf8');
+        return JSON.parse(data);
+      }
+    } catch (error) {
+      console.error('Error reading PID file:', error);
+    }
+    return [];
+  }
+
+  private saveTrackedProcesses(processes: ProcessTracking[]): void {
+    try {
+      fs.writeFileSync(this.pidFilePath, JSON.stringify(processes, null, 2));
+    } catch (error) {
+      console.error('Error saving PID file:', error);
+    }
+  }
+
+  private addTrackedProcess(pid: number, type: 'django' | 'rqworker' | 'redis'): void {
+    const processes = this.getTrackedProcesses();
+    processes.push({ pid, type, timestamp: Date.now() });
+    this.saveTrackedProcesses(processes);
+    console.log(`Tracked ${type} process with PID ${pid}`);
+  }
+
+  private removeTrackedProcess(pid: number): void {
+    const processes = this.getTrackedProcesses().filter(p => p.pid !== pid);
+    this.saveTrackedProcesses(processes);
+  }
+
+  private clearTrackedProcesses(): void {
+    try {
+      if (fs.existsSync(this.pidFilePath)) {
+        fs.unlinkSync(this.pidFilePath);
+      }
+    } catch (error) {
+      console.error('Error clearing PID file:', error);
+    }
+  }
+
+  private isProcessRunning(pid: number): boolean {
+    try {
+      process.kill(pid, 0);
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  private getProcessCommandLine(pid: number): string {
+    try {
+      const { execSync } = require('child_process');
+      if (process.platform === 'win32') {
+        const result = execSync(`wmic process where ProcessId=${pid} get CommandLine`, { encoding: 'utf8' });
+        return result.trim();
+      } else {
+        const result = execSync(`ps -p ${pid} -o args=`, { encoding: 'utf8' });
+        return result.trim();
+      }
+    } catch (error) {
+      return '';
+    }
   }
 
   setSplashWindow(splashWindow: BrowserWindow) {
@@ -232,6 +306,12 @@ export class BackendManager {
       await this.redisManager.killOrphanedProcesses();
       this.sendBackendLog('Starting Redis server...');
       await this.redisManager.startRedis();
+
+      const redisPid = this.redisManager.getRedisPid();
+      if (redisPid) {
+        this.addTrackedProcess(redisPid, 'redis');
+      }
+
       this.sendBackendStatus('redis', 'ready', 'Redis server started successfully');
       this.sendBackendLog('Redis server ready', 'success');
     } catch (error) {
@@ -298,8 +378,13 @@ export class BackendManager {
       this.backendProcess = spawn(command, args, {
         cwd: backendDir,
         stdio: ['ignore', 'pipe', 'pipe'],
-        env: this.getDjangoEnvironment()
+        env: this.getDjangoEnvironment(),
+        detached: process.platform !== 'win32'
       });
+
+      if (this.backendProcess.pid) {
+        this.addTrackedProcess(this.backendProcess.pid, 'django');
+      }
 
       let serverStarted = false;
 
@@ -365,8 +450,13 @@ export class BackendManager {
       this.rqWorkerProcess = spawn(command, args, {
         cwd: backendDir,
         stdio: ['ignore', 'pipe', 'pipe'],
-        env: this.getDjangoEnvironment()
+        env: this.getDjangoEnvironment(),
+        detached: process.platform !== 'win32'
       });
+
+      if (this.rqWorkerProcess.pid) {
+        this.addTrackedProcess(this.rqWorkerProcess.pid, 'rqworker');
+      }
 
       const timeout = setTimeout(() => {
         if (!resolved && this.rqWorkerProcess && !this.rqWorkerProcess.killed) {
@@ -444,21 +534,105 @@ export class BackendManager {
     });
   }
 
+  async killOrphanedDjangoProcesses(): Promise<void> {
+    const trackedProcesses = this.getTrackedProcesses();
+    let killedCount = 0;
+
+    for (const tracked of trackedProcesses) {
+      if (this.isProcessRunning(tracked.pid)) {
+        const cmdline = this.getProcessCommandLine(tracked.pid);
+
+        const isCupcakeProcess =
+          cmdline.includes('cupcake_vanilla') ||
+          cmdline.includes('manage.py rqworker') ||
+          cmdline.includes('gunicorn') ||
+          cmdline.includes('valkey-server') ||
+          cmdline.includes('redis-server');
+
+        if (isCupcakeProcess) {
+          console.log(`Killing tracked ${tracked.type} process PID ${tracked.pid}`);
+          try {
+            if (process.platform === 'win32') {
+              process.kill(tracked.pid, 'SIGKILL');
+            } else {
+              try {
+                process.kill(-tracked.pid, 'SIGKILL');
+              } catch (e) {
+                process.kill(tracked.pid, 'SIGKILL');
+              }
+            }
+            killedCount++;
+          } catch (error) {
+            console.log(`Process ${tracked.pid} already dead or cannot be killed`);
+          }
+        } else {
+          console.log(`Skipping PID ${tracked.pid} - not a Cupcake process: ${cmdline.substring(0, 100)}`);
+        }
+      } else {
+        console.log(`Process ${tracked.pid} is not running`);
+      }
+    }
+
+    this.clearTrackedProcesses();
+
+    if (killedCount > 0) {
+      console.log(`Killed ${killedCount} orphaned process(es)`);
+    } else {
+      console.log('No orphaned processes found');
+    }
+  }
+
   async stopServices(): Promise<void> {
     if (this.backendProcess) {
       console.log('Stopping Django server...');
-      this.backendProcess.kill('SIGTERM');
+      const pid = this.backendProcess.pid;
+
+      try {
+        if (process.platform === 'win32') {
+          this.backendProcess.kill('SIGTERM');
+        } else {
+          if (pid) {
+            process.kill(-pid, 'SIGTERM');
+          } else {
+            this.backendProcess.kill('SIGTERM');
+          }
+        }
+      } catch (error) {
+        console.error('Error stopping Django server:', error.message);
+      }
+
       this.backendProcess = null;
     }
+
     if (this.rqWorkerProcess) {
       console.log('Stopping RQ worker...');
-      this.rqWorkerProcess.kill('SIGTERM');
+      const pid = this.rqWorkerProcess.pid;
+
+      try {
+        if (process.platform === 'win32') {
+          this.rqWorkerProcess.kill('SIGTERM');
+        } else {
+          if (pid) {
+            process.kill(-pid, 'SIGTERM');
+          } else {
+            this.rqWorkerProcess.kill('SIGTERM');
+          }
+        }
+      } catch (error) {
+        console.error('Error stopping RQ worker:', error.message);
+      }
+
       this.rqWorkerProcess = null;
     }
+
     if (this.redisManager.isRunning()) {
       console.log('Stopping Redis server...');
       await this.redisManager.stopRedis();
     }
+
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    await this.killOrphanedDjangoProcesses();
   }
 
   getBackendPort(): number {

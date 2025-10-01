@@ -59,6 +59,7 @@ export class UserManager {
         resizable: false,
         titleBarStyle: 'hidden',
         titleBarOverlay: process.platform !== 'darwin',
+        icon: path.join(__dirname, '..', 'public', 'cupcake_logo.png'),
         webPreferences: {
           nodeIntegration: false,
           contextIsolation: true,
@@ -157,6 +158,7 @@ except Exception as e:
         resizable: false,
         titleBarStyle: 'hidden',
         titleBarOverlay: process.platform !== 'darwin',
+        icon: path.join(__dirname, '..', 'public', 'cupcake_logo.png'),
         webPreferences: {
           nodeIntegration: false,
           contextIsolation: true,
@@ -430,6 +432,7 @@ except Exception as e:
       alwaysOnTop: false,
       focusable: true,
       title: 'Debug Panel - Live Backend Output',
+      icon: path.join(__dirname, '..', 'public', 'cupcake_logo.png'),
       webPreferences: {
         nodeIntegration: false,
         contextIsolation: true,

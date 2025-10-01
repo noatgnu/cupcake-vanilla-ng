@@ -326,6 +326,10 @@ appendonly no
     return this.redisProcess !== null && !this.redisProcess.killed;
   }
 
+  getRedisPid(): number | undefined {
+    return this.redisProcess?.pid;
+  }
+
   getConnectionInfo(): { host: string; port: number; url: string } {
     return {
       host: '127.0.0.1',
