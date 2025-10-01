@@ -12,6 +12,8 @@ jobs:
   build-all-platforms:
     name: Build and Upload Release Assets
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -35,9 +37,9 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            docker-dist/**/*.AppImage
-            docker-dist/**/*.tar.gz
-            docker-dist/**/*.exe
-            docker-dist/**/*.dmg
+            docker-dist/*.AppImage
+            docker-dist/*.tar.gz
+            docker-dist/*.exe
+          fail_on_unmatched_files: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
