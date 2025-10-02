@@ -244,54 +244,81 @@ export class ValkeyDownloader {
 
         try {
           const extractedContents = fs.readdirSync(tempExtractDir);
+          console.log(`Extracted contents: ${extractedContents.join(', ')}`);
 
           // Find the extracted directory (valkey-* for Linux, Redis-* for Windows)
           const extractedDir = extractedContents.find(name =>
             name.startsWith('valkey-') || name.startsWith('Redis-')
           );
 
-          if (extractedDir) {
-            const extractedPath = path.join(tempExtractDir, extractedDir);
-
-            // For Windows Redis, binaries are in the root directory
-            // For Linux Valkey, binaries are in bin/ subdirectory
-            const binDir = fs.existsSync(path.join(extractedPath, 'bin'))
-              ? path.join(extractedPath, 'bin')
-              : extractedPath;
-
-            if (fs.existsSync(binDir)) {
-              // Ensure parent directory exists
-              const parentDir = path.dirname(destPath);
-              fs.mkdirSync(parentDir, { recursive: true });
-
-              // Create destination directory
-              fs.mkdirSync(destPath, { recursive: true });
-
-              const binaries = fs.readdirSync(binDir).filter(file => {
-                const ext = path.extname(file);
-                // Include executables and config files
-                return ext === '' || ext === '.exe' || ext === '.conf' || ext === '.so';
-              });
-
-              binaries.forEach(binary => {
-                const srcPath = path.join(binDir, binary);
-                const destBinaryPath = path.join(destPath, binary);
-
-                // Only copy files, not directories
-                if (fs.statSync(srcPath).isFile()) {
-                  fs.copyFileSync(srcPath, destBinaryPath);
-
-                  // Set executable permissions on Linux
-                  if (!this.isWindows()) {
-                    fs.chmodSync(destBinaryPath, '755');
-                  }
-                }
-              });
-
-              const serverName = this.isWindows() ? 'Redis' : 'Valkey';
-              this.sendStatus({ message: `Extracted ${binaries.length} ${serverName} binaries`, type: 'success' });
-            }
+          if (!extractedDir) {
+            const errorMsg = `Could not find valkey-* or Redis-* directory in extracted contents: ${extractedContents.join(', ')}`;
+            console.error(errorMsg);
+            this.sendStatus({ message: errorMsg, type: 'error' });
+            reject(new Error(errorMsg));
+            return;
           }
+
+          const extractedPath = path.join(tempExtractDir, extractedDir);
+          console.log(`Found extracted directory: ${extractedPath}`);
+
+          // For Windows Redis, binaries are in the root directory
+          // For Linux Valkey, binaries are in bin/ subdirectory
+          const binDir = fs.existsSync(path.join(extractedPath, 'bin'))
+            ? path.join(extractedPath, 'bin')
+            : extractedPath;
+
+          console.log(`Looking for binaries in: ${binDir}`);
+
+          if (!fs.existsSync(binDir)) {
+            const errorMsg = `Binary directory does not exist: ${binDir}`;
+            console.error(errorMsg);
+            this.sendStatus({ message: errorMsg, type: 'error' });
+            reject(new Error(errorMsg));
+            return;
+          }
+
+          // Ensure parent directory exists
+          const parentDir = path.dirname(destPath);
+          fs.mkdirSync(parentDir, { recursive: true });
+
+          // Create destination directory
+          fs.mkdirSync(destPath, { recursive: true });
+          console.log(`Created destination directory: ${destPath}`);
+
+          const binaries = fs.readdirSync(binDir).filter(file => {
+            const ext = path.extname(file);
+            // Include executables and config files
+            return ext === '' || ext === '.exe' || ext === '.conf' || ext === '.so';
+          });
+
+          console.log(`Found ${binaries.length} binaries to copy: ${binaries.join(', ')}`);
+
+          if (binaries.length === 0) {
+            const errorMsg = `No executable files found in ${binDir}`;
+            console.error(errorMsg);
+            this.sendStatus({ message: errorMsg, type: 'warning' });
+          }
+
+          binaries.forEach(binary => {
+            const srcPath = path.join(binDir, binary);
+            const destBinaryPath = path.join(destPath, binary);
+
+            // Only copy files, not directories
+            if (fs.statSync(srcPath).isFile()) {
+              fs.copyFileSync(srcPath, destBinaryPath);
+              console.log(`Copied: ${binary} -> ${destBinaryPath}`);
+
+              // Set executable permissions on Linux
+              if (!this.isWindows()) {
+                fs.chmodSync(destBinaryPath, '755');
+              }
+            }
+          });
+
+          const serverName = this.isWindows() ? 'Redis' : 'Valkey';
+          this.sendStatus({ message: `Extracted ${binaries.length} ${serverName} binaries to ${destPath}`, type: 'success' });
+          console.log(`Successfully extracted ${binaries.length} binaries to ${destPath}`);
 
           // Clean up temp directory
           fs.rmSync(tempExtractDir, { recursive: true, force: true });

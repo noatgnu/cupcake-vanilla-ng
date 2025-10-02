@@ -176,8 +176,19 @@ appendonly no
     }
 
     const executablePath = this.getRedisExecutablePath();
+    this.log(`Checking for Redis executable at: ${executablePath}`, 'info');
 
     if (!fs.existsSync(executablePath)) {
+      this.log(`Redis executable not found at: ${executablePath}`, 'error');
+
+      // List files in redisDir to help debug
+      if (fs.existsSync(this.redisDir)) {
+        const files = fs.readdirSync(this.redisDir);
+        this.log(`Files in Redis directory: ${files.join(', ')}`, 'info');
+      } else {
+        this.log(`Redis directory does not exist: ${this.redisDir}`, 'error');
+      }
+
       if (this.platform === 'win32') {
         throw new Error('REDIS_NOT_FOUND_WINDOWS');
       } else {

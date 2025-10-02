@@ -743,17 +743,22 @@ async function initializeBackend(createNewVenv: boolean = true, selectedPython: 
         });
 
         if (choice === 0) {
+          const redisDir = backendManager.getRedisManager().getRedisDir();
+          console.log(`[DEBUG] Redis will be downloaded to: ${redisDir}`);
+
           const task: DownloadTask = {
             title: 'Downloading Redis',
             description: 'Downloading Redis for Windows',
             execute: async (window) => {
               const downloader = new ValkeyDownloader(window);
-              const redisDir = backendManager.getRedisManager().getRedisDir();
+              console.log(`[DEBUG] Starting Redis download to: ${redisDir}`);
               await downloader.downloadValkey(redisDir);
+              console.log(`[DEBUG] Redis download completed`);
             }
           };
 
           await downloaderManager.startDownload(task);
+          console.log('[DEBUG] Download task completed');
 
           // Retry starting Redis after download
           console.log('[DEBUG] Retrying Redis startup after download...');
