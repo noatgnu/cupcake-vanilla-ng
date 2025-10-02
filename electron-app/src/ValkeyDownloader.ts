@@ -211,6 +211,18 @@ export class ValkeyDownloader {
         shell: this.isWindows()
       });
 
+      let extractorOutput = '';
+      let extractorError = '';
+
+      extractor.stdout?.on('data', (data) => {
+        extractorOutput += data.toString();
+      });
+
+      extractor.stderr?.on('data', (data) => {
+        extractorError += data.toString();
+        console.error(`Extraction stderr: ${data.toString()}`);
+      });
+
       // Simulate progress based on time (tar doesn't provide progress output)
       const progressInterval = setInterval(() => {
         processedSize += archiveSize / 20; // Increment by ~5% each update
@@ -230,9 +242,14 @@ export class ValkeyDownloader {
         clearInterval(progressInterval);
 
         if (code !== 0) {
-          reject(new Error(`Extraction failed with code ${code}`));
+          console.error(`Extraction failed with code ${code}`);
+          console.error(`Stdout: ${extractorOutput}`);
+          console.error(`Stderr: ${extractorError}`);
+          reject(new Error(`Extraction failed with code ${code}: ${extractorError}`));
           return;
         }
+
+        console.log(`Extraction completed successfully to: ${tempExtractDir}`);
 
         this.sendStatus({ message: 'Installing binaries...', type: 'info' });
         this.sendProgress({
@@ -246,79 +263,57 @@ export class ValkeyDownloader {
           const extractedContents = fs.readdirSync(tempExtractDir);
           console.log(`Extracted contents: ${extractedContents.join(', ')}`);
 
-          // Find the extracted directory (valkey-* for Linux, Redis-* for Windows)
-          const extractedDir = extractedContents.find(name =>
-            name.startsWith('valkey-') || name.startsWith('Redis-')
-          );
-
-          if (!extractedDir) {
-            const errorMsg = `Could not find valkey-* or Redis-* directory in extracted contents: ${extractedContents.join(', ')}`;
-            console.error(errorMsg);
-            this.sendStatus({ message: errorMsg, type: 'error' });
-            reject(new Error(errorMsg));
-            return;
-          }
-
-          const extractedPath = path.join(tempExtractDir, extractedDir);
-          console.log(`Found extracted directory: ${extractedPath}`);
-
-          // For Windows Redis, binaries are in the root directory
-          // For Linux Valkey, binaries are in bin/ subdirectory
-          const binDir = fs.existsSync(path.join(extractedPath, 'bin'))
-            ? path.join(extractedPath, 'bin')
-            : extractedPath;
-
-          console.log(`Looking for binaries in: ${binDir}`);
-
-          if (!fs.existsSync(binDir)) {
-            const errorMsg = `Binary directory does not exist: ${binDir}`;
-            console.error(errorMsg);
-            this.sendStatus({ message: errorMsg, type: 'error' });
-            reject(new Error(errorMsg));
-            return;
-          }
-
-          // Ensure parent directory exists
+          // Ensure destination directory exists
           const parentDir = path.dirname(destPath);
           fs.mkdirSync(parentDir, { recursive: true });
-
-          // Create destination directory
           fs.mkdirSync(destPath, { recursive: true });
           console.log(`Created destination directory: ${destPath}`);
 
-          const binaries = fs.readdirSync(binDir).filter(file => {
-            const ext = path.extname(file);
-            // Include executables and config files
-            return ext === '' || ext === '.exe' || ext === '.conf' || ext === '.so';
-          });
+          // Recursively find and copy all executables
+          const binaries: string[] = [];
+          const copyExecutables = (sourceDir: string) => {
+            const items = fs.readdirSync(sourceDir);
 
-          console.log(`Found ${binaries.length} binaries to copy: ${binaries.join(', ')}`);
+            for (const item of items) {
+              const itemPath = path.join(sourceDir, item);
+              const stat = fs.statSync(itemPath);
 
-          if (binaries.length === 0) {
-            const errorMsg = `No executable files found in ${binDir}`;
-            console.error(errorMsg);
-            this.sendStatus({ message: errorMsg, type: 'warning' });
-          }
+              if (stat.isDirectory()) {
+                // Recursively search subdirectories
+                copyExecutables(itemPath);
+              } else if (stat.isFile()) {
+                const ext = path.extname(item);
+                // Include executables and config files
+                if (ext === '' || ext === '.exe' || ext === '.conf' || ext === '.so' || ext === '.dll') {
+                  const destBinaryPath = path.join(destPath, item);
+                  fs.copyFileSync(itemPath, destBinaryPath);
+                  console.log(`Copied: ${item} from ${itemPath} -> ${destBinaryPath}`);
+                  binaries.push(item);
 
-          binaries.forEach(binary => {
-            const srcPath = path.join(binDir, binary);
-            const destBinaryPath = path.join(destPath, binary);
-
-            // Only copy files, not directories
-            if (fs.statSync(srcPath).isFile()) {
-              fs.copyFileSync(srcPath, destBinaryPath);
-              console.log(`Copied: ${binary} -> ${destBinaryPath}`);
-
-              // Set executable permissions on Linux
-              if (!this.isWindows()) {
-                fs.chmodSync(destBinaryPath, '755');
+                  // Set executable permissions on Linux
+                  if (!this.isWindows() && ext === '') {
+                    fs.chmodSync(destBinaryPath, '755');
+                  }
+                }
               }
             }
-          });
+          };
+
+          copyExecutables(tempExtractDir);
+
+          console.log(`Found and copied ${binaries.length} files: ${binaries.join(', ')}`);
+
+          if (binaries.length === 0) {
+            const errorMsg = `No executable files found in extracted archive`;
+            console.error(errorMsg);
+            this.sendStatus({ message: errorMsg, type: 'error' });
+            reject(new Error(errorMsg));
+            return;
+          }
 
           const serverName = this.isWindows() ? 'Redis' : 'Valkey';
-          this.sendStatus({ message: `Extracted ${binaries.length} ${serverName} binaries to ${destPath}`, type: 'success' });
-          console.log(`Successfully extracted ${binaries.length} binaries to ${destPath}`);
+          this.sendStatus({ message: `Extracted ${binaries.length} ${serverName} files to ${destPath}`, type: 'success' });
+          console.log(`Successfully extracted ${binaries.length} files to ${destPath}`);
 
           // Clean up temp directory
           fs.rmSync(tempExtractDir, { recursive: true, force: true });

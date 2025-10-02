@@ -105,6 +105,9 @@ body {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
+  -webkit-app-region: no-drag;
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 .header-section {
@@ -289,4 +292,5 @@ body {
   .command-actions {
     justify-content: flex-start;
   }
-}
+}/* Text selection and scrolling fix */
+.selectable, .scrollable { -webkit-app-region: no-drag; user-select: text; -webkit-user-select: text; cursor: text; }

@@ -554,6 +554,10 @@ body.theme-space .continue-btn:hover {
     font-size: 12px;
     line-height: 1.4;
     border: 1px solid rgba(255, 255, 255, 0.1);
+    -webkit-app-region: no-drag;
+    user-select: text;
+    -webkit-user-select: text;
+    cursor: text;
 }
 
 .log-line {
@@ -669,3 +673,5 @@ body.theme-space .log-header {
 .continue-btn.show {
     display: block;
 }
+/* Text selection and scrolling fix */
+.selectable, .scrollable { -webkit-app-region: no-drag; user-select: text; -webkit-user-select: text; cursor: text; }

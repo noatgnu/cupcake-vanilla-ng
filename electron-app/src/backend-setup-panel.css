@@ -126,4 +126,5 @@ code {
 
 .setup-sections::-webkit-scrollbar-thumb:hover {
   background: #adb5bd;
-}
+}/* Text selection and scrolling fix */
+.selectable, .scrollable { -webkit-app-region: no-drag; user-select: text; -webkit-user-select: text; cursor: text; }

@@ -237,3 +237,5 @@ body {
     text-align: left;
   }
 }
+/* Text selection and scrolling fix */
+.selectable, .scrollable { -webkit-app-region: no-drag; user-select: text; -webkit-user-select: text; cursor: text; }
