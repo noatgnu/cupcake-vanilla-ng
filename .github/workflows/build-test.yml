@@ -40,6 +40,8 @@ jobs:
             docker-dist/*.AppImage
             docker-dist/*.tar.gz
             docker-dist/*.exe
+            docker-dist/*.zip
+            docker-dist/*.dmg
           fail_on_unmatched_files: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
