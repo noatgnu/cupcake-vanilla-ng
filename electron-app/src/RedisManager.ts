@@ -103,19 +103,44 @@ export class RedisManager {
     } else {
       // Production mode - use bundled binaries
       if (platform === 'win32') {
-        // Windows: Look for Memurai in PATH first
+        // Windows: Check multiple locations in order of preference
+
+        // 1. Check for Memurai in PATH
         const memuraiInPath = this.findExecutableInPath('memurai') || this.findExecutableInPath('memurai.exe');
         if (memuraiInPath) {
           return memuraiInPath;
         }
-        // If no Memurai found in PATH, show error
-        throw new Error('Memurai not found. Please install Memurai from https://www.memurai.com/get-memurai');
+
+        // 2. Check for bundled Redis binary in user data
+        const bundledRedis = path.join(this.redisDir, 'redis-server.exe');
+        if (fs.existsSync(bundledRedis)) {
+          return bundledRedis;
+        }
+
+        // 3. Check for bundled Redis binary in resources
+        const resourceRedis = path.join(process.resourcesPath, 'redis', 'windows', 'redis-server.exe');
+        if (fs.existsSync(resourceRedis)) {
+          return resourceRedis;
+        }
+
+        // 4. Look for Redis in PATH
+        const redisInPath = this.findExecutableInPath('redis-server') || this.findExecutableInPath('redis-server.exe');
+        if (redisInPath) {
+          return redisInPath;
+        }
+
+        // If nothing found, use bundled path (will be downloaded on first run)
+        return bundledRedis;
       } else {
         // Mac/Linux: Use bundled Valkey binary
         const platformDir = platform === 'darwin' ? 'darwin' : 'linux';
         return path.join(process.resourcesPath, 'redis', platformDir, 'valkey-server');
       }
     }
+  }
+
+  getRedisDir(): string {
+    return this.redisDir;
   }
 
   private async createRedisConfig(): Promise<string> {
@@ -153,7 +178,11 @@ appendonly no
     const executablePath = this.getRedisExecutablePath();
 
     if (!fs.existsSync(executablePath)) {
-      throw new Error(`Redis/Valkey binary not found at: ${executablePath}. Please install Valkey for Mac/Linux or Memurai for Windows.`);
+      if (this.platform === 'win32') {
+        throw new Error('REDIS_NOT_FOUND_WINDOWS');
+      } else {
+        throw new Error(`Redis/Valkey binary not found at: ${executablePath}. Please install Valkey for Mac/Linux.`);
+      }
     }
 
     // Find an available port

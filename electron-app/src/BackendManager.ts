@@ -315,10 +315,17 @@ export class BackendManager {
       this.sendBackendStatus('redis', 'ready', 'Redis server started successfully');
       this.sendBackendLog('Redis server ready', 'success');
     } catch (error) {
+      if (error.message === 'REDIS_NOT_FOUND_WINDOWS') {
+        throw new Error('REDIS_NOT_FOUND_WINDOWS');
+      }
       this.sendBackendStatus('redis', 'error', `Redis server failed: ${error.message}`);
       this.sendBackendLog(`Redis server error: ${error.message}`, 'error');
       throw error;
     }
+  }
+
+  getRedisManager() {
+    return this.redisManager;
   }
 
   async collectStaticFiles(backendDir: string, venvPython: string): Promise<void> {

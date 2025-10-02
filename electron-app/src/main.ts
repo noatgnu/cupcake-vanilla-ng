@@ -9,6 +9,7 @@ import { UserManager } from './UserManager';
 import { DownloaderManager, DownloadTask } from './DownloaderManager';
 import { BackendDownloader } from './BackendDownloader';
 import { BackendSetupManager } from './BackendSetupManager';
+import { ValkeyDownloader } from './ValkeyDownloader';
 
 // Set environment variable to indicate we're running in Electron
 process.env.IS_ELECTRON_ENVIRONMENT = 'true';
@@ -726,8 +727,45 @@ async function initializeBackend(createNewVenv: boolean = true, selectedPython: 
 
     // Step 7: Start Redis server
     console.log('[DEBUG] About to start Redis server...');
-    await backendManager.startRedisServer();
-    console.log('[DEBUG] Redis server started, starting Django server...');
+    try {
+      await backendManager.startRedisServer();
+      console.log('[DEBUG] Redis server started, starting Django server...');
+    } catch (error) {
+      if (error.message === 'REDIS_NOT_FOUND_WINDOWS') {
+        console.log('[DEBUG] Redis not found on Windows, prompting for download...');
+
+        const choice = dialog.showMessageBoxSync(splashWindow, {
+          type: 'question',
+          buttons: ['Download Redis', 'Cancel'],
+          title: 'Redis Not Found',
+          message: 'Redis server is required but not installed.',
+          detail: 'Would you like to download and install Redis for Windows?'
+        });
+
+        if (choice === 0) {
+          const task: DownloadTask = {
+            title: 'Downloading Redis',
+            description: 'Downloading Redis for Windows',
+            execute: async (window) => {
+              const downloader = new ValkeyDownloader(window);
+              const redisDir = backendManager.getRedisManager().getRedisDir();
+              await downloader.downloadValkey(redisDir);
+            }
+          };
+
+          await downloaderManager.startDownload(task);
+
+          // Retry starting Redis after download
+          console.log('[DEBUG] Retrying Redis startup after download...');
+          await backendManager.startRedisServer();
+          console.log('[DEBUG] Redis server started successfully after download, starting Django server...');
+        } else {
+          throw new Error('Redis is required to run the application');
+        }
+      } else {
+        throw error;
+      }
+    }
 
     // Step 8: Start Django server
     console.log('[DEBUG] About to start Django server...');
