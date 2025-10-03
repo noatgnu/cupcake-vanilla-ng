@@ -145,6 +145,14 @@ export class FirstRunWizardManager {
     await this.wizardWindow.loadFile(path.join(__dirname, 'first-run-wizard.html'));
     this.wizardWindow.show();
 
+    // Prevent accidental close - user must use Cancel button
+    this.wizardWindow.on('close', (event) => {
+      if (this.wizardWindow && !this.wizardWindow.isDestroyed()) {
+        event.preventDefault();
+        this.cancel();
+      }
+    });
+
     this.wizardWindow.on('closed', () => {
       this.wizardWindow = null;
     });
@@ -165,15 +173,26 @@ export class FirstRunWizardManager {
   }
 
   private cancel(): void {
-    const choice = dialog.showMessageBoxSync(this.wizardWindow!, {
+    if (!this.wizardWindow || this.wizardWindow.isDestroyed()) {
+      return;
+    }
+
+    const choice = dialog.showMessageBoxSync(this.wizardWindow, {
       type: 'question',
-      buttons: ['Yes, Cancel', 'No, Continue'],
+      buttons: ['Yes, Exit', 'No, Continue'],
       title: 'Cancel Installation',
-      message: 'Are you sure you want to cancel the installation?'
+      message: 'Are you sure you want to exit the wizard?',
+      detail: 'The application will quit without completing the setup.'
     });
 
     if (choice === 0) {
-      this.wizardWindow?.close();
+      // Remove the close handler to allow actual close
+      this.wizardWindow.removeAllListeners('close');
+      this.wizardWindow.close();
+
+      // Quit the application since setup is incomplete
+      const { app } = require('electron');
+      app.quit();
     }
   }
 
@@ -187,6 +206,29 @@ export class FirstRunWizardManager {
 
   private sendError(error: string): void {
     this.wizardWindow?.webContents.send('wizard:error', error);
+
+    if (!this.wizardWindow || this.wizardWindow.isDestroyed()) {
+      return;
+    }
+
+    // Show error dialog with options
+    const choice = dialog.showMessageBoxSync(this.wizardWindow, {
+      type: 'error',
+      buttons: ['Exit Wizard', 'Continue Anyway'],
+      defaultId: 0,
+      title: 'Installation Error',
+      message: 'An error occurred during installation',
+      detail: error
+    });
+
+    if (choice === 0) {
+      // Remove the close handler to allow actual close
+      this.wizardWindow.removeAllListeners('close');
+      this.wizardWindow.close();
+
+      const { app } = require('electron');
+      app.quit();
+    }
   }
 
   private async startBackendDownload(version?: string): Promise<void> {
