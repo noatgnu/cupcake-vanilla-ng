@@ -1017,9 +1017,27 @@ ipcMain.handle('download-file', async (event, url: string, filename?: string) =>
 });
 
 // App event handlers
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+  createMenu();
   setupPythonSelectionIPC();
-  createSplashWindow();
+
+  // Check if this is first run and backend is not set up
+  const backendPath = getBackendPath();
+  const backendDownloader = new BackendDownloader();
+
+  if (isFirstRun() && !backendDownloader.backendExists(backendPath)) {
+    console.log('[First Run] Showing first-run wizard...');
+    await firstRunWizardManager.showWizard();
+
+    // When wizard completes, mark first run as complete
+    markFirstRunComplete();
+
+    // After wizard, create main window (backend should be running from wizard)
+    createWindow();
+  } else {
+    console.log('[Startup] Proceeding with normal startup...');
+    createSplashWindow();
+  }
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
@@ -1165,21 +1183,3 @@ function markFirstRunComplete(): void {
   const firstRunMarkerPath = path.join(userDataPath, '.first-run-complete');
   fs.writeFileSync(firstRunMarkerPath, new Date().toISOString());
 }
-
-app.whenReady().then(async () => {
-  createMenu();
-
-  // Check if this is first run and backend is not set up
-  const backendPath = getBackendPath();
-  const backendDownloader = new BackendDownloader();
-
-  if (isFirstRun() && !backendDownloader.backendExists(backendPath)) {
-    console.log('[First Run] Showing first-run wizard...');
-    await firstRunWizardManager.showWizard();
-
-    // When wizard completes, mark first run as complete and proceed
-    markFirstRunComplete();
-  } else {
-    console.log('[Startup] Proceeding with normal startup...');
-  }
-});
