@@ -1,5 +1,6 @@
 import { BrowserWindow, ipcMain, dialog } from 'electron';
 import * as path from 'path';
+import * as fs from 'fs';
 import { BackendManager } from './BackendManager';
 import { PythonManager } from './PythonManager';
 import { UserManager } from './UserManager';
@@ -195,28 +196,76 @@ export class FirstRunWizardManager {
       const backendPath = path.join(this.userDataPath, 'backend');
       this.state.backendDir = backendPath;
 
-      const task: DownloadTask = {
-        title: this.state.installationType === 'portable' ? 'Downloading Portable Backend' : 'Downloading Source Backend',
-        description: 'Downloading backend files...',
-        execute: async (window) => {
-          const downloader = new BackendDownloader(window);
+      if (this.state.installationType === 'portable') {
+        // Get latest release tag first
+        const tempDownloader = new BackendDownloader();
+        const releases = await tempDownloader.getAvailableReleases();
 
-          if (this.state.installationType === 'portable') {
-            // For portable, we need to provide options
-            const config = this.pythonManager.loadConfig();
+        if (releases.length === 0) {
+          throw new Error('No backend releases found on GitHub');
+        }
+
+        const latestRelease = releases[0];
+        this.sendLog(`Found latest release: ${latestRelease.tag}`, 'info');
+
+        const task: DownloadTask = {
+          title: 'Downloading Portable Backend',
+          description: `Downloading Cupcake Vanilla Backend ${latestRelease.tag}`,
+          execute: async (window) => {
+            const downloader = new BackendDownloader(window);
             await downloader.downloadPortable({
-              version: version || 'latest',
+              version: latestRelease.tag,
               isPortable: true,
-              pythonVersion: config.pythonVersion || '3.11',
+              pythonVersion: '3.11',
               destPath: backendPath
             });
-          } else {
+          }
+        };
+
+        await this.downloaderManager.startDownload(task);
+
+        // For portable, set the Python path from the bundled Python
+        const portablePython = path.join(
+          backendPath,
+          'python',
+          process.platform === 'win32' ? 'python.exe' : 'bin/python3'
+        );
+
+        if (fs.existsSync(portablePython)) {
+          this.state.pythonPath = portablePython;
+          this.sendLog(`Using portable Python: ${portablePython}`, 'info');
+
+          // Save to config
+          const config = this.pythonManager.loadConfig();
+          config.pythonPath = portablePython;
+
+          // Detect Python version
+          try {
+            const result = await this.pythonManager.verifyPython(portablePython);
+            config.pythonVersion = result.version;
+            this.sendLog(`Detected portable Python version: ${result.version}`, 'info');
+          } catch (error: any) {
+            this.sendLog(`Warning: Failed to detect Python version: ${error.message}`, 'warning');
+          }
+
+          this.pythonManager.saveConfig(config);
+        } else {
+          throw new Error('Portable Python not found after download');
+        }
+      } else {
+        // Source download
+        const task: DownloadTask = {
+          title: 'Downloading Source Backend',
+          description: 'Cloning backend repository...',
+          execute: async (window) => {
+            const downloader = new BackendDownloader(window);
             await downloader.downloadSource(backendPath);
           }
-        }
-      };
+        };
 
-      await this.downloaderManager.startDownload(task);
+        await this.downloaderManager.startDownload(task);
+      }
+
       this.sendLog('Backend downloaded successfully', 'success');
       this.nextStep();
     } catch (error: any) {
@@ -229,27 +278,45 @@ export class FirstRunWizardManager {
     try {
       const backendDir = this.state.backendDir!;
 
+      // Determine if this is a portable backend
+      const backendDownloader = new BackendDownloader();
+      const isPortable = backendDownloader.isPortableBackend(backendDir);
+
+      // Save Python configuration
+      const config = this.pythonManager.loadConfig();
+      const pythonPath = this.state.pythonPath || config.pythonPath!;
+      config.pythonPath = pythonPath;
+      this.pythonManager.saveConfig(config);
+
       // Task: venv
-      this.sendInstallationProgress('venv', 'active', 'Creating virtual environment...');
-      if (this.state.installationType === 'source' && this.state.createNewVenv) {
-        const config = this.pythonManager.loadConfig();
-        const pythonPath = this.state.pythonPath || config.pythonPath!;
-        const venvPath = await this.pythonManager.createVirtualEnvironment(pythonPath);
-        this.state.venvPath = venvPath;
-      } else if (this.state.installationType === 'portable') {
-        // For portable, Python is bundled
-        const config = this.pythonManager.loadConfig();
-        this.state.venvPath = config.pythonPath!;
+      this.sendInstallationProgress('venv', 'active', 'Setting up virtual environment...');
+      if (isPortable) {
+        // Portable backend has venv bundled
+        this.state.venvPath = pythonPath;
+        this.sendLog('Using bundled portable virtual environment', 'info');
+      } else if (this.state.createNewVenv) {
+        this.state.venvPath = await this.pythonManager.createVirtualEnvironment(pythonPath);
+        this.sendLog('Created new virtual environment', 'info');
+      } else {
+        const existingVenv = this.pythonManager.checkVirtualEnvironment();
+        if (!existingVenv) {
+          throw new Error('No existing virtual environment found');
+        }
+        this.state.venvPath = existingVenv;
+        this.sendLog('Using existing virtual environment', 'info');
       }
       this.sendInstallationProgress('venv', 'completed', 'Virtual environment ready');
 
       // Task: dependencies
       this.sendInstallationProgress('dependencies', 'active', 'Installing dependencies...');
-      if (this.state.installationType === 'source') {
+      if (!isPortable) {
         const requirementsPath = path.join(backendDir, 'requirements.txt');
         await this.pythonManager.installDependencies(this.state.venvPath!, requirementsPath);
+        this.sendLog('All dependencies installed successfully', 'info');
+      } else {
+        this.sendLog('Skipping dependency installation for portable backend', 'info');
       }
-      this.sendInstallationProgress('dependencies', 'completed', 'Dependencies installed');
+      this.sendInstallationProgress('dependencies', 'completed', 'Dependencies ready');
 
       // Task: migrations
       this.sendInstallationProgress('migrations', 'active', 'Running database migrations...');
@@ -261,10 +328,54 @@ export class FirstRunWizardManager {
       await this.backendManager.collectStaticFiles(backendDir, this.state.venvPath!);
       this.sendInstallationProgress('static', 'completed', 'Static files collected');
 
+      // Cleanup orphaned processes
+      this.sendLog('Cleaning up orphaned processes...', 'info');
+      await this.backendManager.killOrphanedDjangoProcesses();
+
       // Task: redis
       this.sendInstallationProgress('redis', 'active', 'Starting Redis server...');
-      await this.backendManager.startRedisServer();
-      this.sendInstallationProgress('redis', 'completed', 'Redis server running');
+      try {
+        await this.backendManager.startRedisServer();
+        this.sendInstallationProgress('redis', 'completed', 'Redis server running');
+      } catch (error: any) {
+        if (error.message === 'REDIS_NOT_FOUND_WINDOWS') {
+          this.sendLog('Redis not found on Windows, prompting for download...', 'warning');
+
+          const choice = dialog.showMessageBoxSync(this.wizardWindow!, {
+            type: 'question',
+            buttons: ['Download Redis', 'Cancel'],
+            title: 'Redis Not Found',
+            message: 'Redis server is required but not installed.',
+            detail: 'Would you like to download and install Redis for Windows?'
+          });
+
+          if (choice === 0) {
+            const redisDir = this.backendManager.getRedisManager().getRedisDir();
+            this.sendLog(`Downloading Redis to: ${redisDir}`, 'info');
+
+            const task: DownloadTask = {
+              title: 'Downloading Redis',
+              description: 'Downloading Redis for Windows',
+              execute: async (window) => {
+                const { ValkeyDownloader } = await import('./ValkeyDownloader');
+                const downloader = new ValkeyDownloader(window);
+                await downloader.downloadValkey(redisDir);
+              }
+            };
+
+            await this.downloaderManager.startDownload(task);
+
+            // Retry starting Redis after download
+            this.sendLog('Retrying Redis startup after download...', 'info');
+            await this.backendManager.startRedisServer();
+            this.sendInstallationProgress('redis', 'completed', 'Redis server running');
+          } else {
+            throw new Error('Redis is required to run the application');
+          }
+        } else {
+          throw error;
+        }
+      }
 
       // Task: services
       this.sendInstallationProgress('services', 'active', 'Starting backend services...');
@@ -272,7 +383,7 @@ export class FirstRunWizardManager {
       await this.backendManager.startRQWorker(backendDir, this.state.venvPath!);
       this.sendInstallationProgress('services', 'completed', 'Backend services running');
 
-      this.sendLog('Installation completed successfully', 'success');
+      this.sendLog('All services started successfully!', 'success');
       this.nextStep();
     } catch (error: any) {
       this.sendLog(`Installation error: ${error.message}`, 'error');
