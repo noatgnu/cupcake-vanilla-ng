@@ -10,6 +10,7 @@ import { DownloaderManager, DownloadTask } from './DownloaderManager';
 import { BackendDownloader } from './BackendDownloader';
 import { BackendSetupManager } from './BackendSetupManager';
 import { ValkeyDownloader } from './ValkeyDownloader';
+import { FirstRunWizardManager } from './FirstRunWizardManager';
 
 // Set environment variable to indicate we're running in Electron
 process.env.IS_ELECTRON_ENVIRONMENT = 'true';
@@ -79,6 +80,14 @@ const backendSetupManager = new BackendSetupManager(
     pythonManager.saveConfig(config);
     console.log('Python configuration updated to portable backend:', pythonPath);
   }
+);
+
+// Initialize First Run Wizard Manager
+const firstRunWizardManager = new FirstRunWizardManager(
+  backendManager,
+  pythonManager,
+  userManager,
+  userDataPath
 );
 
 // Configuration
@@ -1145,6 +1154,32 @@ function createMenu(): void {
   Menu.setApplicationMenu(menu);
 }
 
-app.whenReady().then(() => {
+// Check if this is the first run
+function isFirstRun(): boolean {
+  const firstRunMarkerPath = path.join(userDataPath, '.first-run-complete');
+  return !fs.existsSync(firstRunMarkerPath);
+}
+
+// Mark first run as complete
+function markFirstRunComplete(): void {
+  const firstRunMarkerPath = path.join(userDataPath, '.first-run-complete');
+  fs.writeFileSync(firstRunMarkerPath, new Date().toISOString());
+}
+
+app.whenReady().then(async () => {
   createMenu();
+
+  // Check if this is first run and backend is not set up
+  const backendPath = getBackendPath();
+  const backendDownloader = new BackendDownloader();
+
+  if (isFirstRun() && !backendDownloader.backendExists(backendPath)) {
+    console.log('[First Run] Showing first-run wizard...');
+    await firstRunWizardManager.showWizard();
+
+    // When wizard completes, mark first run as complete and proceed
+    markFirstRunComplete();
+  } else {
+    console.log('[Startup] Proceeding with normal startup...');
+  }
 });
