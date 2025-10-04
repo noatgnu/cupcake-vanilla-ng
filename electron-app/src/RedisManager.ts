@@ -207,8 +207,10 @@ appendonly no
 
       if (this.platform === 'win32') {
         throw new Error('REDIS_NOT_FOUND_WINDOWS');
+      } else if (this.platform === 'darwin') {
+        throw new Error('REDIS_NOT_FOUND_MAC');
       } else {
-        throw new Error(`Redis/Valkey binary not found at: ${executablePath}. Please install Valkey for Mac/Linux.`);
+        throw new Error('REDIS_NOT_FOUND_LINUX');
       }
     }
 

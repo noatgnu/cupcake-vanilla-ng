@@ -731,29 +731,35 @@ async function initializeBackend(createNewVenv: boolean = true, selectedPython: 
       await backendManager.startRedisServer();
       console.log('[DEBUG] Redis server started, starting Django server...');
     } catch (error) {
-      if (error.message === 'REDIS_NOT_FOUND_WINDOWS') {
-        console.log('[DEBUG] Redis not found on Windows, prompting for download...');
+      const isRedisNotFound = error.message === 'REDIS_NOT_FOUND_WINDOWS' ||
+                              error.message === 'REDIS_NOT_FOUND_MAC' ||
+                              error.message === 'REDIS_NOT_FOUND_LINUX';
+
+      if (isRedisNotFound) {
+        const platform = process.platform;
+        const platformName = platform === 'win32' ? 'Windows' : platform === 'darwin' ? 'Mac' : 'Linux';
+        console.log(`[DEBUG] Redis/Valkey not found on ${platformName}, prompting for download...`);
 
         const choice = dialog.showMessageBoxSync(splashWindow, {
           type: 'question',
-          buttons: ['Download Redis', 'Cancel'],
-          title: 'Redis Not Found',
-          message: 'Redis server is required but not installed.',
-          detail: 'Would you like to download and install Redis for Windows?'
+          buttons: ['Download Valkey', 'Cancel'],
+          title: 'Redis/Valkey Not Found',
+          message: 'Redis/Valkey server is required but not installed.',
+          detail: `Would you like to download and install Valkey for ${platformName}?`
         });
 
         if (choice === 0) {
           const redisDir = backendManager.getRedisManager().getRedisDir();
-          console.log(`[DEBUG] Redis will be downloaded to: ${redisDir}`);
+          console.log(`[DEBUG] Valkey will be downloaded to: ${redisDir}`);
 
           const task: DownloadTask = {
-            title: 'Downloading Redis',
-            description: 'Downloading Redis for Windows',
+            title: 'Downloading Valkey',
+            description: `Downloading Valkey for ${platformName}`,
             execute: async (window) => {
               const downloader = new ValkeyDownloader(window);
-              console.log(`[DEBUG] Starting Redis download to: ${redisDir}`);
+              console.log(`[DEBUG] Starting Valkey download to: ${redisDir}`);
               await downloader.downloadValkey(redisDir);
-              console.log(`[DEBUG] Redis download completed`);
+              console.log(`[DEBUG] Valkey download completed`);
             }
           };
 
@@ -765,7 +771,7 @@ async function initializeBackend(createNewVenv: boolean = true, selectedPython: 
           await backendManager.startRedisServer();
           console.log('[DEBUG] Redis server started successfully after download, starting Django server...');
         } else {
-          throw new Error('Redis is required to run the application');
+          throw new Error('Redis/Valkey is required to run the application');
         }
       } else {
         throw error;
