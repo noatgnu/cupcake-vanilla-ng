@@ -220,6 +220,20 @@ appendonly no
     this.log(`Starting Redis server from ${executablePath}`, 'info');
     this.log(`Port: ${this.port}`, 'info');
 
+    // Check executable permissions on Unix
+    if (this.platform !== 'win32') {
+      try {
+        const stats = fs.statSync(executablePath);
+        const isExecutable = (stats.mode & 0o111) !== 0;
+        if (!isExecutable) {
+          this.log(`Fixing permissions on ${executablePath}`, 'warning');
+          fs.chmodSync(executablePath, '755');
+        }
+      } catch (error: any) {
+        this.log(`Error checking permissions: ${error.message}`, 'error');
+      }
+    }
+
     return new Promise<void>((resolve, reject) => {
       this.redisProcess = spawn(executablePath, ['--port', this.port.toString(), '--bind', '127.0.0.1'], {
         stdio: ['ignore', 'pipe', 'pipe'],
@@ -227,6 +241,7 @@ appendonly no
       });
 
       let resolved = false;
+      let stderrOutput = '';
 
       this.redisProcess.stdout?.on('data', (data) => {
         const output = data.toString().trim();
@@ -246,6 +261,7 @@ appendonly no
 
       this.redisProcess.stderr?.on('data', (data) => {
         const output = data.toString().trim();
+        stderrOutput += output + '\n';
         this.log(`Redis stderr: ${output}`, 'warning');
 
         // Some Redis messages go to stderr but are not errors
@@ -270,13 +286,21 @@ appendonly no
 
       this.redisProcess.on('exit', (code, signal) => {
         this.log(`Redis process exited with code ${code} and signal ${signal}`, code === 0 ? 'info' : 'error');
+
+        if (stderrOutput) {
+          this.log(`Redis stderr output before exit:\n${stderrOutput}`, 'error');
+        }
+
         this.redisProcess = null;
         if (!resolved) {
           resolved = true;
           if (code === 0) {
             resolve();
           } else {
-            reject(new Error(`Redis process exited with code ${code}`));
+            const errorMsg = stderrOutput
+              ? `Redis process exited with code ${code}. Error: ${stderrOutput.trim()}`
+              : `Redis process exited with code ${code} and signal ${signal}`;
+            reject(new Error(errorMsg));
           }
         }
       });
