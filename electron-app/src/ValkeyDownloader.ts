@@ -18,7 +18,7 @@ export interface DownloadStatus {
 }
 
 export class ValkeyDownloader {
-  private readonly VALKEY_VERSION = '8.1.3';
+  private readonly VALKEY_VERSION = '7.2.11';
   private readonly REDIS_WINDOWS_VERSION = '5.0.14.1';
   private lastDownloadTime: number = Date.now();
   private lastDownloadedBytes: number = 0;
@@ -39,6 +39,119 @@ export class ValkeyDownloader {
    */
   private isWindows(): boolean {
     return os.platform() === 'win32';
+  }
+
+  /**
+   * Detect Linux distribution
+   */
+  private detectLinuxDistro(): { id: string; version: string } | null {
+    if (os.platform() !== 'linux') {
+      return null;
+    }
+
+    try {
+      const osRelease = fs.readFileSync('/etc/os-release', 'utf-8');
+      const lines = osRelease.split('\n');
+      let id = '';
+      let version = '';
+
+      for (const line of lines) {
+        if (line.startsWith('ID=')) {
+          id = line.split('=')[1].replace(/"/g, '').trim();
+        } else if (line.startsWith('VERSION_ID=')) {
+          version = line.split('=')[1].replace(/"/g, '').trim();
+        }
+      }
+
+      return { id, version };
+    } catch (error) {
+      console.error('Failed to detect Linux distro:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Check if Redis is already installed on the system
+   */
+  private checkSystemRedis(destPath: string): boolean {
+    const systemPaths = ['/usr/bin/redis-server', '/usr/local/bin/redis-server'];
+
+    for (const systemPath of systemPaths) {
+      if (fs.existsSync(systemPath)) {
+        this.sendStatus({ message: `Found system Redis at ${systemPath}`, type: 'info' });
+
+        try {
+          fs.mkdirSync(destPath, { recursive: true });
+          const destBinary = path.join(destPath, 'valkey-server');
+          fs.copyFileSync(systemPath, destBinary);
+          fs.chmodSync(destBinary, '755');
+          this.sendStatus({ message: `Using system Redis from ${systemPath}`, type: 'success' });
+          return true;
+        } catch (error: any) {
+          console.error('Failed to copy system Redis:', error);
+          return false;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * Install Redis/Valkey using system package manager
+   */
+  private async installViaPackageManager(destPath: string): Promise<boolean> {
+    const distro = this.detectLinuxDistro();
+    if (!distro) {
+      this.sendStatus({ message: 'Cannot detect Linux distribution', type: 'error' });
+      return false;
+    }
+
+    this.sendStatus({ message: `Detected ${distro.id} ${distro.version}`, type: 'info' });
+
+    let installCmd = '';
+    let packageName = 'redis-server';
+
+    if (distro.id === 'ubuntu' || distro.id === 'debian') {
+      installCmd = `pkexec apt-get install -y ${packageName}`;
+    } else if (distro.id === 'fedora' || distro.id === 'rhel' || distro.id === 'centos') {
+      packageName = 'redis';
+      installCmd = `pkexec dnf install -y ${packageName}`;
+    } else if (distro.id === 'arch' || distro.id === 'manjaro') {
+      packageName = 'redis';
+      installCmd = `pkexec pacman -S --noconfirm ${packageName}`;
+    } else {
+      this.sendStatus({ message: `Unsupported distribution: ${distro.id}`, type: 'error' });
+      return false;
+    }
+
+    try {
+      this.sendStatus({ message: `Installing ${packageName} via package manager...`, type: 'info' });
+      this.sendStatus({ message: 'You will be prompted for your password', type: 'warning' });
+
+      execSync(installCmd, { stdio: 'inherit' });
+
+      this.sendStatus({ message: `${packageName} installed successfully`, type: 'success' });
+
+      // Find the installed binary and copy to destPath
+      const systemPaths = ['/usr/bin/redis-server', '/usr/local/bin/redis-server'];
+      for (const systemPath of systemPaths) {
+        if (fs.existsSync(systemPath)) {
+          fs.mkdirSync(destPath, { recursive: true });
+          const destBinary = path.join(destPath, 'valkey-server');
+          fs.copyFileSync(systemPath, destBinary);
+          fs.chmodSync(destBinary, '755');
+          this.sendStatus({ message: `Copied binary to ${destBinary}`, type: 'success' });
+          return true;
+        }
+      }
+
+      this.sendStatus({ message: 'Package installed but binary not found', type: 'error' });
+      return false;
+    } catch (error: any) {
+      this.sendStatus({ message: `Package manager install failed: ${error.message}`, type: 'error' });
+      return false;
+    }
   }
 
   /**
@@ -361,6 +474,27 @@ export class ValkeyDownloader {
         this.sendComplete(false, `Cannot remove existing ${serverName}: ${error.message}`);
         throw new Error(`Cannot remove existing ${serverName}. Please close any applications using it and try again.`);
       }
+    }
+
+    // On Linux, check for system Redis first, then try package manager
+    if (os.platform() === 'linux') {
+      // First check if Redis is already installed
+      if (this.checkSystemRedis(destPath)) {
+        this.sendComplete(true, 'Using system Redis installation');
+        return;
+      }
+
+      // If not found, try to install via package manager
+      this.sendStatus({ message: 'Attempting to install Redis via package manager...', type: 'info' });
+      const pkgMgrSuccess = await this.installViaPackageManager(destPath);
+
+      if (pkgMgrSuccess) {
+        this.sendComplete(true, 'Redis installed successfully via package manager');
+        return;
+      }
+
+      // If package manager fails, fall back to download
+      this.sendStatus({ message: 'Package manager install failed, falling back to download...', type: 'warning' });
     }
 
     const url = this.getValkeyDownloadURL();
