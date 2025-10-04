@@ -101,26 +101,30 @@ export class RedisManager {
         return path.join(this.redisDir, platform === 'darwin' ? 'valkey-server' : 'valkey-server');
       }
     } else {
-      // Production mode - use bundled binaries
+      // Production mode - prioritize user data (downloaded), then resources (bundled)
       if (platform === 'win32') {
         // Windows: Check multiple locations in order of preference
 
-        // 1. Check for Memurai in PATH
-        const memuraiInPath = this.findExecutableInPath('memurai') || this.findExecutableInPath('memurai.exe');
-        if (memuraiInPath) {
-          return memuraiInPath;
+        // 1. Check for downloaded Redis/Valkey binary in user data (highest priority)
+        const userDataRedis = path.join(this.redisDir, 'redis-server.exe');
+        const userDataValkey = path.join(this.redisDir, 'valkey-server.exe');
+        if (fs.existsSync(userDataRedis)) {
+          return userDataRedis;
+        }
+        if (fs.existsSync(userDataValkey)) {
+          return userDataValkey;
         }
 
-        // 2. Check for bundled Redis binary in user data
-        const bundledRedis = path.join(this.redisDir, 'redis-server.exe');
-        if (fs.existsSync(bundledRedis)) {
-          return bundledRedis;
-        }
-
-        // 3. Check for bundled Redis binary in resources
+        // 2. Check for bundled Redis binary in resources
         const resourceRedis = path.join(process.resourcesPath, 'redis', 'windows', 'redis-server.exe');
         if (fs.existsSync(resourceRedis)) {
           return resourceRedis;
+        }
+
+        // 3. Check for Memurai in PATH
+        const memuraiInPath = this.findExecutableInPath('memurai') || this.findExecutableInPath('memurai.exe');
+        if (memuraiInPath) {
+          return memuraiInPath;
         }
 
         // 4. Look for Redis in PATH
@@ -129,12 +133,24 @@ export class RedisManager {
           return redisInPath;
         }
 
-        // If nothing found, use bundled path (will be downloaded on first run)
-        return bundledRedis;
+        // If nothing found, return user data path (will trigger download)
+        return userDataRedis;
       } else {
-        // Mac/Linux: Use bundled Valkey binary
+        // Mac/Linux: Check user data first (downloaded), then resources (bundled)
+        const userDataValkey = path.join(this.redisDir, 'valkey-server');
+        if (fs.existsSync(userDataValkey)) {
+          return userDataValkey;
+        }
+
+        // Fallback to resources
         const platformDir = platform === 'darwin' ? 'darwin' : 'linux';
-        return path.join(process.resourcesPath, 'redis', platformDir, 'valkey-server');
+        const resourceValkey = path.join(process.resourcesPath, 'redis', platformDir, 'valkey-server');
+        if (fs.existsSync(resourceValkey)) {
+          return resourceValkey;
+        }
+
+        // If nothing found, return user data path (will trigger download)
+        return userDataValkey;
       }
     }
   }
