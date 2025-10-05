@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { MetadataTableService } from './metadata-table';
-import { CUPCAKE_CORE_CONFIG } from '@cupcake/core';
+import { CUPCAKE_CORE_CONFIG } from '@noatgnu/cupcake-core';
 
 describe('MetadataTableService', () => {
   let service: MetadataTableService;

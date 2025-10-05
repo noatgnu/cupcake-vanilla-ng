@@ -6,7 +6,7 @@ import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { Schema } from '../../models';
 import { SchemaService } from '../../services';
-import { ToastService } from '@cupcake/core';
+import { ToastService } from '@noatgnu/cupcake-core';
 
 export interface SchemaSelectionResult {
   selectedSchemaIds: number[];

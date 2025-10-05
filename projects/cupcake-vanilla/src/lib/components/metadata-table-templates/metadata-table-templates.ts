@@ -7,9 +7,9 @@ import { MetadataTableTemplateEditModal } from './metadata-table-template-edit-m
 import { TemplateSchemaSelectionModal, TemplateSchemaSelectionResult } from './schema-selection-modal/schema-selection-modal';
 import { SchemaSelectionModal as ReorderSchemaSelectionModal, SchemaSelectionResult as ReorderSchemaSelectionResult } from '../schema-selection-modal/schema-selection-modal';
 import { TableCreationModalComponent, TableCreationData } from './table-creation-modal/table-creation-modal';
-import { LabGroupService } from '@cupcake/core';
+import { LabGroupService } from '@noatgnu/cupcake-core';
 import { AsyncTaskUIService } from '../async-task-ui';
-import { LabGroup, LabGroupQueryResponse, ResourceVisibility } from '@cupcake/core';
+import { LabGroup, LabGroupQueryResponse, ResourceVisibility } from '@noatgnu/cupcake-core';
 import {
   MetadataTableTemplate,
   MetadataTableTemplateQueryResponse,
@@ -17,7 +17,7 @@ import {
   MetadataTableTemplateCreateRequest
 } from '../../models';
 import { MetadataTableTemplateService } from '../../services/metadata-table-template';
-import { ToastService } from '@cupcake/core';
+import { ToastService } from '@noatgnu/cupcake-core';
 
 @Component({
   selector: 'ccv-metadata-table-templates',

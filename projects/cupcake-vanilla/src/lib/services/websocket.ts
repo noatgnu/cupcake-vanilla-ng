@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { WebSocketService as BaseWebSocketService, WebSocketMessage, AuthService, WEBSOCKET_ENDPOINT } from '@cupcake/core';
+import { WebSocketService as BaseWebSocketService, WebSocketMessage, AuthService, WEBSOCKET_ENDPOINT } from '@noatgnu/cupcake-core';
 
 export type { WebSocketMessage };
 

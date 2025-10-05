@@ -2,13 +2,13 @@ import { Component, inject, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { NgbDropdownModule } from '@ng-bootstrap/ng-bootstrap';
-import { AuthService, User, SiteConfigService, UserManagementService, ThemeService } from '@cupcake/core';
-import { AsyncTaskUIService, NotificationService, Websocket } from '@cupcake/vanilla';
+import { AuthService, User, SiteConfigService, UserManagementService, ThemeService } from '@noatgnu/cupcake-core';
+import { AsyncTaskUIService, NotificationService, Websocket } from '@noatgnu/cupcake-vanilla';
 import { NotificationPanel } from '../notification-panel/notification-panel';
 import { AsyncTaskMonitorComponent } from '../async-task-monitor/async-task-monitor';
 import { Subscription, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { TaskListItem, TaskType, TaskStatus } from '@cupcake/vanilla';
+import { TaskListItem, TaskType, TaskStatus } from '@noatgnu/cupcake-vanilla';
 import { environment } from '../../../../environments/environment';
 
 @Component({

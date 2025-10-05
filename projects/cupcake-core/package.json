@@ -1,6 +1,6 @@
 {
   "name": "@noatgnu/cupcake-core",
-  "version": "1.1.0",
+  "version": "1.2.1",
   "description": "A reusable Angular library that provides user management, authentication, and site configuration functionality for cupcake applications.",
   "keywords": [
     "angular",
@@ -21,10 +21,10 @@
     "url": "https://github.com/noatgnu/cupcake-vanilla-ng/issues"
   },
   "peerDependencies": {
-    "@angular/common": "^20.1.0",
-    "@angular/core": "^20.1.0",
-    "@angular/forms": "^20.1.0",
-    "@angular/router": "^20.1.0",
+    "@angular/common": "^20.3.3",
+    "@angular/core": "^20.3.3",
+    "@angular/forms": "^20.3.3",
+    "@angular/router": "^20.3.3",
     "@ng-bootstrap/ng-bootstrap": "^19.0.0",
     "bootstrap": "^5.3.0",
     "rxjs": "~7.8.0"

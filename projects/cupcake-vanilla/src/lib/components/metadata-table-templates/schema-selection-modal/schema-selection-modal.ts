@@ -2,7 +2,7 @@ import { Component, EventEmitter, Input, Output, signal, computed } from '@angul
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgbActiveModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
-import { ResourceVisibility } from '@cupcake/core';
+import { ResourceVisibility } from '@noatgnu/cupcake-core';
 
 export interface TemplateSchemaSelectionResult {
   name: string;

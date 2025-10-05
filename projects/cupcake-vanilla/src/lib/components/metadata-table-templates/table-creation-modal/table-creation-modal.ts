@@ -2,7 +2,7 @@ import { Component, EventEmitter, Output, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
-import { LabGroup } from '@cupcake/core';
+import { LabGroup } from '@noatgnu/cupcake-core';
 import { MetadataTableTemplate } from '../../../models';
 
 export interface TableCreationData {

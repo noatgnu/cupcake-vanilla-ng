@@ -1,8 +1,8 @@
 import { Component, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
-import { NotificationItem } from '@cupcake/core';
-import { NotificationService, NotificationType } from '@cupcake/vanilla';
+import { NotificationItem } from '@noatgnu/cupcake-core';
+import { NotificationService, NotificationType } from '@noatgnu/cupcake-vanilla';
 
 @Component({
   selector: 'app-notification-panel',

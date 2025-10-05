@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { MetadataColumnService } from './metadata-column';
-import { CUPCAKE_CORE_CONFIG } from '@cupcake/core';
+import { CUPCAKE_CORE_CONFIG } from '@noatgnu/cupcake-core';
 
 describe('MetadataColumnService', () => {
   let service: MetadataColumnService;

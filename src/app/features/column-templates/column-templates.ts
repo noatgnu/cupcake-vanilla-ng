@@ -4,15 +4,15 @@ import { ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
 import { NgbModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { ColumnTemplateEditModal } from './column-template-edit-modal/column-template-edit-modal';
-import { 
-  MetadataColumnTemplate, 
+import {
+  MetadataColumnTemplate,
   MetadataColumnTemplateCreateRequest,
-  LabGroup, 
+  LabGroup,
   LabGroupQueryResponse,
   ResourceVisibility,
   MetadataColumnTemplateService
 } from '../../shared/models';
-import { LabGroupService } from '@cupcake/core';
+import { LabGroupService } from '@noatgnu/cupcake-core';
 
 @Component({
   selector: 'app-column-templates',

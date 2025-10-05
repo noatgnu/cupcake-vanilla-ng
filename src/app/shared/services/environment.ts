@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
-import { ElectronService } from '@cupcake/vanilla';
+import { ElectronService } from '@noatgnu/cupcake-vanilla';
 import { environment } from '../../../environments/environment';
 
 export interface DynamicEnvironment {

@@ -1,9 +1,9 @@
 import { Routes } from '@angular/router';
-import { LoginComponent, RegisterComponent, SiteConfigComponent, UserManagementComponent, UserProfileComponent, LabGroupsComponent, authGuard, adminGuard } from '@cupcake/core';
+import { LoginComponent, RegisterComponent, SiteConfigComponent, UserManagementComponent, UserProfileComponent, LabGroupsComponent, authGuard, adminGuard } from '@noatgnu/cupcake-core';
 import { MetadataTablesComponent} from './features/metadata-tables/metadata-tables';
 import { MetadataTableDetailsComponent } from './features/metadata-table-details/metadata-table-details';
 import { FavoriteManagementComponent } from './features/favorite-management/favorite-management';
-import { MetadataTableTemplates } from '@cupcake/vanilla';
+import { MetadataTableTemplates } from '@noatgnu/cupcake-vanilla';
 import {ColumnTemplatesComponent} from './features/column-templates/column-templates';
 import {MetadataSelector} from './features/metadata-selector/metadata-selector';
 

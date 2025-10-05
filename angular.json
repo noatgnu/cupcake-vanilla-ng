@@ -113,7 +113,7 @@
         }
       }
     },
-    "@cupcake/core": {
+    "@noatgnu/cupcake-core": {
       "projectType": "library",
       "root": "projects/cupcake-core",
       "sourceRoot": "projects/cupcake-core/src",
@@ -143,7 +143,7 @@
         }
       }
     },
-    "@cupcake/macaron": {
+    "@noatgnu/cupcake-macaron": {
       "projectType": "library",
       "root": "projects/cupcake-macaron",
       "sourceRoot": "projects/cupcake-macaron/src",
@@ -173,7 +173,7 @@
         }
       }
     },
-    "@cupcake/mint-chocolate": {
+    "@noatgnu/cupcake-mint-chocolate": {
       "projectType": "library",
       "root": "projects/cupcake-mint-chocolate",
       "sourceRoot": "projects/cupcake-mint-chocolate/src",
@@ -203,7 +203,7 @@
         }
       }
     },
-    "@cupcake/salted-caramel": {
+    "@noatgnu/cupcake-salted-caramel": {
       "projectType": "library",
       "root": "projects/cupcake-salted-caramel",
       "sourceRoot": "projects/cupcake-salted-caramel/src",
@@ -233,7 +233,7 @@
         }
       }
     },
-    "@cupcake/red-velvet": {
+    "@noatgnu/cupcake-red-velvet": {
       "projectType": "library",
       "root": "projects/cupcake-red-velvet",
       "sourceRoot": "projects/cupcake-red-velvet/src",
@@ -263,7 +263,7 @@
         }
       }
     },
-    "@cupcake/vanilla": {
+    "@noatgnu/cupcake-vanilla": {
       "projectType": "library",
       "root": "projects/cupcake-vanilla",
       "sourceRoot": "projects/cupcake-vanilla/src",

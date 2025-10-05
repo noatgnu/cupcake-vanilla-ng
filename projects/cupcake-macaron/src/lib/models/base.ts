@@ -1,4 +1,4 @@
-import { BaseResource } from '@cupcake/core';
+import { BaseResource } from '@noatgnu/cupcake-core';
 
 export interface BaseTimestampedModel {
   createdAt: string;

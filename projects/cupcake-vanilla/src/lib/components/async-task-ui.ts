@@ -19,7 +19,7 @@ import {
   Websocket,
   ElectronService
 } from '../services';
-import { ToastService } from '@cupcake/core';
+import { ToastService } from '@noatgnu/cupcake-core';
 import { ValidationResultsModal, ValidationResults } from './validation-results-modal/validation-results-modal';
 
 @Injectable({

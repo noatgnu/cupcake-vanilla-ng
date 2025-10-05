@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { BaseApiService } from '@cupcake/core';
-import { MetadataTable, MetadataColumn, MetadataColumnCreateRequest } from '@cupcake/vanilla';
+import { BaseApiService } from '@noatgnu/cupcake-core';
+import { MetadataTable, MetadataColumn, MetadataColumnCreateRequest } from '@noatgnu/cupcake-vanilla';
 
 import {
   Instrument,

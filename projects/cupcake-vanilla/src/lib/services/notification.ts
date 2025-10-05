@@ -1,5 +1,5 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
-import { NotificationService as BaseNotificationService, NotificationItem, ToastService } from '@cupcake/core';
+import { NotificationService as BaseNotificationService, NotificationItem, ToastService } from '@noatgnu/cupcake-core';
 import { Websocket, WebSocketMessage } from './websocket';
 import { AdminWebSocketService } from './admin-websocket';
 

@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgbActiveModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { SamplePool, SamplePoolCreateRequest, MetadataTable, SamplePoolService } from '../../models';
-import { ToastService } from '@cupcake/core';
+import { ToastService } from '@noatgnu/cupcake-core';
 
 interface SampleSelectionItem {
   sampleNumber: number;

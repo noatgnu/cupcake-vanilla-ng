@@ -2,8 +2,8 @@ import { Component, OnInit, OnDestroy, Input, signal, computed } from '@angular/
 import { CommonModule } from '@angular/common';
 import { Observable, Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
-import { AsyncTaskStatus, TaskStatus, TaskType, TASK_TYPE_LABELS, TASK_STATUS_LABELS, TASK_STATUS_COLORS } from '@cupcake/vanilla';
-import { AsyncTaskUIService } from '@cupcake/vanilla';
+import { AsyncTaskStatus, TaskStatus, TaskType, TASK_TYPE_LABELS, TASK_STATUS_LABELS, TASK_STATUS_COLORS } from '@noatgnu/cupcake-vanilla';
+import { AsyncTaskUIService } from '@noatgnu/cupcake-vanilla';
 
 @Component({
   selector: 'app-async-task-monitor',

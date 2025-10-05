@@ -2,24 +2,10 @@ import { Component, Input, Output, EventEmitter, OnInit, signal } from '@angular
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormsModule } from '@angular/forms';
 import { NgbActiveModal, NgbModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
-import { MetadataColumn } from '../../../models';
-import { MetadataValueEditModal, MetadataValueEditConfig } from '@cupcake/vanilla';
-import {
-  MetadataColumnTemplateService,
-  MetadataColumnTemplate,
-  PaginatedResponse,
-  MetadataColumnTemplateQueryParams,
-  ONTOLOGY_TYPE_CONFIGS,
-  COLUMN_TYPE_CONFIGS,
-  OntologyTypeConfig,
-  ColumnTypeConfig,
-  ColumnType,
-  OFFICIAL_SDRF_COLUMNS,
-  SdrfColumnConfig,
-  getSdrfColumnsByCategory,
-  getSdrfColumnByName,
-  SdrfSyntaxService
-} from '@cupcake/vanilla';
+import { MetadataColumn, PaginatedResponse, MetadataColumnTemplate, ONTOLOGY_TYPE_CONFIGS, COLUMN_TYPE_CONFIGS, OntologyTypeConfig, ColumnTypeConfig, ColumnType, OFFICIAL_SDRF_COLUMNS, SdrfColumnConfig, getSdrfColumnsByCategory, getSdrfColumnByName } from '../../../models';
+import { MetadataValueEditModal, MetadataValueEditConfig } from '../../metadata-value-edit-modal/metadata-value-edit-modal';
+import { MetadataColumnTemplateService, MetadataColumnTemplateQueryParams } from '../../../services/metadata-column-template';
+import { SdrfSyntaxService } from '../../../services/sdrf-syntax';
 
 @Component({
   selector: 'ccv-column-edit-modal',

@@ -2,8 +2,9 @@ import { Component, Input, Output, EventEmitter, OnInit, signal } from '@angular
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgbActiveModal, NgbModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
-import { MetadataTable, MetadataTableService, MetadataTableUpdateRequest, MetadataTableCreateRequest, SampleCountConfirmationError } from '@cupcake/vanilla';
-import { LabGroupService, LabGroup } from '@cupcake/core';
+import { MetadataTable, MetadataTableUpdateRequest, MetadataTableCreateRequest, SampleCountConfirmationError } from '../../models/metadata-table';
+import { MetadataTableService } from '../../services/metadata-table';
+import { LabGroupService, LabGroup } from '@noatgnu/cupcake-core';
 
 @Component({
   selector: 'ccv-metadata-table-edit-modal',

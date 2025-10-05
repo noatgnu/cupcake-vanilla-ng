@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable, from, throwError } from 'rxjs';
 import { switchMap, map, tap } from 'rxjs/operators';
-import { BaseApiService } from '@cupcake/core';
+import { BaseApiService } from '@noatgnu/cupcake-core';
 import { ChunkedUploadService } from './chunked-upload';
 import { AsyncTaskCreateResponse, ChunkedImportRequest } from '../models';
 

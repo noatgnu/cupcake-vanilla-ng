@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { ChunkedUploadService } from './chunked-upload';
-import { CUPCAKE_CORE_CONFIG } from '@cupcake/core';
+import { CUPCAKE_CORE_CONFIG } from '@noatgnu/cupcake-core';
 
 describe('ChunkedUploadService', () => {
   let service: ChunkedUploadService;

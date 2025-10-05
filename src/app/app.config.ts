@@ -5,7 +5,7 @@ import { provideAnimationsAsync } from '@angular/platform-browser/animations/asy
 
 import { routes } from './app.routes';
 import { environment } from '../environments/environment';
-import { authInterceptor, CUPCAKE_CORE_CONFIG } from "@cupcake/core";
+import { authInterceptor, CUPCAKE_CORE_CONFIG } from "@noatgnu/cupcake-core";
 
 export const appConfig: ApplicationConfig = {
   providers: [

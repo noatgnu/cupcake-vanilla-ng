@@ -1,22 +1,22 @@
-export * from '@cupcake/vanilla';
+export * from '@noatgnu/cupcake-vanilla';
 
-export { 
-  AuthService, 
-  UserManagementService, 
-  SiteConfigService, 
+export {
+  AuthService,
+  UserManagementService,
+  SiteConfigService,
   ToastService,
   ResourceService,
   BaseApiService,
   ResourceVisibility,
   ResourceRole,
   ResourceType
-} from '@cupcake/core';
+} from '@noatgnu/cupcake-core';
 
 export type {
   BaseResource
-} from '@cupcake/core';
+} from '@noatgnu/cupcake-core';
 
-export type { 
+export type {
   User,
   LabGroup,
   LabGroupQueryResponse,
@@ -24,4 +24,4 @@ export type {
   LabGroupUpdateRequest,
   LabGroupMember,
   LabGroupInvitation
-} from '@cupcake/core';
+} from '@noatgnu/cupcake-core';

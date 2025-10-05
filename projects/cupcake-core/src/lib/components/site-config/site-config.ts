@@ -2,14 +2,13 @@ import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { NgbAlert } from '@ng-bootstrap/ng-bootstrap';
-import { ColorSketchModule } from 'ngx-color/sketch';
 import { SiteConfigService } from '../../services/site-config';
 import { SiteConfig } from '../../models';
 
 @Component({
   selector: 'ccc-site-config',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, NgbAlert, ColorSketchModule],
+  imports: [CommonModule, ReactiveFormsModule, NgbAlert],
   templateUrl: './site-config.html',
   styleUrl: './site-config.scss'
 })
@@ -31,13 +30,6 @@ export class SiteConfigComponent implements OnInit {
     if (!this.currentConfig()) return null;
     return { ...this.currentConfig()!, ...this.configForm.value };
   });
-
-  // Preset colors for the color picker
-  presetColors = [
-    '#1976d2', '#2196f3', '#03a9f4', '#00bcd4', '#009688', '#4caf50',
-    '#8bc34a', '#cddc39', '#ffeb3b', '#ffc107', '#ff9800', '#ff5722',
-    '#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#607d8b'
-  ];
 
   constructor() {
     this.configForm = this.fb.group({
@@ -107,17 +99,6 @@ export class SiteConfigComponent implements OnInit {
     }
     this.error.set(null);
     this.success.set(null);
-  }
-
-  /**
-   * Handle color change from ngx-color picker
-   */
-  onColorChange(event: any) {
-    const color = event.color?.hex || event.hex || event;
-    if (color && typeof color === 'string') {
-      this.configForm.get('primaryColor')?.setValue(color);
-      this.configForm.get('primaryColor')?.markAsTouched();
-    }
   }
 
   /**

@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { CUPCAKE_CORE_CONFIG } from '@cupcake/core';
+import { CUPCAKE_CORE_CONFIG } from '@noatgnu/cupcake-core';
 
 import { ReagentActionService } from './reagent-action';
 

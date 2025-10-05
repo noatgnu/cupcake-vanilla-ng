@@ -2,7 +2,7 @@ import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
-import { LabGroup, LabGroupService } from '@cupcake/core';
+import { LabGroup, LabGroupService } from '@noatgnu/cupcake-core';
 
 export interface ExcelExportOptions {
   includeLabGroups: 'none' | 'selected' | 'all';

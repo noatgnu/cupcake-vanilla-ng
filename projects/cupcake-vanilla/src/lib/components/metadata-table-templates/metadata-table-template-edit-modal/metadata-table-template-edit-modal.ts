@@ -3,11 +3,11 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgbActiveModal, NgbModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
-import { LabGroup, ResourceVisibility } from '@cupcake/core';
+import { LabGroup, ResourceVisibility } from '@noatgnu/cupcake-core';
 import { MetadataTableTemplate, MetadataColumn } from '../../../models';
 import { MetadataTableTemplateService } from '../../../services/metadata-table-template';
 import { ColumnEditModal } from '../column-edit-modal/column-edit-modal';
-import { ToastService } from '@cupcake/core';
+import { ToastService } from '@noatgnu/cupcake-core';
 
 @Component({
   selector: 'ccv-metadata-table-template-edit-modal',

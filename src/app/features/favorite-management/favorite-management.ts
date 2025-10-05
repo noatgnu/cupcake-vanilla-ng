@@ -14,9 +14,9 @@ import {
   MetadataColumnTemplateService,
   OntologySuggestion,
   ColumnType
-} from '@cupcake/vanilla';
-import { AuthService, User, LabGroupService, ToastService } from '@cupcake/core';
-import { SdrfSyntaxService, SyntaxType, MetadataValueEditModal, MetadataValueEditConfig } from '@cupcake/vanilla';
+} from '@noatgnu/cupcake-vanilla';
+import { AuthService, User, LabGroupService, ToastService } from '@noatgnu/cupcake-core';
+import { SdrfSyntaxService, SyntaxType, MetadataValueEditModal, MetadataValueEditConfig } from '@noatgnu/cupcake-vanilla';
 
 @Component({
   selector: 'app-favorite-management',

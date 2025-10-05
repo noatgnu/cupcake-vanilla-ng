@@ -3,9 +3,12 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgbActiveModal, NgbModule, NgbNavModule } from '@ng-bootstrap/ng-bootstrap';
 import { Observable, of, catchError, debounceTime, distinctUntilChanged, tap, switchMap, map } from 'rxjs';
-import { MetadataColumn, OntologySuggestion, FavouriteMetadataOption, FavouriteMetadataOptionService, FavouriteMetadataOptionCreateRequest, MetadataColumnService, MetadataColumnTemplateService, OntologyType } from '@cupcake/vanilla';
-import { AuthService, User, LabGroupService } from '@cupcake/core';
-import { SdrfSyntaxService, SyntaxType, SdrfAgeInput, SdrfModificationInput, SdrfCleavageInput, SdrfSpikedCompoundInput } from '@cupcake/vanilla';
+import { MetadataColumn, OntologySuggestion, FavouriteMetadataOption, FavouriteMetadataOptionCreateRequest, OntologyType } from '../../models';
+import { FavouriteMetadataOptionService, MetadataColumnService, MetadataColumnTemplateService } from '../../services';
+import { AuthService, User, LabGroupService } from '@noatgnu/cupcake-core';
+import { SdrfSyntaxService, SyntaxType } from '../../services/sdrf-syntax';
+import { SdrfAgeInput, SdrfModificationInput, SdrfCleavageInput, SdrfSpikedCompoundInput } from '../';
+
 
 export interface MetadataValueEditConfig {
   columnId?: number;

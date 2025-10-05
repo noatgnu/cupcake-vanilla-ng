@@ -4,48 +4,29 @@
   "compileOnSave": false,
   "compilerOptions": {
     "paths": {
-      "@cupcake/core": [
+      "@noatgnu/cupcake-core": [
         "./dist/cupcake-core",
         "./projects/cupcake-core/src/public-api.ts"
       ],
-      "@cupcake/macaron": [
+      "@noatgnu/cupcake-macaron": [
         "./dist/cupcake-macaron",
         "./projects/cupcake-macaron/src/public-api.ts"
       ],
-      "@cupcake/mint-chocolate": [
+      "@noatgnu/cupcake-mint-chocolate": [
         "./dist/cupcake-mint-chocolate",
         "./projects/cupcake-mint-chocolate/src/public-api.ts"
       ],
-      "@cupcake/red-velvet": [
+      "@noatgnu/cupcake-red-velvet": [
         "./dist/cupcake-red-velvet",
         "./projects/cupcake-red-velvet/src/public-api.ts"
       ],
-      "@cupcake/salted-caramel": [
+      "@noatgnu/cupcake-salted-caramel": [
         "./dist/cupcake-salted-caramel",
         "./projects/cupcake-salted-caramel/src/public-api.ts"
       ],
-      "@cupcake/vanilla": [
+      "@noatgnu/cupcake-vanilla": [
         "./dist/cupcake-vanilla",
         "./projects/cupcake-vanilla/src/public-api.ts"
-      ],
-      // Backward compatibility - keep old names for now
-      "cupcake-core": [
-        "./dist/cupcake-core"
-      ],
-      "cupcake-macaron": [
-        "./dist/cupcake-macaron"
-      ],
-      "cupcake-mint-chocolate": [
-        "./dist/cupcake-mint-chocolate"
-      ],
-      "cupcake-red-velvet": [
-        "./dist/cupcake-red-velvet"
-      ],
-      "cupcake-salted-caramel": [
-        "./dist/cupcake-salted-caramel"
-      ],
-      "cupcake-vanilla": [
-        "./dist/cupcake-vanilla"
       ]
     },
     "strict": true,

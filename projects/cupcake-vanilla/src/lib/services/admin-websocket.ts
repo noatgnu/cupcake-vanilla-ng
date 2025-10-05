@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { WebSocketService as BaseWebSocketService, WebSocketMessage, AuthService } from '@cupcake/core';
+import { WebSocketService as BaseWebSocketService, WebSocketMessage, AuthService } from '@noatgnu/cupcake-core';
 
 @Injectable({
   providedIn: 'root'

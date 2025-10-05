@@ -5,15 +5,15 @@ import { NgbModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs';
-import { MetadataTable, MetadataColumn, SamplePool, MetadataTableService, AsyncExportService, SamplePoolService, ChunkedUploadService, MetadataColumnService, MetadataExportRequest, ColumnType } from '@cupcake/vanilla';
-import { ToastService } from '@cupcake/core';
-import { AsyncTaskUIService, MetadataValueEditModal, MetadataValueEditConfig, MetadataTableEditModal } from '@cupcake/vanilla';
+import { MetadataTable, MetadataColumn, SamplePool, MetadataTableService, AsyncExportService, SamplePoolService, ChunkedUploadService, MetadataColumnService, MetadataExportRequest, ColumnType } from '@noatgnu/cupcake-vanilla';
+import { ToastService } from '@noatgnu/cupcake-core';
+import { AsyncTaskUIService, MetadataValueEditModal, MetadataValueEditConfig, MetadataTableEditModal } from '@noatgnu/cupcake-vanilla';
 import { SamplePoolDetailsModal } from '../../shared/components/sample-pool-details-modal/sample-pool-details-modal';
 import { SamplePoolEditModal } from '../../shared/components/sample-pool-edit-modal/sample-pool-edit-modal';
 import { SamplePoolCreateModal } from '../../shared/components/sample-pool-create-modal/sample-pool-create-modal';
-import { ExcelExportModalComponent, ExcelExportOptions } from '@cupcake/vanilla';
-import { ColumnEditModal } from '@cupcake/vanilla';
-import { SchemaSelectionModal, SchemaSelectionResult } from '@cupcake/vanilla';
+import { ExcelExportModalComponent, ExcelExportOptions } from '@noatgnu/cupcake-vanilla';
+import { ColumnEditModal } from '@noatgnu/cupcake-vanilla';
+import { SchemaSelectionModal, SchemaSelectionResult } from '@noatgnu/cupcake-vanilla';
 
 @Component({
   selector: 'app-metadata-table-details',

@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable, from } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
-import { BaseApiService } from '@cupcake/core';
+import { BaseApiService } from '@noatgnu/cupcake-core';
 import jsSHA from 'jssha';
 
 import {

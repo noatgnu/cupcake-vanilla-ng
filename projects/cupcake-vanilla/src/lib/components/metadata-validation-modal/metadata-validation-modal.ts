@@ -4,8 +4,8 @@ import { ReactiveFormsModule, FormBuilder } from '@angular/forms';
 import { NgbActiveModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
 
 import { AsyncTaskUIService } from '../async-task-ui';
-import { ToastService } from '@cupcake/core';
-import { MetadataValidationRequest, MetadataValidationConfig, AsyncTaskCreateResponse } from '@cupcake/vanilla';
+import { ToastService } from '@noatgnu/cupcake-core';
+import { MetadataValidationRequest, MetadataValidationConfig, AsyncTaskCreateResponse } from '../../models/async-task';
 
 @Component({
   selector: 'ccv-metadata-validation-modal',

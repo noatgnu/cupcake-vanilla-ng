@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "Building cupcake-core library..."
-ng build @cupcake/core
+ng build @noatgnu/cupcake-core
 
 if [ $? -eq 0 ]; then
     echo "cupcake-core built successfully"
@@ -11,7 +11,7 @@ else
 fi
 
 echo "Building cupcake-vanilla library..."
-ng build @cupcake/vanilla
+ng build @noatgnu/cupcake-vanilla
 if [ $? -eq 0 ]; then
     echo "cupcake-vanilla built successfully"
 else
@@ -20,7 +20,7 @@ else
 fi
 
 echo "Building cupcake-macaron library..."
-ng build @cupcake/macaron
+ng build @noatgnu/cupcake-macaron
 if [ $? -eq 0 ]; then
     echo "cupcake-macaron built successfully"
 else
@@ -29,7 +29,7 @@ else
 fi
 
 echo "Building cupcake-mint-chocolate library..."
-ng build @cupcake/mint-chocolate
+ng build @noatgnu/cupcake-mint-chocolate
 if [ $? -eq 0 ]; then
     echo "cupcake-mint-chocolate built successfully"
 else
@@ -38,7 +38,7 @@ else
 fi
 
 echo "Building cupcake-red-velvet library..."
-ng build @cupcake/red-velvet
+ng build @noatgnu/cupcake-red-velvet
 if [ $? -eq 0 ]; then
     echo "cupcake-red-velvet built successfully"
 else
@@ -47,7 +47,7 @@ else
 fi
 
 echo "Building cupcake-salted-caramel library..."
-ng build @cupcake/salted-caramel
+ng build @noatgnu/cupcake-salted-caramel
 if [ $? -eq 0 ]; then
     echo "cupcake-salted-caramel built successfully"
 else

@@ -11,13 +11,13 @@ import {
   LabGroup,
   LabGroupQueryResponse
 } from '../../shared/models';
-import { User, LabGroupService } from '@cupcake/core';
-import { MetadataTableService, MetadataValidationConfig } from '@cupcake/vanilla';
+import { User, LabGroupService } from '@noatgnu/cupcake-core';
+import { MetadataTableService, MetadataValidationConfig } from '@noatgnu/cupcake-vanilla';
 import { NavigationState } from '../../shared/services/navigation-state';
-import { ToastService } from '@cupcake/core';
-import { AsyncTaskUIService, MetadataValidationModal, ExcelExportModalComponent, ExcelExportOptions, MetadataTableEditModal } from '@cupcake/vanilla';
+import { ToastService } from '@noatgnu/cupcake-core';
+import { AsyncTaskUIService, MetadataValidationModal, ExcelExportModalComponent, ExcelExportOptions, MetadataTableEditModal } from '@noatgnu/cupcake-vanilla';
 import { environment } from '../../../environments/environment';
-import { AuthService } from '@cupcake/core';
+import { AuthService } from '@noatgnu/cupcake-core';
 
 @Component({
   selector: 'app-metadata-tables',

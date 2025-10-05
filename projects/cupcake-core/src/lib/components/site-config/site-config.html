@@ -143,12 +143,19 @@
                 <i class="bi bi-palette me-1"></i>
                 Primary Color
               </label>
-              <div class="color-picker-wrapper">
-                <color-sketch
-                  [color]="configForm.get('primaryColor')?.value"
-                  (onChange)="onColorChange($event)"
-                  [presetColors]="presetColors">
-                </color-sketch>
+              <div class="d-flex gap-2 align-items-center">
+                <input
+                  type="color"
+                  id="primary_color"
+                  class="form-control form-control-color"
+                  formControlName="primaryColor"
+                  style="width: 60px; height: 40px;">
+                <input
+                  type="text"
+                  class="form-control"
+                  formControlName="primaryColor"
+                  placeholder="#1976d2"
+                  [class.is-invalid]="configForm.get('primaryColor')?.invalid && configForm.get('primaryColor')?.touched">
               </div>
               @if (configForm.get('primaryColor')?.invalid && configForm.get('primaryColor')?.touched) {
                 <div class="invalid-feedback">
