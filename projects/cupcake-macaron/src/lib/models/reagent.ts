@@ -10,6 +10,7 @@ export interface StoredReagent extends BaseTimestampedModel {
   id: number;
   reagent: number;
   reagentName?: string;
+  reagentUnit?: string;
   storageObject?: number;
   storageObjectName?: string;
   quantity: number;

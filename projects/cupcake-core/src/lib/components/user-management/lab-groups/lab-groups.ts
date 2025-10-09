@@ -57,11 +57,17 @@ export class LabGroupsComponent implements OnInit {
   selectedGroup = signal<LabGroup | null>(null);
   groupMembers = signal<LabGroupMember[]>([]);
   pendingInvitations = signal<LabGroupInvitation[]>([]);
-  
+
   // UI state
   showCreateForm = signal(false);
   showInviteForm = signal(false);
   selectedGroupForMembers = signal<LabGroup | null>(null);
+
+  // Member pagination
+  memberTotal = signal(0);
+  memberPage = signal(1);
+  memberPageSize = signal(10);
+  directMembersOnly = signal(false);
 
   // Computed values
   hasLabGroups = computed(() => this.labGroupsData().results.length > 0);
@@ -73,8 +79,11 @@ export class LabGroupsComponent implements OnInit {
   canInviteToCurrentGroup = computed(() => this.selectedGroupForMembers()?.canInvite || false);
   canManageCurrentGroup = computed(() => this.selectedGroupForMembers()?.canManage || false);
   currentGroupName = computed(() => this.selectedGroupForMembers()?.name || '');
-  groupMembersCount = computed(() => this.groupMembers().length);
+  groupMembersCount = computed(() => this.memberTotal());
   pendingInvitationsCount = computed(() => this.pendingInvitations().length);
+  showMemberPagination = computed(() => this.memberTotal() > this.memberPageSize());
+  memberTotalPages = computed(() => Math.ceil(this.memberTotal() / this.memberPageSize()));
+  hasSubGroups = computed(() => (this.selectedGroupForMembers()?.subGroupsCount ?? 0) > 0);
 
   constructor() {
     this.searchForm = this.fb.group({
@@ -191,17 +200,26 @@ export class LabGroupsComponent implements OnInit {
 
   viewGroupMembers(group: LabGroup): void {
     this.selectedGroupForMembers.set(group);
+    this.memberPage.set(1);
+    this.directMembersOnly.set(false);
     this.loadGroupMembers(group.id);
     this.loadPendingInvitations(group.id);
   }
 
   private loadGroupMembers(groupId: number): void {
-    this.labGroupService.getLabGroupMembers(groupId).subscribe({
-      next: (members: LabGroupMember[]) => {
-        this.groupMembers.set(members);
+    const offset = (this.memberPage() - 1) * this.memberPageSize();
+    this.labGroupService.getLabGroupMembers(groupId, {
+      directOnly: this.directMembersOnly(),
+      limit: this.memberPageSize(),
+      offset: offset
+    }).subscribe({
+      next: (response) => {
+        this.groupMembers.set(response.results);
+        this.memberTotal.set(response.count);
       },
       error: (error) => {
         this.groupMembers.set([]);
+        this.memberTotal.set(0);
         console.error('Error loading group members:', error);
       }
     });
@@ -344,7 +362,26 @@ export class LabGroupsComponent implements OnInit {
   closeGroupDetails(): void {
     this.selectedGroupForMembers.set(null);
     this.groupMembers.set([]);
+    this.memberTotal.set(0);
+    this.memberPage.set(1);
     this.pendingInvitations.set([]);
     this.showInviteForm.set(false);
+  }
+
+  toggleDirectMembersOnly(): void {
+    this.directMembersOnly.update(v => !v);
+    this.memberPage.set(1);
+    const group = this.selectedGroupForMembers();
+    if (group) {
+      this.loadGroupMembers(group.id);
+    }
+  }
+
+  onMemberPageChange(page: number): void {
+    this.memberPage.set(page);
+    const group = this.selectedGroupForMembers();
+    if (group) {
+      this.loadGroupMembers(group.id);
+    }
   }
 }

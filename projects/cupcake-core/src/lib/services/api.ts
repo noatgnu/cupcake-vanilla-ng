@@ -167,15 +167,15 @@ export class ApiService {
     isStaff?: boolean;
     isActive?: boolean;
     search?: string;
-    page?: number;
-    pageSize?: number;
+    limit?: number;
+    offset?: number;
   }): Observable<UserListResponse> {
     let httpParams = new HttpParams();
     if (params?.isStaff !== undefined) httpParams = httpParams.set('is_staff', params.isStaff.toString());
     if (params?.isActive !== undefined) httpParams = httpParams.set('is_active', params.isActive.toString());
     if (params?.search) httpParams = httpParams.set('search', params.search);
-    if (params?.page) httpParams = httpParams.set('page', params.page.toString());
-    if (params?.pageSize) httpParams = httpParams.set('page_size', params.pageSize.toString());
+    if (params?.limit) httpParams = httpParams.set('limit', params.limit.toString());
+    if (params?.offset !== undefined) httpParams = httpParams.set('offset', params.offset.toString());
 
     return this.http.get<UserListResponse>(`${this.apiUrl}/users/`, { params: httpParams });
   }
@@ -185,7 +185,7 @@ export class ApiService {
   }
 
   createUser(userData: UserCreateRequest): Observable<UserResponse> {
-    return this.http.post<UserResponse>(`${this.apiUrl}/users/admin_create/`, userData);
+    return this.post<UserResponse>(`${this.apiUrl}/users/admin_create/`, userData);
   }
 
   updateUser(id: number, userData: Partial<User>): Observable<User> {

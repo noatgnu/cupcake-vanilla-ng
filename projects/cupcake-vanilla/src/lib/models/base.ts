@@ -20,8 +20,8 @@ export interface ApiResponse<T = any> {
 }
 
 export interface MetadataQueryParams {
-  page?: number;
-  pageSize?: number;
+  limit?: number;
+  offset?: number;
   search?: string;
   ordering?: string;
   owner?: number;

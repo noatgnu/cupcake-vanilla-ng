@@ -93,8 +93,9 @@ export class StorageService extends BaseApiService {
   /**
    * Get root level storage objects (no parent)
    */
-  getRootStorageObjects(): Observable<PaginatedResponse<StorageObject>> {
-    return this.getStorageObjects({ storedAt: undefined });
+  getRootStorageObjects(params?: Omit<StorageObjectQueryParams, 'storedAt'>): Observable<PaginatedResponse<StorageObject>> {
+    const httpParams = this.buildHttpParams({ ...params, stored_at__isnull: 'true' });
+    return this.get<PaginatedResponse<StorageObject>>(`${this.apiUrl}/storage-objects/`, { params: httpParams });
   }
 
   /**

@@ -130,12 +130,13 @@ export class UserManagementComponent implements OnInit {
     this.isLoading.set(true);
     this.errorMessage.set('');
 
+    const offset = (this.currentPage() - 1) * this.pageSize();
     const searchParams = {
       search: this.searchTerm() || undefined,
       isStaff: this.staffFilter() !== '' ? this.staffFilter() === 'true' : undefined,
       isActive: this.activeFilter() !== '' ? this.activeFilter() === 'true' : undefined,
-      page: this.currentPage(),
-      pageSize: this.pageSize()
+      limit: this.pageSize(),
+      offset: offset
     };
 
     this.userManagementService.getUsers(searchParams).subscribe({

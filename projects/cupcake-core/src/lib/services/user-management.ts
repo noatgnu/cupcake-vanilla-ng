@@ -49,8 +49,8 @@ export class UserManagementService {
     isStaff?: boolean;
     isActive?: boolean;
     search?: string;
-    page?: number;
-    pageSize?: number;
+    limit?: number;
+    offset?: number;
   }): Observable<PaginatedResponse<User>> {
     return this.apiService.getUsers(params);
   }

@@ -102,26 +102,42 @@ export class AuthService {
     }
   }
 
+  private convertUserFromSnakeToCamel(user: any): User {
+    return {
+      id: user.id || user.user_id,
+      username: user.username || '',
+      email: user.email || '',
+      firstName: user.firstName || user.first_name || '',
+      lastName: user.lastName || user.last_name || '',
+      isStaff: user.isStaff !== undefined ? user.isStaff : (user.is_staff || false),
+      isSuperuser: user.isSuperuser !== undefined ? user.isSuperuser : (user.is_superuser || false),
+      isActive: user.isActive !== undefined ? user.isActive : (user.is_active !== undefined ? user.is_active : true),
+      dateJoined: user.dateJoined || user.date_joined || '',
+      lastLogin: user.lastLogin || user.last_login || null,
+      hasOrcid: user.hasOrcid !== undefined ? user.hasOrcid : (user.orcid_id ? true : false),
+      orcidId: user.orcidId || user.orcid_id
+    };
+  }
+
   getUserFromToken(): User | null {
     const token = this.getAccessToken();
     if (!token) return null;
 
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
-      return {
+      return this.convertUserFromSnakeToCamel({
         id: payload.user_id,
-        username: payload.username || '',
-        email: payload.email || '',
-        firstName: payload.first_name || '',
-        lastName: payload.last_name || '',
-        isStaff: payload.is_staff || false,
-        isSuperuser: payload.is_superuser || false,
-        isActive: payload.is_active || true,
-        dateJoined: payload.date_joined || '',
-        lastLogin: payload.last_login || null,
-        hasOrcid: payload.orcid_id ? true : false,
-        orcidId: payload.orcid_id
-      };
+        username: payload.username,
+        email: payload.email,
+        first_name: payload.first_name,
+        last_name: payload.last_name,
+        is_staff: payload.is_staff,
+        is_superuser: payload.is_superuser,
+        is_active: payload.is_active,
+        date_joined: payload.date_joined,
+        last_login: payload.last_login,
+        orcid_id: payload.orcid_id
+      });
     } catch {
       return null;
     }
@@ -188,13 +204,13 @@ export class AuthService {
   }
 
   fetchUserProfile(): Observable<User> {
-    return this.http.get<{user: User}>(`${this.apiUrl}/auth/profile/`)
+    return this.http.get<{user: any}>(`${this.apiUrl}/auth/profile/`)
       .pipe(
-        tap(response => {
-          this.currentUserSubject.next(response.user);
+        map(response => this.convertUserFromSnakeToCamel(response.user)),
+        tap(user => {
+          this.currentUserSubject.next(user);
           this.isAuthenticatedSubject.next(true);
-        }),
-        map(response => response.user)
+        })
       );
   }
 
@@ -217,10 +233,11 @@ export class AuthService {
   private setAuthData(response: AuthResponse): void {
     const accessToken = response.accessToken || (response as any).access_token || (response as any).access;
     const refreshToken = response.refreshToken || (response as any).refresh_token || (response as any).refresh;
-    
+
     localStorage.setItem('ccvAccessToken', accessToken);
     localStorage.setItem('ccvRefreshToken', refreshToken);
-    this.currentUserSubject.next(response.user);
+    const convertedUser = this.convertUserFromSnakeToCamel(response.user);
+    this.currentUserSubject.next(convertedUser);
     this.isAuthenticatedSubject.next(true);
   }
 

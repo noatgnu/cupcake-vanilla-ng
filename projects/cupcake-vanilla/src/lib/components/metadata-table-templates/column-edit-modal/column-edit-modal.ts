@@ -2,7 +2,7 @@ import { Component, Input, Output, EventEmitter, OnInit, signal } from '@angular
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormsModule } from '@angular/forms';
 import { NgbActiveModal, NgbModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
-import { MetadataColumn, PaginatedResponse, MetadataColumnTemplate, ONTOLOGY_TYPE_CONFIGS, COLUMN_TYPE_CONFIGS, OntologyTypeConfig, ColumnTypeConfig, ColumnType, OFFICIAL_SDRF_COLUMNS, SdrfColumnConfig, getSdrfColumnsByCategory, getSdrfColumnByName } from '../../../models';
+import { MetadataColumn, PaginatedResponse, MetadataColumnTemplate, ONTOLOGY_TYPE_CONFIGS, COLUMN_TYPE_CONFIGS, OntologyTypeConfig, ColumnTypeConfig, ColumnType, OntologyType, OFFICIAL_SDRF_COLUMNS, SdrfColumnConfig, getSdrfColumnsByCategory, getSdrfColumnByName } from '../../../models';
 import { MetadataValueEditModal, MetadataValueEditConfig } from '../../metadata-value-edit-modal/metadata-value-edit-modal';
 import { MetadataColumnTemplateService, MetadataColumnTemplateQueryParams } from '../../../services/metadata-column-template';
 import { SdrfSyntaxService } from '../../../services/sdrf-syntax';
@@ -67,7 +67,7 @@ export class ColumnEditModal implements OnInit {
       name: ['', [Validators.required, Validators.minLength(1)]],
       type: [ColumnType.CHARACTERISTICS, Validators.required],
       value: [''],
-      ontologyType: ['0'], // Default to 'None' (index 0)
+      ontologyType: ['0'],
       enableTypeahead: [false],
       mandatory: [false],
       hidden: [false],
@@ -92,11 +92,15 @@ export class ColumnEditModal implements OnInit {
 
   private populateForm() {
     if (this.column) {
+      const ontologyTypeIndex = this.column.ontologyType
+        ? this.ontologyTypes.findIndex(o => o.value === this.column!.ontologyType)
+        : 0;
+
       this.editForm.patchValue({
         name: this.column.name,
         type: this.getCorrectedColumnType(this.column.name, this.column.type),
         value: this.column.value || '',
-        ontologyType: this.column.ontologyType || '',
+        ontologyType: ontologyTypeIndex >= 0 ? ontologyTypeIndex.toString() : '0',
         enableTypeahead: this.column.enableTypeahead || false,
         mandatory: this.column.mandatory || false,
         hidden: this.column.hidden || false,
@@ -115,13 +119,16 @@ export class ColumnEditModal implements OnInit {
 
     if (this.editForm.valid) {
       this.isLoading.set(true);
-      const formValue = this.editForm.getRawValue(); // getRawValue() includes disabled controls
+      const formValue = this.editForm.getRawValue();
+
+      const ontologyTypeIndex = parseInt(formValue.ontologyType);
+      const ontologyTypeValue = ontologyTypeIndex > 0 ? this.ontologyTypes[ontologyTypeIndex]?.value as OntologyType : undefined;
 
       const columnData: Partial<MetadataColumn> = {
         name: formValue.name,
         type: formValue.type,
         value: formValue.value || '',
-        ontologyType: formValue.ontologyType || null,
+        ontologyType: ontologyTypeValue,
         enableTypeahead: formValue.enableTypeahead || false,
         mandatory: formValue.mandatory || false,
         hidden: formValue.hidden || false,
@@ -166,7 +173,7 @@ export class ColumnEditModal implements OnInit {
 
   get hasOntologyType(): boolean {
     const ontologyTypeIndex = this.editForm.get('ontologyType')?.value;
-    return !!(ontologyTypeIndex && ontologyTypeIndex !== '0'); // '0' is the 'None' option
+    return !!(ontologyTypeIndex && ontologyTypeIndex !== '0');
   }
 
   get hasTypeaheadEnabled(): boolean {
@@ -265,11 +272,15 @@ export class ColumnEditModal implements OnInit {
         this.editForm.get('type')?.enable();
 
         // Auto-fill form with template data
+        const ontologyTypeIndex = template.ontologyType
+          ? this.ontologyTypes.findIndex(o => o.value === template.ontologyType)
+          : 0;
+
         this.editForm.patchValue({
           name: template.columnName,
           type: template.columnType,
           value: template.defaultValue || '',
-          ontologyType: template.ontologyType || '',
+          ontologyType: ontologyTypeIndex >= 0 ? ontologyTypeIndex.toString() : '0',
           enableTypeahead: template.enableTypeahead || false,
           mandatory: false,
           hidden: false,
@@ -304,7 +315,7 @@ export class ColumnEditModal implements OnInit {
       name: '',
       type: ColumnType.CHARACTERISTICS,
       value: '',
-      ontologyType: '',
+      ontologyType: '0',
       enableTypeahead: false,
       mandatory: false,
       hidden: false,
@@ -337,11 +348,16 @@ export class ColumnEditModal implements OnInit {
     this.editForm.get('name')?.enable();
     this.editForm.get('type')?.enable();
 
+    const ontologyTypeValue = this.getDefaultOntologyTypeForColumn(column.name);
+    const ontologyTypeIndex = ontologyTypeValue
+      ? this.ontologyTypes.findIndex(o => o.value === ontologyTypeValue)
+      : 0;
+
     this.editForm.patchValue({
       name: column.name,
       type: column.type,
       value: '',
-      ontologyType: this.getDefaultOntologyTypeForColumn(column.name),
+      ontologyType: ontologyTypeIndex >= 0 ? ontologyTypeIndex.toString() : '0',
       enableTypeahead: this.shouldEnableTypeaheadForColumn(column.name),
       mandatory: this.isColumnMandatory(column.name),
       hidden: false,
@@ -451,13 +467,17 @@ export class ColumnEditModal implements OnInit {
     this.editForm.get('name')?.enable();
     this.editForm.get('type')?.enable();
 
+    const ontologyTypeIndex = template.ontologyType
+      ? this.ontologyTypes.findIndex(o => o.value === template.ontologyType)
+      : 0;
+
     this.editForm.patchValue({
       name: template.columnName,
       type: template.columnType,
-      value: currentValue, // Preserve current value
-      ontologyType: template.ontologyType || '',
+      value: currentValue,
+      ontologyType: ontologyTypeIndex >= 0 ? ontologyTypeIndex.toString() : '0',
       enableTypeahead: template.enableTypeahead || false,
-      mandatory: this.editForm.get('mandatory')?.value || false, // Preserve current settings
+      mandatory: this.editForm.get('mandatory')?.value || false,
       hidden: this.editForm.get('hidden')?.value || false,
       readonly: this.editForm.get('readonly')?.value || false,
       notApplicable: this.editForm.get('notApplicable')?.value || false
@@ -501,7 +521,7 @@ export class ColumnEditModal implements OnInit {
     // Reset ontology type when disabling advanced mode
     if (!this.showAdvancedMode()) {
       this.editForm.patchValue({
-        ontologyType: '0', // Reset to 'None'
+        ontologyType: '0',
         enableTypeahead: false
       });
       this.selectedOntologyConfig = null;

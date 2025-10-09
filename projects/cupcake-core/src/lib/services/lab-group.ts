@@ -10,11 +10,17 @@ import {
   LabGroupInvitation,
   LabGroupInvitationQueryResponse,
   LabGroupInvitationCreateRequest,
-  LabGroupMember
+  LabGroupMember,
+  LabGroupPermission,
+  LabGroupPermissionCreateRequest,
+  LabGroupPermissionUpdateRequest,
+  LabGroupPermissionQueryResponse
 } from '../models';
 
 export interface LabGroupQueryParams {
   search?: string;
+  parentGroup?: number;
+  parentGroup__isnull?: string;
   limit?: number;
   offset?: number;
 }
@@ -22,6 +28,16 @@ export interface LabGroupQueryParams {
 export interface LabGroupInvitationQueryParams {
   labGroup?: number;
   status?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export interface LabGroupPermissionQueryParams {
+  labGroup?: number;
+  user?: number;
+  canView?: boolean;
+  canInvite?: boolean;
+  canManage?: boolean;
   limit?: number;
   offset?: number;
 }
@@ -54,8 +70,14 @@ export class LabGroupService extends BaseApiService {
     return this.delete<void>(`${this.apiUrl}/lab-groups/${id}/`);
   }
 
-  getLabGroupMembers(id: number): Observable<LabGroupMember[]> {
-    return this.get<LabGroupMember[]>(`${this.apiUrl}/lab-groups/${id}/members/`);
+  getLabGroupMembers(id: number, params?: { directOnly?: boolean; pageSize?: number; limit?: number; offset?: number }): Observable<{count: number; next: string | null; previous: string | null; results: LabGroupMember[]}> {
+    const httpParams = this.buildHttpParams({
+      direct_only: params?.directOnly?.toString(),
+      page_size: params?.pageSize?.toString(),
+      limit: params?.limit?.toString(),
+      offset: params?.offset?.toString()
+    });
+    return this.get<{count: number; next: string | null; previous: string | null; results: LabGroupMember[]}>(`${this.apiUrl}/lab-groups/${id}/members/`, { params: httpParams });
   }
 
   inviteUserToLabGroup(id: number, invitation: LabGroupInvitationCreateRequest): Observable<LabGroupInvitation> {
@@ -68,6 +90,15 @@ export class LabGroupService extends BaseApiService {
 
   removeMemberFromLabGroup(id: number, userId: number): Observable<{message: string}> {
     return this.post<{message: string}>(`${this.apiUrl}/lab-groups/${id}/remove_member/`, { userId });
+  }
+
+  getRootLabGroups(params?: Omit<LabGroupQueryParams, 'parentGroup'>): Observable<LabGroupQueryResponse> {
+    const httpParams = this.buildHttpParams({ ...params, parentGroup__isnull: 'true' });
+    return this.get<LabGroupQueryResponse>(`${this.apiUrl}/lab-groups/`, { params: httpParams });
+  }
+
+  getSubGroups(parentGroupId: number, params?: Omit<LabGroupQueryParams, 'parentGroup'>): Observable<LabGroupQueryResponse> {
+    return this.getLabGroups({ ...params, parentGroup: parentGroupId });
   }
 
   // LAB GROUP INVITATIONS
@@ -90,5 +121,35 @@ export class LabGroupService extends BaseApiService {
 
   cancelLabGroupInvitation(id: number): Observable<{message: string}> {
     return this.post<{message: string}>(`${this.apiUrl}/lab-group-invitations/${id}/cancel_invitation/`, {});
+  }
+
+  // LAB GROUP PERMISSIONS
+  getLabGroupPermissions(params?: LabGroupPermissionQueryParams): Observable<LabGroupPermissionQueryResponse> {
+    const httpParams = this.buildHttpParams(params);
+    return this.get<LabGroupPermissionQueryResponse>(`${this.apiUrl}/lab-group-permissions/`, { params: httpParams });
+  }
+
+  getLabGroupPermission(id: number): Observable<LabGroupPermission> {
+    return this.get<LabGroupPermission>(`${this.apiUrl}/lab-group-permissions/${id}/`);
+  }
+
+  createLabGroupPermission(permission: LabGroupPermissionCreateRequest): Observable<LabGroupPermission> {
+    return this.post<LabGroupPermission>(`${this.apiUrl}/lab-group-permissions/`, permission);
+  }
+
+  updateLabGroupPermission(id: number, permission: LabGroupPermissionUpdateRequest): Observable<LabGroupPermission> {
+    return this.patch<LabGroupPermission>(`${this.apiUrl}/lab-group-permissions/${id}/`, permission);
+  }
+
+  deleteLabGroupPermission(id: number): Observable<void> {
+    return this.delete<void>(`${this.apiUrl}/lab-group-permissions/${id}/`);
+  }
+
+  getLabGroupPermissionsForLabGroup(labGroupId: number): Observable<LabGroupPermissionQueryResponse> {
+    return this.getLabGroupPermissions({ labGroup: labGroupId });
+  }
+
+  getLabGroupPermissionsForUser(userId: number): Observable<LabGroupPermissionQueryResponse> {
+    return this.getLabGroupPermissions({ user: userId });
   }
 }

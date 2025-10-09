@@ -8,6 +8,8 @@ export interface InstrumentJob extends BaseTimestampedModel {
   instrument: number;
   instrumentName?: string;
   instrumentUsage?: number;
+  labGroup?: number;
+  labGroupName?: string;
   jobType: JobType;
   jobTypeDisplay?: string;
   jobName?: string;
@@ -44,6 +46,7 @@ export interface InstrumentJob extends BaseTimestampedModel {
 export interface InstrumentJobCreateRequest {
   instrument: number;
   jobType: JobType;
+  labGroup?: number;
   jobName?: string;
   sampleNumber?: number;
   sampleType?: SampleType;
@@ -62,6 +65,7 @@ export interface InstrumentJobCreateRequest {
 }
 
 export interface InstrumentJobUpdateRequest {
+  labGroup?: number;
   jobName?: string;
   status?: Status;
   sampleNumber?: number;
