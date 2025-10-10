@@ -10,7 +10,8 @@ import {
   StoredReagent,
   StoredReagentCreateRequest,
   StoredReagentUpdateRequest,
-  PaginatedResponse
+  PaginatedResponse,
+  ReagentAlertType
 } from '../models';
 
 export interface ReagentQueryParams {
@@ -238,11 +239,32 @@ export class ReagentService extends BaseApiService {
   /**
    * Update values in the stored reagent's metadata table
    */
-  updateStoredReagentMetadataValue(id: number, updateData: { columnId: number; value: string }): Observable<{ 
-    message: string; 
+  updateStoredReagentMetadataValue(id: number, updateData: { columnId: number; value: string }): Observable<{
+    message: string;
     columnName: string;
     newValue: string;
   }> {
     return this.patch(`${this.apiUrl}/stored-reagents/${id}/update_metadata_value/`, updateData);
+  }
+
+  /**
+   * Send a test notification for this stored reagent
+   * Only accessible by staff or admin users
+   * @param id - Stored reagent ID
+   * @param notificationType - Type of notification
+   * @param recipientId - Optional user ID to send to (defaults to current user)
+   */
+  sendTestNotification(
+    id: number,
+    notificationType: ReagentAlertType,
+    recipientId?: number
+  ): Observable<{ success: boolean; message: string; notificationType: string }> {
+    const body: any = { notification_type: notificationType };
+    if (recipientId !== undefined) {
+      body.recipient_id = recipientId;
+    }
+    return this.http.post<{ success: boolean; message: string; notificationType: string }>(
+      `${this.apiUrl}/stored-reagents/${id}/send_test_notification/`, body
+    );
   }
 }

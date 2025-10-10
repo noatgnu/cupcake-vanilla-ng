@@ -8,7 +8,8 @@ import {
   InstrumentCreateRequest,
   InstrumentUpdateRequest,
   PaginatedResponse,
-  InstrumentQueryParams
+  InstrumentQueryParams,
+  InstrumentAlertType
 } from '../models';
 
 @Injectable({
@@ -121,6 +122,27 @@ export class InstrumentService extends BaseApiService {
   checkMaintenance(id: number): Observable<{ maintenanceRequired: boolean; lastMaintenance?: string; message: string }> {
     return this.http.post<{ maintenanceRequired: boolean; lastMaintenance?: string; message: string }>(
       `${this.apiUrl}/instruments/${id}/check_maintenance/`, {}
+    );
+  }
+
+  /**
+   * Send a test notification for this instrument
+   * Only accessible by staff or admin users
+   * @param id - Instrument ID
+   * @param notificationType - Type of notification
+   * @param recipientId - Optional user ID to send to (defaults to current user)
+   */
+  sendTestNotification(
+    id: number,
+    notificationType: InstrumentAlertType,
+    recipientId?: number
+  ): Observable<{ success: boolean; message: string; notificationType: string }> {
+    const body: any = { notification_type: notificationType };
+    if (recipientId !== undefined) {
+      body.recipient_id = recipientId;
+    }
+    return this.http.post<{ success: boolean; message: string; notificationType: string }>(
+      `${this.apiUrl}/instruments/${id}/send_test_notification/`, body
     );
   }
 

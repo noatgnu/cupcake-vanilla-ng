@@ -88,3 +88,27 @@ export const ReagentActionTypeLabels: Record<ReagentActionType, string> = {
   [ReagentActionType.REMOVE]: 'Remove',
   [ReagentActionType.UPDATE]: 'Update'
 };
+
+export enum InstrumentAlertType {
+  WARRANTY_EXPIRING = 'warranty_expiring',
+  MAINTENANCE_DUE = 'maintenance_due',
+  MAINTENANCE_COMPLETED = 'maintenance_completed'
+}
+
+export const InstrumentAlertTypeLabels: Record<InstrumentAlertType, string> = {
+  [InstrumentAlertType.WARRANTY_EXPIRING]: 'Warranty Expiring',
+  [InstrumentAlertType.MAINTENANCE_DUE]: 'Maintenance Due',
+  [InstrumentAlertType.MAINTENANCE_COMPLETED]: 'Maintenance Completed'
+};
+
+export enum ReagentAlertType {
+  LOW_STOCK = 'low_stock',
+  EXPIRED = 'expired',
+  EXPIRING_SOON = 'expiring_soon'
+}
+
+export const ReagentAlertTypeLabels: Record<ReagentAlertType, string> = {
+  [ReagentAlertType.LOW_STOCK]: 'Low Stock',
+  [ReagentAlertType.EXPIRED]: 'Expired',
+  [ReagentAlertType.EXPIRING_SOON]: 'Expiring Soon'
+};

@@ -9,22 +9,9 @@ import {
   ProtocolRating,
   ProtocolSection,
   ProtocolStep,
-  PaginatedResponse
+  PaginatedResponse,
+  ProtocolQueryParams
 } from '../models';
-
-export interface ProtocolQueryParams {
-  search?: string;
-  category?: string;
-  creator?: number;
-  isPublic?: boolean;
-  isTemplate?: boolean;
-  labGroup?: number;
-  dateFrom?: string;
-  dateTo?: string;
-  limit?: number;
-  offset?: number;
-  ordering?: string;
-}
 
 @Injectable({
   providedIn: 'root'
@@ -98,42 +85,42 @@ export class ProtocolService extends BaseApiService {
   /**
    * Search protocols by name or description
    */
-  searchProtocols(query: string): Observable<PaginatedResponse<Protocol>> {
+  searchProtocols(query: string): Observable<PaginatedResponse<ProtocolModel>> {
     return this.getProtocols({ search: query });
   }
 
   /**
    * Get protocols by category
    */
-  getProtocolsByCategory(category: string): Observable<PaginatedResponse<Protocol>> {
+  getProtocolsByCategory(category: string): Observable<PaginatedResponse<ProtocolModel>> {
     return this.getProtocols({ category });
   }
 
   /**
    * Get protocols by creator
    */
-  getProtocolsByCreator(creatorId: number): Observable<PaginatedResponse<Protocol>> {
+  getProtocolsByCreator(creatorId: number): Observable<PaginatedResponse<ProtocolModel>> {
     return this.getProtocols({ creator: creatorId });
   }
 
   /**
    * Get public protocols
    */
-  getPublicProtocols(): Observable<PaginatedResponse<Protocol>> {
+  getPublicProtocols(): Observable<PaginatedResponse<ProtocolModel>> {
     return this.getProtocols({ isPublic: true });
   }
 
   /**
    * Get protocol templates
    */
-  getProtocolTemplates(): Observable<PaginatedResponse<Protocol>> {
+  getProtocolTemplates(): Observable<PaginatedResponse<ProtocolModel>> {
     return this.getProtocols({ isTemplate: true });
   }
 
   /**
    * Get protocols by lab group
    */
-  getProtocolsByLabGroup(labGroupId: number): Observable<PaginatedResponse<Protocol>> {
+  getProtocolsByLabGroup(labGroupId: number): Observable<PaginatedResponse<ProtocolModel>> {
     return this.getProtocols({ labGroup: labGroupId });
   }
 }

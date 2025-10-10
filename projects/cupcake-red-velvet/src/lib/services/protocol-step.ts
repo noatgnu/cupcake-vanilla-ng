@@ -20,25 +20,27 @@ export interface ProtocolStepQueryParams {
 
 export interface ProtocolStepCreateRequest {
   protocol: number;
-  stepId?: string;
+  stepId?: number;
   stepDescription?: string;
-  stepSection?: string;
-  sectionDescription?: string;
+  stepSection?: number;
   stepDuration?: number;
   order: number;
   previousStep?: number;
-  nextSteps?: number[];
+  original?: boolean;
+  branchFrom?: number;
+  remoteId?: number;
+  remoteHost?: number;
 }
 
 export interface ProtocolStepUpdateRequest {
-  stepId?: string;
+  stepId?: number;
   stepDescription?: string;
-  stepSection?: string;
-  sectionDescription?: string;
+  stepSection?: number;
   stepDuration?: number;
   order?: number;
   previousStep?: number;
-  nextSteps?: number[];
+  original?: boolean;
+  branchFrom?: number;
 }
 
 @Injectable({

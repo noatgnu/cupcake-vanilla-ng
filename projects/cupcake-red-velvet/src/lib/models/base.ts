@@ -51,4 +51,15 @@ export interface ProtocolQueryParams {
   enabled?: boolean;
   owner?: number;
   includeVaulted?: boolean;
+  category?: string;
+  creator?: number;
+  isPublic?: boolean;
+  isTemplate?: boolean;
+  labGroup?: number;
+  dateFrom?: string;
+  dateTo?: string;
+  limit?: number;
+  offset?: number;
+  protocol?: number;
+  stepSection?: number;
 }
