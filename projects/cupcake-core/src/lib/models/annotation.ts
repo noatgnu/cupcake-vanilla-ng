@@ -13,7 +13,7 @@ export interface AnnotationFolder extends BaseResource {
 export interface Annotation extends BaseResource {
   annotation: string;
   annotationType: string;
-  file?: number;
+  file?: string;
   fileUrl?: string;
   fileSize?: number;
   folder?: number;
@@ -24,6 +24,9 @@ export interface Annotation extends BaseResource {
   translation?: string;
   scratched: boolean;
   ownerName?: string;
+  canEdit?: boolean;
+  canView?: boolean;
+  canDelete?: boolean;
 }
 
 export interface AnnotationFolderCreateRequest {

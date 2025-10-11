@@ -9,7 +9,7 @@ import {
 
 export interface ProtocolStepQueryParams {
   protocol?: number;
-  section?: number;
+  stepSection?: number;
   order?: number;
   hasNext?: boolean;
   hasPrevious?: boolean;
@@ -53,42 +53,27 @@ export class ProtocolStepService extends BaseApiService {
    */
   getProtocolSteps(params?: ProtocolStepQueryParams): Observable<PaginatedResponse<ProtocolStep>> {
     const httpParams = this.buildHttpParams(params);
-    return this.get<PaginatedResponse<ProtocolStep>>(`${this.apiUrl}/protocol-steps/`, { params: httpParams });
+    return this.get<PaginatedResponse<ProtocolStep>>(`${this.apiUrl}/steps/`, { params: httpParams });
   }
 
-  /**
-   * Get a single protocol step by ID
-   */
   getProtocolStep(id: number): Observable<ProtocolStep> {
-    return this.get<ProtocolStep>(`${this.apiUrl}/protocol-steps/${id}/`);
+    return this.get<ProtocolStep>(`${this.apiUrl}/steps/${id}/`);
   }
 
-  /**
-   * Create a new protocol step
-   */
   createProtocolStep(step: ProtocolStepCreateRequest): Observable<ProtocolStep> {
-    return this.post<ProtocolStep>(`${this.apiUrl}/protocol-steps/`, step);
+    return this.post<ProtocolStep>(`${this.apiUrl}/steps/`, step);
   }
 
-  /**
-   * Update an existing protocol step
-   */
   updateProtocolStep(id: number, step: ProtocolStepUpdateRequest): Observable<ProtocolStep> {
-    return this.put<ProtocolStep>(`${this.apiUrl}/protocol-steps/${id}/`, step);
+    return this.put<ProtocolStep>(`${this.apiUrl}/steps/${id}/`, step);
   }
 
-  /**
-   * Partially update a protocol step
-   */
   patchProtocolStep(id: number, step: Partial<ProtocolStepUpdateRequest>): Observable<ProtocolStep> {
-    return this.patch<ProtocolStep>(`${this.apiUrl}/protocol-steps/${id}/`, step);
+    return this.patch<ProtocolStep>(`${this.apiUrl}/steps/${id}/`, step);
   }
 
-  /**
-   * Delete a protocol step
-   */
   deleteProtocolStep(id: number): Observable<void> {
-    return this.delete<void>(`${this.apiUrl}/protocol-steps/${id}/`);
+    return this.delete<void>(`${this.apiUrl}/steps/${id}/`);
   }
 
   /**
@@ -102,6 +87,6 @@ export class ProtocolStepService extends BaseApiService {
    * Get steps for a specific section
    */
   getStepsBySection(sectionId: number): Observable<PaginatedResponse<ProtocolStep>> {
-    return this.getProtocolSteps({ section: sectionId });
+    return this.getProtocolSteps({ stepSection: sectionId });
   }
 }

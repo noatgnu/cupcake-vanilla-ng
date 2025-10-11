@@ -18,7 +18,7 @@ export interface StepReagentQueryParams {
 
 export interface StepReagentCreateRequest {
   step: number;
-  reagent: number;
+  reagentId: number;
   quantity: number;
   scalable?: boolean;
   scalableFactor?: number;
@@ -26,7 +26,7 @@ export interface StepReagentCreateRequest {
 
 export interface StepReagentUpdateRequest {
   step?: number;
-  reagent?: number;
+  reagentId?: number;
   quantity?: number;
   scalable?: boolean;
   scalableFactor?: number;

@@ -33,7 +33,7 @@ export interface SessionAnnotation extends BaseTimestampedModel {
   metadataColumnsCount?: number;
 }
 
-export interface StepAnnotation extends BaseTimestampedModel {
+export interface StepAnnotation {
   id: number;
   session: number;
   sessionName?: string;
@@ -42,22 +42,25 @@ export interface StepAnnotation extends BaseTimestampedModel {
   annotation?: number;
   annotationName?: string;
   annotationType?: string;
+  createdAt: string;
 }
 
-export interface SessionAnnotationFolder extends BaseTimestampedModel {
+export interface SessionAnnotationFolder {
   id: number;
   session: number;
   sessionName?: string;
   folder?: number;
   folderName?: string;
+  createdAt: string;
 }
 
-export interface InstrumentUsageSessionAnnotation extends BaseTimestampedModel {
+export interface InstrumentUsageSessionAnnotation {
   id: number;
   sessionAnnotation: number;
   sessionAnnotationDetails?: any;
   instrumentUsage: number;
   instrumentName?: string;
+  createdAt: string;
 }
 
 export interface SessionCreateRequest {

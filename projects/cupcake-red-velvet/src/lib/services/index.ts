@@ -5,6 +5,7 @@ export * from './protocol-section';
 export * from './protocol-step';
 export * from './protocol-reagent';
 export * from './session';
+export * from './step-annotation';
 export * from './step-reagent';
 export * from './step-variation';
 export * from './timekeeper';

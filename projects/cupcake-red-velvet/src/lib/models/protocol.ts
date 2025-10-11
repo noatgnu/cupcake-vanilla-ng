@@ -1,4 +1,5 @@
 import { BaseTimestampedModel, RemoteSystemModel, OwnedModel } from './base';
+import { Reagent } from '@noatgnu/cupcake-macaron';
 
 export interface ProtocolRating extends BaseTimestampedModel, RemoteSystemModel {
   id: number;
@@ -75,7 +76,7 @@ export interface Project extends BaseTimestampedModel, RemoteSystemModel, OwnedM
 export interface ProtocolReagent extends BaseTimestampedModel {
   id: number;
   protocol: number;
-  reagent: number;
+  reagent: Reagent;
   reagentId?: number;
   reagentName?: string;
   reagentUnit?: string;
@@ -86,7 +87,7 @@ export interface ProtocolReagent extends BaseTimestampedModel {
 export interface StepReagent extends BaseTimestampedModel {
   id: number;
   step: number;
-  reagent: number;
+  reagent: Reagent;
   reagentId?: number;
   reagentName?: string;
   reagentUnit?: string;
