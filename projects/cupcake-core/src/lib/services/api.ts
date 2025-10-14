@@ -338,6 +338,17 @@ export class ApiService {
     return this.http.delete<void>(`${this.apiUrl}/annotation-folders/${id}/`);
   }
 
+  /**
+   * WARNING: This method accesses the base annotation endpoint and should only be used
+   * for standalone annotations that are NOT attached to parent resources.
+   *
+   * For annotations attached to parent resources, use the specialized services instead:
+   * - Instrument annotations: Use InstrumentService from @noatgnu/cupcake-macaron
+   * - StoredReagent annotations: Use ReagentService from @noatgnu/cupcake-macaron
+   * - Session annotations: Use SessionService from @noatgnu/cupcake-red-velvet
+   *
+   * These specialized services ensure proper permission checking through parent resources.
+   */
   getAnnotations(params?: {
     search?: string;
     annotationType?: string;
@@ -365,12 +376,36 @@ export class ApiService {
     );
   }
 
+  /**
+   * WARNING: This method accesses the base annotation endpoint and should only be used
+   * for standalone annotations that are NOT attached to parent resources.
+   *
+   * For annotations attached to parent resources, use the specialized services instead:
+   * - Instrument annotations: Use InstrumentService.getInstrumentAnnotation()
+   * - StoredReagent annotations: Use ReagentService.getStoredReagentAnnotation()
+   * - Session annotations: Use SessionService (session folder annotations)
+   *
+   * The backend enforces parent resource permissions, but using specialized services
+   * provides cleaner access control and better context.
+   */
   getAnnotation(id: number): Observable<Annotation> {
     return this.http.get<any>(`${this.apiUrl}/annotations/${id}/`).pipe(
       map(response => this.resourceService.transformLegacyResource(response))
     );
   }
 
+  /**
+   * WARNING: This method accesses the base annotation endpoint and should only be used
+   * for standalone annotations that are NOT attached to parent resources.
+   *
+   * For creating annotations attached to parent resources, use specialized upload methods:
+   * - Instrument annotations: Use InstrumentService.uploadAnnotation()
+   * - StoredReagent annotations: Use ReagentService.uploadAnnotation()
+   * - Session/Step annotations: Use the appropriate chunked upload service
+   *
+   * These specialized methods provide chunked upload support, progress tracking,
+   * and automatic binding to parent resources with proper permission enforcement.
+   */
   createAnnotation(annotationData: AnnotationCreateRequest): Observable<Annotation> {
     const formData = new FormData();
     Object.keys(annotationData).forEach(key => {
@@ -388,6 +423,13 @@ export class ApiService {
     );
   }
 
+  /**
+   * WARNING: This method accesses the base annotation endpoint and should only be used
+   * for standalone annotations that are NOT attached to parent resources.
+   *
+   * For annotations attached to parent resources, the backend enforces parent resource
+   * permissions. However, using specialized services provides better context and access control.
+   */
   updateAnnotation(id: number, annotationData: AnnotationUpdateRequest): Observable<Annotation> {
     const preparedData = this.resourceService.prepareForAPI(annotationData);
     return this.http.patch<any>(`${this.apiUrl}/annotations/${id}/`, preparedData).pipe(
@@ -395,6 +437,18 @@ export class ApiService {
     );
   }
 
+  /**
+   * WARNING: This method accesses the base annotation endpoint and should only be used
+   * for standalone annotations that are NOT attached to parent resources.
+   *
+   * For deleting annotations attached to parent resources, use specialized services:
+   * - Instrument annotations: Use InstrumentService.deleteInstrumentAnnotation()
+   * - StoredReagent annotations: Use ReagentService.deleteStoredReagentAnnotation()
+   * - Session annotations: Use appropriate session/step annotation delete methods
+   *
+   * The backend enforces parent resource permissions, but using specialized services
+   * provides clearer intent and better access control context.
+   */
   deleteAnnotation(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/annotations/${id}/`);
   }

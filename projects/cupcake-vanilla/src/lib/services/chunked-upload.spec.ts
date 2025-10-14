@@ -467,6 +467,138 @@ describe('ChunkedUploadService', () => {
     });
   });
 
+  describe('Complete Upload With File (SHA-256)', () => {
+    it('should upload file with SHA-256 checksum in FormData', (done) => {
+      const fileContent = 'test metadata table content';
+      const blob = new Blob([fileContent], { type: 'text/csv' });
+      const file = new File([blob], 'metadata.csv', { type: 'text/csv' });
+
+      const hasher = new (window as any).jsSHA('SHA-256', 'ARRAYBUFFER');
+      const reader = new FileReader();
+      reader.onload = () => {
+        hasher.update(reader.result as ArrayBuffer);
+        const expectedHash = hasher.getHash('HEX');
+
+        const request = {
+          file: file,
+          filename: 'metadata.csv',
+          metadataTableId: 10
+        };
+
+        service.completeUploadWithFile(request).subscribe({
+          next: (response) => {
+            expect(response.id).toBe('metadata-upload-123');
+            done();
+          },
+          error: done.fail
+        });
+
+        const req = httpMock.expectOne(`${mockConfig.apiUrl}/chunked-upload/`);
+        expect(req.request.method).toBe('POST');
+
+        const formData = req.request.body as FormData;
+        expect(formData.get('file')).toBe(file);
+        expect(formData.get('filename')).toBe('metadata.csv');
+        expect(formData.get('metadata_table_id')).toBe('10');
+        const actualHash = formData.get('sha256') as string;
+        expect(actualHash).toBeTruthy();
+        expect(actualHash).toBe(expectedHash);
+
+        req.flush({
+          id: 'metadata-upload-123',
+          message: 'Upload complete',
+          metadata_table_id: 10,
+          filename: 'metadata.csv'
+        });
+      };
+      reader.readAsArrayBuffer(file);
+    });
+
+    it('should calculate correct SHA-256 hash for known content', (done) => {
+      const knownContent = 'Sample,Data\nRow1,Value1\nRow2,Value2';
+      const blob = new Blob([knownContent], { type: 'text/csv' });
+      const file = new File([blob], 'sample.csv', { type: 'text/csv' });
+
+      const hasher = new (window as any).jsSHA('SHA-256', 'TEXT', { encoding: 'UTF8' });
+      hasher.update(knownContent);
+      const expectedHash = hasher.getHash('HEX');
+
+      const request = {
+        file: file,
+        metadataTableId: 5
+      };
+
+      service.completeUploadWithFile(request).subscribe({
+        next: () => done(),
+        error: done.fail
+      });
+
+      const req = httpMock.expectOne(`${mockConfig.apiUrl}/chunked-upload/`);
+      const formData = req.request.body as FormData;
+      const actualHash = formData.get('sha256') as string;
+
+      expect(actualHash).toBe(expectedHash);
+
+      req.flush({ id: 'test', message: 'ok', metadata_table_id: 5 });
+    });
+
+    it('should include all required fields in FormData', (done) => {
+      const fileContent = 'complete test';
+      const blob = new Blob([fileContent], { type: 'text/csv' });
+      const file = new File([blob], 'complete.csv', { type: 'text/csv' });
+
+      const request = {
+        file: file,
+        filename: 'complete.csv',
+        metadataTableId: 20,
+        columnMapping: { col1: 'mapped1', col2: 'mapped2' }
+      };
+
+      service.completeUploadWithFile(request).subscribe({
+        next: () => done(),
+        error: done.fail
+      });
+
+      const req = httpMock.expectOne(`${mockConfig.apiUrl}/chunked-upload/`);
+      const formData = req.request.body as FormData;
+
+      expect(formData.get('file')).toBe(file);
+      expect(formData.get('filename')).toBe('complete.csv');
+      expect(formData.get('metadata_table_id')).toBe('20');
+      expect(formData.get('column_mapping')).toBe(JSON.stringify({ col1: 'mapped1', col2: 'mapped2' }));
+      expect(formData.get('sha256')).toBeTruthy();
+      expect(typeof formData.get('sha256')).toBe('string');
+
+      req.flush({ id: 'complete-123', message: 'ok' });
+    });
+
+    it('should handle SHA-256 error gracefully', (done) => {
+      const fileContent = 'error test file';
+      const blob = new Blob([fileContent], { type: 'text/csv' });
+      const file = new File([blob], 'error.csv', { type: 'text/csv' });
+
+      const request = {
+        file: file,
+        metadataTableId: 1
+      };
+
+      service.completeUploadWithFile(request).subscribe({
+        next: () => fail('should have failed'),
+        error: (error) => {
+          expect(error.status).toBe(400);
+          expect(error.error.detail).toContain('Checksum');
+          done();
+        }
+      });
+
+      const req = httpMock.expectOne(`${mockConfig.apiUrl}/chunked-upload/`);
+      req.flush(
+        { detail: 'Checksum of type \'sha256\' is required' },
+        { status: 400, statusText: 'Bad Request' }
+      );
+    });
+  });
+
   describe('Integration Scenarios', () => {
     it('should handle complete upload workflow', (done) => {
       const fileInfo = { filename: 'workflow.csv', totalSize: 512, chunkSize: 256 };

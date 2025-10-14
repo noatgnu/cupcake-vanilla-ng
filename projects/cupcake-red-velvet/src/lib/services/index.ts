@@ -9,3 +9,4 @@ export * from './step-annotation';
 export * from './step-reagent';
 export * from './step-variation';
 export * from './timekeeper';
+export * from './annotation-chunked-upload';

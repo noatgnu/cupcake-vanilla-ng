@@ -11,3 +11,5 @@ export * from './reagent-subscription';
 export * from './reagent-action';
 
 export * from './contact';
+
+export * from './annotation-chunked-upload';

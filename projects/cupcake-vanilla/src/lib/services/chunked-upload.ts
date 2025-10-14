@@ -51,14 +51,16 @@ export class ChunkedUploadService extends BaseApiService {
       : `${this.apiUrl}/chunked-upload/`;
 
     const httpOptions: any = {};
-    if (offset !== undefined && totalSize !== undefined) {
+    const isChunkedUpload = offset !== undefined && totalSize !== undefined;
+
+    if (isChunkedUpload) {
       const chunkEnd = offset + request.file.size - 1;
       httpOptions.headers = {
         'Content-Range': `bytes ${offset}-${chunkEnd}/${totalSize}`
       };
     }
 
-    if (uploadId) {
+    if (isChunkedUpload || uploadId) {
       return this.put<ChunkedUploadResponse>(url, formData, httpOptions);
     } else {
       return this.post<ChunkedUploadResponse>(url, formData, httpOptions);
@@ -98,21 +100,19 @@ export class ChunkedUploadService extends BaseApiService {
    * Complete the chunked upload by uploading the entire file at once
    */
   completeUploadWithFile(request: ChunkedUploadRequest): Observable<ChunkedUploadCompletionResponse> {
-    const formData = new FormData();
-    formData.append('file', request.file);
-
-    if (request.filename) {
-      formData.append('filename', request.filename);
-    }
     const hasher = new jsSHA('SHA-256', 'ARRAYBUFFER');
     const arrayBufferPromise = request.file.arrayBuffer();
-    arrayBufferPromise.then(arrayBuffer => {
-      hasher.update(arrayBuffer);
-    })
+
     return from(arrayBufferPromise).pipe(
-      switchMap(() => {
+      switchMap((arrayBuffer) => {
+        hasher.update(arrayBuffer);
         const hash = hasher.getHash('HEX');
-        formData.append('sha256', hash);
+
+        const formData = new FormData();
+        formData.append('file', request.file);
+        if (request.filename) {
+          formData.append('filename', request.filename);
+        }
         if (request.uploadSessionId) {
           formData.append('upload_session_id', request.uploadSessionId);
         }
@@ -125,6 +125,7 @@ export class ChunkedUploadService extends BaseApiService {
         if (request.replaceExisting !== undefined) {
           formData.append('replace_existing', request.replaceExisting.toString());
         }
+        formData.append('sha256', hash);
 
         return this.post<ChunkedUploadCompletionResponse>(`${this.apiUrl}/chunked-upload/`, formData);
       })

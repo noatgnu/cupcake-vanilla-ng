@@ -18,3 +18,7 @@ export * from './reagent-action';
 
 // Contact models
 export * from './contact';
+
+// Annotation models
+export * from './annotation-junction';
+export * from './annotation-chunked-upload';

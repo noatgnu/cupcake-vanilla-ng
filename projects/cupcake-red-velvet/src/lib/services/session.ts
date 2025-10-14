@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { BaseApiService } from '@noatgnu/cupcake-core';
+import { map } from 'rxjs/operators';
+import { BaseApiService, AnnotationFolder } from '@noatgnu/cupcake-core';
 
 import {
   Session,
@@ -19,6 +20,7 @@ export interface SessionQueryParams {
   limit?: number;
   offset?: number;
   ordering?: string;
+  uniqueId?: string;
 }
 
 @Injectable({
@@ -102,5 +104,33 @@ export class SessionService extends BaseApiService {
    */
   getSessionsByDateRange(dateFrom: string, dateTo: string): Observable<PaginatedResponse<Session>> {
     return this.getSessions({ dateFrom, dateTo });
+  }
+
+  /**
+   * Start a session
+   */
+  startSession(id: number): Observable<Session> {
+    return this.post<{message: string, session: Session}>(`${this.apiUrl}/sessions/${id}/start/`, {})
+      .pipe(
+        map(response => response.session)
+      );
+  }
+
+  /**
+   * End a session
+   */
+  endSession(id: number): Observable<Session> {
+    return this.post<{message: string, session: Session}>(`${this.apiUrl}/sessions/${id}/end/`, {})
+      .pipe(
+        map(response => response.session)
+      );
+  }
+
+  /**
+   * Get annotation folders for this session
+   * Returns dynamically linked folders
+   */
+  getSessionFolders(id: number): Observable<AnnotationFolder[]> {
+    return this.get<AnnotationFolder[]>(`${this.apiUrl}/sessions/${id}/folders/`);
   }
 }

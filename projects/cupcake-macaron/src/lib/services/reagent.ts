@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { BaseApiService } from '@noatgnu/cupcake-core';
+import { BaseApiService, AnnotationFolder } from '@noatgnu/cupcake-core';
 import { MetadataTable, MetadataColumn, MetadataColumnCreateRequest } from '@noatgnu/cupcake-vanilla';
 
 import {
@@ -11,8 +11,12 @@ import {
   StoredReagentCreateRequest,
   StoredReagentUpdateRequest,
   PaginatedResponse,
-  ReagentAlertType
+  ReagentAlertType,
+  AnnotationChunkedUploadCompletionResponse,
+  StoredReagentAnnotation,
+  StoredReagentAnnotationQueryParams
 } from '../models';
+import { AnnotationChunkedUploadService } from './annotation-chunked-upload';
 
 export interface ReagentQueryParams {
   search?: string;
@@ -43,6 +47,10 @@ export interface StoredReagentQueryParams {
   providedIn: 'root'
 })
 export class ReagentService extends BaseApiService {
+
+  constructor(private annotationChunkedUploadService: AnnotationChunkedUploadService) {
+    super();
+  }
 
   // ===== REAGENT METHODS =====
 
@@ -266,5 +274,77 @@ export class ReagentService extends BaseApiService {
     return this.http.post<{ success: boolean; message: string; notificationType: string }>(
       `${this.apiUrl}/stored-reagents/${id}/send_test_notification/`, body
     );
+  }
+
+  /**
+   * Upload annotation file for stored reagent with automatic binding
+   * Uses chunked upload for large files with progress tracking
+   *
+   * @param storedReagentId - ID of the stored reagent
+   * @param folderId - ID of the folder (MSDS, Certificates, or Manuals)
+   * @param file - File to upload
+   * @param options - Optional annotation text, type, and progress callback
+   */
+  uploadAnnotation(
+    storedReagentId: number,
+    folderId: number,
+    file: File,
+    options?: {
+      annotation?: string;
+      annotationType?: string;
+      onProgress?: (progress: number) => void;
+    }
+  ): Observable<AnnotationChunkedUploadCompletionResponse> {
+    return this.annotationChunkedUploadService.uploadStoredReagentAnnotationFileInChunks(
+      file,
+      storedReagentId,
+      folderId,
+      1024 * 1024,
+      options
+    );
+  }
+
+  /**
+   * Get all stored reagent annotations with optional filtering
+   */
+  getStoredReagentAnnotations(params?: StoredReagentAnnotationQueryParams): Observable<PaginatedResponse<StoredReagentAnnotation>> {
+    const httpParams = this.buildHttpParams(params);
+    return this.get<PaginatedResponse<StoredReagentAnnotation>>(`${this.apiUrl}/stored-reagent-annotations/`, { params: httpParams });
+  }
+
+  /**
+   * Get a single stored reagent annotation by ID
+   */
+  getStoredReagentAnnotation(id: number): Observable<StoredReagentAnnotation> {
+    return this.get<StoredReagentAnnotation>(`${this.apiUrl}/stored-reagent-annotations/${id}/`);
+  }
+
+  /**
+   * Get all annotations for a specific stored reagent
+   */
+  getAnnotationsForStoredReagent(storedReagentId: number): Observable<PaginatedResponse<StoredReagentAnnotation>> {
+    return this.getStoredReagentAnnotations({ storedReagent: storedReagentId });
+  }
+
+  /**
+   * Get annotations in a specific folder for a stored reagent
+   */
+  getStoredReagentAnnotationsByFolder(storedReagentId: number, folderId: number): Observable<PaginatedResponse<StoredReagentAnnotation>> {
+    return this.getStoredReagentAnnotations({ storedReagent: storedReagentId, folder: folderId });
+  }
+
+  /**
+   * Delete a stored reagent annotation
+   */
+  deleteStoredReagentAnnotation(id: number): Observable<void> {
+    return this.delete<void>(`${this.apiUrl}/stored-reagent-annotations/${id}/`);
+  }
+
+  /**
+   * Get annotation folders for this stored reagent
+   * Returns MSDS, Certificates, and Manuals folders
+   */
+  getStoredReagentFolders(id: number): Observable<AnnotationFolder[]> {
+    return this.get<AnnotationFolder[]>(`${this.apiUrl}/stored-reagents/${id}/folders/`);
   }
 }

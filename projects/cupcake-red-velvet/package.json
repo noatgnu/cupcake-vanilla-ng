@@ -1,6 +1,6 @@
 {
   "name": "@noatgnu/cupcake-red-velvet",
-  "version": "1.2.10",
+  "version": "1.2.20",
   "description": "An extension for cupcake-core that provides additional api and interfaces for managing protocols, sessions, protocol steps, and data annotations.",
   "author": "Toan Phung",
   "license": "MIT",
@@ -14,7 +14,9 @@
   },
   "peerDependencies": {
     "@angular/common": "^20.3.3",
-    "@angular/core": "^20.3.3"
+    "@angular/core": "^20.3.3",
+    "jssha": "^3.3.1",
+    "rxjs": "~7.8.0"
   },
   "dependencies": {
     "tslib": "^2.3.0"

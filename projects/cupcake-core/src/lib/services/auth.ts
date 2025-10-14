@@ -2,6 +2,7 @@ import { Injectable, inject, Inject, InjectionToken } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, BehaviorSubject, tap, throwError, catchError, map } from 'rxjs';
 import { User } from '../models';
+import { resetRefreshState } from '../interceptors';
 
 export interface CupcakeCoreConfig {
   apiUrl: string;
@@ -239,6 +240,7 @@ export class AuthService {
     const convertedUser = this.convertUserFromSnakeToCamel(response.user);
     this.currentUserSubject.next(convertedUser);
     this.isAuthenticatedSubject.next(true);
+    resetRefreshState();
   }
 
   tryRefreshToken(): Observable<{access: string}> {

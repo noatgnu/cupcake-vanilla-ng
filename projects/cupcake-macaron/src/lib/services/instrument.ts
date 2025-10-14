@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { BaseApiService } from '@noatgnu/cupcake-core';
+import { BaseApiService, AnnotationFolder } from '@noatgnu/cupcake-core';
 import { MetadataTable, MetadataColumn, MetadataColumnCreateRequest } from '@noatgnu/cupcake-vanilla';
 
 import {
@@ -9,13 +9,21 @@ import {
   InstrumentUpdateRequest,
   PaginatedResponse,
   InstrumentQueryParams,
-  InstrumentAlertType
+  InstrumentAlertType,
+  AnnotationChunkedUploadCompletionResponse,
+  InstrumentAnnotation,
+  InstrumentAnnotationQueryParams
 } from '../models';
+import { AnnotationChunkedUploadService } from './annotation-chunked-upload';
 
 @Injectable({
   providedIn: 'root'
 })
 export class InstrumentService extends BaseApiService {
+
+  constructor(private annotationChunkedUploadService: AnnotationChunkedUploadService) {
+    super();
+  }
 
   /**
    * Get all instruments with optional filtering
@@ -184,16 +192,88 @@ export class InstrumentService extends BaseApiService {
   }
 
   /**
+   * Upload annotation file for instrument with automatic binding
+   * Uses chunked upload for large files with progress tracking
+   *
+   * @param instrumentId - ID of the instrument
+   * @param folderId - ID of the folder (Manuals, Certificates, or Maintenance)
+   * @param file - File to upload
+   * @param options - Optional annotation text, type, and progress callback
+   */
+  uploadAnnotation(
+    instrumentId: number,
+    folderId: number,
+    file: File,
+    options?: {
+      annotation?: string;
+      annotationType?: string;
+      onProgress?: (progress: number) => void;
+    }
+  ): Observable<AnnotationChunkedUploadCompletionResponse> {
+    return this.annotationChunkedUploadService.uploadInstrumentAnnotationFileInChunks(
+      file,
+      instrumentId,
+      folderId,
+      1024 * 1024,
+      options
+    );
+  }
+
+  /**
+   * Get all instrument annotations with optional filtering
+   */
+  getInstrumentAnnotations(params?: InstrumentAnnotationQueryParams): Observable<PaginatedResponse<InstrumentAnnotation>> {
+    const httpParams = this.buildHttpParams(params);
+    return this.get<PaginatedResponse<InstrumentAnnotation>>(`${this.apiUrl}/instrument-annotations/`, { params: httpParams });
+  }
+
+  /**
+   * Get a single instrument annotation by ID
+   */
+  getInstrumentAnnotation(id: number): Observable<InstrumentAnnotation> {
+    return this.get<InstrumentAnnotation>(`${this.apiUrl}/instrument-annotations/${id}/`);
+  }
+
+  /**
+   * Get all annotations for a specific instrument
+   */
+  getAnnotationsForInstrument(instrumentId: number): Observable<PaginatedResponse<InstrumentAnnotation>> {
+    return this.getInstrumentAnnotations({ instrument: instrumentId });
+  }
+
+  /**
+   * Get annotations in a specific folder for an instrument
+   */
+  getInstrumentAnnotationsByFolder(instrumentId: number, folderId: number): Observable<PaginatedResponse<InstrumentAnnotation>> {
+    return this.getInstrumentAnnotations({ instrument: instrumentId, folder: folderId });
+  }
+
+  /**
+   * Delete an instrument annotation
+   */
+  deleteInstrumentAnnotation(id: number): Observable<void> {
+    return this.delete<void>(`${this.apiUrl}/instrument-annotations/${id}/`);
+  }
+
+  /**
+   * Get annotation folders for this instrument
+   * Returns Manuals, Certificates, and Maintenance folders
+   */
+  getInstrumentFolders(id: number): Observable<AnnotationFolder[]> {
+    return this.get<AnnotationFolder[]>(`${this.apiUrl}/instruments/${id}/folders/`);
+  }
+
+  /**
    * Transform camelCase properties to snake_case for API
    */
   private transformToApiFormat(data: any): any {
     const transformed: any = {};
-    
+
     Object.entries(data).forEach(([key, value]) => {
       const snakeKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
       transformed[snakeKey] = value;
     });
-    
+
     return transformed;
   }
 }

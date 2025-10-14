@@ -26,6 +26,7 @@ export interface SessionAnnotation extends BaseTimestampedModel {
   annotation?: number;
   annotationType?: string;
   annotationText?: string;
+  fileUrl?: string;
   order: number;
   metadataTable?: number;
   metadataTableName?: string;
@@ -42,6 +43,8 @@ export interface StepAnnotation {
   annotation?: number;
   annotationName?: string;
   annotationType?: string;
+  annotationText?: string;
+  fileUrl?: string;
   createdAt: string;
 }
 

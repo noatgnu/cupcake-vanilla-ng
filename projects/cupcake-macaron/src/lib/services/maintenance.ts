@@ -8,7 +8,9 @@ import {
   MaintenanceLogUpdateRequest,
   PaginatedResponse,
   MaintenanceType,
-  Status
+  Status,
+  MaintenanceLogAnnotation,
+  MaintenanceLogAnnotationQueryParams
 } from '../models';
 
 export interface MaintenanceQueryParams {
@@ -117,5 +119,41 @@ export class MaintenanceService extends BaseApiService {
       params.maintenanceDateBefore = endDate;
     }
     return this.getMaintenanceLogs(params);
+  }
+
+  /**
+   * Get all maintenance log annotations with optional filtering
+   */
+  getMaintenanceLogAnnotations(params?: MaintenanceLogAnnotationQueryParams): Observable<PaginatedResponse<MaintenanceLogAnnotation>> {
+    const httpParams = this.buildHttpParams(params);
+    return this.get<PaginatedResponse<MaintenanceLogAnnotation>>(`${this.apiUrl}/maintenance-log-annotations/`, { params: httpParams });
+  }
+
+  /**
+   * Get a single maintenance log annotation by ID
+   */
+  getMaintenanceLogAnnotation(id: number): Observable<MaintenanceLogAnnotation> {
+    return this.get<MaintenanceLogAnnotation>(`${this.apiUrl}/maintenance-log-annotations/${id}/`);
+  }
+
+  /**
+   * Get all annotations for a specific maintenance log
+   */
+  getAnnotationsForMaintenanceLog(maintenanceLogId: number): Observable<PaginatedResponse<MaintenanceLogAnnotation>> {
+    return this.getMaintenanceLogAnnotations({ maintenanceLog: maintenanceLogId });
+  }
+
+  /**
+   * Get annotations in a specific folder for a maintenance log
+   */
+  getMaintenanceLogAnnotationsByFolder(maintenanceLogId: number, folderId: number): Observable<PaginatedResponse<MaintenanceLogAnnotation>> {
+    return this.getMaintenanceLogAnnotations({ maintenanceLog: maintenanceLogId, folder: folderId });
+  }
+
+  /**
+   * Delete a maintenance log annotation
+   */
+  deleteMaintenanceLogAnnotation(id: number): Observable<void> {
+    return this.delete<void>(`${this.apiUrl}/maintenance-log-annotations/${id}/`);
   }
 }

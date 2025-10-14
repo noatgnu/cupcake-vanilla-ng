@@ -5,7 +5,17 @@ import { catchError, throwError, switchMap, BehaviorSubject, filter, take, Obser
 import { CUPCAKE_CORE_CONFIG } from '../services/auth';
 
 let isRefreshing = false;
+let refreshFailedCount = 0;
+let lastRefreshFailTime = 0;
+const MAX_REFRESH_RETRIES = 3;
+const REFRESH_RETRY_WINDOW_MS = 60000;
 const refreshTokenSubject: BehaviorSubject<string | null> = new BehaviorSubject<string | null>(null);
+
+export function resetRefreshState(): void {
+  refreshFailedCount = 0;
+  lastRefreshFailTime = 0;
+  isRefreshing = false;
+}
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const router = inject(Router);
@@ -47,59 +57,78 @@ function addTokenToRequest(request: HttpRequest<any>, token: string): HttpReques
 }
 
 function handle401Error(request: HttpRequest<any>, next: HttpHandlerFn, http: HttpClient, router: Router, config: any): Observable<HttpEvent<unknown>> {
+  const now = Date.now();
+
+  if (now - lastRefreshFailTime > REFRESH_RETRY_WINDOW_MS) {
+    refreshFailedCount = 0;
+  }
+
+  if (refreshFailedCount >= MAX_REFRESH_RETRIES) {
+    return throwError(() => new Error('Maximum token refresh attempts exceeded. Please log in again.')) as Observable<HttpEvent<unknown>>;
+  }
+
   if (!isRefreshing) {
     isRefreshing = true;
     refreshTokenSubject.next(null);
 
     const refreshToken = localStorage.getItem('ccvRefreshToken');
-    
+
     if (refreshToken) {
       return http.post<{access: string}>(`${config.apiUrl}/auth/token/refresh/`, {
         refresh: refreshToken
       }).pipe(
         switchMap((tokenResponse: {access: string}): Observable<HttpEvent<unknown>> => {
           isRefreshing = false;
-          
+          refreshFailedCount = 0;
+          lastRefreshFailTime = 0;
+
           localStorage.setItem('ccvAccessToken', tokenResponse.access);
           refreshTokenSubject.next(tokenResponse.access);
-          
+
           if (typeof window !== 'undefined') {
             window.dispatchEvent(new CustomEvent('tokenRefreshed'));
           }
-          
+
           return next(addTokenToRequest(request, tokenResponse.access));
         }),
         catchError((refreshError) => {
           isRefreshing = false;
+          refreshFailedCount++;
+          lastRefreshFailTime = Date.now();
           localStorage.removeItem('ccvAccessToken');
           localStorage.removeItem('ccvRefreshToken');
           refreshTokenSubject.next(null);
-          
+
           if (typeof window !== 'undefined') {
             window.dispatchEvent(new CustomEvent('authCleared'));
           }
-          
-          router.navigate(['/login'], {
-            queryParams: { returnUrl: router.url }
-          });
-          
+
+          if (refreshFailedCount >= MAX_REFRESH_RETRIES) {
+            router.navigate(['/login'], {
+              queryParams: { returnUrl: router.url }
+            });
+          }
+
           return throwError(() => refreshError) as Observable<HttpEvent<unknown>>;
         })
       );
     } else {
       isRefreshing = false;
+      refreshFailedCount++;
+      lastRefreshFailTime = Date.now();
       localStorage.removeItem('ccvAccessToken');
       localStorage.removeItem('ccvRefreshToken');
-      
-      // Notify AuthService that auth was cleared
+
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('authCleared'));
       }
-      
-      router.navigate(['/login'], {
-        queryParams: { returnUrl: router.url }
-      });
-      
+
+      if (refreshFailedCount >= MAX_REFRESH_RETRIES) {
+        router.navigate(['/login'], {
+          queryParams: { returnUrl: router.url }
+        });
+      }
+
       return throwError(() => new Error('No refresh token available')) as Observable<HttpEvent<unknown>>;
     }
   } else {
