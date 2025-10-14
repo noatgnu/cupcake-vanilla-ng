@@ -31,6 +31,7 @@ export interface StoredReagentQueryParams {
   search?: string;
   reagent?: number;
   storageObject?: number;
+  includeSubStorage?: boolean;
   user?: number;
   shareable?: boolean;
   accessAll?: boolean;
@@ -158,9 +159,19 @@ export class ReagentService extends BaseApiService {
 
   /**
    * Get stored reagents in a specific storage location
+   * @param storageId - The storage object ID
+   * @param includeSubStorage - If true, includes reagents from all nested child storage objects
    */
-  getStoredReagentsByStorage(storageId: number): Observable<PaginatedResponse<StoredReagent>> {
-    return this.getStoredReagents({ storageObject: storageId });
+  getStoredReagentsByStorage(storageId: number, includeSubStorage: boolean = false): Observable<PaginatedResponse<StoredReagent>> {
+    return this.getStoredReagents({ storageObject: storageId, includeSubStorage });
+  }
+
+  /**
+   * Get stored reagents in a specific storage location including all nested child storage objects
+   * @param storageId - The storage object ID
+   */
+  getStoredReagentsByStorageWithChildren(storageId: number): Observable<PaginatedResponse<StoredReagent>> {
+    return this.getStoredReagents({ storageObject: storageId, includeSubStorage: true });
   }
 
   /**
