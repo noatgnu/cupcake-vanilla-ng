@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, interval } from 'rxjs';
+import { tap } from 'rxjs/operators';
 import { BaseApiService } from './base-api';
 import { SiteConfig } from '../models/site-config';
 
@@ -14,6 +15,7 @@ export class SiteConfigService extends BaseApiService {
     primaryColor: '#1976d2',
     allowUserRegistration: false,
     enableOrcidLogin: false,
+    bookingDeletionWindowMinutes: 30,
     installedApps: {},
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
@@ -25,6 +27,19 @@ export class SiteConfigService extends BaseApiService {
   constructor() {
     super();
     this.loadConfig();
+    this.startPeriodicRefresh();
+  }
+
+  private startPeriodicRefresh(): void {
+    interval(60000).subscribe(() => {
+      this.fetchConfigFromBackend().subscribe({
+        next: (config) => {
+          this.configSubject.next({ ...this.defaultConfig, ...config });
+          localStorage.setItem('site_config', JSON.stringify(config));
+        },
+        error: () => {}
+      });
+    });
   }
 
   private loadConfig(): void {
@@ -49,16 +64,30 @@ export class SiteConfigService extends BaseApiService {
     });
   }
 
+  refreshConfig(): void {
+    this.loadConfig();
+  }
+
   private fetchConfigFromBackend(): Observable<Partial<SiteConfig>> {
     return this.get<Partial<SiteConfig>>(`${this.apiUrl}/site-config/public/`);
   }
 
   getCurrentConfig(): Observable<SiteConfig> {
-    return this.get<SiteConfig>(`${this.apiUrl}/site-config/current/`);
+    return this.get<SiteConfig>(`${this.apiUrl}/site-config/current/`).pipe(
+      tap(config => {
+        this.configSubject.next({ ...this.defaultConfig, ...config });
+        localStorage.setItem('site_config', JSON.stringify(config));
+      })
+    );
   }
 
   updateConfig(config: Partial<SiteConfig>): Observable<SiteConfig> {
-    return this.put<SiteConfig>(`${this.apiUrl}/site-config/update_config/`, config);
+    return this.put<SiteConfig>(`${this.apiUrl}/site-config/update_config/`, config).pipe(
+      tap(updatedConfig => {
+        this.configSubject.next({ ...this.defaultConfig, ...updatedConfig });
+        localStorage.setItem('site_config', JSON.stringify(updatedConfig));
+      })
+    );
   }
 
   getSiteName(): string {

@@ -31,63 +31,70 @@ export class TimeKeeperService extends BaseApiService {
    */
   getTimeKeepers(params?: TimeKeeperQueryParams): Observable<PaginatedResponse<TimeKeeper>> {
     const httpParams = this.buildHttpParams(params);
-    return this.get<PaginatedResponse<TimeKeeper>>(`${this.apiUrl}/timekeepers/`, { params: httpParams });
+    return this.get<PaginatedResponse<TimeKeeper>>(`${this.apiUrl}/time-keepers/`, { params: httpParams });
   }
 
   /**
    * Get a single timekeeper record by ID
    */
   getTimeKeeper(id: number): Observable<TimeKeeper> {
-    return this.get<TimeKeeper>(`${this.apiUrl}/timekeepers/${id}/`);
+    return this.get<TimeKeeper>(`${this.apiUrl}/time-keepers/${id}/`);
   }
 
   /**
    * Create a new timekeeper record
    */
   createTimeKeeper(timekeeper: TimeKeeperCreateRequest): Observable<TimeKeeper> {
-    return this.post<TimeKeeper>(`${this.apiUrl}/timekeepers/`, timekeeper);
+    return this.post<TimeKeeper>(`${this.apiUrl}/time-keepers/`, timekeeper);
   }
 
   /**
    * Update an existing timekeeper record
    */
   updateTimeKeeper(id: number, timekeeper: TimeKeeperUpdateRequest): Observable<TimeKeeper> {
-    return this.put<TimeKeeper>(`${this.apiUrl}/timekeepers/${id}/`, timekeeper);
+    return this.put<TimeKeeper>(`${this.apiUrl}/time-keepers/${id}/`, timekeeper);
   }
 
   /**
    * Partially update a timekeeper record
    */
   patchTimeKeeper(id: number, timekeeper: Partial<TimeKeeperUpdateRequest>): Observable<TimeKeeper> {
-    return this.patch<TimeKeeper>(`${this.apiUrl}/timekeepers/${id}/`, timekeeper);
+    return this.patch<TimeKeeper>(`${this.apiUrl}/time-keepers/${id}/`, timekeeper);
   }
 
   /**
    * Delete a timekeeper record
    */
   deleteTimeKeeper(id: number): Observable<void> {
-    return this.delete<void>(`${this.apiUrl}/timekeepers/${id}/`);
+    return this.delete<void>(`${this.apiUrl}/time-keepers/${id}/`);
   }
 
   /**
    * Start a timer
    */
   startTimer(id: number): Observable<{ message: string; timeKeeper: TimeKeeper }> {
-    return this.post<{ message: string; timeKeeper: TimeKeeper }>(`${this.apiUrl}/timekeepers/${id}/start_timer/`, {});
+    return this.post<{ message: string; timeKeeper: TimeKeeper }>(`${this.apiUrl}/time-keepers/${id}/start_timer/`, {});
   }
 
   /**
    * Stop a timer
    */
-  stopTimer(id: number): Observable<{ message: string; durationSeconds: number; timeKeeper: TimeKeeper }> {
-    return this.post<{ message: string; durationSeconds: number; timeKeeper: TimeKeeper }>(`${this.apiUrl}/timekeepers/${id}/stop_timer/`, {});
+  stopTimer(id: number): Observable<{ message: string; currentDuration: number; timeKeeper: TimeKeeper }> {
+    return this.post<{ message: string; currentDuration: number; timeKeeper: TimeKeeper }>(`${this.apiUrl}/time-keepers/${id}/stop_timer/`, {});
+  }
+
+  /**
+   * Reset a timer to its original duration
+   */
+  resetTimer(id: number): Observable<{ message: string; currentDuration: number; timeKeeper: TimeKeeper }> {
+    return this.post<{ message: string; currentDuration: number; timeKeeper: TimeKeeper }>(`${this.apiUrl}/time-keepers/${id}/reset/`, {});
   }
 
   /**
    * Get all active timers for current user
    */
   getActiveTimers(): Observable<TimeKeeper[]> {
-    return this.get<TimeKeeper[]>(`${this.apiUrl}/timekeepers/active_timers/`);
+    return this.get<TimeKeeper[]>(`${this.apiUrl}/time-keepers/active_timers/`);
   }
 
   /**

@@ -11,6 +11,11 @@ export interface StepAnnotationChunkedUploadRequest extends AnnotationChunkedUpl
   folderId?: number;
 }
 
+export interface SessionAnnotationChunkedUploadRequest extends AnnotationChunkedUploadRequest {
+  sessionId: number;
+  folderId?: number;
+}
+
 export interface SessionAnnotationFolderChunkedUploadRequest extends AnnotationChunkedUploadRequest {
   sessionId: number;
   folderId: number;
@@ -37,6 +42,13 @@ export interface StepAnnotationChunkedUploadCompletionRequest extends Annotation
   annotationType?: string;
 }
 
+export interface SessionAnnotationChunkedUploadCompletionRequest extends AnnotationChunkedUploadCompletionRequest {
+  sessionId: number;
+  folderId?: number;
+  annotation?: string;
+  annotationType?: string;
+}
+
 export interface SessionAnnotationFolderChunkedUploadCompletionRequest extends AnnotationChunkedUploadCompletionRequest {
   sessionId: number;
   folderId: number;
@@ -47,6 +59,7 @@ export interface SessionAnnotationFolderChunkedUploadCompletionRequest extends A
 export interface AnnotationChunkedUploadCompletionResponse {
   annotationId?: number;
   stepAnnotationId?: number;
+  sessionAnnotationId?: number;
   sessionAnnotationFolderId?: number;
   message?: string;
   warning?: string;

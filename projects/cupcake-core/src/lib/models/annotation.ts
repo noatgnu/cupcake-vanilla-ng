@@ -1,5 +1,25 @@
 import { BaseResource } from './base';
 
+export enum AnnotationType {
+  Text = 'text',
+  File = 'file',
+  Image = 'image',
+  Video = 'video',
+  Audio = 'audio',
+  Sketch = 'sketch',
+  Other = 'other',
+  Checklist = 'checklist',
+  Counter = 'counter',
+  Table = 'table',
+  Alignment = 'alignment',
+  Calculator = 'calculator',
+  MolarityCalculator = 'mcalculator',
+  Randomization = 'randomization',
+  Instrument = 'instrument',
+  Metadata = 'metadata',
+  Booking = 'booking'
+}
+
 export interface AnnotationFolder extends BaseResource {
   folderName: string;
   parentFolder?: number;
@@ -49,9 +69,13 @@ export interface AnnotationCreateRequest {
   annotationType?: string;
   file?: File;
   folder?: number;
+  transcribed?: boolean;
+  transcription?: string;
   language?: string;
+  translation?: string;
   labGroup?: number;
   visibility?: string;
+  autoTranscribe?: boolean;
 }
 
 export interface AnnotationUpdateRequest {

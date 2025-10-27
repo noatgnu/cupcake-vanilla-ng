@@ -4,28 +4,19 @@ import { BaseApiService } from '@noatgnu/cupcake-core';
 
 import {
   StepAnnotation,
+  StepAnnotationCreateRequest,
+  StepAnnotationUpdateRequest,
   PaginatedResponse
 } from '../models';
 
 export interface StepAnnotationQueryParams {
   session?: number;
   step?: number;
-  annotationType?: string;
+  annotation?: number;
+  scratched?: boolean;
   limit?: number;
   offset?: number;
   ordering?: string;
-}
-
-export interface StepAnnotationCreateRequest {
-  session: number;
-  step: number;
-  annotation?: number;
-  annotationType?: string;
-}
-
-export interface StepAnnotationUpdateRequest {
-  annotation?: number;
-  annotationType?: string;
 }
 
 @Injectable({
@@ -58,15 +49,15 @@ export class StepAnnotationService extends BaseApiService {
     return this.delete<void>(`${this.apiUrl}/step-annotations/${id}/`);
   }
 
-  getAnnotationsForSession(sessionId: number): Observable<PaginatedResponse<StepAnnotation>> {
-    return this.getStepAnnotations({ session: sessionId });
+  getAnnotationsForSession(sessionId: number, params?: Omit<StepAnnotationQueryParams, 'session'>): Observable<PaginatedResponse<StepAnnotation>> {
+    return this.getStepAnnotations({ session: sessionId, ...params });
   }
 
-  getAnnotationsForStep(stepId: number): Observable<PaginatedResponse<StepAnnotation>> {
-    return this.getStepAnnotations({ step: stepId });
+  getAnnotationsForStep(stepId: number, params?: Omit<StepAnnotationQueryParams, 'step'>): Observable<PaginatedResponse<StepAnnotation>> {
+    return this.getStepAnnotations({ step: stepId, ...params });
   }
 
-  getAnnotationsForSessionAndStep(sessionId: number, stepId: number): Observable<PaginatedResponse<StepAnnotation>> {
-    return this.getStepAnnotations({ session: sessionId, step: stepId });
+  getAnnotationsForSessionAndStep(sessionId: number, stepId: number, params?: Omit<StepAnnotationQueryParams, 'session' | 'step'>): Observable<PaginatedResponse<StepAnnotation>> {
+    return this.getStepAnnotations({ session: sessionId, step: stepId, ...params });
   }
 }

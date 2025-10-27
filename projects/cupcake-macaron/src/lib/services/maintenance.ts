@@ -10,7 +10,9 @@ import {
   MaintenanceType,
   Status,
   MaintenanceLogAnnotation,
-  MaintenanceLogAnnotationQueryParams
+  MaintenanceLogAnnotationQueryParams,
+  MaintenanceLogAnnotationCreateRequest,
+  MaintenanceLogAnnotationUpdateRequest
 } from '../models';
 
 export interface MaintenanceQueryParams {
@@ -144,10 +146,17 @@ export class MaintenanceService extends BaseApiService {
   }
 
   /**
-   * Get annotations in a specific folder for a maintenance log
+   * Create a maintenance log annotation
    */
-  getMaintenanceLogAnnotationsByFolder(maintenanceLogId: number, folderId: number): Observable<PaginatedResponse<MaintenanceLogAnnotation>> {
-    return this.getMaintenanceLogAnnotations({ maintenanceLog: maintenanceLogId, folder: folderId });
+  createMaintenanceLogAnnotation(data: MaintenanceLogAnnotationCreateRequest): Observable<MaintenanceLogAnnotation> {
+    return this.post<MaintenanceLogAnnotation>(`${this.apiUrl}/maintenance-log-annotations/`, data);
+  }
+
+  /**
+   * Update a maintenance log annotation
+   */
+  updateMaintenanceLogAnnotation(id: number, data: MaintenanceLogAnnotationUpdateRequest): Observable<MaintenanceLogAnnotation> {
+    return this.patch<MaintenanceLogAnnotation>(`${this.apiUrl}/maintenance-log-annotations/${id}/`, data);
   }
 
   /**

@@ -1,6 +1,6 @@
 {
   "name": "@noatgnu/cupcake-core",
-  "version": "1.2.10",
+  "version": "1.2.14",
   "description": "A reusable Angular library that provides user management, authentication, and site configuration functionality for cupcake applications.",
   "keywords": [
     "angular",

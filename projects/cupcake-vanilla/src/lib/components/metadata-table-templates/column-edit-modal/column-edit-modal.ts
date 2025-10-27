@@ -181,29 +181,38 @@ export class ColumnEditModal implements OnInit {
   }
 
   openValueEditModal(): void {
-    // Get custom filters from selected ontology type or template
-    let customFilters = this.selectedTemplate?.customOntologyFilters;
-    let ontologyType = '';
+    const ontologyTypeIndexStr = this.editForm.get('ontologyType')?.value;
+    const ontologyTypeIndex = parseInt(ontologyTypeIndexStr || '0');
+    const enableTypeahead = this.editForm.get('enableTypeahead')?.value || false;
 
-    // If in advanced mode and an ontology type is selected, use its custom filters
-    if (this.showAdvancedMode() && this.selectedOntologyConfig) {
-      ontologyType = this.selectedOntologyConfig.value;
-      if (this.selectedOntologyConfig.customFilters) {
-        customFilters = this.selectedOntologyConfig.customFilters;
-      }
+    let ontologyType = '';
+    if (ontologyTypeIndex > 0 && ontologyTypeIndex < this.ontologyTypes.length) {
+      ontologyType = this.ontologyTypes[ontologyTypeIndex].value;
     }
 
     const config: MetadataValueEditConfig = {
-      columnId: this.column?.id,
       columnName: this.editForm.get('name')?.value || 'Column',
       columnType: this.editForm.get('type')?.value || '',
       ontologyType: ontologyType,
-      enableTypeahead: this.editForm.get('enableTypeahead')?.value || false,
+      enableTypeahead: enableTypeahead,
       currentValue: this.editForm.get('value')?.value || '',
-      context: this.isEdit ? 'table' : 'template',
-      templateId: this.selectedTemplate?.id || this.templateId || undefined,
-      customOntologyFilters: customFilters
+      context: this.isEdit ? 'table' : 'template'
     };
+
+    const hasTemplate = this.selectedTemplate || this.column?.template || this.templateId;
+
+    if (hasTemplate) {
+      if (this.isEdit && this.column?.id) {
+        config.columnId = this.column.id;
+      }
+      config.templateId = this.selectedTemplate?.id || this.column?.template || this.templateId || undefined;
+    } else {
+      const columnName = this.editForm.get('name')?.value;
+      if (columnName) {
+        const ontologyConfig = this.getOntologyConfigForColumn(columnName);
+        config.customOntologyFilters = ontologyConfig.customFilters;
+      }
+    }
 
     const modalRef = this.modalService.open(MetadataValueEditModal, {
       size: 'lg',
@@ -212,7 +221,6 @@ export class ColumnEditModal implements OnInit {
 
     modalRef.componentInstance.config = config;
     modalRef.componentInstance.valueSaved.subscribe((result: string | { value: string; sampleIndices: number[] }) => {
-      // Extract the actual value from the result
       const newValue = typeof result === 'string' ? result : result.value;
       this.editForm.get('value')?.setValue(newValue);
       this.editForm.get('value')?.markAsTouched();
@@ -348,17 +356,15 @@ export class ColumnEditModal implements OnInit {
     this.editForm.get('name')?.enable();
     this.editForm.get('type')?.enable();
 
-    const ontologyTypeValue = this.getDefaultOntologyTypeForColumn(column.name);
-    const ontologyTypeIndex = ontologyTypeValue
-      ? this.ontologyTypes.findIndex(o => o.value === ontologyTypeValue)
-      : 0;
+    const ontologyConfig = this.getOntologyConfigForColumn(column.name);
+    const ontologyTypeIndex = ontologyConfig.index;
 
     this.editForm.patchValue({
       name: column.name,
       type: column.type,
       value: '',
-      ontologyType: ontologyTypeIndex >= 0 ? ontologyTypeIndex.toString() : '0',
-      enableTypeahead: this.shouldEnableTypeaheadForColumn(column.name),
+      ontologyType: ontologyTypeIndex.toString(),
+      enableTypeahead: ontologyTypeIndex > 0,
       mandatory: this.isColumnMandatory(column.name),
       hidden: false,
       readonly: false,
@@ -386,43 +392,92 @@ export class ColumnEditModal implements OnInit {
     });
   }
 
-  private getDefaultOntologyTypeForColumn(columnName: string): string {
+  private getOntologyConfigForColumn(columnName: string): { index: number; ontologyType: string; customFilters?: any } {
     const lowerName = columnName.toLowerCase();
+    const MSTermType = {
+      INSTRUMENT: 'instrument',
+      MASS_ANALYZER_TYPE: 'mass analyzer type',
+      CLEAVAGE_AGENT: 'cleavage agent',
+      SAMPLE_ATTRIBUTE: 'sample attribute',
+      ANCESTRAL_CATEGORY: 'ancestral category',
+      SEX: 'sex',
+      DEVELOPMENTAL_STAGE: 'developmental stage'
+    };
 
-    // Based on backend configure_ontology_options method - use exact matches
+    let ontologyType = '';
+    let customFilters: any = undefined;
+
     switch (lowerName) {
       case 'characteristics[organism]':
-        return 'species';
+        ontologyType = 'species';
+        break;
       case 'characteristics[disease]':
-        return 'human_disease';
+        ontologyType = 'human_disease';
+        break;
       case 'characteristics[organism part]':
-        return 'tissue';
+        ontologyType = 'tissue';
+        break;
       case 'characteristics[cell type]':
-        return 'cell_ontology';
+        ontologyType = 'cell_ontology';
+        break;
       case 'comment[instrument]':
-        return 'ms_unique_vocabularies';
+        ontologyType = 'ms_unique_vocabularies';
+        customFilters = { ms_unique_vocabularies: { term_type: MSTermType.INSTRUMENT } };
+        break;
       case 'comment[modification parameters]':
-        return 'unimod';
+        ontologyType = 'unimod';
+        break;
       case 'comment[ms2 analyzer type]':
-        return 'ms_unique_vocabularies';
+        ontologyType = 'ms_unique_vocabularies';
+        customFilters = { ms_unique_vocabularies: { term_type: MSTermType.MASS_ANALYZER_TYPE } };
+        break;
       case 'comment[cleavage agent details]':
-        return 'ms_unique_vocabularies';
+        ontologyType = 'ms_unique_vocabularies';
+        customFilters = { ms_unique_vocabularies: { term_type: MSTermType.CLEAVAGE_AGENT } };
+        break;
       case 'characteristics[ancestry category]':
-        return 'ms_unique_vocabularies';
+        ontologyType = 'ms_unique_vocabularies';
+        customFilters = { ms_unique_vocabularies: { term_type: MSTermType.ANCESTRAL_CATEGORY } };
+        break;
       case 'characteristics[sex]':
-        return 'ms_unique_vocabularies';
+        ontologyType = 'ms_unique_vocabularies';
+        customFilters = { ms_unique_vocabularies: { term_type: MSTermType.SEX } };
+        break;
       case 'characteristics[developmental stage]':
-        return 'ms_unique_vocabularies';
+        ontologyType = 'ms_unique_vocabularies';
+        customFilters = { ms_unique_vocabularies: { term_type: MSTermType.DEVELOPMENTAL_STAGE } };
+        break;
       case 'comment[label]':
-        return 'ms_unique_vocabularies';
-      default:
-        return '';
+        ontologyType = 'ms_unique_vocabularies';
+        customFilters = { ms_unique_vocabularies: { term_type: MSTermType.SAMPLE_ATTRIBUTE } };
+        break;
     }
-  }
 
-  private shouldEnableTypeaheadForColumn(columnName: string): boolean {
-    const ontologyType = this.getDefaultOntologyTypeForColumn(columnName);
-    return ontologyType.length > 0;
+    if (!ontologyType) {
+      return { index: 0, ontologyType: '', customFilters: undefined };
+    }
+
+    // Find the matching ontology type config with the correct custom filters
+    const index = this.ontologyTypes.findIndex(config => {
+      if (config.value !== ontologyType) return false;
+      if (!customFilters) return !config.customFilters || Object.keys(config.customFilters).length === 0;
+
+      // Match custom filters
+      if (!config.customFilters) return false;
+      const configFilterKey = Object.keys(config.customFilters)[0];
+      const customFilterKey = Object.keys(customFilters)[0];
+      if (configFilterKey !== customFilterKey) return false;
+
+      const configTermType = config.customFilters[configFilterKey]?.['term_type'];
+      const customTermType = customFilters[customFilterKey]?.['term_type'];
+      return configTermType === customTermType;
+    });
+
+    return {
+      index: index >= 0 ? index : 0,
+      ontologyType,
+      customFilters
+    };
   }
 
   private isColumnMandatory(columnName: string): boolean {

@@ -20,8 +20,8 @@ export interface ApiResponse<T = any> {
 }
 
 export interface InstrumentQueryParams {
-  page?: number;
-  pageSize?: number;
+  limit?: number;
+  offset?: number;
   search?: string;
   ordering?: string;
   enabled?: boolean;

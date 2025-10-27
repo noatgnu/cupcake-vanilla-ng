@@ -5,6 +5,7 @@ import { MetadataTable, MetadataColumn, MetadataColumnCreateRequest } from '@noa
 
 import {
   Instrument,
+  InstrumentDetail,
   InstrumentCreateRequest,
   InstrumentUpdateRequest,
   PaginatedResponse,
@@ -12,7 +13,9 @@ import {
   InstrumentAlertType,
   AnnotationChunkedUploadCompletionResponse,
   InstrumentAnnotation,
-  InstrumentAnnotationQueryParams
+  InstrumentAnnotationQueryParams,
+  InstrumentAnnotationCreateRequest,
+  InstrumentAnnotationUpdateRequest
 } from '../models';
 import { AnnotationChunkedUploadService } from './annotation-chunked-upload';
 
@@ -36,8 +39,8 @@ export class InstrumentService extends BaseApiService {
   /**
    * Get a single instrument by ID
    */
-  getInstrument(id: number): Observable<Instrument> {
-    return this.get<Instrument>(`${this.apiUrl}/instruments/${id}/`);
+  getInstrument(id: number): Observable<InstrumentDetail> {
+    return this.get<InstrumentDetail>(`${this.apiUrl}/instruments/${id}/`);
   }
 
   /**
@@ -45,7 +48,7 @@ export class InstrumentService extends BaseApiService {
    */
   createInstrument(instrument: InstrumentCreateRequest): Observable<Instrument> {
     const formData = this.prepareInstrumentData(instrument);
-    return this.http.post<Instrument>(`${this.apiUrl}/instruments/`, formData);
+    return this.post<Instrument>(`${this.apiUrl}/instruments/`, formData);
   }
 
   /**
@@ -53,7 +56,7 @@ export class InstrumentService extends BaseApiService {
    */
   updateInstrument(id: number, instrument: InstrumentUpdateRequest): Observable<Instrument> {
     const formData = this.prepareInstrumentData(instrument);
-    return this.http.put<Instrument>(`${this.apiUrl}/instruments/${id}/`, formData);
+    return this.put<Instrument>(`${this.apiUrl}/instruments/${id}/`, formData);
   }
 
   /**
@@ -61,7 +64,7 @@ export class InstrumentService extends BaseApiService {
    */
   patchInstrument(id: number, instrument: Partial<InstrumentUpdateRequest>): Observable<Instrument> {
     const formData = this.prepareInstrumentData(instrument);
-    return this.http.patch<Instrument>(`${this.apiUrl}/instruments/${id}/`, formData);
+    return this.patch<Instrument>(`${this.apiUrl}/instruments/${id}/`, formData);
   }
 
   /**
@@ -98,17 +101,18 @@ export class InstrumentService extends BaseApiService {
   private prepareInstrumentData(instrument: any): FormData | any {
     if (instrument.image && instrument.image instanceof File) {
       const formData = new FormData();
-      
+
       Object.entries(instrument).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
+          const snakeKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
           if (key === 'image' && value instanceof File) {
-            formData.append(key, value);
+            formData.append(snakeKey, value);
           } else {
-            formData.append(key, value.toString());
+            formData.append(snakeKey, value.toString());
           }
         }
       });
-      
+
       return formData;
     }
 
@@ -119,7 +123,7 @@ export class InstrumentService extends BaseApiService {
    * Check warranty status for an instrument
    */
   checkWarranty(id: number): Observable<{ warrantyValid: boolean; warrantyExpiration?: string; message: string }> {
-    return this.http.post<{ warrantyValid: boolean; warrantyExpiration?: string; message: string }>(
+    return this.post<{ warrantyValid: boolean; warrantyExpiration?: string; message: string }>(
       `${this.apiUrl}/instruments/${id}/check_warranty/`, {}
     );
   }
@@ -128,7 +132,7 @@ export class InstrumentService extends BaseApiService {
    * Check maintenance status for an instrument
    */
   checkMaintenance(id: number): Observable<{ maintenanceRequired: boolean; lastMaintenance?: string; message: string }> {
-    return this.http.post<{ maintenanceRequired: boolean; lastMaintenance?: string; message: string }>(
+    return this.post<{ maintenanceRequired: boolean; lastMaintenance?: string; message: string }>(
       `${this.apiUrl}/instruments/${id}/check_maintenance/`, {}
     );
   }
@@ -145,11 +149,11 @@ export class InstrumentService extends BaseApiService {
     notificationType: InstrumentAlertType,
     recipientId?: number
   ): Observable<{ success: boolean; message: string; notificationType: string }> {
-    const body: any = { notification_type: notificationType };
+    const body: any = { notificationType };
     if (recipientId !== undefined) {
-      body.recipient_id = recipientId;
+      body.recipientId = recipientId;
     }
-    return this.http.post<{ success: boolean; message: string; notificationType: string }>(
+    return this.post<{ success: boolean; message: string; notificationType: string }>(
       `${this.apiUrl}/instruments/${id}/send_test_notification/`, body
     );
   }
@@ -166,7 +170,7 @@ export class InstrumentService extends BaseApiService {
    * Add a column to the instrument's metadata table
    */
   addMetadataColumn(id: number, columnData: MetadataColumnCreateRequest): Observable<{ message: string; column: MetadataColumn }> {
-    return this.http.post<{ message: string; column: MetadataColumn }>(
+    return this.post<{ message: string; column: MetadataColumn }>(
       `${this.apiUrl}/instruments/${id}/add_metadata_column/`, columnData
     );
   }
@@ -175,7 +179,7 @@ export class InstrumentService extends BaseApiService {
    * Remove a column from the instrument's metadata table
    */
   removeMetadataColumn(id: number, columnId: string): Observable<{ message: string }> {
-    return this.http.delete<{ message: string }>(
+    return this.delete<{ message: string }>(
       `${this.apiUrl}/instruments/${id}/remove_metadata_column/${columnId}/`
     );
   }
@@ -249,6 +253,27 @@ export class InstrumentService extends BaseApiService {
   }
 
   /**
+   * Create a new instrument annotation (non-file)
+   */
+  createInstrumentAnnotation(annotation: InstrumentAnnotationCreateRequest): Observable<InstrumentAnnotation> {
+    return this.post<InstrumentAnnotation>(`${this.apiUrl}/instrument-annotations/`, annotation);
+  }
+
+  /**
+   * Update an instrument annotation
+   */
+  updateInstrumentAnnotation(id: number, annotation: InstrumentAnnotationUpdateRequest): Observable<InstrumentAnnotation> {
+    return this.put<InstrumentAnnotation>(`${this.apiUrl}/instrument-annotations/${id}/`, annotation);
+  }
+
+  /**
+   * Partially update an instrument annotation
+   */
+  patchInstrumentAnnotation(id: number, annotation: Partial<InstrumentAnnotationUpdateRequest>): Observable<InstrumentAnnotation> {
+    return this.patch<InstrumentAnnotation>(`${this.apiUrl}/instrument-annotations/${id}/`, annotation);
+  }
+
+  /**
    * Delete an instrument annotation
    */
   deleteInstrumentAnnotation(id: number): Observable<void> {
@@ -261,19 +286,5 @@ export class InstrumentService extends BaseApiService {
    */
   getInstrumentFolders(id: number): Observable<AnnotationFolder[]> {
     return this.get<AnnotationFolder[]>(`${this.apiUrl}/instruments/${id}/folders/`);
-  }
-
-  /**
-   * Transform camelCase properties to snake_case for API
-   */
-  private transformToApiFormat(data: any): any {
-    const transformed: any = {};
-
-    Object.entries(data).forEach(([key, value]) => {
-      const snakeKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
-      transformed[snakeKey] = value;
-    });
-
-    return transformed;
   }
 }

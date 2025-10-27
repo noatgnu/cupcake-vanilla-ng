@@ -8,6 +8,7 @@ export interface SiteConfig extends BaseTimestampedModel {
   showPoweredBy: boolean;
   allowUserRegistration: boolean;
   enableOrcidLogin: boolean;
+  bookingDeletionWindowMinutes: number;
   installedApps: {
     [appCode: string]: {
       name: string;
@@ -27,6 +28,7 @@ export interface SiteConfigUpdateRequest {
   showPoweredBy?: boolean;
   allowUserRegistration?: boolean;
   enableOrcidLogin?: boolean;
+  bookingDeletionWindowMinutes?: number;
 }
 
 export interface AuthConfig {

@@ -1,4 +1,6 @@
 import { BaseTimestampedModel } from './base';
+import { MetadataColumn } from './metadata-column';
+import { SamplePool } from './sample-pool';
 
 export interface MetadataTable extends BaseTimestampedModel {
   id: number;
@@ -15,8 +17,8 @@ export interface MetadataTable extends BaseTimestampedModel {
   visibility: 'private' | 'group' | 'public';
   contentType?: number;
   objectId?: number;
-  columns?: any[];
-  samplePools?: any[];
+  columns?: MetadataColumn[];
+  samplePools?: SamplePool[];
   columnCount?: number;
   sampleRange?: string;
   canEdit?: boolean;

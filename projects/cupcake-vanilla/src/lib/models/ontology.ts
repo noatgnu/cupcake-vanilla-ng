@@ -103,10 +103,3 @@ export interface OntologySuggestion {
   ontologyType: string;
   fullData?: any;
 }
-
-export interface OntologySuggestionResponse {
-  count: number;
-  next?: string;
-  previous?: string;
-  results: OntologySuggestion[];
-}

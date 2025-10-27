@@ -1,6 +1,6 @@
 {
   "name": "@noatgnu/cupcake-macaron",
-  "version": "1.2.15",
+  "version": "1.2.41",
   "description": "Extension for cupcake-core that provides additional api and interfaces for instrument and stock inventory management.",
   "author": "Toan Phung",
   "license": "MIT",

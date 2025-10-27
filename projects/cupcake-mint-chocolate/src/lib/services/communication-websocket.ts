@@ -147,7 +147,7 @@ export class CommunicationWebSocketService implements OnDestroy {
     filter((msg): msg is NotificationUpdateEvent => msg.type === 'notification.update')
   );
 
-  connect(wsUrl: string, token?: string): void {
+  connect(wsBaseUrl: string, token?: string): void {
     if (this.socket && this.socket.readyState === WebSocket.OPEN) {
       console.log('WebSocket already connected');
       return;
@@ -155,7 +155,8 @@ export class CommunicationWebSocketService implements OnDestroy {
 
     this.connectionStateSubject.next('connecting');
 
-    const url = token ? `${wsUrl}?token=${token}` : wsUrl;
+    const fullUrl = `${wsBaseUrl.replace(/\/$/, '')}/ccmc/communications/`;
+    const url = token ? `${fullUrl}?token=${token}` : fullUrl;
     this.socket = new WebSocket(url);
 
     this.socket.onopen = () => {
@@ -186,19 +187,19 @@ export class CommunicationWebSocketService implements OnDestroy {
       this.connectionStateSubject.next('disconnected');
 
       if (this.reconnectAttempts < this.maxReconnectAttempts) {
-        this.scheduleReconnect(wsUrl, token);
+        this.scheduleReconnect(wsBaseUrl, token);
       }
     };
   }
 
-  private scheduleReconnect(wsUrl: string, token?: string): void {
+  private scheduleReconnect(wsBaseUrl: string, token?: string): void {
     this.reconnectAttempts++;
     const delay = this.reconnectDelay * this.reconnectAttempts;
 
     console.log(`Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
 
     this.reconnectTimer = setTimeout(() => {
-      this.connect(wsUrl, token);
+      this.connect(wsBaseUrl, token);
     }, delay);
   }
 

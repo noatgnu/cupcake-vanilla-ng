@@ -1,6 +1,6 @@
 {
   "name": "@noatgnu/cupcake-vanilla",
-  "version": "1.2.6",
+  "version": "1.2.9",
   "description": "An extension for cupcake-core that provides additional api and interfaces for facility to manage and compose metadata.",
   "author": "Toan Phung",
   "license": "MIT",
@@ -13,6 +13,7 @@
     "url": "https://github.com/noatgnu/cupcake-vanilla-ng/issues"
   },
   "peerDependencies": {
+    "@angular/cdk": "^20.2.7",
     "@angular/common": "^20.3.3",
     "@angular/core": "^20.3.3",
     "jssha": "^3.3.1",

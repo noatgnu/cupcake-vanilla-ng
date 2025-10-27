@@ -1,11 +1,12 @@
 import { BaseTimestampedModel } from './base';
+import { ExternalContact } from './contact';
 
 export interface SupportInformation extends BaseTimestampedModel {
   id: number;
   vendorName?: string;
-  vendorContacts?: number[];
+  vendorContacts?: ExternalContact[];
   manufacturerName?: string;
-  manufacturerContacts?: number[];
+  manufacturerContacts?: ExternalContact[];
   serialNumber?: string;
   maintenanceFrequencyDays?: number;
   location?: number;
@@ -16,9 +17,9 @@ export interface SupportInformation extends BaseTimestampedModel {
 
 export interface SupportInformationCreateRequest {
   vendorName?: string;
-  vendorContacts?: number[];
+  vendorContactsIds?: number[];
   manufacturerName?: string;
-  manufacturerContacts?: number[];
+  manufacturerContactsIds?: number[];
   serialNumber?: string;
   maintenanceFrequencyDays?: number;
   location?: number;
@@ -28,9 +29,9 @@ export interface SupportInformationCreateRequest {
 
 export interface SupportInformationUpdateRequest {
   vendorName?: string;
-  vendorContacts?: number[];
+  vendorContactsIds?: number[];
   manufacturerName?: string;
-  manufacturerContacts?: number[];
+  manufacturerContactsIds?: number[];
   serialNumber?: string;
   maintenanceFrequencyDays?: number;
   location?: number;

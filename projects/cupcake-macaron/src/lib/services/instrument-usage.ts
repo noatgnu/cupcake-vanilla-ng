@@ -16,6 +16,14 @@ export interface InstrumentUsageQueryParams {
   approved?: boolean;
   maintenance?: boolean;
   approvedBy?: number;
+  timeStarted__gte?: string;
+  timeStarted__lte?: string;
+  timeStarted__gt?: string;
+  timeStarted__lt?: string;
+  timeEnded__gte?: string;
+  timeEnded__lte?: string;
+  timeEnded__gt?: string;
+  timeEnded__lt?: string;
   limit?: number;
   offset?: number;
   ordering?: string;

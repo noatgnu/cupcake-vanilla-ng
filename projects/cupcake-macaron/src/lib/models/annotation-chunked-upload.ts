@@ -15,6 +15,10 @@ export interface StoredReagentAnnotationChunkedUploadRequest extends AnnotationC
   folderId: number;
 }
 
+export interface MaintenanceLogAnnotationChunkedUploadRequest extends AnnotationChunkedUploadRequest {
+  maintenanceLogId: number;
+}
+
 export interface AnnotationChunkedUploadResponse {
   id: string;
   filename: string;
@@ -42,10 +46,17 @@ export interface StoredReagentAnnotationChunkedUploadCompletionRequest extends A
   annotationType?: string;
 }
 
+export interface MaintenanceLogAnnotationChunkedUploadCompletionRequest extends AnnotationChunkedUploadCompletionRequest {
+  maintenanceLogId: number;
+  annotation?: string;
+  annotationType?: string;
+}
+
 export interface AnnotationChunkedUploadCompletionResponse {
   annotationId?: number;
   instrumentAnnotationId?: number;
   storedReagentAnnotationId?: number;
+  maintenanceLogAnnotationId?: number;
   message?: string;
   warning?: string;
   error?: string;

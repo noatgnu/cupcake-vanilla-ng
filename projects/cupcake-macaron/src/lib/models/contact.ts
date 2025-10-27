@@ -37,9 +37,11 @@ export interface ExternalContactDetailsUpdateRequest {
 export interface ExternalContactCreateRequest {
   contactName: string;
   user?: number;
+  contactDetailsIds?: number[];
 }
 
 export interface ExternalContactUpdateRequest {
   contactName?: string;
   user?: number;
+  contactDetailsIds?: number[];
 }

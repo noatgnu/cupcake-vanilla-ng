@@ -12,7 +12,7 @@ import {
 
 export interface SessionQueryParams {
   search?: string;
-  project?: number;
+  projects?: number;
   status?: string;
   user?: number;
   dateFrom?: string;
@@ -82,7 +82,7 @@ export class SessionService extends BaseApiService {
    * Get sessions by project
    */
   getSessionsByProject(projectId: number): Observable<PaginatedResponse<Session>> {
-    return this.getSessions({ project: projectId });
+    return this.getSessions({ projects: projectId });
   }
 
   /**

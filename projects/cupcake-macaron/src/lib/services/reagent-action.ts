@@ -15,6 +15,8 @@ export interface ReagentActionQueryParams {
   reagent?: number;
   user?: number;
   actionType?: ActionType;
+  session?: number;
+  step?: number;
   limit?: number;
   offset?: number;
   ordering?: string;
@@ -101,5 +103,19 @@ export class ReagentActionService extends BaseApiService {
    */
   searchReagentActions(query: string): Observable<PaginatedResponse<ReagentAction>> {
     return this.getReagentActions({ search: query });
+  }
+
+  /**
+   * Get actions for a specific session
+   */
+  getActionsForSession(sessionId: number): Observable<PaginatedResponse<ReagentAction>> {
+    return this.getReagentActions({ session: sessionId });
+  }
+
+  /**
+   * Get actions for a specific protocol step
+   */
+  getActionsForStep(stepId: number): Observable<PaginatedResponse<ReagentAction>> {
+    return this.getReagentActions({ step: stepId });
   }
 }

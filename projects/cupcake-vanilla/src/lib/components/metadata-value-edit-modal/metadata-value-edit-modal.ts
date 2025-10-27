@@ -4,7 +4,7 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
 import { NgbActiveModal, NgbModule, NgbNavModule } from '@ng-bootstrap/ng-bootstrap';
 import { Observable, of, catchError, debounceTime, distinctUntilChanged, tap, switchMap, map } from 'rxjs';
 import { MetadataColumn, OntologySuggestion, FavouriteMetadataOption, FavouriteMetadataOptionCreateRequest, OntologyType } from '../../models';
-import { FavouriteMetadataOptionService, MetadataColumnService, MetadataColumnTemplateService } from '../../services';
+import { FavouriteMetadataOptionService, MetadataColumnService, MetadataColumnTemplateService, OntologySearchService } from '../../services';
 import { AuthService, User, LabGroupService } from '@noatgnu/cupcake-core';
 import { SdrfSyntaxService, SyntaxType } from '../../services/sdrf-syntax';
 import { SdrfAgeInput, SdrfModificationInput, SdrfCleavageInput, SdrfSpikedCompoundInput } from '../';
@@ -78,7 +78,8 @@ export class MetadataValueEditModal implements OnInit {
     private favouriteMetadataOptionService: FavouriteMetadataOptionService,
     private metadataColumnService: MetadataColumnService,
     private metadataColumnTemplateService: MetadataColumnTemplateService,
-    private labGroupService: LabGroupService
+    private labGroupService: LabGroupService,
+    private ontologySearchService: OntologySearchService
   ) {
     this.editForm = this.fb.group({
       value: ['', [Validators.maxLength(500)]]
@@ -187,6 +188,22 @@ export class MetadataValueEditModal implements OnInit {
             search: term,
             limit: 10,
             searchType: this.searchType()
+          }).pipe(
+            map(response => response.suggestions || []),
+            catchError(error => {
+              console.error('Error getting ontology suggestions:', error);
+              return of([]);
+            }),
+            tap(() => this.isLoadingSuggestions.set(false))
+          );
+        } else if (this.config.ontologyType) {
+          // Fallback: use OntologySearchService directly with custom filters
+          return this.ontologySearchService.suggest({
+            q: term,
+            type: this.config.ontologyType,
+            match: this.searchType() === 'icontains' ? 'contains' : 'startswith',
+            customFilters: this.config.customOntologyFilters,
+            limit: 10
           }).pipe(
             map(response => response.suggestions || []),
             catchError(error => {

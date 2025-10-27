@@ -64,9 +64,32 @@ export class LoginComponent implements OnInit {
 
     this.authService.isAuthenticated$.subscribe(isAuthenticated => {
       if (isAuthenticated) {
-        this.router.navigate([this.returnUrl]);
+        this.navigateToReturnUrl();
       }
     });
+  }
+
+  /**
+   * Navigate to return URL, properly handling query parameters
+   */
+  private navigateToReturnUrl(): void {
+    const url = this.returnUrl;
+    if (!url || url === '/') {
+      this.router.navigate(['/']);
+      return;
+    }
+
+    const [path, queryString] = url.split('?');
+    if (queryString) {
+      const queryParams: any = {};
+      const params = new URLSearchParams(queryString);
+      params.forEach((value, key) => {
+        queryParams[key] = value;
+      });
+      this.router.navigate([path], { queryParams });
+    } else {
+      this.router.navigate([path]);
+    }
   }
 
   /**
@@ -142,7 +165,7 @@ export class LoginComponent implements OnInit {
         next: (response) => {
           this.success.set('Login successful!');
           setTimeout(() => {
-            this.router.navigate([this.returnUrl]);
+            this.navigateToReturnUrl();
           }, 1000);
         },
         error: (error) => {
@@ -192,7 +215,7 @@ export class LoginComponent implements OnInit {
       next: (response) => {
         this.success.set(`Welcome, ${response.user.firstName || response.user.username}!`);
         setTimeout(() => {
-          this.router.navigate([this.returnUrl]);
+          this.navigateToReturnUrl();
         }, 1000);
       },
       error: (error) => {

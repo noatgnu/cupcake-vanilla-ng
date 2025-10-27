@@ -3,13 +3,15 @@ import { JobType, Status, SampleType } from './enums';
 
 export interface InstrumentJob extends BaseTimestampedModel {
   id: number;
-  user: number;
+  user?: number;
   userUsername?: string;
-  instrument: number;
+  instrument?: number;
   instrumentName?: string;
   instrumentUsage?: number;
   labGroup?: number;
   labGroupName?: string;
+  project?: number;
+  projectName?: string;
   jobType: JobType;
   jobTypeDisplay?: string;
   jobName?: string;
@@ -44,9 +46,10 @@ export interface InstrumentJob extends BaseTimestampedModel {
 }
 
 export interface InstrumentJobCreateRequest {
-  instrument: number;
+  instrument?: number;
   jobType: JobType;
   labGroup?: number;
+  project?: number;
   jobName?: string;
   sampleNumber?: number;
   sampleType?: SampleType;
@@ -66,6 +69,7 @@ export interface InstrumentJobCreateRequest {
 
 export interface InstrumentJobUpdateRequest {
   labGroup?: number;
+  project?: number;
   jobName?: string;
   status?: Status;
   sampleNumber?: number;

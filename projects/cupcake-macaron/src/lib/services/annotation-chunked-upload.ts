@@ -10,7 +10,9 @@ import {
   InstrumentAnnotationChunkedUploadRequest,
   InstrumentAnnotationChunkedUploadCompletionRequest,
   StoredReagentAnnotationChunkedUploadRequest,
-  StoredReagentAnnotationChunkedUploadCompletionRequest
+  StoredReagentAnnotationChunkedUploadCompletionRequest,
+  MaintenanceLogAnnotationChunkedUploadRequest,
+  MaintenanceLogAnnotationChunkedUploadCompletionRequest
 } from '../models';
 
 @Injectable({
@@ -398,10 +400,202 @@ export class AnnotationChunkedUploadService extends BaseApiService {
     );
   }
 
-  cancelUpload(uploadId: string, uploadType: 'instrument' | 'stored-reagent'): Observable<void> {
-    const endpoint = uploadType === 'instrument'
-      ? `upload/instrument-annotation-chunks`
-      : `upload/stored-reagent-annotation-chunks`;
+  uploadMaintenanceLogAnnotationChunk(
+    request: MaintenanceLogAnnotationChunkedUploadRequest,
+    uploadId?: string,
+    offset?: number,
+    totalSize?: number
+  ): Observable<AnnotationChunkedUploadResponse> {
+    const formData = new FormData();
+    formData.append('file', request.file);
+
+    if (request.filename) {
+      formData.append('filename', request.filename);
+    }
+    formData.append('maintenance_log_id', request.maintenanceLogId.toString());
+    if (request.annotation) {
+      formData.append('annotation', request.annotation);
+    }
+    if (request.annotationType) {
+      formData.append('annotation_type', request.annotationType);
+    }
+
+    const url = uploadId
+      ? `${this.apiUrl}/upload/maintenance-log-annotation-chunks/${uploadId}/`
+      : `${this.apiUrl}/upload/maintenance-log-annotation-chunks/`;
+
+    const httpOptions: any = {};
+    const isChunkedUpload = offset !== undefined && totalSize !== undefined;
+
+    if (isChunkedUpload) {
+      const chunkEnd = offset + request.file.size - 1;
+      httpOptions.headers = {
+        'Content-Range': `bytes ${offset}-${chunkEnd}/${totalSize}`
+      };
+    }
+
+    if (isChunkedUpload || uploadId) {
+      return this.put<AnnotationChunkedUploadResponse>(url, formData, httpOptions);
+    } else {
+      return this.post<AnnotationChunkedUploadResponse>(url, formData, httpOptions);
+    }
+  }
+
+  completeMaintenanceLogAnnotationUpload(
+    uploadId: string,
+    request: MaintenanceLogAnnotationChunkedUploadCompletionRequest
+  ): Observable<AnnotationChunkedUploadCompletionResponse> {
+    const formData = new FormData();
+    formData.append('sha256', request.sha256);
+    formData.append('maintenance_log_id', request.maintenanceLogId.toString());
+    if (request.annotation) {
+      formData.append('annotation', request.annotation);
+    }
+    if (request.annotationType) {
+      formData.append('annotation_type', request.annotationType);
+    }
+
+    return this.post<AnnotationChunkedUploadCompletionResponse>(
+      `${this.apiUrl}/upload/maintenance-log-annotation-chunks/${uploadId}/`,
+      formData
+    );
+  }
+
+  uploadMaintenanceLogAnnotationFileInChunks(
+    file: File,
+    maintenanceLogId: number,
+    chunkSize: number = 1024 * 1024,
+    options?: {
+      annotation?: string;
+      annotationType?: string;
+      onProgress?: (progress: number) => void;
+    }
+  ): Observable<AnnotationChunkedUploadCompletionResponse> {
+    return new Observable(subscriber => {
+      let uploadId: string | undefined;
+      let offset = 0;
+      const totalSize = file.size;
+      const sha256 = new jsSHA('SHA-256', 'ARRAYBUFFER');
+
+      if (totalSize <= chunkSize) {
+        this.completeMaintenanceLogAnnotationUploadWithFile({
+          file: file,
+          filename: file.name,
+          maintenanceLogId: maintenanceLogId,
+          annotation: options?.annotation,
+          annotationType: options?.annotationType
+        }).subscribe({
+          next: (result) => {
+            subscriber.next(result);
+            subscriber.complete();
+          },
+          error: (error) => subscriber.error(error)
+        });
+        return;
+      }
+
+      const uploadNextChunk = () => {
+        if (offset >= totalSize) {
+          if (uploadId) {
+            const calculatedHash = sha256.getHash('HEX');
+            this.completeMaintenanceLogAnnotationUpload(uploadId, {
+              sha256: calculatedHash,
+              maintenanceLogId: maintenanceLogId,
+              annotation: options?.annotation,
+              annotationType: options?.annotationType
+            }).subscribe({
+              next: (result) => {
+                subscriber.next(result);
+                subscriber.complete();
+              },
+              error: (error) => subscriber.error(error)
+            });
+          } else {
+            subscriber.error(new Error('Upload failed: No upload ID'));
+          }
+          return;
+        }
+
+        const end = Math.min(offset + chunkSize, totalSize);
+        const chunk = file.slice(offset, end);
+        const chunkFile = new File([chunk], file.name, { type: file.type });
+
+        chunk.arrayBuffer().then(arrayBuffer => {
+          sha256.update(arrayBuffer);
+
+          this.uploadMaintenanceLogAnnotationChunk({
+            file: chunkFile,
+            filename: file.name,
+            maintenanceLogId: maintenanceLogId,
+            annotation: options?.annotation,
+            annotationType: options?.annotationType
+          }, uploadId, offset, totalSize).subscribe({
+            next: (response) => {
+              uploadId = response.id;
+              offset = response.offset;
+
+              const progress = (offset / totalSize) * 100;
+              if (options?.onProgress) {
+                options.onProgress(progress);
+              }
+
+              uploadNextChunk();
+            },
+            error: (error) => subscriber.error(error)
+          });
+        }).catch(error => subscriber.error(error));
+      };
+
+      uploadNextChunk();
+    });
+  }
+
+  completeMaintenanceLogAnnotationUploadWithFile(
+    request: MaintenanceLogAnnotationChunkedUploadRequest
+  ): Observable<AnnotationChunkedUploadCompletionResponse> {
+    const hasher = new jsSHA('SHA-256', 'ARRAYBUFFER');
+    const arrayBufferPromise = request.file.arrayBuffer();
+
+    return from(arrayBufferPromise).pipe(
+      switchMap((arrayBuffer) => {
+        hasher.update(arrayBuffer);
+        const hash = hasher.getHash('HEX');
+
+        const formData = new FormData();
+        formData.append('file', request.file);
+        if (request.filename) {
+          formData.append('filename', request.filename);
+        }
+        formData.append('maintenance_log_id', request.maintenanceLogId.toString());
+        if (request.annotation) {
+          formData.append('annotation', request.annotation);
+        }
+        if (request.annotationType) {
+          formData.append('annotation_type', request.annotationType);
+        }
+        formData.append('sha256', hash);
+
+        return this.post<AnnotationChunkedUploadCompletionResponse>(
+          `${this.apiUrl}/upload/maintenance-log-annotation-chunks/`,
+          formData
+        );
+      })
+    );
+  }
+
+  cancelUpload(uploadId: string, uploadType: 'instrument' | 'stored-reagent' | 'maintenance-log'): Observable<void> {
+    let endpoint: string;
+    switch (uploadType) {
+      case 'instrument':
+        endpoint = 'upload/instrument-annotation-chunks';
+        break;
+      case 'stored-reagent':
+        endpoint = 'upload/stored-reagent-annotation-chunks';
+        break;
+      case 'maintenance-log':
+        endpoint = 'upload/maintenance-log-annotation-chunks';
+        break;
+    }
     return this.delete<void>(`${this.apiUrl}/${endpoint}/${uploadId}/`);
   }
 }

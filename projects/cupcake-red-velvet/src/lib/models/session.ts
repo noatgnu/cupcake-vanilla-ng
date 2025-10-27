@@ -11,6 +11,7 @@ export interface Session extends BaseTimestampedModel, RemoteSystemModel, OwnedM
   editorsUsernames?: string[];
   viewersUsernames?: string[];
   protocols?: number[];
+  projects?: number[];
   protocolCount?: number;
   duration?: number;
   isRunning?: boolean;
@@ -32,6 +33,11 @@ export interface SessionAnnotation extends BaseTimestampedModel {
   metadataTableName?: string;
   metadataTableId?: number;
   metadataColumnsCount?: number;
+  transcribed?: boolean;
+  transcription?: string;
+  language?: string;
+  translation?: string;
+  scratched?: boolean;
 }
 
 export interface StepAnnotation {
@@ -44,8 +50,16 @@ export interface StepAnnotation {
   annotationName?: string;
   annotationType?: string;
   annotationText?: string;
+  transcribed?: boolean;
+  transcription?: string;
+  language?: string;
+  translation?: string;
+  scratched?: boolean;
   fileUrl?: string;
+  instrumentUsageIds?: number[];
+  order: number;
   createdAt: string;
+  updatedAt: string;
 }
 
 export interface SessionAnnotationFolder {
@@ -66,15 +80,27 @@ export interface InstrumentUsageSessionAnnotation {
   createdAt: string;
 }
 
+export interface InstrumentUsageStepAnnotation {
+  id: number;
+  stepAnnotation: number;
+  stepAnnotationDetails?: any;
+  instrumentUsage: number;
+  instrumentName?: string;
+  createdAt: string;
+}
+
 export interface SessionCreateRequest {
   uniqueId?: string;
   name: string;
   enabled?: boolean;
   protocols?: number[];
+  projects?: number[];
   editors?: number[];
   viewers?: number[];
   remoteId?: number;
   remoteHost?: number;
+  startedAt?: string;
+  endedAt?: string;
 }
 
 export interface SessionUpdateRequest {
@@ -82,23 +108,46 @@ export interface SessionUpdateRequest {
   enabled?: boolean;
   processing?: boolean;
   protocols?: number[];
+  projects?: number[];
   editors?: number[];
   viewers?: number[];
   status?: string;
+  startedAt?: string;
+  endedAt?: string;
+}
+
+export interface AnnotationDataRequest {
+  annotation: string;
+  annotationType?: string;
+  transcription?: string;
+  language?: string;
+  translation?: string;
+  scratched?: boolean;
 }
 
 export interface SessionAnnotationCreateRequest {
   session: number;
   annotation?: number;
-  annotationType?: string;
-  annotationText?: string;
+  annotationData?: AnnotationDataRequest;
   order?: number;
   metadataTable?: number;
 }
 
+export interface StepAnnotationCreateRequest {
+  session: number;
+  step: number;
+  annotation?: number;
+  annotationData?: AnnotationDataRequest;
+  order?: number;
+}
+
+export interface StepAnnotationUpdateRequest {
+  annotationData?: Partial<AnnotationDataRequest>;
+  order?: number;
+}
+
 export interface SessionAnnotationUpdateRequest {
-  annotationType?: string;
-  annotationText?: string;
+  annotationData?: Partial<AnnotationDataRequest>;
   order?: number;
   metadataTable?: number;
 }

@@ -22,6 +22,7 @@ export interface InstrumentJobQueryParams {
   user?: number;
   instrument?: number;
   metadataTable?: number;
+  project?: number;
   limit?: number;
   offset?: number;
   ordering?: string;
@@ -147,6 +148,13 @@ export class InstrumentJobService extends BaseApiService {
   }
 
   /**
+   * Get jobs for a specific project
+   */
+  getJobsForProject(projectId: number): Observable<PaginatedResponse<InstrumentJob>> {
+    return this.getInstrumentJobs({ project: projectId });
+  }
+
+  /**
    * Search jobs by name or details
    */
   searchInstrumentJobs(query: string): Observable<PaginatedResponse<InstrumentJob>> {
@@ -158,5 +166,12 @@ export class InstrumentJobService extends BaseApiService {
    */
   getAssignedInstrumentJobs(): Observable<PaginatedResponse<InstrumentJob>> {
     return this.getInstrumentJobs({ assigned: true });
+  }
+
+  /**
+   * Get autocomplete values for funder and cost_center from user's existing jobs
+   */
+  getAutocompleteFields(): Observable<{ funders: string[]; cost_centers: string[] }> {
+    return this.get<{ funders: string[]; cost_centers: string[] }>(`${this.apiUrl}/instrument-jobs/autocomplete_fields/`);
   }
 }
