@@ -32,6 +32,8 @@ export interface InstrumentJob extends BaseTimestampedModel {
   assigned: boolean;
   staff?: number[];
   staffUsernames?: string[];
+  metadataTableTemplate?: number;
+  metadataTableTemplateName?: string;
   metadataTable?: number;
   metadataTableName?: string;
   userAnnotations?: any[];
@@ -43,6 +45,9 @@ export interface InstrumentJob extends BaseTimestampedModel {
   personnelEndTime?: string;
   submittedAt?: string;
   completedAt?: string;
+  canEdit?: boolean;
+  canDelete?: boolean;
+  canEditMetadata?: boolean;
 }
 
 export interface InstrumentJobCreateRequest {
@@ -63,6 +68,7 @@ export interface InstrumentJobCreateRequest {
   funder?: string;
   costCenter?: string;
   staff?: number[];
+  metadataTableTemplate?: number;
   metadataTable?: number;
   storedReagent?: number;
 }
@@ -85,6 +91,7 @@ export interface InstrumentJobUpdateRequest {
   costCenter?: string;
   assigned?: boolean;
   staff?: number[];
+  metadataTableTemplate?: number;
   storedReagent?: number;
   instrumentStartTime?: string;
   instrumentEndTime?: string;

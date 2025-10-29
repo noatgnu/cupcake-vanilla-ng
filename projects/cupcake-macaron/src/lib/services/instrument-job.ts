@@ -114,7 +114,16 @@ export class InstrumentJobService extends BaseApiService {
   /**
    * Create a metadata table for this job from an existing template
    */
-  createMetadataFromTemplate(id: number, templateId: number): Observable<{
+  createMetadataFromTemplate(
+    id: number,
+    params: {
+      templateId: number;
+      name?: string;
+      description?: string;
+      sampleCount?: number;
+      labGroupId?: number;
+    }
+  ): Observable<{
     message: string;
     metadataTable: MetadataTable;
     jobId: number;
@@ -123,7 +132,13 @@ export class InstrumentJobService extends BaseApiService {
       message: string;
       metadataTable: MetadataTable;
       jobId: number;
-    }>(`${this.apiUrl}/instrument-jobs/${id}/create_metadata_from_template/`, { templateId });
+    }>(`${this.apiUrl}/instrument-jobs/${id}/create_metadata_from_template/`, {
+      template_id: params.templateId,
+      name: params.name,
+      description: params.description,
+      sample_count: params.sampleCount,
+      lab_group_id: params.labGroupId,
+    });
   }
 
   /**

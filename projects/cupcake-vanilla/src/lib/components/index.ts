@@ -14,3 +14,6 @@ export * from './metadata-table-templates/schema-selection-modal/schema-selectio
 export * from './metadata-table-templates/table-creation-modal/table-creation-modal';
 export * from './schema-selection-modal/schema-selection-modal';
 export * from './async-task-ui';
+export * from './column-templates/column-templates';
+export * from './column-templates/column-template-edit-modal/column-template-edit-modal';
+export * from './favorite-management/favorite-management';

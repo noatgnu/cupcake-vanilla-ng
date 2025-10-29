@@ -11,6 +11,8 @@ export interface MetadataColumnTemplate extends BaseTimestampedModel {
   ontologyType?: string;
   customOntologyFilters?: any;
   enableTypeahead: boolean;
+  notApplicable: boolean;
+  notAvailable: boolean;
   excelValidation?: any;
   customValidationRules?: any;
   apiEnhancements?: any;
@@ -50,6 +52,8 @@ export interface MetadataColumnTemplateCreateRequest {
   ontologyType?: string;
   customOntologyFilters?: any;
   enableTypeahead?: boolean;
+  notApplicable?: boolean;
+  notAvailable?: boolean;
   excelValidation?: any;
   customValidationRules?: any;
   apiEnhancements?: any;
@@ -69,6 +73,8 @@ export interface MetadataColumnTemplateUpdateRequest {
   ontologyType?: string;
   customOntologyFilters?: any;
   enableTypeahead?: boolean;
+  notApplicable?: boolean;
+  notAvailable?: boolean;
   excelValidation?: any;
   customValidationRules?: any;
   apiEnhancements?: any;

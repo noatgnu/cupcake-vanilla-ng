@@ -1,0 +1,481 @@
+<div class="favorite-management-container">
+  <!-- Header Section -->
+  <nav class="navbar navbar-expand-lg bg-body-tertiary shadow-sm">
+    <div class="container-fluid">
+      <div class="d-flex align-items-center justify-content-between w-100">
+        <div class="d-flex align-items-center">
+          <h4 class="mb-0">
+            <i class="bi bi-heart-fill me-2 text-danger"></i>Favorite Management
+          </h4>
+          <span class="badge bg-primary ms-3">{{ filteredFavorites().length }} favorites</span>
+        </div>
+
+        <div class="d-flex gap-2">
+          <button
+            type="button"
+            class="btn btn-primary btn-sm"
+            (click)="openCreateModal()"
+            [disabled]="isLoading()">
+            <i class="bi bi-plus-circle me-1"></i>Add Favorite
+          </button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="tables-content p-4">
+    <!-- Search and Filters Section -->
+    <div class="card mb-4">
+      <div class="card-header">
+        <h5 class="mb-0">
+          <i class="bi bi-search me-2"></i>Search & Filters
+        </h5>
+      </div>
+      <div class="card-body">
+        <form [formGroup]="searchForm" class="row g-3">
+          <div class="col-md-3">
+            <label for="search" class="form-label">Search</label>
+            <div class="input-group">
+            <span class="input-group-text">
+              <i class="bi bi-search"></i>
+            </span>
+              <input
+                type="text"
+                class="form-control"
+                id="search"
+                formControlName="search"
+                placeholder="Search by name or value">
+            </div>
+          </div>
+
+          <div class="col-md-3">
+            <label for="scope" class="form-label">Scope</label>
+            <select class="form-select" id="scope" formControlName="scope">
+              <option value="">All Scopes</option>
+              <option value="personal">Personal</option>
+              <option value="lab_group">Lab Group</option>
+              <option value="global">Global</option>
+            </select>
+          </div>
+
+          <div class="col-md-3">
+            <label for="labGroup" class="form-label">Lab Group</label>
+            <input
+              type="text"
+              class="form-control"
+              id="labGroup"
+              formControlName="labGroup"
+              placeholder="All Lab Groups"
+              [ngbTypeahead]="searchLabGroups"
+              [resultFormatter]="formatLabGroup"
+              [inputFormatter]="inputLabGroupFormatter"
+              (selectItem)="onLabGroupSelected($event)"
+              [editable]="true"
+              [showHint]="true"
+              [focusFirst]="false"
+              container="body">
+          </div>
+
+          <div class="col-md-3">
+            <label for="columnType" class="form-label">Column Type</label>
+            <select class="form-select" id="columnType" formControlName="columnType">
+              @for (type of columnTypes; track type.value) {
+                <option [value]="type.value">{{ type.label }}</option>
+              }
+            </select>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+          <i class="bi bi-table me-2"></i>Favorites options
+          <span class="badge bg-primary ms-2"></span>
+        </h5>
+        @if (isLoading()) {
+          <div class="spinner-border spinner-border-sm text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+        }
+      </div>
+      <div class="card-body p-0">
+        @if (!isLoading()) {
+
+          @if (filteredFavorites().length === 0) {
+            <div class="text-center py-5">
+              <i class="bi bi-heart display-1 text-muted"></i>
+              <h5 class="mt-3 text-muted">No Favorites Found</h5>
+              @if (searchTerm() || scopeFilter() || columnTypeFilter()) {
+                <p class="text-muted">Try adjusting your search criteria</p>
+                <button type="button" class="btn btn-outline-secondary" (click)="clearFilters()">
+                  <i class="bi bi-arrow-clockwise me-1"></i>Clear Filters
+                </button>
+              } @else {
+                <p class="text-muted">Create your first favorite to get started</p>
+                <button type="button" class="btn btn-primary" (click)="openCreateModal()">
+                  <i class="bi bi-plus-circle me-1"></i>Add First Favorite
+                </button>
+              }
+            </div>
+          }
+
+          <!-- Favorites Table -->
+          @if (filteredFavorites().length > 0) {
+            <div class="card">
+              <div class="card-body p-0">
+                <div class="table-responsive">
+                  <table class="table table-hover mb-0">
+                    <thead>
+                    <tr>
+                      <th scope="col" style="width: 200px;">Column</th>
+                      <th scope="col" style="width: 200px;">Display Name</th>
+                      <th scope="col">Value</th>
+                      <th scope="col" style="width: 150px;">Scope</th>
+                      <th scope="col" style="width: 120px;">Created</th>
+                      <th scope="col" style="width: 120px;">Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                      @for (favorite of paginatedFavorites(); track favorite.id) {
+                        <tr>
+                          <td>
+                            <div class="d-flex align-items-center gap-2">
+                              <div class="d-flex align-items-center">
+                                <i class="me-2" [class]="getColumnTypeIcon(favorite) + ' ' + getColumnTypeClass(favorite)"></i>
+                                <span class="fw-semibold">{{ getCleanColumnName(favorite.name) }}</span>
+                              </div>
+                            </div>
+                          </td>
+                          <td>
+                            <div class="text-truncate" [title]="favorite.displayValue || 'No display name'">
+                              @if (favorite.displayValue && favorite.displayValue.trim()) {
+                                {{ favorite.displayValue }}
+                              } @else {
+                                <span class="text-muted fst-italic">No display name</span>
+                              }
+                            </div>
+                          </td>
+                          <td>
+                            <div style="max-width: 300px;">
+                              @if (isComplexValue(favorite.value)) {
+                                <!-- Complex value with key-value pairs -->
+                                <div class="d-flex flex-wrap gap-1">
+                                  @for (pair of parseComplexValue(favorite.value); track $index) {
+                                    <span class="badge bg-light text-dark border">
+                                <small><strong>{{ pair.key }}:</strong> {{ pair.value }}</small>
+                              </span>
+                                  }
+                                </div>
+                              } @else {
+                                <!-- Simple value -->
+                                <div class="text-truncate" [title]="favorite.value">
+                                  {{ favorite.value }}
+                                </div>
+                              }
+                            </div>
+                          </td>
+                          <td>
+                      <span [class]="getScopeClass(favorite)">
+                        @if (favorite.isGlobal) {
+                          <i class="bi bi-globe me-1"></i>Global
+                        } @else if (favorite.labGroup) {
+                          <i class="bi bi-people me-1"></i>Lab Group
+                        } @else {
+                          <i class="bi bi-person me-1"></i>Personal
+                        }
+                      </span>
+                            @if (favorite.userUsername && !favorite.isGlobal) {
+                              <br><small class="text-muted">{{ favorite.userUsername }}</small>
+                            }
+                            @if (favorite.labGroupName) {
+                              <br><small class="text-muted">{{ favorite.labGroupName }}</small>
+                            }
+                          </td>
+                          <td>
+                            <small class="text-muted">
+                              {{ favorite.createdAt | date:'MMM d, y' }}
+                            </small>
+                          </td>
+                          <td>
+                            <div class="btn-group btn-group-sm">
+                              @if (canEditFavorite(favorite)) {
+                                <button
+                                  type="button"
+                                  class="btn btn-outline-primary"
+                                  (click)="openEditModal(favorite)"
+                                  title="Edit favorite">
+                                  <i class="bi bi-pencil"></i>
+                                </button>
+                              }
+                              @if (canDeleteFavorite(favorite)) {
+                                <button
+                                  type="button"
+                                  class="btn btn-outline-danger"
+                                  (click)="deleteFavorite(favorite)"
+                                  title="Delete favorite">
+                                  <i class="bi bi-trash"></i>
+                                </button>
+                              }
+                            </div>
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- Pagination -->
+            @if (totalPages() > 1) {
+              <div class="d-flex justify-content-between align-items-center mt-4">
+                <div class="d-flex align-items-center gap-2">
+                  <span class="text-muted">Show:</span>
+                  <select
+                    class="form-select form-select-sm"
+                    style="width: auto;"
+                    [value]="pageSize()"
+                    (change)="onPageSizeChange(+($any($event.target).value))">
+                    <option value="10">10</option>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                  </select>
+                  <span class="text-muted">per page</span>
+                </div>
+
+                <ngb-pagination
+                  [collectionSize]="totalFavoritesCount()"
+                  [page]="currentPage()"
+                  [pageSize]="pageSize()"
+                  [maxSize]="5"
+                  [boundaryLinks]="true"
+                  [rotate]="true"
+                  (pageChange)="onPageChange($event)"
+                  class="pagination-sm mb-0">
+                </ngb-pagination>
+
+                <span class="text-muted">
+            Showing {{ ((currentPage() - 1) * pageSize()) + 1 }}-{{ Math.min(currentPage() * pageSize(), totalFavoritesCount()) }}
+                  of {{ totalFavoritesCount() }} favorites
+          </span>
+              </div>
+            }
+          }
+        }
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit/Create Modal -->
+@if (showEditModal()) {
+  <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="bi bi-heart me-2"></i>{{ editModalTitle }}
+          </h5>
+          <button type="button" class="btn-close" (click)="closeEditModal()"></button>
+        </div>
+
+        <div class="modal-body">
+          <form [formGroup]="editForm" (ngSubmit)="saveFavorite()">
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="favName" class="form-label">
+                  Column Name *
+                  @if (columnTemplatesLoaded()) {
+                    <small class="text-success ms-1">
+                      <i class="bi bi-search"></i> Autocomplete Available
+                    </small>
+                  }
+                </label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="favName"
+                  formControlName="name"
+                  [class.is-invalid]="editForm.get('name')?.invalid && editForm.get('name')?.touched"
+                  placeholder="e.g., organism"
+                  [ngbTypeahead]="searchColumnNames"
+                  (selectItem)="onColumnNameSelected($event)"
+                  [editable]="true"
+                  [showHint]="true"
+                  [focusFirst]="false"
+                  container="body">
+                <div class="form-text">
+                  @if (columnTemplatesLoaded()) {
+                    Type to search available column names from templates
+                  } @else {
+                    Loading column suggestions...
+                  }
+                </div>
+                <div class="invalid-feedback">
+                  @if (editForm.get('name')?.errors?.['required']) {
+                    Column name is required
+                  }
+                  @if (editForm.get('name')?.errors?.['maxlength']) {
+                    Column name must be less than 255 characters
+                  }
+                </div>
+              </div>
+
+              <div class="col-md-6 mb-3">
+                <label for="favType" class="form-label">
+                  Column Type *
+                  @if (columnTemplatesLoaded()) {
+                    <small class="text-success ms-1">
+                      <i class="bi bi-search"></i> Autocomplete Available
+                    </small>
+                  }
+                </label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="favType"
+                  formControlName="type"
+                  [class.is-invalid]="editForm.get('type')?.invalid && editForm.get('type')?.touched"
+                  placeholder="e.g., characteristics[organism]"
+                  [ngbTypeahead]="searchColumnTypes"
+                  (selectItem)="onColumnTypeSelected($event)"
+                  [editable]="true"
+                  [showHint]="true"
+                  [focusFirst]="false"
+                  container="body">
+                <div class="form-text">
+                  @if (columnTemplatesLoaded()) {
+                    Type to search available column types (filtered by selected name)
+                  } @else {
+                    Loading column suggestions...
+                  }
+                </div>
+                <div class="invalid-feedback">
+                  @if (editForm.get('type')?.errors?.['required']) {
+                    Column type is required
+                  }
+                  @if (editForm.get('type')?.errors?.['maxlength']) {
+                    Column type must be less than 255 characters
+                  }
+                </div>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="favValue" class="form-label">
+                Value
+                @if (editForm.get('templateId')?.value) {
+                  <span class="badge bg-success ms-2">
+                    <i class="bi bi-search me-1"></i>Advanced Editor Available
+                  </span>
+                }
+                @if (specialSyntaxType()) {
+                  <span class="badge bg-info ms-2">
+                    <i class="bi bi-gear me-1"></i>{{ getSpecialInputTitle() }}
+                  </span>
+                }
+              </label>
+
+              <div class="input-group">
+                <input
+                  type="text"
+                  class="form-control"
+                  id="favValue"
+                  formControlName="value"
+                  [class.is-invalid]="editForm.get('value')?.invalid && editForm.get('value')?.touched"
+                  placeholder="Enter favorite value"
+                  readonly>
+                <button
+                  type="button"
+                  class="btn btn-outline-primary"
+                  (click)="openValueEditModal()"
+                  title="Open advanced value editor">
+                  <i class="bi bi-pencil me-1"></i>Edit
+                </button>
+              </div>
+
+              <div class="form-text">
+                @if (editForm.get('templateId')?.value) {
+                  <i class="bi bi-info-circle me-1"></i>
+                  Click "Edit" to use advanced value editor with ontology autocomplete suggestions
+                } @else if (specialSyntaxType()) {
+                  <i class="bi bi-info-circle me-1"></i>
+                  Click "Edit" to use enhanced {{ specialSyntaxType() }} editor for structured input
+                } @else {
+                  <i class="bi bi-info-circle me-1"></i>
+                  Click "Edit" to set the value (select column name and type for smart suggestions)
+                }
+              </div>
+              <div class="invalid-feedback">
+                @if (editForm.get('value')?.errors?.['maxlength']) {
+                  Value must be less than 500 characters
+                }
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="favDisplayValue" class="form-label">Display Value</label>
+              <input
+                type="text"
+                class="form-control"
+                id="favDisplayValue"
+                formControlName="displayValue"
+                placeholder="Optional: Human-readable version">
+              <div class="form-text">If empty, will use the same value as above</div>
+            </div>
+
+            <div class="mb-3">
+              <label for="favScope" class="form-label">Scope *</label>
+              <select
+                class="form-select"
+                id="favScope"
+                formControlName="scope">
+                <option value="personal">Personal (Only visible to me)</option>
+                @if (userLabGroups().length > 0) {
+                  <option value="lab_group">Lab Group (Visible to my lab group)</option>
+                }
+                @if (isAdmin()) {
+                  <option value="global">Global (Visible to everyone)</option>
+                }
+              </select>
+            </div>
+
+            <!-- Lab Group Selection (shown when lab_group scope is selected) -->
+            @if (editForm.get('scope')?.value === 'lab_group' && userLabGroups().length > 1) {
+              <div class="mb-3">
+                <label for="favLabGroup" class="form-label">Lab Group *</label>
+                <select
+                  class="form-select"
+                  id="favLabGroup"
+                  formControlName="labGroupId">
+                  <option value="">Select a lab group</option>
+                  @for (labGroup of userLabGroups(); track labGroup.id) {
+                    <option [value]="labGroup.id">{{ labGroup.name }}</option>
+                  }
+                </select>
+                <div class="form-text">Choose which lab group this favorite will be visible to</div>
+              </div>
+            }
+          </form>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" (click)="closeEditModal()">
+            <i class="bi bi-x-circle me-1"></i>Cancel
+          </button>
+          <button
+            type="button"
+            class="btn btn-primary"
+            (click)="saveFavorite()"
+            [disabled]="editForm.invalid">
+            <i class="bi bi-check-circle me-1"></i>
+            {{ isEditMode() ? 'Update' : 'Create' }} Favorite
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}

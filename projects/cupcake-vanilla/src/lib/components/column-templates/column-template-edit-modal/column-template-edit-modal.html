@@ -1,0 +1,259 @@
+<div class="modal-header">
+  <h4 class="modal-title">
+    <i class="bi bi-clipboard-list me-2"></i>{{ title }}
+  </h4>
+  <button type="button" class="btn-close" (click)="onCancel()"></button>
+</div>
+
+<div class="modal-body">
+  <form [formGroup]="editForm" (ngSubmit)="onSubmit()">
+    <div class="row">
+      <!-- Basic Information -->
+      <div class="col-12 mb-3">
+        <h6 class="text-muted border-bottom pb-2">
+          <i class="bi bi-info-circle me-2"></i>Basic Information
+        </h6>
+      </div>
+
+      <div class="col-md-6 mb-3">
+        <label for="templateName" class="form-label">Template Name *</label>
+        <input
+          type="text"
+          class="form-control"
+          id="templateName"
+          formControlName="name"
+          [class.is-invalid]="editForm.get('name')?.invalid && editForm.get('name')?.touched"
+          placeholder="Enter template name">
+        <div class="invalid-feedback">
+          {{ getFieldError('name') }}
+        </div>
+      </div>
+
+      <div class="col-md-6 mb-3">
+        <label for="columnName" class="form-label">Column Name *</label>
+        <input
+          type="text"
+          class="form-control"
+          id="columnName"
+          formControlName="columnName"
+          [class.is-invalid]="editForm.get('columnName')?.invalid && editForm.get('columnName')?.touched"
+          placeholder="columnName">
+        <div class="invalid-feedback">
+          {{ getFieldError('columnName') }}
+        </div>
+        <small class="form-text text-muted">Column name based on column type and template name. Example: characteristics[biological replicate]</small>
+      </div>
+
+      <div class="col-12 mb-3">
+        <label for="description" class="form-label">Description</label>
+        <textarea
+          class="form-control"
+          id="description"
+          formControlName="description"
+          rows="2"
+          placeholder="Optional description"></textarea>
+      </div>
+
+      <!-- Column Configuration -->
+      <div class="col-12 mb-3">
+        <h6 class="text-muted border-bottom pb-2">
+          <i class="bi bi-gear me-2"></i>Column Configuration
+        </h6>
+      </div>
+
+      <div class="col-md-6 mb-3">
+        <label for="columnType" class="form-label">Column Type *</label>
+        <select
+          class="form-select"
+          id="columnType"
+          formControlName="columnType"
+          [class.is-invalid]="editForm.get('columnType')?.invalid && editForm.get('columnType')?.touched">
+          @for (type of columnTypes; track type.value) {
+            <option [value]="type.value">{{ type.label }}</option>
+          }
+        </select>
+        <div class="invalid-feedback">
+          {{ getFieldError('columnType') }}
+        </div>
+      </div>
+
+      <div class="col-md-6 mb-3">
+        <label for="defaultPosition" class="form-label">Default Position</label>
+        <input
+          type="number"
+          class="form-control"
+          id="defaultPosition"
+          formControlName="defaultPosition"
+          [class.is-invalid]="editForm.get('defaultPosition')?.invalid && editForm.get('defaultPosition')?.touched"
+          min="0"
+          placeholder="0">
+        <div class="invalid-feedback">
+          {{ getFieldError('defaultPosition') }}
+        </div>
+      </div>
+
+      <div class="col-md-6 mb-3">
+        <label for="defaultValue" class="form-label">Default Value</label>
+        <input
+          type="text"
+          class="form-control"
+          id="defaultValue"
+          formControlName="defaultValue"
+          placeholder="Optional default value">
+      </div>
+
+      <div class="col-md-6 mb-3">
+        <label for="ontologyType" class="form-label">Ontology Type</label>
+        <select
+          class="form-select"
+          id="ontologyType"
+          formControlName="ontologyType"
+          (change)="onOntologyTypeChange()">
+          @for (ontology of ontologyTypes; track $index) {
+            <option [value]="ontology.value">{{ ontology.label }}</option>
+          }
+        </select>
+      </div>
+
+      @if (editForm.get('ontologyType')?.value && editForm.get('customOntologyFilters')?.value && Object.keys(editForm.get('customOntologyFilters')?.value || {}).length > 0) {
+        <div class="col-12 mb-3">
+          <div class="alert alert-info">
+            <h6 class="alert-heading">
+              <i class="bi bi-filter me-2"></i>Custom Ontology Filters Applied
+            </h6>
+            <small class="mb-0">
+              The following custom filters will be automatically applied for this ontology type:
+              <code class="ms-1">{{ editForm.get('customOntologyFilters')?.value | json }}</code>
+            </small>
+          </div>
+        </div>
+      }
+
+      <!-- Visibility and Access -->
+      <div class="col-12 mb-3">
+        <h6 class="text-muted border-bottom pb-2">
+          <i class="bi bi-eye me-2"></i>Visibility and Access
+        </h6>
+      </div>
+
+      <div class="col-md-6 mb-3">
+        <label for="visibility" class="form-label">Visibility *</label>
+        <select
+          class="form-select"
+          id="visibility"
+          formControlName="visibility"
+          (change)="onVisibilityChange()"
+          [class.is-invalid]="editForm.get('visibility')?.invalid && editForm.get('visibility')?.touched">
+          @for (option of visibilityOptions; track option.value) {
+            <option [value]="option.value">{{ option.label }}</option>
+          }
+        </select>
+        <div class="invalid-feedback">
+          {{ getFieldError('visibility') }}
+        </div>
+      </div>
+
+      <div class="col-md-6 mb-3">
+        <label for="labGroup" class="form-label">Lab Group</label>
+        <select
+          class="form-select"
+          id="labGroup"
+          formControlName="labGroup"
+          [class.is-invalid]="editForm.get('labGroup')?.invalid && editForm.get('labGroup')?.touched">
+          <option [ngValue]="null">Select Lab Group</option>
+          @for (group of labGroups; track group.id) {
+            <option [ngValue]="group.id">{{ group.name }}</option>
+          }
+        </select>
+        <div class="invalid-feedback">
+          {{ getFieldError('labGroup') }}
+        </div>
+      </div>
+
+      <!-- Additional Options -->
+      <div class="col-12 mb-3">
+        <h6 class="text-muted border-bottom pb-2">
+          <i class="bi bi-sliders me-2"></i>Additional Options
+        </h6>
+      </div>
+
+      <div class="col-md-6 mb-3">
+        <label for="category" class="form-label">Category</label>
+        <input
+          type="text"
+          class="form-control"
+          id="category"
+          formControlName="category"
+          placeholder="Template category">
+      </div>
+
+      <div class="col-md-6 mb-3">
+        <label for="tags" class="form-label">Tags</label>
+        <input
+          type="text"
+          class="form-control"
+          id="tags"
+          formControlName="tags"
+          placeholder="Comma-separated tags">
+      </div>
+
+      <div class="col-12 mb-3">
+        <div class="row">
+          <div class="col-md-3">
+            <div class="form-check form-switch">
+              <input
+                class="form-check-input"
+                type="checkbox"
+                id="enableTypeahead"
+                formControlName="enableTypeahead">
+              <label class="form-check-label" for="enableTypeahead">
+                Enable Typeahead
+              </label>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="form-check form-switch">
+              <input
+                class="form-check-input"
+                type="checkbox"
+                id="excelValidation"
+                formControlName="excelValidation">
+              <label class="form-check-label" for="excelValidation">
+                Excel Validation
+              </label>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="form-check form-switch">
+              <input
+                class="form-check-input"
+                type="checkbox"
+                id="isActive"
+                formControlName="isActive">
+              <label class="form-check-label" for="isActive">
+                Active
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </form>
+</div>
+
+<div class="modal-footer">
+  <button type="button" class="btn btn-outline-secondary" (click)="onCancel()">
+    <i class="bi bi-x-circle me-1"></i>Cancel
+  </button>
+  <button
+    type="button"
+    class="btn btn-primary"
+    (click)="onSubmit()"
+    [disabled]="editForm.invalid || isLoading()">
+    @if (isLoading()) {
+      <span class="spinner-border spinner-border-sm me-2"></span>
+    }
+    <i class="bi bi-check-circle me-1"></i>
+    {{ isEdit ? 'Update' : 'Create' }} Template
+  </button>
+</div>
