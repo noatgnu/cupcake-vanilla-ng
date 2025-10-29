@@ -1,6 +1,6 @@
 {
   "name": "@noatgnu/cupcake-salted-caramel",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "An extension for cupcake-core that provides additional api and interfaces for facility to manage billing.",
   "author": "Toan Phung",
   "license": "MIT",
@@ -13,8 +13,8 @@
     "url": "https://github.com/noatgnu/cupcake-vanilla-ng/issues"
   },
   "peerDependencies": {
-    "@angular/common": "^20.3.3",
-    "@angular/core": "^20.3.3"
+    "@angular/common": "^20.3.7",
+    "@angular/core": "^20.3.7"
   },
   "dependencies": {
     "tslib": "^2.3.0"
