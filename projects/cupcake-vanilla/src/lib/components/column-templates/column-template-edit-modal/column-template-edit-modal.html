@@ -94,6 +94,28 @@
 
       <div class="col-md-6 mb-3">
         <label for="defaultValue" class="form-label">Default Value</label>
+        @if (editForm.get('notApplicable')?.value || editForm.get('notAvailable')?.value) {
+          <div class="mb-2">
+            <div class="btn-group btn-group-sm" role="group">
+              @if (editForm.get('notApplicable')?.value) {
+                <button
+                  type="button"
+                  class="btn btn-outline-secondary"
+                  (click)="setDefaultValue('not applicable')">
+                  <i class="bi bi-dash-circle me-1"></i>Not Applicable
+                </button>
+              }
+              @if (editForm.get('notAvailable')?.value) {
+                <button
+                  type="button"
+                  class="btn btn-outline-secondary"
+                  (click)="setDefaultValue('not available')">
+                  <i class="bi bi-question-circle me-1"></i>Not Available
+                </button>
+              }
+            </div>
+          </div>
+        }
         <input
           type="text"
           class="form-control"
@@ -211,6 +233,34 @@
               </label>
             </div>
           </div>
+          <div class="col-md-3">
+            <div class="form-check form-switch">
+              <input
+                class="form-check-input"
+                type="checkbox"
+                id="notApplicable"
+                formControlName="notApplicable">
+              <label class="form-check-label" for="notApplicable">
+                <i class="bi bi-dash-circle me-1"></i>Not Applicable
+              </label>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="form-check form-switch">
+              <input
+                class="form-check-input"
+                type="checkbox"
+                id="notAvailable"
+                formControlName="notAvailable">
+              <label class="form-check-label" for="notAvailable">
+                <i class="bi bi-question-circle me-1"></i>Not Available
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-12 mb-3">
+        <div class="row">
           <div class="col-md-3">
             <div class="form-check form-switch">
               <input

@@ -25,6 +25,8 @@ export interface MetadataValueEditConfig {
   enableMultiSampleEdit?: boolean;
   sampleData?: { index: number; value: string; sourceName?: string }[];
   maxSampleCount?: number;
+  allowNotApplicable?: boolean;
+  allowNotAvailable?: boolean;
 }
 
 @Component({
@@ -275,7 +277,13 @@ export class MetadataValueEditModal implements OnInit {
   clearValue(): void {
     this.editForm.get('value')?.setValue('');
     this.editForm.get('value')?.markAsTouched();
-    this.selectedFavorite.set(null); // Clear selected favorite when manually clearing
+    this.selectedFavorite.set(null);
+  }
+
+  setValue(value: string): void {
+    this.editForm.get('value')?.setValue(value);
+    this.editForm.get('value')?.markAsTouched();
+    this.selectedFavorite.set(null);
   }
 
   // Favorite options methods

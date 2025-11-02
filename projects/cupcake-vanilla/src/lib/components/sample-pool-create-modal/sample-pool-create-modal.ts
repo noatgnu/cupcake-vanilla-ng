@@ -2,17 +2,18 @@ import { Component, Input, Output, EventEmitter, OnInit, signal } from '@angular
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgbActiveModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
-import { SamplePool, SamplePoolCreateRequest, MetadataTable, SamplePoolService } from '../../models';
+import { SamplePool, SamplePoolCreateRequest, MetadataTable } from '../../models';
+import { SamplePoolService } from '../../services';
 import { ToastService } from '@noatgnu/cupcake-core';
 
 interface SampleSelectionItem {
   sampleNumber: number;
   selected: boolean;
-  pooled: boolean; // Track if already in a pool
+  pooled: boolean;
 }
 
 @Component({
-  selector: 'app-sample-pool-create-modal',
+  selector: 'ccv-sample-pool-create-modal',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, NgbModule],
   templateUrl: './sample-pool-create-modal.html',

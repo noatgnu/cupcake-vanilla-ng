@@ -5,24 +5,46 @@ import { NgbModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs';
-import { MetadataTable, MetadataColumn, SamplePool, MetadataTableService, AsyncExportService, SamplePoolService, ChunkedUploadService, MetadataColumnService, MetadataExportRequest, ColumnType } from '@noatgnu/cupcake-vanilla';
+import {
+  MetadataTable,
+  MetadataColumn,
+  SamplePool,
+  MetadataExportRequest,
+  ColumnType
+} from '../../models';
+import {
+  MetadataTableService,
+  AsyncExportService,
+  SamplePoolService,
+  ChunkedUploadService,
+  MetadataColumnService
+} from '../../services';
+import { ExcelExportOptions } from '../excel-export-modal/excel-export-modal';
+import { MetadataValueEditConfig } from '../metadata-value-edit-modal/metadata-value-edit-modal';
+import { SchemaSelectionResult } from '../schema-selection-modal/schema-selection-modal';
+import { AsyncTaskUIService } from '../async-task-ui';
+import {
+  MetadataValueEditModal,
+  MetadataTableEditModal,
+  ExcelExportModalComponent,
+  ColumnEditModal,
+  SchemaSelectionModal,
+  MetadataColumnAutofillModal,
+  MetadataColumnAutofillConfig
+} from '../';
+import { SamplePoolDetailsModal } from '../sample-pool-details-modal/sample-pool-details-modal';
+import { SamplePoolEditModal } from '../sample-pool-edit-modal/sample-pool-edit-modal';
+import { SamplePoolCreateModal } from '../sample-pool-create-modal/sample-pool-create-modal';
 import { ToastService } from '@noatgnu/cupcake-core';
-import { AsyncTaskUIService, MetadataValueEditModal, MetadataValueEditConfig, MetadataTableEditModal } from '@noatgnu/cupcake-vanilla';
-import { SamplePoolDetailsModal } from '../../shared/components/sample-pool-details-modal/sample-pool-details-modal';
-import { SamplePoolEditModal } from '../../shared/components/sample-pool-edit-modal/sample-pool-edit-modal';
-import { SamplePoolCreateModal } from '../../shared/components/sample-pool-create-modal/sample-pool-create-modal';
-import { ExcelExportModalComponent, ExcelExportOptions } from '@noatgnu/cupcake-vanilla';
-import { ColumnEditModal } from '@noatgnu/cupcake-vanilla';
-import { SchemaSelectionModal, SchemaSelectionResult } from '@noatgnu/cupcake-vanilla';
 
 @Component({
-  selector: 'app-metadata-table-details',
+  selector: 'ccv-metadata-table-details',
   standalone: true,
   imports: [CommonModule, RouterModule, NgbModule, DragDropModule],
   templateUrl: './metadata-table-details.html',
   styleUrl: './metadata-table-details.scss'
 })
-export class MetadataTableDetailsComponent implements OnInit, OnDestroy {
+export class MetadataTableDetails implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
   @ViewChild('excelInput') excelInput!: ElementRef<HTMLInputElement>;
@@ -911,6 +933,56 @@ export class MetadataTableDetailsComponent implements OnInit, OnDestroy {
         this.toastService.error('Failed to update column visibility');
       }
     });
+  }
+
+  autofillColumnValues(column: MetadataColumn): void {
+    const table = this.table();
+    if (!table || !table.canEdit || !column.id) return;
+
+    const config: MetadataColumnAutofillConfig = {
+      column: column,
+      metadataTableId: table.id!,
+      sampleCount: table.sampleCount,
+      selectedSampleIndices: []
+    };
+
+    const modalRef = this.modalService.open(MetadataColumnAutofillModal, {
+      size: 'lg',
+      backdrop: 'static'
+    });
+
+    modalRef.componentInstance.config = config;
+
+    modalRef.result.then(
+      (result: { template: string; sampleIndices: number[]; values: { sampleIndex: number; value: string }[] }) => {
+        const updates = result.values.map(v => ({
+          sampleIndex: v.sampleIndex,
+          value: v.value
+        }));
+
+        this.metadataColumnService.bulkUpdateSampleValues(column.id!, updates).subscribe({
+          next: (response) => {
+            this.loadTable(table.id);
+            if (response.failedCount === 0) {
+              this.toastService.success(`Auto-filled ${response.updatedCount} sample(s) for "${column.name}"`);
+            } else {
+              this.toastService.warning(
+                `Auto-filled ${response.updatedCount} sample(s), ${response.failedCount} failed for "${column.name}"`
+              );
+              if (response.failedUpdates) {
+                console.error('Failed updates:', response.failedUpdates);
+              }
+            }
+          },
+          error: (error) => {
+            console.error('Error auto-filling column values:', error);
+            this.toastService.error('Failed to auto-fill column values');
+          }
+        });
+      },
+      () => {
+      }
+    );
   }
 
   // View column details

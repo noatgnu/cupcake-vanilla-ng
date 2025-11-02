@@ -3,6 +3,7 @@ export interface AnnotationChunkedUploadRequest {
   filename?: string;
   annotation?: string;
   annotationType?: string;
+  autoTranscribe?: boolean;
 }
 
 export interface StepAnnotationChunkedUploadRequest extends AnnotationChunkedUploadRequest {
@@ -32,6 +33,7 @@ export interface AnnotationChunkedUploadResponse {
 
 export interface AnnotationChunkedUploadCompletionRequest {
   sha256: string;
+  autoTranscribe?: boolean;
 }
 
 export interface StepAnnotationChunkedUploadCompletionRequest extends AnnotationChunkedUploadCompletionRequest {

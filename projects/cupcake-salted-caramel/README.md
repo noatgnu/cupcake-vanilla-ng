@@ -1,63 +1,88 @@
-# CupcakeSaltedCaramel
+# Cupcake Salted Caramel
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.1.0.
+The `cupcake-salted-caramel` library provides services and models for handling billing, service tiers, and pricing within the Cupcake ecosystem.
 
-## Code scaffolding
+## Key Features
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+- **Billing Management:** A comprehensive system for creating, tracking, and managing billing records.
+- **Service Tiers:** Define different tiers of service with their own pricing rules and modifiers.
+- **Flexible Pricing:** Manage prices for different services and billable items.
 
-```bash
-ng generate component component-name
-```
+## Installation
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
-```bash
-ng generate --help
-```
-
-## Building
-
-To build the library, run:
+To install the `@noatgnu/cupcake-salted-caramel` library, run the following command:
 
 ```bash
-ng build cupcake-salted-caramel
+npm install @noatgnu/cupcake-salted-caramel
 ```
 
-This command will compile your project, and the build artifacts will be placed in the `dist/` directory.
+This library is an extension of `@noatgnu/cupcake-core` and depends on it. Make sure you have `@noatgnu/cupcake-core` installed and configured in your application.
 
-### Publishing the Library
+## Services
 
-Once the project is built, you can publish your library by following these steps:
+### BillingRecordService
 
-1. Navigate to the `dist` directory:
-   ```bash
-   cd dist/cupcake-salted-caramel
-   ```
+The `BillingRecordService` is the core of the billing system, responsible for managing billing records:
 
-2. Run the `npm publish` command to publish your library to the npm registry:
-   ```bash
-   npm publish
-   ```
+- **CRUD Operations:** Create, read, update, and delete billing records.
+- **Status Tracking:** Track the status of billing records (e.g., pending, approved, paid, disputed).
+- **Approval Workflow:** Approve billing records before they are processed.
+- **Querying & Reporting:** Get billing summaries and filter records by status, user, cost center, and date range.
 
-## Running unit tests
+**Usage:**
 
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+```typescript
+import { BillingRecordService } from '@noatgnu/cupcake-salted-caramel';
 
-```bash
-ng test
+@Component({ ... })
+export class MyComponent {
+  constructor(private billingRecordService: BillingRecordService) {
+    // Get all billing records pending approval
+    this.billingRecordService.getPendingApproval().subscribe(response => {
+      // ...
+    });
+  }
+}
 ```
 
-## Running end-to-end tests
+### ServiceTierService
 
-For end-to-end (e2e) testing, run:
+The `ServiceTierService` handles the management of service tiers:
 
-```bash
-ng e2e
+- **CRUD Operations:** Create, read, update, and delete service tiers.
+- **Price Calculation:** Calculate prices based on a service tier's modifiers (e.g., multipliers, discounts).
+- **Querying:** Find service tiers by priority, active status, and other attributes.
+
+**Usage:**
+
+```typescript
+import { ServiceTierService } from '@noatgnu/cupcake-salted-caramel';
+
+@Component({ ... })
+export class MyComponent {
+  constructor(private serviceTierService: ServiceTierService) {
+    // Get all active service tiers
+    this.serviceTierService.getActiveTiers().subscribe(tiers => {
+      // ...
+    });
+  }
+}
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+### Other Services
 
-## Additional Resources
+This library also includes the following services:
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+- **`ServicePriceService`:** For managing the prices of different services.
+- **`BillableItemTypeService`:** For defining the types of items that can be billed.
+
+## Models
+
+The `cupcake-salted-caramel` library provides a set of models for working with billing and service data. Key models include:
+
+- `BillingRecord`
+- `ServiceTier`
+- `ServicePrice`
+- `BillableItemType`
+
+This library is essential for any Cupcake application that needs to implement a billing or service-based pricing system.

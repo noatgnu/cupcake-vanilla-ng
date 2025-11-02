@@ -1,121 +1,163 @@
-# CupcakeCore
+# Cupcake Core
 
-A reusable Angular library that provides user management, authentication, and site configuration functionality for cupcake applications.
+The `cupcake-core` library provides essential services, components, and models for building Angular applications that interact with a Cupcake backend. It simplifies authentication, API communication, and provides a set of reusable UI components.
 
-## Features
+## Key Features
 
-- **Authentication**: Login/register components with ORCID support
-- **User Management**: Admin user management, lab groups, user profiles
-- **Site Configuration**: Configurable site settings and branding
-- **Guards & Interceptors**: Auth guard, admin guard, and HTTP interceptors
-- **Models & Services**: Complete set of models and services for user management
+- **Authentication:** Simplified user authentication and session management.
+- **API Service:** A robust API service with automatic request/response case transformation.
+- **Guards & Interceptors:** Route guards and HTTP interceptors for securing your application.
+- **Reusable Components:** A collection of pre-built components for common UI patterns.
+- **Type-safe Models:** A comprehensive set of TypeScript interfaces for backend data structures.
 
 ## Installation
 
+To install the `@noatgnu/cupcake-core` library, run the following command:
+
 ```bash
-npm install cupcake-core
+npm install @noatgnu/cupcake-core
 ```
 
-## Usage
-
-### 1. Configure in your app.config.ts
+Then, import the `CupcakeCoreModule` into your application's `AppModule` (or any other feature module):
 
 ```typescript
-import { ApplicationConfig } from '@angular/core';
-import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { authInterceptor, CUPCAKE_CORE_CONFIG } from 'cupcake-core';
+import { CupcakeCoreModule } from '@noatgnu/cupcake-core';
 
-export const appConfig: ApplicationConfig = {
-  providers: [
-    { provide: CUPCAKE_CORE_CONFIG, useValue: { apiUrl: 'https://your-api.com' } },
-    provideHttpClient(
-      withInterceptors([authInterceptor])
-    ),
-    // ... other providers
-  ]
-};
-```
-
-### 2. Use components in your routes
-
-```typescript
-import { Routes } from '@angular/router';
-import { LoginComponent, RegisterComponent, authGuard, adminGuard } from 'cupcake-core';
-
-export const routes: Routes = [
-  { path: 'login', component: LoginComponent },
-  { path: 'register', component: RegisterComponent },
-  { path: 'protected', component: YourComponent, canActivate: [authGuard] },
-  { path: 'admin', component: AdminComponent, canActivate: [authGuard, adminGuard] },
-];
-```
-
-### 3. Import services in your components
-
-```typescript
-import { Component, inject } from '@angular/core';
-import { AuthService, SiteConfigService, User } from 'cupcake-core';
-
-@Component({
-  selector: 'app-example',
-  template: \`
-    <div *ngIf="currentUser">
-      Welcome, {{ currentUser.first_name }}!
-    </div>
-  \`
+@NgModule({
+  imports: [
+    // ... other modules
+    CupcakeCoreModule
+  ],
+  // ...
 })
-export class ExampleComponent {
-  private authService = inject(AuthService);
-  private siteConfigService = inject(SiteConfigService);
-  
-  currentUser = this.authService.currentUser$;
-  siteConfig = this.siteConfigService.config$;
+export class AppModule { }
+```
+
+Additionally, you need to provide the `CUPCAKE_CORE_CONFIG` in your `AppModule` to configure the API URL:
+
+```typescript
+import { CUPCAKE_CORE_CONFIG } from '@noatgnu/cupcake-core';
+
+@NgModule({
+  // ...
+  providers: [
+    {
+      provide: CUPCAKE_CORE_CONFIG,
+      useValue: { apiUrl: 'YOUR_API_URL_HERE' }
+    }
+  ]
+})
+export class AppModule { }
+```
+
+## Services
+
+### AuthService
+
+The `AuthService` handles user authentication, including login, logout, and token management. It uses JWT for authentication and stores tokens in local storage.
+
+**Usage:**
+
+```typescript
+import { AuthService } from '@noatgnu/cupcake-core';
+
+@Component({ ... })
+export class MyComponent {
+  constructor(private authService: AuthService) {
+    this.authService.isAuthenticated$.subscribe(isAuthenticated => {
+      // ...
+    });
+
+    this.authService.currentUser$.subscribe(user => {
+      // ...
+    });
+  }
+
+  login() {
+    this.authService.login('username', 'password').subscribe(response => {
+      // ...
+    });
+  }
+
+  logout() {
+    this.authService.logout().subscribe(() => {
+      // ...
+    });
+  }
 }
 ```
 
-## Available Components
+### ApiService
 
-- `LoginComponent` - Login form with username/password and ORCID support
-- `RegisterComponent` - User registration form
-- `UserProfileComponent` - User profile management
-- `UserManagementComponent` - Admin user management
-- `LabGroupsComponent` - Lab group management
-- `SiteConfigComponent` - Site configuration management
-- `ToastContainerComponent` - Toast notification container
+The `ApiService` is the primary service for communicating with the Cupcake backend. It provides methods for a wide range of functionalities, including user management, site configuration, and more.
 
-## Available Services
+**Automatic Case Transformation:**
 
-- `AuthService` - Authentication and user management
-- `ApiService` - API communication
-- `SiteConfigService` - Site configuration
-- `UserManagementService` - User management operations
-- `ToastService` - Toast notifications
-- `ResourceService` - Resource utilities
+The `ApiService` automatically transforms request data from camelCase (frontend) to snake_case (backend) and response data from snake_case to camelCase. This eliminates the need for manual transformations in your components and services.
 
-## Available Guards
+**Usage:**
 
-- `authGuard` - Protect routes requiring authentication
-- `adminGuard` - Protect admin-only routes
+```typescript
+import { ApiService } from '@noatgnu/cupcake-core';
 
-## Available Models
-
-All necessary TypeScript interfaces and enums for user management, authentication, and site configuration.
-
-## Building the Library
-
-To build the library:
-
-```bash
-ng build cupcake-core
+@Component({ ... })
+export class MyComponent {
+  constructor(private apiService: ApiService) {
+    this.apiService.getUsers().subscribe(response => {
+      // `response` is already transformed to camelCase
+      console.log(response.results);
+    });
+  }
+}
 ```
 
-To publish:
+## Guards
 
-```bash
-cd dist/cupcake-core
-npm publish
+The library provides the following route guards:
+
+- `AuthGuard`: Ensures that a route can only be accessed by authenticated users.
+- `AdminGuard`: Ensures that a route can only be accessed by admin users.
+
+**Usage (in your routing module):**
+
+```typescript
+import { AuthGuard, AdminGuard } from '@noatgnu/cupcake-core';
+
+const routes: Routes = [
+  {
+    path: 'profile',
+    component: UserProfileComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'admin',
+    component: AdminDashboardComponent,
+    canActivate: [AdminGuard]
+  }
+];
 ```
 
-## Development
+## Interceptors
 
-The library is designed to be framework-agnostic and can be imported by any Angular application that needs user management functionality.
+The `AuthInterceptor` automatically attaches the JWT access token to outgoing HTTP requests. It also handles token refreshing when the access token expires.
+
+## Components
+
+The `cupcake-core` library includes a variety of reusable components, such as:
+
+- **Login Form:** A complete login form with username/password fields.
+- **User Management:** Components for listing, creating, and editing users.
+- **Color Picker:** A color selection component.
+- **Toast Notifications:** A container for displaying toast messages.
+- **Powered-by Footer:** A standard footer component.
+
+## Models
+
+The library defines a comprehensive set of TypeScript interfaces that correspond to the backend data models. These models provide type safety and autocompletion when working with API responses. Some of the key models include:
+
+- `User`
+- `SiteConfig`
+- `Annotation`
+- `ResourcePermission`
+
+By leveraging the services, components, and models provided by `cupcake-core`, you can significantly accelerate the development of your Angular application and ensure consistency with the Cupcake backend.

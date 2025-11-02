@@ -465,8 +465,42 @@
                   id="notApplicable"
                   formControlName="notApplicable">
                 <label class="form-check-label" for="notApplicable">
-                  <i class="bi bi-dash-circle me-1"></i>N/A
+                  <i class="bi bi-dash-circle me-1"></i>Not Applicable
                 </label>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="form-check form-switch">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  id="notAvailable"
+                  formControlName="notAvailable">
+                <label class="form-check-label" for="notAvailable">
+                  <i class="bi bi-question-circle me-1"></i>Not Available
+                </label>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="form-check form-switch">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  id="staffOnly"
+                  formControlName="staffOnly">
+                <label class="form-check-label" for="staffOnly">
+                  <i class="bi bi-shield-lock me-1"></i>Staff Only
+                </label>
+              </div>
+            </div>
+          </div>
+          <div class="row mt-2">
+            <div class="col-12">
+              <div class="alert alert-info py-2">
+                <i class="bi bi-info-circle me-1"></i>
+                <small>
+                  <strong>Staff Only:</strong> When enabled, this column will only be visible and editable by staff members.
+                </small>
               </div>
             </div>
           </div>
@@ -482,7 +516,31 @@
             </span>
           }
         </label>
-        
+
+        @if (editForm.get('notApplicable')?.value || editForm.get('notAvailable')?.value) {
+          <div class="mb-2">
+            <small class="text-muted d-block mb-1">Quick Select:</small>
+            <div class="btn-group btn-group-sm" role="group">
+              @if (editForm.get('notApplicable')?.value) {
+                <button
+                  type="button"
+                  class="btn btn-outline-secondary"
+                  (click)="setDefaultValue('not applicable')">
+                  <i class="bi bi-dash-circle me-1"></i>Not Applicable
+                </button>
+              }
+              @if (editForm.get('notAvailable')?.value) {
+                <button
+                  type="button"
+                  class="btn btn-outline-secondary"
+                  (click)="setDefaultValue('not available')">
+                  <i class="bi bi-question-circle me-1"></i>Not Available
+                </button>
+              }
+            </div>
+          </div>
+        }
+
         <div class="input-group">
           <input 
             type="text" 

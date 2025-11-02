@@ -130,6 +130,19 @@ export class MetadataColumnService extends BaseApiService {
   }
 
   /**
+   * Bulk update sample values with different values for each sample
+   */
+  bulkUpdateSampleValues(id: number, updates: { sampleIndex: number; value: string }[]): Observable<{
+    message: string;
+    updatedCount: number;
+    failedCount: number;
+    column: MetadataColumn;
+    failedUpdates?: { sampleIndex: number; error: string }[];
+  }> {
+    return this.post(`${this.apiUrl}/metadata-columns/${id}/bulk_update_sample_values/`, { updates });
+  }
+
+  /**
    * Apply automatic ontology mapping to a column
    */
   applyOntologyMapping(id: number): Observable<{ applied: boolean; ontologyType: string; message: string }> {
@@ -142,5 +155,25 @@ export class MetadataColumnService extends BaseApiService {
   detectOntologyType(params: { name: string; type: string }): Observable<{ columnName: string; columnType: string; detectedOntologyType: string }> {
     const httpParams = this.buildHttpParams(params);
     return this.get(`${this.apiUrl}/metadata-columns/detect_ontology_type/`, { params: httpParams });
+  }
+
+  /**
+   * Replace all occurrences of a specific value with a new value in this column
+   */
+  replaceValue(id: number, request: {
+    oldValue: string;
+    newValue: string;
+    updatePools?: boolean;
+  }): Observable<{
+    message: string;
+    oldValue: string;
+    newValue: string;
+    defaultValueUpdated: boolean;
+    modifiersMerged: number;
+    modifiersDeleted: number;
+    samplesRevertedToDefault: number;
+    poolColumnsUpdated: number;
+  }> {
+    return this.post(`${this.apiUrl}/metadata-columns/${id}/replace_value/`, request);
   }
 }

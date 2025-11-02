@@ -2,10 +2,11 @@ import { Component, Input, Output, EventEmitter, OnInit, inject, signal } from '
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgbActiveModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
-import { SamplePool, SamplePoolService } from '../../models';
+import { SamplePool } from '../../models';
+import { SamplePoolService } from '../../services';
 
 @Component({
-  selector: 'app-sample-pool-edit-modal',
+  selector: 'ccv-sample-pool-edit-modal',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, NgbModule],
   templateUrl: './sample-pool-edit-modal.html',

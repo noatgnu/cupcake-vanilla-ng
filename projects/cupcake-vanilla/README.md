@@ -1,63 +1,117 @@
-# CupcakeVanilla
+# Cupcake Vanilla
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.1.0.
+The `cupcake-vanilla` library is a powerful toolkit for managing complex metadata, handling asynchronous operations, and working with SDRF (Sample and Data Relationship Format) data within the Cupcake ecosystem.
 
-## Code scaffolding
+## Key Features
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+- **Advanced Metadata Management:** A comprehensive suite of services and components for creating, editing, and validating metadata tables.
+- **Asynchronous Task Handling:** A robust system for managing long-running background tasks like data imports and exports.
+- **Chunked File Uploads:** A reliable mechanism for uploading large files by splitting them into smaller chunks.
+- **SDRF Support:** Specialized components and services for working with SDRF data.
+- **Reusable UI Components:** A rich set of components for metadata editing, validation, and more.
 
-```bash
-ng generate component component-name
-```
+## Installation
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
-```bash
-ng generate --help
-```
-
-## Building
-
-To build the library, run:
+To install the `@noatgnu/cupcake-vanilla` library, run the following command:
 
 ```bash
-ng build cupcake-vanilla
+npm install @noatgnu/cupcake-vanilla
 ```
 
-This command will compile your project, and the build artifacts will be placed in the `dist/` directory.
+This library is an extension of `@noatgnu/cupcake-core` and depends on it. Make sure you have `@noatgnu/cupcake-core` installed and configured in your application.
 
-### Publishing the Library
+## Services
 
-Once the project is built, you can publish your library by following these steps:
+### MetadataTableService
 
-1. Navigate to the `dist` directory:
-   ```bash
-   cd dist/cupcake-vanilla
-   ```
+The `MetadataTableService` is the cornerstone of the metadata management system:
 
-2. Run the `npm publish` command to publish your library to the npm registry:
-   ```bash
-   npm publish
-   ```
+- **CRUD Operations:** Full control over metadata tables and their columns.
+- **Column Manipulation:** Add, remove, reorder, and combine columns.
+- **Bulk Operations:** Perform bulk updates and deletions on columns.
+- **Validation:** Validate changes to sample counts and other metadata.
 
-## Running unit tests
+**Usage:**
 
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+```typescript
+import { MetadataTableService } from '@noatgnu/cupcake-vanilla';
 
-```bash
-ng test
+@Component({ ... })
+export class MyComponent {
+  constructor(private metadataTableService: MetadataTableService) {
+    // Get all published metadata tables
+    this.metadataTableService.getMetadataTables({ isPublished: true }).subscribe(response => {
+      // ...
+    });
+  }
+}
 ```
 
-## Running end-to-end tests
+### AsyncTaskService
 
-For end-to-end (e2e) testing, run:
+The `AsyncTaskService` is used to manage long-running background tasks:
 
-```bash
-ng e2e
+- **Task Monitoring:** Get the status of any asynchronous task.
+- **Task Control:** Cancel queued or running tasks.
+- **Result Retrieval:** Download the results of completed tasks.
+
+**Usage:**
+
+```typescript
+import { AsyncTaskService } from '@noatgnu/cupcake-vanilla';
+
+@Component({ ... })
+export class MyComponent {
+  constructor(private asyncTaskService: AsyncTaskService) {
+    const taskId = '...'; // ID of the async task
+    this.asyncTaskService.getAsyncTask(taskId).subscribe(status => {
+      // ...
+    });
+  }
+}
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+### ChunkedUploadService
 
-## Additional Resources
+The `ChunkedUploadService` provides a reliable way to upload large files:
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+- **Chunking:** Automatically splits large files into smaller, manageable chunks.
+- **Progress Tracking:** Provides progress updates during the upload process.
+- **Resumability (server-dependent):** Can be used to build resumable upload functionality.
+
+**Usage:**
+
+```typescript
+import { ChunkedUploadService } from '@noatgnu/cupcake-vanilla';
+
+@Component({ ... })
+export class MyComponent {
+  constructor(private chunkedUploadService: ChunkedUploadService) { }
+
+  uploadFile(file: File) {
+    this.chunkedUploadService.uploadFileInChunks(file).subscribe(response => {
+      // ...
+    });
+  }
+}
+```
+
+## Components
+
+The `cupcake-vanilla` library includes a wide array of UI components to facilitate metadata management and data validation, including:
+
+- **Metadata Table Editor:** A full-featured editor for metadata tables.
+- **Validation Modals:** Modals for displaying validation results and resolving errors.
+- **SDRF Input Components:** Specialized input fields for SDRF data types (e.g., age, modifications).
+- **Excel Export/Import:** Modals for exporting and importing data from Excel files.
+
+## Models
+
+The library provides a comprehensive set of models for working with metadata, async tasks, and SDRF data. Key models include:
+
+- `MetadataTable`
+- `MetadataColumn`
+- `AsyncTaskStatus`
+- `ChunkedUploadStatus`
+
+With its powerful services and rich component library, `cupcake-vanilla` is an essential tool for building sophisticated data management and analysis applications on the Cupcake platform.

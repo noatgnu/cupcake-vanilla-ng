@@ -72,7 +72,9 @@ export class ColumnEditModal implements OnInit {
       mandatory: [false],
       hidden: [false],
       readonly: [false],
-      notApplicable: [false]
+      notApplicable: [false],
+      notAvailable: [false],
+      staffOnly: [false]
     });
   }
 
@@ -105,7 +107,9 @@ export class ColumnEditModal implements OnInit {
         mandatory: this.column.mandatory || false,
         hidden: this.column.hidden || false,
         readonly: this.column.readonly || false,
-        notApplicable: this.column.notApplicable || false
+        notApplicable: this.column.notApplicable || false,
+        notAvailable: this.column.notAvailable || false,
+        staffOnly: this.column.staffOnly || false
       });
     }
   }
@@ -133,7 +137,9 @@ export class ColumnEditModal implements OnInit {
         mandatory: formValue.mandatory || false,
         hidden: formValue.hidden || false,
         readonly: formValue.readonly || false,
-        notApplicable: formValue.notApplicable || false
+        notApplicable: formValue.notApplicable || false,
+        notAvailable: formValue.notAvailable || false,
+        staffOnly: formValue.staffOnly || false
       };
 
       this.columnSaved.emit(columnData);
@@ -196,7 +202,9 @@ export class ColumnEditModal implements OnInit {
       ontologyType: ontologyType,
       enableTypeahead: enableTypeahead,
       currentValue: this.editForm.get('value')?.value || '',
-      context: this.isEdit ? 'table' : 'template'
+      context: this.isEdit ? 'table' : 'template',
+      allowNotApplicable: this.editForm.get('notApplicable')?.value || false,
+      allowNotAvailable: this.editForm.get('notAvailable')?.value || false
     };
 
     const hasTemplate = this.selectedTemplate || this.column?.template || this.templateId;
@@ -226,6 +234,11 @@ export class ColumnEditModal implements OnInit {
       this.editForm.get('value')?.markAsTouched();
       modalRef.componentInstance.onClose();
     });
+  }
+
+  setDefaultValue(value: string): void {
+    this.editForm.get('value')?.setValue(value);
+    this.editForm.get('value')?.markAsTouched();
   }
 
   // Template selection methods

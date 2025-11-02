@@ -52,6 +52,8 @@ export class ColumnTemplateEditModal implements OnInit {
       visibility: ['private', Validators.required],
       labGroup: [null],
       enableTypeahead: [false],
+      notApplicable: [false],
+      notAvailable: [false],
       excelValidation: [false],
       isActive: [true],
       tags: [''],
@@ -86,6 +88,8 @@ export class ColumnTemplateEditModal implements OnInit {
         visibility: this.template.visibility || 'private',
         labGroup: this.template.labGroup || null,
         enableTypeahead: this.template.enableTypeahead || false,
+        notApplicable: this.template.notApplicable || false,
+        notAvailable: this.template.notAvailable || false,
         excelValidation: this.template.excelValidation || false,
         isActive: this.template.isActive !== false,
         tags: this.template.tags || '',
@@ -150,6 +154,11 @@ export class ColumnTemplateEditModal implements OnInit {
       const control = this.editForm.get(key);
       control?.markAsTouched();
     });
+  }
+
+  setDefaultValue(value: string): void {
+    this.editForm.get('defaultValue')?.setValue(value);
+    this.editForm.get('defaultValue')?.markAsTouched();
   }
 
   onCancel() {

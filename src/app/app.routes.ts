@@ -1,10 +1,7 @@
 import { Routes } from '@angular/router';
 import { LoginComponent, RegisterComponent, SiteConfigComponent, UserManagementComponent, UserProfileComponent, LabGroupsComponent, authGuard, adminGuard } from '@noatgnu/cupcake-core';
 import { MetadataTablesComponent} from './features/metadata-tables/metadata-tables';
-import { MetadataTableDetailsComponent } from './features/metadata-table-details/metadata-table-details';
-import { FavoriteManagementComponent } from './features/favorite-management/favorite-management';
-import { MetadataTableTemplates } from '@noatgnu/cupcake-vanilla';
-import {ColumnTemplatesComponent} from './features/column-templates/column-templates';
+import { MetadataTableTemplates, ColumnTemplates, FavoriteManagement, MetadataTableDetails } from '@noatgnu/cupcake-vanilla';
 import {MetadataSelector} from './features/metadata-selector/metadata-selector';
 
 export const routes: Routes = [
@@ -33,17 +30,17 @@ export const routes: Routes = [
   },
   {
     path: 'metadata-tables/:id',
-    component: MetadataTableDetailsComponent,
+    component: MetadataTableDetails,
     canActivate: [authGuard]
   },
   {
     path: 'metadata-tables/:id/:mode',
-    component: MetadataTableDetailsComponent,
+    component: MetadataTableDetails,
     canActivate: [authGuard]
   },
   {
     path: 'metadata-templates',
-    component: ColumnTemplatesComponent,
+    component: ColumnTemplates,
     canActivate: [authGuard]
   },
   {
@@ -67,13 +64,13 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
   {
-    path: 'users/lab-groups', 
+    path: 'users/lab-groups',
     redirectTo: '/lab-groups',
     pathMatch: 'full'
   },
   {
     path: 'favorites',
-    component: FavoriteManagementComponent,
+    component: FavoriteManagement,
     canActivate: [authGuard]
   },
   {

@@ -90,19 +90,44 @@
 
       <!-- Column Management -->
       <div class="col-12 mb-3">
-        <h6 class="text-muted border-bottom pb-2">
-          <i class="bi bi-columns-gap me-2"></i>Template Columns
-          <button type="button" class="btn btn-sm btn-outline-primary ms-2" (click)="addColumn()">
-            <i class="bi bi-plus me-1"></i>Add Column
-          </button>
-          @if (isEdit && template?.id) {
-            <button type="button" class="btn btn-sm btn-success ms-2" (click)="addColumnWithAutoReorder()" 
-                    [disabled]="isLoading()"
-                    title="Add column with automatic schema-based reordering">
-              <i class="bi bi-plus-circle me-1"></i>Add Column (Auto-Reorder)
+        <div class="d-flex justify-content-between align-items-center border-bottom pb-2">
+          <h6 class="text-muted mb-0">
+            <i class="bi bi-columns-gap me-2"></i>Template Columns
+          </h6>
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-sm btn-outline-primary" (click)="addColumn()">
+              <i class="bi bi-plus me-1"></i>Add Column
             </button>
-          }
-        </h6>
+            @if (isEdit && template?.id) {
+              <button type="button" class="btn btn-sm btn-success" (click)="addColumnWithAutoReorder()"
+                      [disabled]="isLoading()"
+                      title="Add column with automatic schema-based reordering">
+                <i class="bi bi-plus-circle me-1"></i>Add Column (Auto-Reorder)
+              </button>
+            }
+          </div>
+        </div>
+        @if (selectedColumnIds().size > 0) {
+          <div class="alert alert-info py-2 px-3 mt-2 mb-0">
+            <div class="d-flex justify-content-between align-items-center">
+              <span>
+                <i class="bi bi-check-square me-1"></i>
+                {{ selectedColumnIds().size }} column(s) selected
+              </span>
+              <div class="btn-group btn-group-sm">
+                <button type="button" class="btn btn-warning" (click)="bulkToggleStaffOnly(true)" title="Mark selected as Staff Only" [disabled]="isLoading() || !isEdit || !template?.id">
+                  <i class="bi bi-shield-lock me-1"></i>Mark Staff Only
+                </button>
+                <button type="button" class="btn btn-outline-secondary" (click)="bulkToggleStaffOnly(false)" title="Mark selected as User Visible" [disabled]="isLoading() || !isEdit || !template?.id">
+                  <i class="bi bi-person me-1"></i>Mark User Visible
+                </button>
+                <button type="button" class="btn btn-danger" (click)="bulkDeleteColumns()" title="Delete selected columns" [disabled]="isLoading() || !isEdit || !template?.id">
+                  <i class="bi bi-trash me-1"></i>Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        }
       </div>
 
       <div class="col-12 mb-3">
@@ -111,6 +136,13 @@
             <table class="table table-sm table-hover">
               <thead class="table-light">
                 <tr>
+                  <th style="width: 40px;">
+                    <input type="checkbox" class="form-check-input"
+                           [checked]="allColumnsSelected()"
+                           [indeterminate]="someColumnsSelected()"
+                           (change)="toggleAllColumns()"
+                           title="Select all columns">
+                  </th>
                   <th style="width: 40px;"><i class="bi bi-arrows-move"></i></th>
                   <th>Position</th>
                   <th>Column Name</th>
@@ -123,6 +155,12 @@
               <tbody cdkDropList (cdkDropListDropped)="onColumnDrop($event)" [cdkDropListData]="_templateColumns()">
                 @for (column of _templateColumns(); track column.id; let i = $index) {
                   <tr cdkDrag [cdkDragData]="column" class="column-row" [attr.data-column-id]="column.id">
+                    <td class="text-center">
+                      <input type="checkbox" class="form-check-input"
+                             [checked]="column.id && selectedColumnIds().has(column.id)"
+                             (change)="column.id && toggleColumnSelection(column.id)"
+                             (click)="$event.stopPropagation()">
+                    </td>
                     <td class="text-center">
                       <i class="bi bi-grip-vertical drag-handle" cdkDragHandle></i>
                     </td>
@@ -153,6 +191,11 @@
                         @if (column.readonly) {
                           <span class="badge badge-pill bg-dark" title="Read Only">
                             <i class="bi bi-lock"></i>
+                          </span>
+                        }
+                        @if (column.staffOnly) {
+                          <span class="badge badge-pill bg-warning text-dark" title="Staff Only">
+                            <i class="bi bi-shield-lock"></i>
                           </span>
                         }
                         @if (column.ontologyType) {

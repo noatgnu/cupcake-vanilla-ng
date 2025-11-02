@@ -1,63 +1,110 @@
-# CupcakeMintChocolate
+# Cupcake Mint Chocolate
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.1.0.
+The `cupcake-mint-chocolate` library provides a comprehensive suite of services and models for handling real-time messaging and user notifications within the Cupcake ecosystem.
 
-## Code scaffolding
+## Key Features
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+- **Messaging System:** A complete messaging system with support for public and private threads, user participation, and message replies.
+- **Notification Service:** A robust system for delivering notifications to users, with support for different types, priorities, and delivery statuses.
+- **Real-time Communication:** WebSocket integration for real-time updates on new messages and notifications.
 
-```bash
-ng generate component component-name
-```
+## Installation
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
-```bash
-ng generate --help
-```
-
-## Building
-
-To build the library, run:
+To install the `@noatgnu/cupcake-mint-chocolate` library, run the following command:
 
 ```bash
-ng build cupcake-mint-chocolate
+npm install @noatgnu/cupcake-mint-chocolate
 ```
 
-This command will compile your project, and the build artifacts will be placed in the `dist/` directory.
+This library is an extension of `@noatgnu/cupcake-core` and depends on it. Make sure you have `@noatgnu/cupcake-core` installed and configured in your application.
 
-### Publishing the Library
+## Services
 
-Once the project is built, you can publish your library by following these steps:
+### MessageThreadService
 
-1. Navigate to the `dist` directory:
-   ```bash
-   cd dist/cupcake-mint-chocolate
-   ```
+The `MessageThreadService` is responsible for managing message threads:
 
-2. Run the `npm publish` command to publish your library to the npm registry:
-   ```bash
-   npm publish
-   ```
+- **CRUD Operations:** Create, read, update, and delete message threads.
+- **Participant Management:** Add, remove, and list participants in a thread.
+- **Thread Actions:** Archive, unarchive, and mark threads as read.
+- **Querying:** Filter and search for threads based on privacy, archive status, and creator.
 
-## Running unit tests
+**Usage:**
 
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+```typescript
+import { MessageThreadService } from '@noatgnu/cupcake-mint-chocolate';
 
-```bash
-ng test
+@Component({ ... })
+export class MyComponent {
+  constructor(private messageThreadService: MessageThreadService) {
+    // Get all active public threads
+    this.messageThreadService.getMessageThreads({ isPrivate: false, isArchived: false }).subscribe(response => {
+      // ...
+    });
+  }
+}
 ```
 
-## Running end-to-end tests
+### MessageService
 
-For end-to-end (e2e) testing, run:
+The `MessageService` handles the messages within threads:
 
-```bash
-ng e2e
+- **CRUD Operations:** Create, read, update, and (soft) delete messages.
+- **Querying:** Fetch messages by thread, sender, type, or content.
+- **Replies:** Create messages that are replies to other messages.
+
+**Usage:**
+
+```typescript
+import { MessageService } from '@noatgnu/cupcake-mint-chocolate';
+
+@Component({ ... })
+export class MyComponent {
+  constructor(private messageService: MessageService) {
+    const threadId = '...'; // ID of the message thread
+    this.messageService.getThreadMessages(threadId).subscribe(response => {
+      // ...
+    });
+  }
+}
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+### NotificationService
 
-## Additional Resources
+The `NotificationService` manages user notifications:
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+- **CRUD Operations:** Create, read, update, and delete notifications.
+- **Notification Management:** Mark notifications as read (individually or all at once).
+- **Statistics:** Get statistics about a user's notifications (total, unread, etc.).
+- **Querying:** Filter notifications by type, priority, sender, and delivery status.
+
+**Usage:**
+
+```typescript
+import { NotificationService } from '@noatgnu/cupcake-mint-chocolate';
+
+@Component({ ... })
+export class MyComponent {
+  constructor(private notificationService: NotificationService) {
+    // Get all unread notifications
+    this.notificationService.getUnreadNotifications().subscribe(response => {
+      // ...
+    });
+  }
+}
+```
+
+### Real-time Communication
+
+This library also includes a WebSocket service (`CommunicationWebsocketService`) that provides real-time updates for new messages and notifications, ensuring that the user interface is always up-to-date without the need for polling.
+
+## Models
+
+The `cupcake-mint-chocolate` library provides a set of models for type-safe interaction with the messaging and notification APIs. Key models include:
+
+- `MessageThread`
+- `Message`
+- `Notification`
+- `ThreadParticipant`
+
+This library is a crucial component for building interactive and engaging applications on the Cupcake platform.

@@ -15,7 +15,6 @@ export enum AnnotationType {
   Calculator = 'calculator',
   MolarityCalculator = 'mcalculator',
   Randomization = 'randomization',
-  Instrument = 'instrument',
   Metadata = 'metadata',
   Booking = 'booking'
 }

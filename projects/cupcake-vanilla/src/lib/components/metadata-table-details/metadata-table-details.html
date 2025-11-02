@@ -542,6 +542,11 @@
                                     title="Edit default value">
                               <i class="bi bi-pencil-square"></i>
                             </button>
+                            <button type="button" class="btn btn-outline-info"
+                                    (click)="autofillColumnValues(column)"
+                                    title="Auto-fill values">
+                              <i class="bi bi-magic"></i>
+                            </button>
                             <button type="button" class="btn btn-outline-secondary"
                                     (click)="editColumnSettings(column)"
                                     title="Edit column settings">
@@ -585,6 +590,13 @@
                                   (click)="editColumnValue(column)"
                                   [title]="'Edit default value for ' + column.name">
                                   <i class="bi bi-pencil"></i>
+                                </button>
+                                <button
+                                  type="button"
+                                  class="btn btn-sm btn-outline-info header-edit-btn me-1"
+                                  (click)="autofillColumnValues(column)"
+                                  [title]="'Auto-fill values for ' + column.name">
+                                  <i class="bi bi-magic"></i>
                                 </button>
                                 <button
                                   type="button"

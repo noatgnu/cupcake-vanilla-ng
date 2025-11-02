@@ -5,6 +5,7 @@ export * from './enums';
 // Instrument management models
 export * from './instrument';
 export * from './instrument-job';
+export * from './instrument-job-annotation';
 export * from './instrument-usage';
 export * from './instrument-permission';
 export * from './maintenance';

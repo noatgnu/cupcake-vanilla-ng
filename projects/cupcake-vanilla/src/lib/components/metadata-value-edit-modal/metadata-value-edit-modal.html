@@ -173,6 +173,31 @@
         }
       </div>
 
+      <!-- Quick-select buttons for standard values -->
+      @if (config.allowNotApplicable || config.allowNotAvailable) {
+        <div class="mb-2">
+          <small class="text-muted d-block mb-1">Quick Select:</small>
+          <div class="btn-group btn-group-sm" role="group">
+            @if (config.allowNotApplicable) {
+              <button
+                type="button"
+                class="btn btn-outline-secondary"
+                (click)="setValue('not applicable')">
+                <i class="bi bi-dash-circle me-1"></i>Not Applicable
+              </button>
+            }
+            @if (config.allowNotAvailable) {
+              <button
+                type="button"
+                class="btn btn-outline-secondary"
+                (click)="setValue('not available')">
+                <i class="bi bi-question-circle me-1"></i>Not Available
+              </button>
+            }
+          </div>
+        </div>
+      }
+
       <!-- Special SDRF Syntax Input Components -->
       @if (showSpecialInput() && specialSyntaxType()) {
         <div class="border rounded p-3 mb-3 bg-body-secondary">

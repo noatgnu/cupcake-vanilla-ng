@@ -3,6 +3,7 @@ export interface AnnotationChunkedUploadRequest {
   filename?: string;
   annotation?: string;
   annotationType?: string;
+  autoTranscribe?: boolean;
 }
 
 export interface InstrumentAnnotationChunkedUploadRequest extends AnnotationChunkedUploadRequest {
@@ -19,6 +20,12 @@ export interface MaintenanceLogAnnotationChunkedUploadRequest extends Annotation
   maintenanceLogId: number;
 }
 
+export interface InstrumentJobAnnotationChunkedUploadRequest extends AnnotationChunkedUploadRequest {
+  instrumentJobId: number;
+  folderId?: number;
+  role?: 'user' | 'staff';
+}
+
 export interface AnnotationChunkedUploadResponse {
   id: string;
   filename: string;
@@ -30,6 +37,7 @@ export interface AnnotationChunkedUploadResponse {
 
 export interface AnnotationChunkedUploadCompletionRequest {
   sha256: string;
+  autoTranscribe?: boolean;
 }
 
 export interface InstrumentAnnotationChunkedUploadCompletionRequest extends AnnotationChunkedUploadCompletionRequest {
@@ -52,9 +60,18 @@ export interface MaintenanceLogAnnotationChunkedUploadCompletionRequest extends 
   annotationType?: string;
 }
 
+export interface InstrumentJobAnnotationChunkedUploadCompletionRequest extends AnnotationChunkedUploadCompletionRequest {
+  instrumentJobId: number;
+  folderId?: number;
+  annotation?: string;
+  annotationType?: string;
+  role?: 'user' | 'staff';
+}
+
 export interface AnnotationChunkedUploadCompletionResponse {
   annotationId?: number;
   instrumentAnnotationId?: number;
+  instrumentJobAnnotationId?: number;
   storedReagentAnnotationId?: number;
   maintenanceLogAnnotationId?: number;
   message?: string;

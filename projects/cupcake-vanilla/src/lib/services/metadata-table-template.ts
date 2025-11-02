@@ -188,4 +188,32 @@ export class MetadataTableTemplateService extends BaseApiService {
   createTableFromSchemas(request: { schemaIds: number[]; name: string; description?: string; sampleCount: number }): Observable<MetadataTable> {
     return this.post<MetadataTable>(`${this.apiUrl}/metadata-table-templates/create_table_from_schemas/`, request);
   }
+
+  /**
+   * Bulk delete columns from a metadata table template
+   */
+  bulkDeleteColumns(id: number, request: {
+    columnIds: number[];
+  }): Observable<{
+    message: string;
+    deletedCount: number;
+    deletedColumns: Array<{id: number; name: string}>;
+  }> {
+    return this.post(`${this.apiUrl}/metadata-table-templates/${id}/bulk_delete_columns/`, request);
+  }
+
+  /**
+   * Bulk update staff-only status for columns in a template
+   */
+  bulkUpdateStaffOnly(id: number, request: {
+    columnIds: number[];
+    staffOnly: boolean;
+  }): Observable<{
+    message: string;
+    updatedCount: number;
+    updatedColumns: Array<{id: number; name: string; staffOnly: boolean}>;
+    staffOnly: boolean;
+  }> {
+    return this.post(`${this.apiUrl}/metadata-table-templates/${id}/bulk_update_staff_only/`, request);
+  }
 }

@@ -48,6 +48,7 @@ export interface InstrumentJob extends BaseTimestampedModel {
   canEdit?: boolean;
   canDelete?: boolean;
   canEditMetadata?: boolean;
+  canEditStaffOnlyColumns?: boolean;
 }
 
 export interface InstrumentJobCreateRequest {
@@ -97,4 +98,16 @@ export interface InstrumentJobUpdateRequest {
   instrumentEndTime?: string;
   personnelStartTime?: string;
   personnelEndTime?: string;
+}
+
+export interface InstrumentUsageJobAnnotation {
+  id: number;
+  instrumentJobAnnotation: number;
+  instrumentJobAnnotationDetails?: any;
+  instrumentUsage: number;
+  instrumentName?: string;
+  jobName?: string;
+  order: number;
+  createdAt: string;
+  updatedAt: string;
 }

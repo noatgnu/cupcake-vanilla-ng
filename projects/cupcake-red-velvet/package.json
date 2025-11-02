@@ -1,6 +1,6 @@
 {
   "name": "@noatgnu/cupcake-red-velvet",
-  "version": "1.2.40",
+  "version": "1.2.43",
   "description": "An extension for cupcake-core that provides additional api and interfaces for managing protocols, sessions, protocol steps, and data annotations.",
   "author": "Toan Phung",
   "license": "MIT",

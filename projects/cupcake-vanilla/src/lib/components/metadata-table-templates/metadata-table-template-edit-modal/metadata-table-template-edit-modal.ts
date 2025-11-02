@@ -23,9 +23,11 @@ export class MetadataTableTemplateEditModal implements OnInit {
 
   editForm: FormGroup;
   isLoading = signal(false);
-  
+
   // Column management
   _templateColumns = signal<MetadataColumn[]>([]);
+  selectedColumnIds = signal<Set<number>>(new Set());
+
   templateColumns = computed(() => {
     // Sort columns by position, then by name+type for grouping same columns together
     return this._templateColumns().sort((a, b) => {
@@ -37,6 +39,18 @@ export class MetadataTableTemplateEditModal implements OnInit {
       const bKey = `${b.name}_${b.type}`;
       return aKey.localeCompare(bKey);
     });
+  });
+
+  allColumnsSelected = computed(() => {
+    const columns = this._templateColumns();
+    const selected = this.selectedColumnIds();
+    return columns.length > 0 && columns.every(col => col.id && selected.has(col.id));
+  });
+
+  someColumnsSelected = computed(() => {
+    const columns = this._templateColumns();
+    const selected = this.selectedColumnIds();
+    return columns.some(col => col.id && selected.has(col.id)) && !this.allColumnsSelected();
   });
 
   // Available options for dropdowns
@@ -178,13 +192,106 @@ export class MetadataTableTemplateEditModal implements OnInit {
 
   removeColumn(column: MetadataColumn) {
     const confirmMessage = `Are you sure you want to remove the column "${column.name}"?`;
-    
+
     if (confirm(confirmMessage)) {
       const currentColumns = this._templateColumns();
       const updatedColumns = currentColumns.filter(col => col.id !== column.id);
       this.normalizeColumnPositions(updatedColumns);
       this._templateColumns.set(updatedColumns);
     }
+  }
+
+  toggleColumnSelection(columnId: number): void {
+    const selected = new Set(this.selectedColumnIds());
+    if (selected.has(columnId)) {
+      selected.delete(columnId);
+    } else {
+      selected.add(columnId);
+    }
+    this.selectedColumnIds.set(selected);
+  }
+
+  toggleAllColumns(): void {
+    const columns = this._templateColumns();
+    if (this.allColumnsSelected()) {
+      this.selectedColumnIds.set(new Set());
+    } else {
+      const allIds = new Set(columns.filter(col => col.id).map(col => col.id!));
+      this.selectedColumnIds.set(allIds);
+    }
+  }
+
+  bulkToggleStaffOnly(staffOnly: boolean): void {
+    const selected = this.selectedColumnIds();
+    if (selected.size === 0) {
+      this.toastService.error('Please select columns first');
+      return;
+    }
+
+    if (!this.template?.id) {
+      this.toastService.error('Template ID not found');
+      return;
+    }
+
+    const columnIds = Array.from(selected);
+
+    this.isLoading.set(true);
+    this.metadataTableTemplateService.bulkUpdateStaffOnly(this.template.id, {
+      columnIds,
+      staffOnly
+    }).subscribe({
+      next: (result) => {
+        this.isLoading.set(false);
+        this.toastService.success(`Updated ${result.updatedCount} column(s)`);
+        this.selectedColumnIds.set(new Set());
+        this.reloadTemplateColumns();
+      },
+      error: (error) => {
+        this.isLoading.set(false);
+        console.error('Error bulk updating columns:', error);
+        this.toastService.error('Failed to update columns');
+      }
+    });
+  }
+
+  bulkDeleteColumns(): void {
+    const selected = this.selectedColumnIds();
+    if (selected.size === 0) {
+      this.toastService.error('Please select columns first');
+      return;
+    }
+
+    if (!this.template?.id) {
+      this.toastService.error('Template ID not found');
+      return;
+    }
+
+    const columnIds = Array.from(selected);
+    const columnNames = this._templateColumns()
+      .filter(col => col.id && selected.has(col.id))
+      .map(col => col.name)
+      .join(', ');
+
+    if (!confirm(`Are you sure you want to delete ${columnIds.length} column(s)?\n\n${columnNames}`)) {
+      return;
+    }
+
+    this.isLoading.set(true);
+    this.metadataTableTemplateService.bulkDeleteColumns(this.template.id, {
+      columnIds
+    }).subscribe({
+      next: (result) => {
+        this.isLoading.set(false);
+        this.toastService.success(`Deleted ${result.deletedCount} column(s)`);
+        this.selectedColumnIds.set(new Set());
+        this.reloadTemplateColumns();
+      },
+      error: (error) => {
+        this.isLoading.set(false);
+        console.error('Error bulk deleting columns:', error);
+        this.toastService.error('Failed to delete columns');
+      }
+    });
   }
 
   onColumnDrop(event: CdkDragDrop<MetadataColumn[]>) {

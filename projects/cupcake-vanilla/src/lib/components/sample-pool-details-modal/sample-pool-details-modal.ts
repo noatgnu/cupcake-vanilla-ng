@@ -4,7 +4,7 @@ import { NgbActiveModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { SamplePool } from '../../models';
 
 @Component({
-  selector: 'app-sample-pool-details-modal',
+  selector: 'ccv-sample-pool-details-modal',
   standalone: true,
   imports: [CommonModule, NgbModule],
   templateUrl: './sample-pool-details-modal.html',

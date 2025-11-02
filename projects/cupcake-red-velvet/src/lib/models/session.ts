@@ -123,6 +123,7 @@ export interface AnnotationDataRequest {
   language?: string;
   translation?: string;
   scratched?: boolean;
+  autoTranscribe?: boolean;
 }
 
 export interface SessionAnnotationCreateRequest {

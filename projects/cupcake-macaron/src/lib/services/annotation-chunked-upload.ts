@@ -9,6 +9,8 @@ import {
   AnnotationChunkedUploadCompletionResponse,
   InstrumentAnnotationChunkedUploadRequest,
   InstrumentAnnotationChunkedUploadCompletionRequest,
+  InstrumentJobAnnotationChunkedUploadRequest,
+  InstrumentJobAnnotationChunkedUploadCompletionRequest,
   StoredReagentAnnotationChunkedUploadRequest,
   StoredReagentAnnotationChunkedUploadCompletionRequest,
   MaintenanceLogAnnotationChunkedUploadRequest,
@@ -75,6 +77,9 @@ export class AnnotationChunkedUploadService extends BaseApiService {
     }
     if (request.annotationType) {
       formData.append('annotation_type', request.annotationType);
+    }
+    if (request.autoTranscribe !== undefined) {
+      formData.append('auto_transcribe', request.autoTranscribe.toString());
     }
 
     return this.post<AnnotationChunkedUploadCompletionResponse>(
@@ -210,6 +215,223 @@ export class AnnotationChunkedUploadService extends BaseApiService {
     );
   }
 
+  uploadInstrumentJobAnnotationChunk(
+    request: InstrumentJobAnnotationChunkedUploadRequest,
+    uploadId?: string,
+    offset?: number,
+    totalSize?: number
+  ): Observable<AnnotationChunkedUploadResponse> {
+    const formData = new FormData();
+    formData.append('file', request.file);
+
+    if (request.filename) {
+      formData.append('filename', request.filename);
+    }
+    formData.append('instrument_job_id', request.instrumentJobId.toString());
+    if (request.folderId) {
+      formData.append('folder_id', request.folderId.toString());
+    }
+    if (request.annotation) {
+      formData.append('annotation', request.annotation);
+    }
+    if (request.annotationType) {
+      formData.append('annotation_type', request.annotationType);
+    }
+    if (request.role) {
+      formData.append('role', request.role);
+    }
+
+    const url = uploadId
+      ? `${this.apiUrl}/upload/instrument-job-annotation-chunks/${uploadId}/`
+      : `${this.apiUrl}/upload/instrument-job-annotation-chunks/`;
+
+    const httpOptions: any = {};
+    const isChunkedUpload = offset !== undefined && totalSize !== undefined;
+
+    if (isChunkedUpload) {
+      const chunkEnd = offset + request.file.size - 1;
+      httpOptions.headers = {
+        'Content-Range': `bytes ${offset}-${chunkEnd}/${totalSize}`
+      };
+    }
+
+    if (isChunkedUpload || uploadId) {
+      return this.put<AnnotationChunkedUploadResponse>(url, formData, httpOptions);
+    } else {
+      return this.post<AnnotationChunkedUploadResponse>(url, formData, httpOptions);
+    }
+  }
+
+  completeInstrumentJobAnnotationUpload(
+    uploadId: string,
+    request: InstrumentJobAnnotationChunkedUploadCompletionRequest
+  ): Observable<AnnotationChunkedUploadCompletionResponse> {
+    const formData = new FormData();
+    formData.append('sha256', request.sha256);
+    formData.append('instrument_job_id', request.instrumentJobId.toString());
+    if (request.folderId) {
+      formData.append('folder_id', request.folderId.toString());
+    }
+    if (request.annotation) {
+      formData.append('annotation', request.annotation);
+    }
+    if (request.annotationType) {
+      formData.append('annotation_type', request.annotationType);
+    }
+    if (request.autoTranscribe !== undefined) {
+      formData.append('auto_transcribe', request.autoTranscribe.toString());
+    }
+    if (request.role) {
+      formData.append('role', request.role);
+    }
+
+    return this.post<AnnotationChunkedUploadCompletionResponse>(
+      `${this.apiUrl}/upload/instrument-job-annotation-chunks/${uploadId}/`,
+      formData
+    );
+  }
+
+  uploadInstrumentJobAnnotationFileInChunks(
+    file: File,
+    instrumentJobId: number,
+    folderId?: number,
+    chunkSize: number = 1024 * 1024,
+    options?: {
+      annotation?: string;
+      annotationType?: string;
+      autoTranscribe?: boolean;
+      role?: 'user' | 'staff';
+      onProgress?: (progress: number) => void;
+    }
+  ): Observable<AnnotationChunkedUploadCompletionResponse> {
+    return new Observable(subscriber => {
+      let uploadId: string | undefined;
+      let offset = 0;
+      const totalSize = file.size;
+      const sha256 = new jsSHA('SHA-256', 'ARRAYBUFFER');
+
+      if (totalSize <= chunkSize) {
+        this.completeInstrumentJobAnnotationUploadWithFile({
+          file: file,
+          filename: file.name,
+          instrumentJobId: instrumentJobId,
+          folderId: folderId,
+          annotation: options?.annotation,
+          annotationType: options?.annotationType,
+          autoTranscribe: options?.autoTranscribe,
+          role: options?.role
+        }).subscribe({
+          next: (result) => {
+            subscriber.next(result);
+            subscriber.complete();
+          },
+          error: (error) => subscriber.error(error)
+        });
+        return;
+      }
+
+      const uploadNextChunk = () => {
+        if (offset >= totalSize) {
+          if (uploadId) {
+            const calculatedHash = sha256.getHash('HEX');
+            this.completeInstrumentJobAnnotationUpload(uploadId, {
+              sha256: calculatedHash,
+              instrumentJobId: instrumentJobId,
+              folderId: folderId,
+              annotation: options?.annotation,
+              annotationType: options?.annotationType,
+              autoTranscribe: options?.autoTranscribe,
+              role: options?.role
+            }).subscribe({
+              next: (result) => {
+                subscriber.next(result);
+                subscriber.complete();
+              },
+              error: (error) => subscriber.error(error)
+            });
+          } else {
+            subscriber.error(new Error('Upload failed: No upload ID'));
+          }
+          return;
+        }
+
+        const end = Math.min(offset + chunkSize, totalSize);
+        const chunk = file.slice(offset, end);
+        const chunkFile = new File([chunk], file.name, { type: file.type });
+
+        chunk.arrayBuffer().then(arrayBuffer => {
+          sha256.update(arrayBuffer);
+
+          this.uploadInstrumentJobAnnotationChunk({
+            file: chunkFile,
+            filename: file.name,
+            instrumentJobId: instrumentJobId,
+            folderId: folderId,
+            annotation: options?.annotation,
+            annotationType: options?.annotationType,
+            role: options?.role
+          }, uploadId, offset, totalSize).subscribe({
+            next: (response) => {
+              uploadId = response.id;
+              offset = response.offset;
+
+              const progress = (offset / totalSize) * 100;
+              if (options?.onProgress) {
+                options.onProgress(progress);
+              }
+
+              uploadNextChunk();
+            },
+            error: (error) => subscriber.error(error)
+          });
+        }).catch(error => subscriber.error(error));
+      };
+
+      uploadNextChunk();
+    });
+  }
+
+  completeInstrumentJobAnnotationUploadWithFile(
+    request: InstrumentJobAnnotationChunkedUploadRequest
+  ): Observable<AnnotationChunkedUploadCompletionResponse> {
+    const hasher = new jsSHA('SHA-256', 'ARRAYBUFFER');
+
+    return from(request.file.arrayBuffer()).pipe(
+      switchMap((arrayBuffer) => {
+        hasher.update(arrayBuffer);
+        const hash = hasher.getHash('HEX');
+
+        const formData = new FormData();
+        formData.append('file', request.file);
+        if (request.filename) {
+          formData.append('filename', request.filename);
+        }
+        formData.append('instrument_job_id', request.instrumentJobId.toString());
+        if (request.folderId) {
+          formData.append('folder_id', request.folderId.toString());
+        }
+        if (request.annotation) {
+          formData.append('annotation', request.annotation);
+        }
+        if (request.annotationType) {
+          formData.append('annotation_type', request.annotationType);
+        }
+        if (request.autoTranscribe !== undefined) {
+          formData.append('auto_transcribe', request.autoTranscribe.toString());
+        }
+        if (request.role) {
+          formData.append('role', request.role);
+        }
+        formData.append('sha256', hash);
+
+        return this.post<AnnotationChunkedUploadCompletionResponse>(
+          `${this.apiUrl}/upload/instrument-job-annotation-chunks/`,
+          formData
+        );
+      })
+    );
+  }
+
   uploadStoredReagentAnnotationChunk(
     request: StoredReagentAnnotationChunkedUploadRequest,
     uploadId?: string,
@@ -265,6 +487,9 @@ export class AnnotationChunkedUploadService extends BaseApiService {
     }
     if (request.annotationType) {
       formData.append('annotation_type', request.annotationType);
+    }
+    if (request.autoTranscribe !== undefined) {
+      formData.append('auto_transcribe', request.autoTranscribe.toString());
     }
 
     return this.post<AnnotationChunkedUploadCompletionResponse>(
@@ -453,6 +678,9 @@ export class AnnotationChunkedUploadService extends BaseApiService {
     }
     if (request.annotationType) {
       formData.append('annotation_type', request.annotationType);
+    }
+    if (request.autoTranscribe !== undefined) {
+      formData.append('auto_transcribe', request.autoTranscribe.toString());
     }
 
     return this.post<AnnotationChunkedUploadCompletionResponse>(

@@ -1,63 +1,113 @@
-# CupcakeRedVelvet
+# Cupcake Red Velvet
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.1.0.
+The `cupcake-red-velvet` library provides services and models for managing scientific projects, protocols, and experimental sessions within the Cupcake ecosystem.
 
-## Code scaffolding
+## Key Features
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+- **Project Management:** Organize your work into projects, with support for ownership, lab groups, and visibility controls.
+- **Protocol Authoring & Execution:** Create, manage, and execute detailed, step-by-step protocols.
+- **Session Tracking:** Track the execution of protocols in experimental sessions, including their status and timing.
+- **Real-time Updates:** WebSocket integration for real-time monitoring of session progress and timers.
 
-```bash
-ng generate component component-name
-```
+## Installation
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
-```bash
-ng generate --help
-```
-
-## Building
-
-To build the library, run:
+To install the `@noatgnu/cupcake-red-velvet` library, run the following command:
 
 ```bash
-ng build cupcake-red-velvet
+npm install @noatgnu/cupcake-red-velvet
 ```
 
-This command will compile your project, and the build artifacts will be placed in the `dist/` directory.
+This library is an extension of `@noatgnu/cupcake-core` and depends on it. Make sure you have `@noatgnu/cupcake-core` installed and configured in your application.
 
-### Publishing the Library
+## Services
 
-Once the project is built, you can publish your library by following these steps:
+### ProjectService
 
-1. Navigate to the `dist` directory:
-   ```bash
-   cd dist/cupcake-red-velvet
-   ```
+The `ProjectService` is used to manage projects:
 
-2. Run the `npm publish` command to publish your library to the npm registry:
-   ```bash
-   npm publish
-   ```
+- **CRUD Operations:** Create, read, update, and delete projects.
+- **Querying:** Find projects by owner, lab group, visibility (public/private), and more.
+- **Session Management:** Retrieve all sessions associated with a specific project.
 
-## Running unit tests
+**Usage:**
 
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+```typescript
+import { ProjectService } from '@noatgnu/cupcake-red-velvet';
 
-```bash
-ng test
+@Component({ ... })
+export class MyComponent {
+  constructor(private projectService: ProjectService) {
+    // Get all projects owned by the current user
+    this.projectService.getMyProjects().subscribe(projects => {
+      // ...
+    });
+  }
+}
 ```
 
-## Running end-to-end tests
+### ProtocolService
 
-For end-to-end (e2e) testing, run:
+The `ProtocolService` handles the creation and management of protocols:
 
-```bash
-ng e2e
+- **CRUD Operations:** Create, read, update, and delete protocols.
+- **Protocol Structure:** Manage the sections and steps that make up a protocol.
+- **Ratings:** Allow users to rate and review protocols.
+- **Querying:** Search and filter protocols by category, creator, and other attributes.
+
+**Usage:**
+
+```typescript
+import { ProtocolService } from '@noatgnu/cupcake-red-velvet';
+
+@Component({ ... })
+export class MyComponent {
+  constructor(private protocolService: ProtocolService) {
+    // Get all public protocol templates
+    this.protocolService.getProtocols({ isPublic: true, isTemplate: true }).subscribe(response => {
+      // ...
+    });
+  }
+}
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+### SessionService
 
-## Additional Resources
+The `SessionService` is used to track the execution of protocols in sessions:
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+- **CRUD Operations:** Create, read, update, and delete sessions.
+- **Session Lifecycle:** Start and end sessions to track their duration.
+- **Querying:** Filter sessions by project, user, status, and date range.
+- **Annotations:** Manage session-related documents and notes.
+
+**Usage:**
+
+```typescript
+import { SessionService } from '@noatgnu/cupcake-red-velvet';
+
+@Component({ ... })
+export class MyComponent {
+  constructor(private sessionService: SessionService) {
+    const projectId = 123;
+    this.sessionService.getSessionsByProject(projectId).subscribe(response => {
+      // ...
+    });
+  }
+}
+```
+
+### Real-time Functionality
+
+This library includes WebSocket services (`TimekeeperWebsocketService` and `NotificationWebsocketService`) to provide real-time updates on session timers and other events, enabling a dynamic and interactive user experience.
+
+## Models
+
+The `cupcake-red-velvet` library provides a rich set of models for working with projects, protocols, and sessions. Key models include:
+
+- `Project`
+- `ProtocolModel`
+- `Session`
+- `ProtocolSection`
+- `ProtocolStep`
+- `Timekeeper`
+
+This library is essential for building applications that involve structured experimental workflows and data collection on the Cupcake platform.

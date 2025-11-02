@@ -60,4 +60,12 @@ export class StepAnnotationService extends BaseApiService {
   getAnnotationsForSessionAndStep(sessionId: number, stepId: number, params?: Omit<StepAnnotationQueryParams, 'session' | 'step'>): Observable<PaginatedResponse<StepAnnotation>> {
     return this.getStepAnnotations({ session: sessionId, step: stepId, ...params });
   }
+
+  /**
+   * Retrigger transcription and translation for audio/video annotation
+   * Only available to staff/admin users
+   */
+  retriggerTranscription(id: number): Observable<{ message: string; annotation_id: number }> {
+    return this.post<{ message: string; annotation_id: number }>(`${this.apiUrl}/step-annotations/${id}/retrigger_transcription/`, {});
+  }
 }

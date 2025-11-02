@@ -1,18 +1,17 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { SearchReplaceModal } from './search-replace-modal';
 
-import { ColumnTemplates } from './column-templates';
-
-describe('ColumnTemplates', () => {
-  let component: ColumnTemplates;
-  let fixture: ComponentFixture<ColumnTemplates>;
+describe('SearchReplaceModal', () => {
+  let component: SearchReplaceModal;
+  let fixture: ComponentFixture<SearchReplaceModal>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [ColumnTemplates]
+      imports: [SearchReplaceModal]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(ColumnTemplates);
+    fixture = TestBed.createComponent(SearchReplaceModal);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

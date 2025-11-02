@@ -1,0 +1,121 @@
+<div class="modal-header">
+  <h4 class="modal-title">
+    <i class="bi bi-search me-2"></i>Search and Replace Values
+  </h4>
+  <button type="button" class="btn-close" (click)="onCancel()"></button>
+</div>
+
+<div class="modal-body">
+  <form [formGroup]="searchReplaceForm" (ngSubmit)="onSubmit()">
+    <div class="row">
+      <div class="col-12 mb-3">
+        <div class="alert alert-info">
+          <i class="bi bi-info-circle me-2"></i>
+          @if (isTableContext) {
+            <strong>Table Context:</strong> Search and replace values across {{ config.tableName }}
+          } @else {
+            <strong>Column Context:</strong> Search and replace values in {{ config.columnName }}
+          }
+        </div>
+      </div>
+
+      @if (isTableContext && config.columns && config.columns.length > 0) {
+        <div class="col-12 mb-3">
+          <label for="columnSelect" class="form-label">
+            Target Column <small class="text-muted">(optional - leave empty to search all columns)</small>
+          </label>
+          <select
+            class="form-select"
+            id="columnSelect"
+            formControlName="columnId">
+            <option [ngValue]="null">All Columns</option>
+            @for (column of config.columns; track column.id) {
+              <option [ngValue]="column.id">{{ column.name }}</option>
+            }
+          </select>
+          <div class="form-text">
+            <i class="bi bi-info-circle me-1"></i>
+            Select a specific column to limit the search, or leave as "All Columns" to search everywhere.
+          </div>
+        </div>
+      }
+
+      <div class="col-12 mb-3">
+        <label for="oldValue" class="form-label">Find Value *</label>
+        <input
+          type="text"
+          class="form-control"
+          id="oldValue"
+          formControlName="oldValue"
+          [class.is-invalid]="searchReplaceForm.get('oldValue')?.invalid && searchReplaceForm.get('oldValue')?.touched"
+          placeholder="Enter value to find">
+        <div class="invalid-feedback">
+          {{ getFieldError('oldValue') }}
+        </div>
+        <div class="form-text">
+          <i class="bi bi-info-circle me-1"></i>
+          Exact match - this will find all cells with exactly this value.
+        </div>
+      </div>
+
+      <div class="col-12 mb-3">
+        <label for="newValue" class="form-label">Replace With *</label>
+        <input
+          type="text"
+          class="form-control"
+          id="newValue"
+          formControlName="newValue"
+          [class.is-invalid]="searchReplaceForm.get('newValue')?.invalid && searchReplaceForm.get('newValue')?.touched"
+          placeholder="Enter replacement value">
+        <div class="invalid-feedback">
+          {{ getFieldError('newValue') }}
+        </div>
+        <div class="form-text">
+          <i class="bi bi-info-circle me-1"></i>
+          All matching values will be replaced with this value.
+        </div>
+      </div>
+
+      <div class="col-12 mb-3">
+        <div class="form-check form-switch">
+          <input
+            class="form-check-input"
+            type="checkbox"
+            id="updatePools"
+            formControlName="updatePools">
+          <label class="form-check-label" for="updatePools">
+            Update Sample Pools
+          </label>
+        </div>
+        <div class="form-text">
+          <i class="bi bi-info-circle me-1"></i>
+          When enabled, this will also update values in related sample pools.
+        </div>
+      </div>
+
+      <div class="col-12">
+        <div class="alert alert-warning">
+          <i class="bi bi-exclamation-triangle me-2"></i>
+          <strong>Warning:</strong> This operation cannot be undone. All matching values will be permanently replaced.
+        </div>
+      </div>
+    </div>
+  </form>
+</div>
+
+<div class="modal-footer">
+  <button type="button" class="btn btn-outline-secondary" (click)="onCancel()">
+    <i class="bi bi-x-circle me-1"></i>Cancel
+  </button>
+  <button
+    type="button"
+    class="btn btn-primary"
+    (click)="onSubmit()"
+    [disabled]="searchReplaceForm.invalid || isProcessing()">
+    @if (isProcessing()) {
+      <span class="spinner-border spinner-border-sm me-2"></span>
+    }
+    <i class="bi bi-arrow-repeat me-1"></i>
+    Replace All
+  </button>
+</div>

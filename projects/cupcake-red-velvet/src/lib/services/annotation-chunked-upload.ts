@@ -82,6 +82,9 @@ export class AnnotationChunkedUploadService extends BaseApiService {
     if (request.annotationType) {
       formData.append('annotation_type', request.annotationType);
     }
+    if (request.autoTranscribe !== undefined) {
+      formData.append('auto_transcribe', request.autoTranscribe.toString());
+    }
 
     return this.post<AnnotationChunkedUploadCompletionResponse>(
       `${this.apiUrl}/upload/step-annotation-chunks/${uploadId}/`,
@@ -283,6 +286,9 @@ export class AnnotationChunkedUploadService extends BaseApiService {
     if (request.annotationType) {
       formData.append('annotation_type', request.annotationType);
     }
+    if (request.autoTranscribe !== undefined) {
+      formData.append('auto_transcribe', request.autoTranscribe.toString());
+    }
 
     return this.post<AnnotationChunkedUploadCompletionResponse>(
       `${this.apiUrl}/upload/session-annotation-chunks/${uploadId}/`,
@@ -474,6 +480,9 @@ export class AnnotationChunkedUploadService extends BaseApiService {
     }
     if (request.annotationType) {
       formData.append('annotation_type', request.annotationType);
+    }
+    if (request.autoTranscribe !== undefined) {
+      formData.append('auto_transcribe', request.autoTranscribe.toString());
     }
 
     return this.post<AnnotationChunkedUploadCompletionResponse>(

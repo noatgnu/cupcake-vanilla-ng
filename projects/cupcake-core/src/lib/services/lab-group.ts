@@ -92,6 +92,23 @@ export class LabGroupService extends BaseApiService {
     return this.post<{message: string}>(`${this.apiUrl}/lab-groups/${id}/remove_member/`, { userId });
   }
 
+  /**
+   * Check if a user is a member of a lab group
+   * @param id Lab group ID
+   * @param userId User ID to check (optional, defaults to current user)
+   * @returns Membership status including direct and indirect membership
+   */
+  checkMembership(id: number, userId?: number): Observable<{
+    isMember: boolean;
+    isDirectMember: boolean;
+    userId: number;
+    userUsername: string;
+  }> {
+    const params = userId ? { user_id: userId.toString() } : {};
+    const httpParams = this.buildHttpParams(params);
+    return this.get(`${this.apiUrl}/lab-groups/${id}/check_membership/`, { params: httpParams });
+  }
+
   getRootLabGroups(params?: Omit<LabGroupQueryParams, 'parentGroup'>): Observable<LabGroupQueryResponse> {
     const httpParams = this.buildHttpParams({ ...params, parentGroup__isnull: 'true' });
     return this.get<LabGroupQueryResponse>(`${this.apiUrl}/lab-groups/`, { params: httpParams });
