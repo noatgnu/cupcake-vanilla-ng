@@ -1,5 +1,6 @@
 export * from './auth';
 export * from './api';
+export * from './async-task-monitor';
 export * from './base-api';
 export * from './notification';
 export * from './site-config';
@@ -9,4 +10,5 @@ export * from './user-management';
 export * from './resource';
 export * from './websocket';
 export * from './websocket-config';
+export * from './admin-websocket';
 export * from './lab-group';

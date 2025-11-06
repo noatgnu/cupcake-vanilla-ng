@@ -11,7 +11,9 @@ import {
   PaginatedResponse,
   SampleCountValidationRequest,
   SampleCountValidationResponse,
-  SampleCountConfirmationError
+  SampleCountConfirmationError,
+  AdvancedAutofillRequest,
+  AdvancedAutofillResponse
 } from '../models';
 
 export interface MetadataTableQueryParams {
@@ -240,5 +242,9 @@ export class MetadataTableService extends BaseApiService {
     staffOnly: boolean;
   }> {
     return this.post(`${this.apiUrl}/metadata-tables/${id}/bulk_update_staff_only/`, request);
+  }
+
+  advancedAutofill(id: number, request: AdvancedAutofillRequest): Observable<AdvancedAutofillResponse> {
+    return this.post<AdvancedAutofillResponse>(`${this.apiUrl}/metadata-tables/${id}/advanced_autofill/`, request);
   }
 }

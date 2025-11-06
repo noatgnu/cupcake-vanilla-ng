@@ -488,7 +488,6 @@ export class MetadataTableTemplates implements OnInit {
         
         // Mark task for monitoring and start real-time updates (same pattern as other async operations)
         this.asyncTaskService.monitorTask(response.taskId);
-        this.asyncTaskService.startRealtimeUpdates();
         
         this.isLoading.set(false);
       },

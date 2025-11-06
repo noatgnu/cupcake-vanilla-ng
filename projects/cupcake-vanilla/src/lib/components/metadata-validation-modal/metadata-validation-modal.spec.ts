@@ -6,7 +6,7 @@ import { of, throwError } from 'rxjs';
 import { MetadataValidationModal } from './metadata-validation-modal';
 import { AsyncTaskService } from '../../services/async-task';
 import { ToastService } from '../../services/toast';
-import { ValidationTaskCreateRequest, MetadataValidationConfig } from '../../models/async-task';
+import { MetadataValidationConfig } from '@noatgnu/cupcake-core';
 
 describe('MetadataValidationModal', () => {
   let component: MetadataValidationModal;

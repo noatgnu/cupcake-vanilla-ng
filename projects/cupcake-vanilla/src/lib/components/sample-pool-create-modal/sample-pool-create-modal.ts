@@ -1,8 +1,8 @@
-import { Component, Input, Output, EventEmitter, OnInit, signal } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgbActiveModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
-import { SamplePool, SamplePoolCreateRequest, MetadataTable } from '../../models';
+import { SamplePool, SamplePoolCreateRequest, MetadataTable, MetadataColumn } from '../../models';
 import { SamplePoolService } from '../../services';
 import { ToastService } from '@noatgnu/cupcake-core';
 
@@ -37,7 +37,23 @@ export class SamplePoolCreateModal implements OnInit {
   // UI state
   selectionMode = signal<'manual' | 'range'>('manual');
   currentPage = signal(1);
-  samplesPerPage = 20;
+  samplesPerPage = 10;
+
+  sourceNameColumn = computed(() => {
+    return this.metadataTable?.columns?.find(c => c.name.toLowerCase() === 'source name');
+  });
+
+  assayNameColumn = computed(() => {
+    return this.metadataTable?.columns?.find(c => c.name.toLowerCase() === 'assay name');
+  });
+
+  fractionIdentifierColumn = computed(() => {
+    return this.metadataTable?.columns?.find(c => c.name.toLowerCase() === 'comment[fraction identifier]');
+  });
+
+  labelColumn = computed(() => {
+    return this.metadataTable?.columns?.find(c => c.name.toLowerCase() === 'comment[label]');
+  });
 
   constructor(
     private fb: FormBuilder,
@@ -150,6 +166,30 @@ export class SamplePoolCreateModal implements OnInit {
     samples.forEach(s => s.selected = false);
     this.samples.set([...samples]);
     this.updateSampleTextInputs();
+  }
+
+  selectAllNonPooledSamples(): void {
+    const samples = this.samples();
+    samples.forEach(s => {
+      if (!s.pooled) {
+        s.selected = true;
+      }
+    });
+    this.samples.set([...samples]);
+    this.updateSampleTextInputs();
+  }
+
+  toggleSelectAllSamples(): void {
+    const nonPooledCount = this.samples().filter(s => !s.pooled).length;
+    if (this.selectedSamplesCount === nonPooledCount) {
+      this.clearAllSelections();
+    } else {
+      this.selectAllNonPooledSamples();
+    }
+  }
+
+  get availableSamplesCount(): number {
+    return this.samples().filter(s => !s.pooled).length;
   }
 
   private updateSampleTextInputs(): void {
@@ -325,5 +365,35 @@ export class SamplePoolCreateModal implements OnInit {
     if (this.currentPage() < this.totalPages) {
       this.currentPage.set(this.currentPage() + 1);
     }
+  }
+
+  getColumnValueForSample(column: MetadataColumn | undefined, sampleIndex: number): string {
+    if (!column) return '';
+
+    const modifier = column.modifiers?.find(m => this.isSampleInRange(sampleIndex, m.samples));
+    if (modifier) {
+      return modifier.value;
+    }
+
+    return column.value || '';
+  }
+
+  private isSampleInRange(sampleIndex: number, rangeStr: string): boolean {
+    if (!rangeStr) return false;
+
+    const ranges = rangeStr.split(',').map(s => s.trim());
+    for (const range of ranges) {
+      if (range.includes('-')) {
+        const [start, end] = range.split('-').map(n => parseInt(n.trim(), 10));
+        if (sampleIndex >= start && sampleIndex <= end) {
+          return true;
+        }
+      } else {
+        if (sampleIndex === parseInt(range, 10)) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 }

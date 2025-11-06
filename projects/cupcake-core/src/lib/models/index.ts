@@ -15,3 +15,4 @@ export * from './annotation';
 export * from './resource-permission';
 export * from './remote-host';
 export * from './notification';
+export * from './async-task';

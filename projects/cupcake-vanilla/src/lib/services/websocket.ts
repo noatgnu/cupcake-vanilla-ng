@@ -11,8 +11,8 @@ export class Websocket extends BaseWebSocketService {
 
   constructor(authService: AuthService) {
     super(authService);
-    this.endpoint = 'ccv/notifications';
-    this.config.endpoint = 'ccv/notifications';
+    this.endpoint = 'ccc/notifications';
+    this.config.endpoint = 'ccc/notifications';
     this.config.url = this.getWebSocketUrl();
   }
 

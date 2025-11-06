@@ -134,69 +134,107 @@
         </div>
       }
 
-      <!-- Sample Grid for Manual Selection -->
+      <!-- Sample Table for Manual Selection -->
       @if (selectionMode() === 'manual') {
-        <div class="card mb-3">
-          <div class="card-header d-flex justify-content-between align-items-center">
-            <span>
-              <i class="bi bi-grid me-2"></i>Select Samples 
-              <span class="badge bg-info ms-2">{{ selectedSamplesCount }} selected</span>
-            </span>
-            <button type="button" class="btn btn-sm btn-outline-danger" (click)="clearAllSelections()">
-              <i class="bi bi-x-circle me-1"></i>Clear All
-            </button>
+        <div class="mb-3">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <label class="form-label mb-0">
+              Select Samples <span class="text-muted">({{ selectedSamplesCount }} of {{ availableSamplesCount }} selected)</span>
+            </label>
+            <div class="btn-group btn-group-sm">
+              <button
+                type="button"
+                class="btn btn-outline-primary"
+                (click)="selectAllNonPooledSamples()"
+                title="Select All"
+              >
+                <i class="bi bi-check-all"></i>
+              </button>
+              <button
+                type="button"
+                class="btn btn-outline-secondary"
+                (click)="clearAllSelections()"
+                title="Clear Selection"
+              >
+                <i class="bi bi-x"></i>
+              </button>
+            </div>
           </div>
-          <div class="card-body" style="max-height: 300px; overflow-y: auto;">
-            <!-- Sample Grid -->
-            <div class="row g-1 mb-3">
-              @for (sample of paginatedSamples; track sample.sampleNumber) {
-                <div class="col-2">
-                  <button 
-                    type="button" 
-                    class="btn btn-sm w-100"
-                    [class.btn-primary]="sample.selected && !sample.pooled"
-                    [class.btn-success]="sample.selected && sample.pooled"
-                    [class.btn-outline-secondary]="!sample.selected && !sample.pooled"
-                    [class.btn-outline-warning]="!sample.selected && sample.pooled"
-                    [disabled]="sample.pooled"
-                    (click)="toggleSampleSelection(sample.sampleNumber)"
-                    [title]="sample.pooled ? 'Sample already in another pool' : 'Click to select/deselect'">
-                    {{ sample.sampleNumber }}
-                    @if (sample.pooled) {
-                      <i class="bi bi-lock-fill ms-1"></i>
-                    }
-                  </button>
-                </div>
-              }
-            </div>
 
-            <!-- Pagination -->
-            @if (totalPages > 1) {
-              <nav>
-                <ul class="pagination pagination-sm justify-content-center">
-                  <li class="page-item" [class.disabled]="currentPage() === 1">
-                    <button class="page-link" type="button" (click)="previousPage()">Previous</button>
-                  </li>
-                  @for (page of [].constructor(Math.min(5, totalPages)); track $index) {
-                    @let pageNum = $index + Math.max(1, currentPage() - 2);
-                    @if (pageNum <= totalPages) {
-                      <li class="page-item" [class.active]="pageNum === currentPage()">
-                        <button class="page-link" type="button" (click)="goToPage(pageNum)">{{ pageNum }}</button>
-                      </li>
-                    }
-                  }
-                  <li class="page-item" [class.disabled]="currentPage() === totalPages">
-                    <button class="page-link" type="button" (click)="nextPage()">Next</button>
-                  </li>
-                </ul>
-              </nav>
-            }
+          <div class="table-responsive">
+            <table class="table table-sm table-hover">
+              <thead>
+                <tr>
+                  <th style="width: 50px;">
+                    <input
+                      type="checkbox"
+                      class="form-check-input"
+                      [checked]="selectedSamplesCount === availableSamplesCount && selectedSamplesCount > 0"
+                      [indeterminate]="selectedSamplesCount > 0 && selectedSamplesCount < availableSamplesCount"
+                      (change)="toggleSelectAllSamples()"
+                    />
+                  </th>
+                  <th style="width: 80px;">Sample</th>
+                  <th>{{ sourceNameColumn()?.displayName || sourceNameColumn()?.name || 'Source Name' }}</th>
+                  <th>{{ assayNameColumn()?.displayName || assayNameColumn()?.name || 'Assay Name' }}</th>
+                  <th>{{ labelColumn()?.displayName || labelColumn()?.name || 'Label' }}</th>
+                  <th>{{ fractionIdentifierColumn()?.displayName || fractionIdentifierColumn()?.name || 'Fraction Identifier' }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (sample of paginatedSamples; track sample.sampleNumber) {
+                  <tr
+                    [class.table-active]="sample.selected"
+                    [class.table-warning]="sample.pooled"
+                    (click)="!sample.pooled && toggleSampleSelection(sample.sampleNumber)"
+                    [style.cursor]="sample.pooled ? 'not-allowed' : 'pointer'"
+                  >
+                    <td>
+                      <input
+                        type="checkbox"
+                        class="form-check-input"
+                        [checked]="sample.selected"
+                        [disabled]="sample.pooled"
+                        (click)="$event.stopPropagation()"
+                        (change)="toggleSampleSelection(sample.sampleNumber)"
+                      />
+                    </td>
+                    <td class="fw-semibold">
+                      {{ sample.sampleNumber }}
+                      @if (sample.pooled) {
+                        <i class="bi bi-lock-fill ms-1 text-warning" title="Already in another pool"></i>
+                      }
+                    </td>
+                    <td>{{ getColumnValueForSample(sourceNameColumn(), sample.sampleNumber) || '-' }}</td>
+                    <td>{{ getColumnValueForSample(assayNameColumn(), sample.sampleNumber) || '-' }}</td>
+                    <td>{{ getColumnValueForSample(labelColumn(), sample.sampleNumber) || '-' }}</td>
+                    <td>{{ getColumnValueForSample(fractionIdentifierColumn(), sample.sampleNumber) || '-' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
 
-            <div class="form-text text-center">
-              Showing {{ ((currentPage() - 1) * samplesPerPage) + 1 }} - 
-              {{ Math.min(currentPage() * samplesPerPage, samples().length) }} 
-              of {{ samples().length }} samples
+          @if (totalPages > 1) {
+            <div class="d-flex justify-content-between align-items-center mt-2">
+              <small class="text-muted">
+                Showing {{ ((currentPage() - 1) * samplesPerPage) + 1 }}-{{ Math.min(currentPage() * samplesPerPage, samples().length) }} of {{ samples().length }}
+              </small>
+              <ngb-pagination
+                [collectionSize]="samples().length"
+                [page]="currentPage()"
+                [pageSize]="samplesPerPage"
+                [maxSize]="3"
+                [boundaryLinks]="true"
+                (pageChange)="goToPage($event)"
+                size="sm"
+              ></ngb-pagination>
             </div>
+          }
+
+          <div class="form-text">
+            <i class="bi bi-info-circle me-1"></i>
+            Select samples to add to the pool. Samples with <i class="bi bi-lock-fill"></i> are already in another pool.
           </div>
         </div>
       }

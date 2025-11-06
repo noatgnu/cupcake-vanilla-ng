@@ -89,7 +89,7 @@ export class CCMNotificationWebSocketService implements OnDestroy {
 
     this.connectionStateSubject.next('connecting');
 
-    const fullUrl = `${wsBaseUrl.replace(/\/$/, '')}/ccm/notifications/`;
+    const fullUrl = `${wsBaseUrl.replace(/\/$/, '')}/ccc/notifications/`;
     const url = token ? `${fullUrl}?token=${token}` : fullUrl;
     this.socket = new WebSocket(url);
 

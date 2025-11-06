@@ -7,7 +7,7 @@ import {
   BulkExportRequest,
   BulkExcelExportRequest,
   AsyncTaskCreateResponse
-} from '../models';
+} from '@noatgnu/cupcake-core';
 
 @Injectable({
   providedIn: 'root'

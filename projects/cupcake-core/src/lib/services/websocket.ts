@@ -5,7 +5,7 @@ import { AuthService, CUPCAKE_CORE_CONFIG } from './auth';
 
 export const WEBSOCKET_ENDPOINT = new InjectionToken<string>('WEBSOCKET_ENDPOINT', {
   providedIn: 'root',
-  factory: () => 'notifications'
+  factory: () => 'ccc/notifications'
 });
 
 export interface WebSocketMessage {
@@ -46,7 +46,7 @@ export class WebSocketService {
   readonly lastError$ = computed(() => this.lastError());
 
   protected config_token = inject(CUPCAKE_CORE_CONFIG);
-  protected endpoint = inject(WEBSOCKET_ENDPOINT, { optional: true }) || 'notifications';
+  protected endpoint = inject(WEBSOCKET_ENDPOINT, { optional: true }) || 'ccc/notifications';
 
   constructor(protected authService: AuthService) {
     this.config = {
@@ -73,7 +73,7 @@ export class WebSocketService {
       const url = new URL(apiUrl);
       const protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
       const host = url.host;
-      const endpoint = this.config?.endpoint || 'notifications';
+      const endpoint = this.config?.endpoint || 'ccc/notifications';
 
       return `${protocol}//${host}/ws/${endpoint}/`;
     } catch (error) {
@@ -81,7 +81,7 @@ export class WebSocketService {
 
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
       const host = window.location.host;
-      const endpoint = this.config?.endpoint || 'notifications';
+      const endpoint = this.config?.endpoint || 'ccc/notifications';
       return `${protocol}//${host}/ws/${endpoint}/`;
     }
   }

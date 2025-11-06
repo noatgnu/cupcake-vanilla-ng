@@ -103,7 +103,7 @@
               @for (column of pool.metadataColumns; track column.id) {
                 <tr>
                   <td>
-                    <strong>{{ column.name }}</strong>
+                    <strong>{{ column.displayName || column.name }}</strong>
                   </td>
                   <td>
                     <span class="badge bg-light text-dark">{{ column.type }}</span>

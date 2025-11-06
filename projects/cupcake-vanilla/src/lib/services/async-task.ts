@@ -8,7 +8,7 @@ import {
   AsyncTaskCreateResponse,
   DownloadUrlResponse,
   PaginatedResponse
-} from '../models';
+} from '@noatgnu/cupcake-core';
 
 @Injectable({
   providedIn: 'root'

@@ -1,0 +1,128 @@
+<div class="modal-header">
+  <h4 class="modal-title">
+    <i class="bi bi-clock-history me-2"></i>Column History: {{ config.columnName }}
+  </h4>
+  <button type="button" class="btn-close" (click)="close()"></button>
+</div>
+
+<div class="modal-body">
+  @if (error) {
+    <div class="alert alert-danger">
+      <i class="bi bi-exclamation-triangle me-2"></i>{{ error }}
+    </div>
+  }
+
+  @if (loading && history.length === 0) {
+    <div class="text-center py-4">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <p class="mt-2 text-muted">Loading history...</p>
+    </div>
+  }
+
+  @if (history.length > 0) {
+    <div class="mb-3 text-muted">
+      <i class="bi bi-info-circle me-1"></i>
+      Showing {{ history.length }} of {{ totalCount }} records
+    </div>
+
+    <div class="timeline">
+      @for (record of history; track record.historyId) {
+        <div class="timeline-item mb-4">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <div>
+              <span [ngClass]="getHistoryTypeClass(record.historyType)">
+                {{ record.historyType }}
+              </span>
+              <small class="text-muted ms-2">
+                {{ record.historyDate | date:'short' }}
+              </small>
+            </div>
+            @if (record.historyUser) {
+              <span class="badge bg-secondary">
+                <i class="bi bi-person me-1"></i>{{ record.historyUser }}
+              </span>
+            }
+          </div>
+
+          @if (record.changes.length > 0) {
+            <div class="card">
+              <div class="card-body">
+                <h6 class="card-title">Changes:</h6>
+                <div class="table-responsive">
+                  <table class="table table-sm table-bordered mb-0">
+                    <thead>
+                      <tr>
+                        <th>Field</th>
+                        <th>Old Value</th>
+                        <th>New Value</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (change of record.changes; track change.field) {
+                        <tr>
+                          <td><strong>{{ getChangeLabel(change.field) }}</strong></td>
+                          <td>
+                            <code class="text-muted">{{ formatValue(change.oldValue) }}</code>
+                          </td>
+                          <td>
+                            <code class="text-success">{{ formatValue(change.newValue) }}</code>
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          } @else {
+            <div class="alert alert-info mb-0">
+              <i class="bi bi-info-circle me-2"></i>
+              Initial record - no changes
+            </div>
+          }
+
+          <details class="mt-2">
+            <summary class="text-muted" style="cursor: pointer;">
+              <i class="bi bi-eye me-1"></i>View full snapshot
+            </summary>
+            <div class="card mt-2">
+              <div class="card-body">
+                <pre class="mb-0"><code>{{ formatValue(record.snapshot) }}</code></pre>
+              </div>
+            </div>
+          </details>
+        </div>
+      }
+    </div>
+
+    @if (hasMore) {
+      <div class="text-center mt-3">
+        <button
+          type="button"
+          class="btn btn-outline-primary"
+          (click)="loadMore()"
+          [disabled]="loading">
+          @if (loading) {
+            <span class="spinner-border spinner-border-sm me-2"></span>
+          }
+          Load More
+        </button>
+      </div>
+    }
+  }
+
+  @if (!loading && history.length === 0 && !error) {
+    <div class="alert alert-info">
+      <i class="bi bi-info-circle me-2"></i>
+      No history records found for this column.
+    </div>
+  }
+</div>
+
+<div class="modal-footer">
+  <button type="button" class="btn btn-secondary" (click)="close()">
+    <i class="bi bi-x-circle me-1"></i>Close
+  </button>
+</div>

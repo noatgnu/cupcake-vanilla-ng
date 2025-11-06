@@ -11,8 +11,8 @@ import {
   LabGroup,
   LabGroupQueryResponse
 } from '../../shared/models';
-import { User, LabGroupService } from '@noatgnu/cupcake-core';
-import { MetadataTableService, MetadataValidationConfig } from '@noatgnu/cupcake-vanilla';
+import { User, LabGroupService, MetadataValidationConfig } from '@noatgnu/cupcake-core';
+import { MetadataTableService } from '@noatgnu/cupcake-vanilla';
 import { NavigationState } from '../../shared/services/navigation-state';
 import { ToastService } from '@noatgnu/cupcake-core';
 import { AsyncTaskUIService, MetadataValidationModal, ExcelExportModalComponent, ExcelExportOptions, MetadataTableEditModal } from '@noatgnu/cupcake-vanilla';
@@ -493,7 +493,6 @@ export class MetadataTablesComponent implements OnInit, OnDestroy {
     }
 
     if (format === 'excel') {
-      // Show Excel export options modal
       const modalRef = this.modalService.open(ExcelExportModalComponent, {
         size: 'lg',
         backdrop: 'static'
@@ -502,16 +501,13 @@ export class MetadataTablesComponent implements OnInit, OnDestroy {
       modalRef.result.then((options: ExcelExportOptions) => {
         this.performExcelExport(table, options);
       }).catch(() => {
-        // Modal was dismissed - no action needed
       });
     } else {
-      // Direct SDRF export
       this.performSdrfExport(table);
     }
   }
 
   private performExcelExport(table: MetadataTable, options: ExcelExportOptions): void {
-    // Filter out columns without IDs and extract valid column IDs
     const columnIds = table.columns!
       .filter(col => col && col.id != null)
       .map(col => col.id!);
@@ -521,17 +517,13 @@ export class MetadataTablesComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Prepare lab group IDs based on options
     let labGroupIds: number[] | undefined = undefined;
     if (options.includeLabGroups === 'selected') {
       labGroupIds = options.selectedLabGroupIds;
     } else if (options.includeLabGroups === 'all') {
-      // Pass empty array to signal "include all lab groups"
       labGroupIds = [];
     }
-    // For 'none', labGroupIds stays undefined
 
-    // Use async export if enabled
     if (environment.features?.asyncTasks) {
       this.asyncTaskService.queueExcelExport({
         metadataTableId: table.id!,
@@ -543,8 +535,6 @@ export class MetadataTablesComponent implements OnInit, OnDestroy {
       }).subscribe({
         next: (response) => {
           this.toastService.success(`Excel export queued successfully! Task ID: ${response.taskId}`);
-          // Start monitoring tasks if not already started
-          this.asyncTaskService.startRealtimeUpdates();
         },
         error: (error) => {
           console.error('Error queuing Excel export:', error);
@@ -553,7 +543,6 @@ export class MetadataTablesComponent implements OnInit, OnDestroy {
         }
       });
     } else {
-      // Use synchronous export (fallback)
       this.toastService.info('Synchronous Excel export not implemented');
     }
   }
@@ -581,7 +570,6 @@ export class MetadataTablesComponent implements OnInit, OnDestroy {
         next: (response) => {
           this.toastService.success(`SDRF export queued successfully! Task ID: ${response.taskId}`);
           // Start monitoring tasks if not already started
-          this.asyncTaskService.startRealtimeUpdates();
         },
         error: (error) => {
           console.error('Error queuing SDRF export:', error);

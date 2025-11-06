@@ -12,7 +12,8 @@ export interface MetadataColumn extends BaseTimestampedModel {
   metadataTableName?: string; // computed field, not in model
   template?: number; // null=True, blank=True
   templateName?: string; // computed field, not in model
-  name: string; // required
+  name: string; // required - technical SDRF column name
+  displayName?: string; // computed field from template.name for UI display
   type: string; // required
   columnPosition: number; // default=0
   value?: string; // null=True, blank=True
@@ -67,4 +68,42 @@ export interface MetadataColumnUpdateRequest {
   ontologyOptions?: any;
   enableTypeahead?: boolean;
   staffOnly?: boolean;
+}
+
+export interface MetadataColumnHistoryChange {
+  field: string;
+  oldValue: any;
+  newValue: any;
+}
+
+export interface MetadataColumnHistorySnapshot {
+  name: string;
+  type: string;
+  value?: string;
+  columnPosition: number;
+  mandatory: boolean;
+  hidden: boolean;
+  readonly: boolean;
+  modifiers: MetadataColumnModifier[];
+  ontologyType?: OntologyType;
+  notApplicable: boolean;
+  notAvailable: boolean;
+}
+
+export interface MetadataColumnHistoryRecord {
+  historyId: number;
+  historyDate: string;
+  historyType: string;
+  historyUser: string | null;
+  historyUserId: number | null;
+  changes: MetadataColumnHistoryChange[];
+  snapshot: MetadataColumnHistorySnapshot;
+}
+
+export interface MetadataColumnHistoryResponse {
+  count: number;
+  limit: number;
+  offset: number;
+  hasMore: boolean;
+  history: MetadataColumnHistoryRecord[];
 }

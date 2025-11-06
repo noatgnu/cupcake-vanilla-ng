@@ -62,6 +62,13 @@ export class StepAnnotationService extends BaseApiService {
   }
 
   /**
+   * Get all step annotations for a specific annotation
+   */
+  getStepAnnotationsForAnnotation(annotationId: number, params?: Omit<StepAnnotationQueryParams, 'annotation'>): Observable<PaginatedResponse<StepAnnotation>> {
+    return this.getStepAnnotations({ annotation: annotationId, ...params });
+  }
+
+  /**
    * Retrigger transcription and translation for audio/video annotation
    * Only available to staff/admin users
    */

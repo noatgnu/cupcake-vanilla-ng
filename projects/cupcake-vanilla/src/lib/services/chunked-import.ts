@@ -3,7 +3,7 @@ import { Observable, from, throwError } from 'rxjs';
 import { switchMap, map, tap } from 'rxjs/operators';
 import { BaseApiService } from '@noatgnu/cupcake-core';
 import { ChunkedUploadService } from './chunked-upload';
-import { AsyncTaskCreateResponse, ChunkedImportRequest } from '../models';
+import { AsyncTaskCreateResponse, ChunkedImportRequest } from '@noatgnu/cupcake-core';
 
 export interface ChunkedFileImportRequest {
   file: File;

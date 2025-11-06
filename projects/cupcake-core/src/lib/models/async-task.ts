@@ -1,16 +1,24 @@
-// Task status and type definitions
-export type TaskStatus = 'QUEUED' | 'STARTED' | 'SUCCESS' | 'FAILURE' | 'CANCELLED';
+export enum TaskStatus {
+  QUEUED = 'QUEUED',
+  STARTED = 'STARTED',
+  SUCCESS = 'SUCCESS',
+  FAILURE = 'FAILURE',
+  CANCELLED = 'CANCELLED'
+}
 
-export type TaskType =
-  | 'EXPORT_EXCEL'
-  | 'EXPORT_SDRF'
-  | 'IMPORT_SDRF'
-  | 'IMPORT_EXCEL'
-  | 'EXPORT_MULTIPLE_SDRF'
-  | 'EXPORT_MULTIPLE_EXCEL'
-  | 'VALIDATE_TABLE'
-  | 'REORDER_TABLE_COLUMNS'
-  | 'REORDER_TEMPLATE_COLUMNS';
+export enum TaskType {
+  EXPORT_EXCEL = 'EXPORT_EXCEL',
+  EXPORT_SDRF = 'EXPORT_SDRF',
+  IMPORT_SDRF = 'IMPORT_SDRF',
+  IMPORT_EXCEL = 'IMPORT_EXCEL',
+  EXPORT_MULTIPLE_SDRF = 'EXPORT_MULTIPLE_SDRF',
+  EXPORT_MULTIPLE_EXCEL = 'EXPORT_MULTIPLE_EXCEL',
+  VALIDATE_TABLE = 'VALIDATE_TABLE',
+  REORDER_TABLE_COLUMNS = 'REORDER_TABLE_COLUMNS',
+  REORDER_TEMPLATE_COLUMNS = 'REORDER_TEMPLATE_COLUMNS',
+  TRANSCRIBE_AUDIO = 'TRANSCRIBE_AUDIO',
+  TRANSCRIBE_VIDEO = 'TRANSCRIBE_VIDEO'
+}
 
 export interface AsyncTaskStatus {
   id: string;
@@ -70,7 +78,6 @@ export interface TaskResult {
   createdAt: string;
 }
 
-// Async Task Request/Response Interfaces
 export interface MetadataExportRequest {
   metadataTableId: number;
   includePools?: boolean;
@@ -131,7 +138,6 @@ export interface DownloadUrlResponse {
   expiresInHours: number;
 }
 
-// Query parameters for async tasks
 export interface AsyncTaskQueryParams {
   taskType?: string;
   status?: string;
@@ -142,31 +148,32 @@ export interface AsyncTaskQueryParams {
   ordering?: string;
 }
 
-// Helper constants
 export const TASK_TYPE_LABELS: Record<TaskType, string> = {
-  'EXPORT_EXCEL': 'Export Excel Template',
-  'EXPORT_SDRF': 'Export SDRF File',
-  'IMPORT_SDRF': 'Import SDRF File',
-  'IMPORT_EXCEL': 'Import Excel File',
-  'EXPORT_MULTIPLE_SDRF': 'Export Multiple SDRF Files',
-  'EXPORT_MULTIPLE_EXCEL': 'Export Multiple Excel Templates',
-  'VALIDATE_TABLE': 'Validate Metadata Table',
-  'REORDER_TABLE_COLUMNS': 'Reorder Table Columns',
-  'REORDER_TEMPLATE_COLUMNS': 'Reorder Template Columns',
+  [TaskType.EXPORT_EXCEL]: 'Export Excel Template',
+  [TaskType.EXPORT_SDRF]: 'Export SDRF File',
+  [TaskType.IMPORT_SDRF]: 'Import SDRF File',
+  [TaskType.IMPORT_EXCEL]: 'Import Excel File',
+  [TaskType.EXPORT_MULTIPLE_SDRF]: 'Export Multiple SDRF Files',
+  [TaskType.EXPORT_MULTIPLE_EXCEL]: 'Export Multiple Excel Templates',
+  [TaskType.VALIDATE_TABLE]: 'Validate Metadata Table',
+  [TaskType.REORDER_TABLE_COLUMNS]: 'Reorder Table Columns',
+  [TaskType.REORDER_TEMPLATE_COLUMNS]: 'Reorder Template Columns',
+  [TaskType.TRANSCRIBE_AUDIO]: 'Transcribe Audio',
+  [TaskType.TRANSCRIBE_VIDEO]: 'Transcribe Video',
 };
 
 export const TASK_STATUS_LABELS: Record<TaskStatus, string> = {
-  'QUEUED': 'Queued',
-  'STARTED': 'In Progress',
-  'SUCCESS': 'Completed',
-  'FAILURE': 'Failed',
-  'CANCELLED': 'Cancelled',
+  [TaskStatus.QUEUED]: 'Queued',
+  [TaskStatus.STARTED]: 'In Progress',
+  [TaskStatus.SUCCESS]: 'Completed',
+  [TaskStatus.FAILURE]: 'Failed',
+  [TaskStatus.CANCELLED]: 'Cancelled',
 };
 
 export const TASK_STATUS_COLORS: Record<TaskStatus, string> = {
-  'QUEUED': 'secondary',
-  'STARTED': 'primary',
-  'SUCCESS': 'success',
-  'FAILURE': 'danger',
-  'CANCELLED': 'warning',
+  [TaskStatus.QUEUED]: 'secondary',
+  [TaskStatus.STARTED]: 'primary',
+  [TaskStatus.SUCCESS]: 'success',
+  [TaskStatus.FAILURE]: 'danger',
+  [TaskStatus.CANCELLED]: 'warning',
 };

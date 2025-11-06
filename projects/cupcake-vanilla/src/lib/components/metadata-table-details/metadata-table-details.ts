@@ -9,9 +9,9 @@ import {
   MetadataTable,
   MetadataColumn,
   SamplePool,
-  MetadataExportRequest,
   ColumnType
 } from '../../models';
+import { MetadataExportRequest } from '@noatgnu/cupcake-core';
 import {
   MetadataTableService,
   AsyncExportService,
@@ -30,7 +30,9 @@ import {
   ColumnEditModal,
   SchemaSelectionModal,
   MetadataColumnAutofillModal,
-  MetadataColumnAutofillConfig
+  MetadataColumnAutofillConfig,
+  MetadataColumnHistoryModal,
+  ColumnHistoryModalConfig
 } from '../';
 import { SamplePoolDetailsModal } from '../sample-pool-details-modal/sample-pool-details-modal';
 import { SamplePoolEditModal } from '../sample-pool-edit-modal/sample-pool-edit-modal';
@@ -378,7 +380,6 @@ export class MetadataTableDetails implements OnInit, OnDestroy {
             
             // Mark task for monitoring and start real-time updates (same pattern as export)
             this.asyncTaskService.monitorTask(result.taskId);
-            this.asyncTaskService.startRealtimeUpdates();
           } else {
             // Fallback for immediate processing (backward compatibility)
             this.toastService.success('SDRF file imported successfully!');
@@ -448,7 +449,6 @@ export class MetadataTableDetails implements OnInit, OnDestroy {
             
             // Mark task for monitoring and start real-time updates (same pattern as export)
             this.asyncTaskService.monitorTask(result.taskId);
-            this.asyncTaskService.startRealtimeUpdates();
           } else {
             // Fallback for immediate processing (backward compatibility)
             this.toastService.success('Excel file imported successfully!');
@@ -505,8 +505,7 @@ export class MetadataTableDetails implements OnInit, OnDestroy {
     }
     // For 'none', labGroupIds stays undefined
 
-    // Use async export only
-    this.asyncExportService.excelTemplate({
+    this.asyncTaskService.queueExcelExport({
       metadataTableId: table.id,
       metadataColumnIds: columnIds,
       sampleNumber: table.sampleCount,
@@ -516,8 +515,6 @@ export class MetadataTableDetails implements OnInit, OnDestroy {
     }).subscribe({
       next: (response) => {
         this.toastService.success(`Excel export queued successfully! Task ID: ${response.taskId}`);
-        // Start monitoring tasks if not already started
-        this.asyncTaskService.startRealtimeUpdates();
       },
       error: (error) => {
         console.error('Error queuing Excel export:', error);
@@ -530,8 +527,7 @@ export class MetadataTableDetails implements OnInit, OnDestroy {
   private performSdrfExport(table: MetadataTable): void {
     const columnIds = table.columns!.map(col => col.id!);
 
-    // Use async export only
-    this.asyncExportService.sdrfFile({
+    this.asyncTaskService.queueSdrfExport({
       metadataTableId: table.id,
       metadataColumnIds: columnIds,
       sampleNumber: table.sampleCount,
@@ -540,8 +536,6 @@ export class MetadataTableDetails implements OnInit, OnDestroy {
     }).subscribe({
       next: (response) => {
         this.toastService.success(`SDRF export queued successfully! Task ID: ${response.taskId}`);
-        // Start monitoring tasks if not already started
-        this.asyncTaskService.startRealtimeUpdates();
       },
       error: (error) => {
         console.error('Error queuing SDRF export:', error);
@@ -558,7 +552,6 @@ export class MetadataTableDetails implements OnInit, OnDestroy {
         this.toastService.success(`${format.toUpperCase()} export task queued successfully! Task ID: ${response.taskId}`);
 
         // Start monitoring tasks if not already started
-        this.asyncTaskService.startRealtimeUpdates();
       },
       error: (error: any) => {
         this.isLoading.set(false);
@@ -647,6 +640,10 @@ export class MetadataTableDetails implements OnInit, OnDestroy {
   }
 
   getShortColumnName(column: MetadataColumn): string {
+    if (column.displayName) {
+      return column.displayName;
+    }
+
     let name = column.name;
 
     // Handle different column types
@@ -943,11 +940,12 @@ export class MetadataTableDetails implements OnInit, OnDestroy {
       column: column,
       metadataTableId: table.id!,
       sampleCount: table.sampleCount,
-      selectedSampleIndices: []
+      selectedSampleIndices: [],
+      allColumns: table.columns || []
     };
 
     const modalRef = this.modalService.open(MetadataColumnAutofillModal, {
-      size: 'lg',
+      size: 'xl',
       backdrop: 'static'
     });
 
@@ -1024,6 +1022,23 @@ export class MetadataTableDetails implements OnInit, OnDestroy {
       this.updateColumnSettings(column.id!, columnData);
       modalRef.componentInstance.onClose();
     });
+  }
+
+  // Open column history modal
+  openColumnHistory(column: MetadataColumn): void {
+    if (!column.id) return;
+
+    const config: ColumnHistoryModalConfig = {
+      columnId: column.id,
+      columnName: column.displayName || column.name
+    };
+
+    const modalRef = this.modalService.open(MetadataColumnHistoryModal, {
+      size: 'lg',
+      backdrop: 'static'
+    });
+
+    modalRef.componentInstance.config = config;
   }
 
   // Update column settings
@@ -1311,7 +1326,6 @@ export class MetadataTableDetails implements OnInit, OnDestroy {
         
         // Mark task for monitoring and start real-time updates (same pattern as imports)
         this.asyncTaskService.monitorTask(response.taskId);
-        this.asyncTaskService.startRealtimeUpdates();
         
         this.isLoading.set(false);
       },

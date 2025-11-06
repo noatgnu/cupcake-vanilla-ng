@@ -6,7 +6,7 @@ import { environment } from '../../../environments/environment';
 export interface DynamicEnvironment {
   production: boolean;
   apiUrl: string;
-  websocketUrl: string;
+  websocketUrl?: string;
   features: {
     asyncTasks: boolean;
   };
@@ -40,7 +40,6 @@ export class EnvironmentService {
         const electronEnvironment: DynamicEnvironment = {
           production: environment.production,
           apiUrl: `http://localhost:${backendPort}/api/v1`,
-          websocketUrl: `ws://localhost:${backendPort}/ws/notifications/`,
           features: environment.features,
           isElectron: true
         };
@@ -49,14 +48,12 @@ export class EnvironmentService {
         console.log(`Electron environment initialized with backend port: ${backendPort}`);
       } catch (error) {
         console.error('Failed to get backend port from Electron:', error);
-        // Fallback to default environment but mark as Electron
         this.environmentSubject.next({
           ...environment,
           isElectron: true
         });
       }
     } else {
-      // Browser environment - use static configuration
       this.environmentSubject.next({
         ...environment,
         isElectron: false
@@ -73,7 +70,22 @@ export class EnvironmentService {
   }
 
   getWebsocketUrl(): string {
-    return this.currentEnvironment.websocketUrl;
+    if (this.currentEnvironment.websocketUrl) {
+      return this.currentEnvironment.websocketUrl;
+    }
+
+    const apiUrl = this.currentEnvironment.apiUrl;
+    try {
+      const url = new URL(apiUrl);
+      const protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+      const host = url.host;
+      return `${protocol}//${host}/ws/ccc/notifications/`;
+    } catch (error) {
+      console.error('Invalid API URL:', apiUrl);
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const host = window.location.host;
+      return `${protocol}//${host}/ws/ccc/notifications/`;
+    }
   }
 
   isElectron(): boolean {

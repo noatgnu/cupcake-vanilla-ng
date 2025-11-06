@@ -8,7 +8,7 @@ import { NotificationPanel } from '../notification-panel/notification-panel';
 import { AsyncTaskMonitorComponent } from '../async-task-monitor/async-task-monitor';
 import { Subscription, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { TaskListItem, TaskType, TaskStatus } from '@noatgnu/cupcake-vanilla';
+import { TaskListItem, TaskType, TaskStatus } from '@noatgnu/cupcake-core';
 import { environment } from '../../../../environments/environment';
 
 @Component({

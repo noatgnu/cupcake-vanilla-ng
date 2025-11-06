@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy, Input, signal, computed } from '@angular/
 import { CommonModule } from '@angular/common';
 import { Observable, Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
-import { AsyncTaskStatus, TaskStatus, TaskType, TASK_TYPE_LABELS, TASK_STATUS_LABELS, TASK_STATUS_COLORS } from '@noatgnu/cupcake-vanilla';
+import { AsyncTaskStatus, TaskStatus, TaskType, TASK_TYPE_LABELS, TASK_STATUS_LABELS, TASK_STATUS_COLORS, AsyncTaskMonitorService } from '@noatgnu/cupcake-core';
 import { AsyncTaskUIService } from '@noatgnu/cupcake-vanilla';
 
 @Component({
@@ -38,11 +38,11 @@ export class AsyncTaskMonitorComponent implements OnInit, OnDestroy {
     
     switch (filter) {
       case 'active':
-        return tasks.filter(task => task.status === 'QUEUED' || task.status === 'STARTED');
+        return tasks.filter(task => task.status === TaskStatus.QUEUED || task.status === TaskStatus.STARTED);
       case 'completed':
-        return tasks.filter(task => task.status === 'SUCCESS');
+        return tasks.filter(task => task.status === TaskStatus.SUCCESS);
       case 'failed':
-        return tasks.filter(task => task.status === 'FAILURE');
+        return tasks.filter(task => task.status === TaskStatus.FAILURE);
       default:
         return tasks;
     }
@@ -53,7 +53,10 @@ export class AsyncTaskMonitorComponent implements OnInit, OnDestroy {
   readonly taskStatusLabels = TASK_STATUS_LABELS;
   readonly taskStatusColors = TASK_STATUS_COLORS;
 
-  constructor(private asyncTaskService: AsyncTaskUIService) {}
+  constructor(
+    private asyncTaskMonitor: AsyncTaskMonitorService,
+    private asyncTaskService: AsyncTaskUIService
+  ) {}
 
   ngOnInit(): void {
     console.log('AsyncTaskMonitorComponent ngOnInit');
@@ -159,9 +162,7 @@ export class AsyncTaskMonitorComponent implements OnInit, OnDestroy {
    * Refresh task list manually
    */
   refreshTasks(): void {
-    this.asyncTaskService.getTasks().pipe(
-      takeUntil(this.destroy$)
-    ).subscribe();
+    this.asyncTaskMonitor.loadAllTasks();
   }
 
   /**

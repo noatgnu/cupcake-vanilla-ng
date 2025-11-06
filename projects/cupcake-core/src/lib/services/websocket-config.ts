@@ -9,13 +9,8 @@ export interface WebSocketEndpointConfig {
 export const WEBSOCKET_ENDPOINTS = new InjectionToken<WebSocketEndpointConfig[]>('WEBSOCKET_ENDPOINTS');
 
 export class WebSocketEndpoints {
-  static readonly CORE_NOTIFICATIONS = 'notifications';
-  static readonly CORE_ADMIN = 'admin';
-  static readonly CCV_NOTIFICATIONS = 'ccv/notifications';
-  static readonly CCV_ADMIN = 'ccv/admin';
-  static readonly CCM_NOTIFICATIONS = 'ccm/notifications';
-  static readonly CCRV_NOTIFICATIONS = 'ccrv/notifications';
-  static readonly CCSC_NOTIFICATIONS = 'ccsc/notifications';
+  static readonly CORE_NOTIFICATIONS = 'ccc/notifications';
+  static readonly CORE_ADMIN = 'ccc/admin';
 }
 
 @Injectable({
@@ -39,36 +34,6 @@ export class WebSocketConfigService {
       app: 'core',
       endpoint: WebSocketEndpoints.CORE_ADMIN,
       description: 'Core admin notification endpoint'
-    });
-
-    this.registerEndpoint({
-      app: 'ccv',
-      endpoint: WebSocketEndpoints.CCV_NOTIFICATIONS,
-      description: 'CCV notification endpoint'
-    });
-
-    this.registerEndpoint({
-      app: 'ccv',
-      endpoint: WebSocketEndpoints.CCV_ADMIN,
-      description: 'CCV admin notification endpoint'
-    });
-
-    this.registerEndpoint({
-      app: 'ccm',
-      endpoint: WebSocketEndpoints.CCM_NOTIFICATIONS,
-      description: 'CCM notification endpoint'
-    });
-
-    this.registerEndpoint({
-      app: 'ccrv',
-      endpoint: WebSocketEndpoints.CCRV_NOTIFICATIONS,
-      description: 'CCRV notification endpoint'
-    });
-
-    this.registerEndpoint({
-      app: 'ccsc',
-      endpoint: WebSocketEndpoints.CCSC_NOTIFICATIONS,
-      description: 'CCSC notification endpoint'
     });
   }
 

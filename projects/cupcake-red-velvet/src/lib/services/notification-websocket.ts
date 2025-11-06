@@ -89,7 +89,7 @@ export class CCRVNotificationWebSocketService implements OnDestroy {
 
     this.connectionStateSubject.next('connecting');
 
-    const fullUrl = `${wsBaseUrl.replace(/\/$/, '')}/ccrv/notifications/`;
+    const fullUrl = `${wsBaseUrl.replace(/\/$/, '')}/ccc/notifications/`;
     const url = token ? `${fullUrl}?token=${token}` : fullUrl;
     this.socket = new WebSocket(url);
 

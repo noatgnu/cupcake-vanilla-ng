@@ -23,3 +23,4 @@ export * from './sample-pool-details-modal/sample-pool-details-modal';
 export * from './sample-pool-edit-modal/sample-pool-edit-modal';
 export * from './sample-pool-create-modal/sample-pool-create-modal';
 export * from './metadata-column-autofill-modal/metadata-column-autofill-modal';
+export * from './metadata-column-history-modal/metadata-column-history-modal';

@@ -1,0 +1,53 @@
+.timeline {
+  position: relative;
+  padding-left: 0;
+}
+
+.timeline-item {
+  position: relative;
+  padding-left: 20px;
+  border-left: 2px solid #dee2e6;
+
+  &:last-child {
+    border-left-color: transparent;
+  }
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: -6px;
+    top: 0;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: #0d6efd;
+    border: 2px solid #fff;
+  }
+}
+
+details summary {
+  font-size: 0.875rem;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+pre code {
+  display: block;
+  max-height: 300px;
+  overflow-y: auto;
+  font-size: 0.85rem;
+}
+
+.table {
+  font-size: 0.875rem;
+
+  code {
+    white-space: pre-wrap;
+    word-break: break-word;
+    display: block;
+    max-height: 100px;
+    overflow-y: auto;
+  }
+}

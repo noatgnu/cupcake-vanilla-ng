@@ -90,3 +90,41 @@ export interface MetadataTableQueryResponse {
   previous?: string;
   results: MetadataTable[];
 }
+
+export interface VariationSpecRange {
+  columnId: number;
+  type: 'range';
+  start: number;
+  end: number;
+  step?: number;
+}
+
+export interface VariationSpecList {
+  columnId: number;
+  type: 'list';
+  values: any[];
+}
+
+export interface VariationSpecPattern {
+  columnId: number;
+  type: 'pattern';
+  pattern: string;
+  count: number;
+}
+
+export type VariationSpec = VariationSpecRange | VariationSpecList | VariationSpecPattern;
+
+export interface AdvancedAutofillRequest {
+  templateSamples: number[];
+  targetSampleCount: number;
+  variations: VariationSpec[];
+  fillStrategy: 'cartesian_product' | 'sequential' | 'interleaved';
+}
+
+export interface AdvancedAutofillResponse {
+  status: 'success';
+  samplesModified: number;
+  columnsModified: number;
+  variationsCombinations: number;
+  strategy: string;
+}

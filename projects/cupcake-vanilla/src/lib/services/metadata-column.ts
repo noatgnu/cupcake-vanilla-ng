@@ -6,6 +6,7 @@ import {
   MetadataColumn,
   MetadataColumnCreateRequest,
   MetadataColumnUpdateRequest,
+  MetadataColumnHistoryResponse,
   PaginatedResponse,
   OntologySuggestion
 } from '../models';
@@ -175,5 +176,13 @@ export class MetadataColumnService extends BaseApiService {
     poolColumnsUpdated: number;
   }> {
     return this.post(`${this.apiUrl}/metadata-columns/${id}/replace_value/`, request);
+  }
+
+  /**
+   * Get change history for a metadata column
+   */
+  getHistory(id: number, params?: { limit?: number; offset?: number }): Observable<MetadataColumnHistoryResponse> {
+    const httpParams = this.buildHttpParams(params);
+    return this.get<MetadataColumnHistoryResponse>(`${this.apiUrl}/metadata-columns/${id}/history/`, { params: httpParams });
   }
 }

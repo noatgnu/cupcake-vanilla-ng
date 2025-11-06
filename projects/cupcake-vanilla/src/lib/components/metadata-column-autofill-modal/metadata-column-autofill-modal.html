@@ -6,217 +6,37 @@
 </div>
 
 <div class="modal-body">
-  <form [formGroup]="autofillForm">
-    <div class="row">
-      <div class="col-12 mb-3">
-        <div class="alert alert-info">
-          <i class="bi bi-info-circle me-2"></i>
-          <strong>Column:</strong> {{ config.column.name }} ({{ config.column.type }})
-        </div>
-      </div>
-
-      <div class="col-12 mb-3">
-        <label class="form-label">Fill Mode</label>
-        <div class="btn-group w-100">
-          <button
-            type="button"
-            class="btn"
-            [class.btn-primary]="fillMode() === 'template'"
-            [class.btn-outline-secondary]="fillMode() !== 'template'"
-            (click)="fillMode.set('template'); autofillForm.patchValue({ fillMode: 'template' })"
-          >
-            <i class="bi bi-code-square me-1"></i>Template
-          </button>
-          <button
-            type="button"
-            class="btn"
-            [class.btn-primary]="fillMode() === 'range'"
-            [class.btn-outline-secondary]="fillMode() !== 'range'"
-            (click)="fillMode.set('range'); autofillForm.patchValue({ fillMode: 'range' })"
-          >
-            <i class="bi bi-123 me-1"></i>Numeric Range
-          </button>
-        </div>
-      </div>
-
-      @if (fillMode() === 'template') {
-        <div class="col-12 mb-3">
-          <label for="template" class="form-label">
-            Value Template *
-          </label>
-          <input
-            type="text"
-            id="template"
-            class="form-control"
-            formControlName="template"
-            placeholder="run {sample_index}"
-            [class.is-invalid]="isFieldInvalid('template')"
-          />
-          @if (isFieldInvalid('template')) {
-            <div class="invalid-feedback">Template is required</div>
-          }
-          <div class="form-text">
-            <i class="bi bi-info-circle me-1"></i>
-            Use <code>{{ '{' }}sample_index{{ '}' }}</code>, <code>{{ '{' }}index{{ '}' }}</code>, or <code>{{ '{' }}n{{ '}' }}</code> as placeholder for sample number.
-          </div>
-        </div>
-
-        <div class="col-12 mb-3">
-          <label class="form-label">Quick Templates</label>
-          <div class="d-flex flex-wrap gap-2">
-            <button
-              type="button"
-              class="btn btn-sm btn-outline-secondary"
-              (click)="useTemplate('run {sample_index}')"
-            >
-              <i class="bi bi-lightning me-1"></i>run {{ '{' }}n{{ '}' }}
-            </button>
-            <button
-              type="button"
-              class="btn btn-sm btn-outline-secondary"
-              (click)="useTemplate('sample_{sample_index}')"
-            >
-              <i class="bi bi-lightning me-1"></i>sample_{{ '{' }}n{{ '}' }}
-            </button>
-            <button
-              type="button"
-              class="btn btn-sm btn-outline-secondary"
-              (click)="useTemplate('assay {sample_index}')"
-            >
-              <i class="bi bi-lightning me-1"></i>assay {{ '{' }}n{{ '}' }}
-            </button>
-            <button
-              type="button"
-              class="btn btn-sm btn-outline-secondary"
-              (click)="useTemplate('replicate_{sample_index}')"
-            >
-              <i class="bi bi-lightning me-1"></i>replicate_{{ '{' }}n{{ '}' }}
-            </button>
-          </div>
-        </div>
-      }
-
-      @if (fillMode() === 'range') {
-        <div class="col-12 mb-3">
-          <div class="row">
-            <div class="col-6">
-              <label for="rangeStart" class="form-label">
-                Start Value *
-              </label>
-              <input
-                type="number"
-                id="rangeStart"
-                class="form-control"
-                formControlName="rangeStart"
-                placeholder="1"
-                [class.is-invalid]="isFieldInvalid('rangeStart')"
-              />
-              @if (isFieldInvalid('rangeStart')) {
-                <div class="invalid-feedback">Start value is required</div>
-              }
-              <div class="form-text">
-                <i class="bi bi-info-circle me-1"></i>
-                First value in the sequence
-              </div>
-            </div>
-            <div class="col-6">
-              <label for="rangeIncrement" class="form-label">
-                Increment *
-              </label>
-              <input
-                type="number"
-                id="rangeIncrement"
-                class="form-control"
-                formControlName="rangeIncrement"
-                placeholder="1"
-                [class.is-invalid]="isFieldInvalid('rangeIncrement')"
-              />
-              @if (isFieldInvalid('rangeIncrement')) {
-                <div class="invalid-feedback">Increment is required</div>
-              }
-              <div class="form-text">
-                <i class="bi bi-info-circle me-1"></i>
-                Step between values
-              </div>
-            </div>
-          </div>
-        </div>
-      }
-
-      <div class="col-12 mb-3">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-          <label class="form-label mb-0">
-            Apply to Samples <span class="text-muted">({{ sampleIndices().length }} of {{ config.sampleCount }} selected)</span>
-          </label>
-          <div class="btn-group btn-group-sm">
-            <button
-              type="button"
-              class="btn btn-outline-primary"
-              (click)="selectAllSamples()"
-            >
-              <i class="bi bi-check-all me-1"></i>Select All
-            </button>
-            <button
-              type="button"
-              class="btn btn-outline-secondary"
-              (click)="clearSelection()"
-            >
-              <i class="bi bi-x me-1"></i>Clear
-            </button>
-          </div>
-        </div>
-
-        <div class="sample-grid">
-          @for (i of allSampleNumbers(); track i) {
-            <button
-              type="button"
-              class="btn btn-sm sample-button"
-              [class.btn-primary]="isSampleSelected(i)"
-              [class.btn-outline-secondary]="!isSampleSelected(i)"
-              (click)="toggleSample(i)"
-            >
-              {{ i }}
-            </button>
-          }
-        </div>
-        <div class="form-text">
-          <i class="bi bi-info-circle me-1"></i>
-          Click sample numbers to select/deselect. Auto-fill will only apply to selected samples.
-        </div>
-      </div>
-
-      <div class="col-12">
-        <label class="form-label">
-          Preview
-          @if (previewValues().length > 0) {
-            <span class="text-muted">(Showing {{ Math.min(10, previewValues().length) }} of {{ previewValues().length }})</span>
-          }
-        </label>
-
-        @if (previewValues().length === 0) {
-          <div class="alert alert-warning">
-            <i class="bi bi-exclamation-triangle me-2"></i>
-            No samples selected. Please select at least one sample.
-          </div>
-        } @else {
-          <div class="preview-list">
-            @for (item of previewValues().slice(0, 10); track item.index) {
-              <div class="preview-item">
-                <span class="badge bg-secondary me-2">Sample {{ item.index }}</span>
-                <span class="preview-value">{{ item.value }}</span>
-              </div>
-            }
-            @if (previewValues().length > 10) {
-              <div class="preview-item text-muted">
-                <i class="bi bi-three-dots"></i>
-                and {{ previewValues().length - 10 }} more...
-              </div>
-            }
-          </div>
+  <ul ngbNav #nav="ngbNav" [(activeId)]="activeTab" class="nav-tabs mb-3">
+    <li [ngbNavItem]="1">
+      <button ngbNavLink>
+        <i class="bi bi-pencil me-1"></i>Basic
+      </button>
+      <ng-template ngbNavContent>
+        @if (basicConfig()) {
+          <ccv-basic-autofill
+            [config]="basicConfig()!"
+            (submit)="onBasicSubmit($event)"
+          ></ccv-basic-autofill>
         }
-      </div>
-    </div>
-  </form>
+      </ng-template>
+    </li>
+
+    <li [ngbNavItem]="2">
+      <button ngbNavLink>
+        <i class="bi bi-gear me-1"></i>Advanced
+      </button>
+      <ng-template ngbNavContent>
+        @if (advancedConfig()) {
+          <ccv-advanced-autofill
+            [config]="advancedConfig()!"
+            (submit)="onAdvancedSubmit($event)"
+          ></ccv-advanced-autofill>
+        }
+      </ng-template>
+    </li>
+  </ul>
+
+  <div [ngbNavOutlet]="nav"></div>
 </div>
 
 <div class="modal-footer">
@@ -224,20 +44,7 @@
     type="button"
     class="btn btn-outline-secondary"
     (click)="close()"
-    [disabled]="isSubmitting()"
   >
     <i class="bi bi-x-circle me-1"></i>Cancel
-  </button>
-  <button
-    type="button"
-    class="btn btn-primary"
-    (click)="onSubmit()"
-    [disabled]="autofillForm.invalid || sampleIndices().length === 0 || isSubmitting()"
-  >
-    @if (isSubmitting()) {
-      <span class="spinner-border spinner-border-sm me-2"></span>
-    }
-    <i class="bi bi-magic me-1"></i>
-    Apply Auto-fill
   </button>
 </div>

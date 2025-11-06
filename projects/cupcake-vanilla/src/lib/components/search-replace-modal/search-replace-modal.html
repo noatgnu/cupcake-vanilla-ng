@@ -30,7 +30,7 @@
             formControlName="columnId">
             <option [ngValue]="null">All Columns</option>
             @for (column of config.columns; track column.id) {
-              <option [ngValue]="column.id">{{ column.name }}</option>
+              <option [ngValue]="column.id">{{ column.displayName || column.name }}</option>
             }
           </select>
           <div class="form-text">

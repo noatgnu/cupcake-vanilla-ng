@@ -7,7 +7,7 @@ import { ChunkedUploadService } from './chunked-upload';
 import {
   MetadataImportRequest,
   AsyncTaskCreateResponse
-} from '../models';
+} from '@noatgnu/cupcake-core';
 
 @Injectable({
   providedIn: 'root'

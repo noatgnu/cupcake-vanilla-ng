@@ -1,7 +1,6 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
 import { NotificationService as BaseNotificationService, NotificationItem, ToastService } from '@noatgnu/cupcake-core';
 import { Websocket, WebSocketMessage } from './websocket';
-import { AdminWebSocketService } from './admin-websocket';
 
 export enum NotificationType {
   SYSTEM = 'system',
@@ -18,14 +17,11 @@ export enum NotificationType {
 })
 export class NotificationService extends BaseNotificationService {
   private isConnected = signal(false);
-  private isAdminConnected = signal(false);
 
   readonly isWebSocketConnected = computed(() => this.isConnected());
-  readonly isAdminWebSocketConnected = computed(() => this.isAdminConnected());
 
   constructor(
     private websocketService: Websocket,
-    private adminWebSocketService: AdminWebSocketService,
     toastService: ToastService
   ) {
     super(toastService);
@@ -40,19 +36,8 @@ export class NotificationService extends BaseNotificationService {
       }
     });
 
-    this.adminWebSocketService.isConnected$.subscribe(connected => {
-      this.isAdminConnected.set(connected);
-      if (connected) {
-        console.log('CCV Admin WebSocket connected - admin notifications active');
-      }
-    });
-
     this.websocketService.messages$.subscribe(message => {
       this.handleWebSocketMessage(message);
-    });
-
-    this.adminWebSocketService.messages$.subscribe(message => {
-      this.handleAdminWebSocketMessage(message);
     });
 
     this.setupNotificationHandlers();
@@ -74,24 +59,6 @@ export class NotificationService extends BaseNotificationService {
       }
     });
 
-    this.adminWebSocketService.getAdminNotifications().subscribe(message => {
-      const notification = this.createNotificationFromWebSocket(message, NotificationType.SYSTEM);
-      this.addNotification(notification);
-
-      const level = message['level'] || 'info';
-      const title = message['title'] || 'Admin Notification';
-      const messageText = message.message || '';
-
-      if (level === 'error') {
-        this.toastService.error(`${title}: ${messageText}`, 10000);
-      } else if (level === 'warning') {
-        this.toastService.warning(`${title}: ${messageText}`, 8000);
-      } else if (level === 'success') {
-        this.toastService.success(`${title}: ${messageText}`, 6000);
-      } else {
-        this.toastService.info(`${title}: ${messageText}`, 5000);
-      }
-    });
 
     this.websocketService.getMetadataTableUpdates().subscribe(message => {
       const notification = this.createNotificationFromWebSocket(message, NotificationType.METADATA_TABLE);
@@ -247,6 +214,12 @@ export class NotificationService extends BaseNotificationService {
       case 'REORDER_TEMPLATE_COLUMNS':
         operation = 'Template Column Reordering';
         break;
+      case 'TRANSCRIBE_AUDIO':
+        operation = 'Audio Transcription';
+        break;
+      case 'TRANSCRIBE_VIDEO':
+        operation = 'Video Transcription';
+        break;
     }
 
     switch (status) {
@@ -282,27 +255,12 @@ export class NotificationService extends BaseNotificationService {
     }
   }
 
-  private handleAdminWebSocketMessage(message: WebSocketMessage): void {
-    if (message.type === 'admin.notification') {
-      const notification = this.createNotificationFromWebSocket(message, NotificationType.SYSTEM);
-      this.addNotification(notification);
-    }
-  }
-
   connect(): void {
     this.websocketService.connect();
   }
 
-  connectAdmin(): void {
-    this.adminWebSocketService.connect();
-  }
-
   disconnect(): void {
     this.websocketService.disconnect();
-  }
-
-  disconnectAdmin(): void {
-    this.adminWebSocketService.disconnect();
   }
 
   subscribeToMetadataTable(tableId: number): void {

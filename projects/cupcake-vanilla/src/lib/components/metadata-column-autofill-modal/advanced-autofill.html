@@ -1,0 +1,201 @@
+<form [formGroup]="advancedForm">
+  <div class="row">
+    <div class="col-12 mb-3">
+      <div class="alert alert-info">
+        <i class="bi bi-info-circle me-2"></i>
+        Advanced autofill allows you to generate complex sample variations using templates and multiple column variables.
+      </div>
+    </div>
+
+    <div class="col-md-6 mb-3">
+      <label for="templateSamples" class="form-label">
+        Template Samples *
+      </label>
+      <input
+        type="text"
+        id="templateSamples"
+        class="form-control"
+        formControlName="templateSamples"
+        placeholder="1,2,3 or 1-5"
+      />
+      <div class="form-text">
+        <i class="bi bi-info-circle me-1"></i>
+        Enter sample indices (e.g., "1,2,3" or "1-5")
+      </div>
+    </div>
+
+    <div class="col-md-6 mb-3">
+      <label for="targetSampleCount" class="form-label">
+        Target Sample Count *
+      </label>
+      <input
+        type="number"
+        id="targetSampleCount"
+        class="form-control"
+        formControlName="targetSampleCount"
+        [max]="config.sampleCount"
+        placeholder="Enter target count"
+      />
+      <div class="form-text">
+        <i class="bi bi-info-circle me-1"></i>
+        Total samples to fill (max: {{ config.sampleCount }})
+      </div>
+    </div>
+
+    <div class="col-12 mb-3">
+      <label for="fillStrategy" class="form-label">
+        Fill Strategy *
+      </label>
+      <select
+        id="fillStrategy"
+        class="form-select"
+        formControlName="fillStrategy"
+      >
+        <option value="cartesian_product">Cartesian Product (All Combinations)</option>
+        <option value="sequential">Sequential (Cycle Each)</option>
+        <option value="interleaved">Interleaved Pattern</option>
+      </select>
+      <div class="form-text">
+        <i class="bi bi-info-circle me-1"></i>
+        How variations are combined across samples
+      </div>
+    </div>
+
+    <div class="col-12 mb-3">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <label class="form-label mb-0">
+          Column Variations
+        </label>
+        <div class="btn-group btn-group-sm">
+          <button
+            type="button"
+            class="btn btn-outline-primary"
+            (click)="addVariation('range')"
+          >
+            <i class="bi bi-plus me-1"></i>Range
+          </button>
+          <button
+            type="button"
+            class="btn btn-outline-secondary"
+            (click)="addVariation('list')"
+          >
+            <i class="bi bi-plus me-1"></i>List
+          </button>
+          <button
+            type="button"
+            class="btn btn-outline-info"
+            (click)="addVariation('pattern')"
+          >
+            <i class="bi bi-plus me-1"></i>Pattern
+          </button>
+        </div>
+      </div>
+
+      @if (variations.length === 0) {
+        <div class="alert alert-warning">
+          <i class="bi bi-exclamation-triangle me-2"></i>
+          No variations added. Click above to add column variations.
+        </div>
+      }
+
+      @for (variation of variations.controls; track $index) {
+        <div class="card mb-2" [formGroupName]="$index">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <h6 class="card-title mb-0">Variation {{ $index + 1 }}</h6>
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-danger"
+                (click)="removeVariation($index)"
+              >
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-2">
+                <label class="form-label">Column *</label>
+                <select class="form-select" formControlName="columnId">
+                  <option [ngValue]="null">Select Column</option>
+                  @for (col of config.allColumns || []; track col.id) {
+                    <option [ngValue]="col.id">{{ col.displayName || col.name }}</option>
+                  }
+                </select>
+              </div>
+
+              <div class="col-md-6 mb-2">
+                <label class="form-label">Type *</label>
+                <select class="form-select" formControlName="type">
+                  <option value="range">Range</option>
+                  <option value="list">List</option>
+                  <option value="pattern">Pattern</option>
+                </select>
+              </div>
+
+              @if (getVariationType($index) === 'range') {
+                <div class="col-md-4 mb-2">
+                  <label class="form-label">Start</label>
+                  <input type="number" class="form-control" formControlName="start" />
+                </div>
+                <div class="col-md-4 mb-2">
+                  <label class="form-label">End</label>
+                  <input type="number" class="form-control" formControlName="end" />
+                </div>
+                <div class="col-md-4 mb-2">
+                  <label class="form-label">Step</label>
+                  <input type="number" class="form-control" formControlName="step" />
+                </div>
+              }
+
+              @if (getVariationType($index) === 'list') {
+                <div class="col-12 mb-2">
+                  <label class="form-label">
+                    Values (comma-separated)
+                    @if (canOpenAutocomplete($index)) {
+                      <span class="badge bg-success ms-2">
+                        <i class="bi bi-search"></i> Autocomplete Available
+                      </span>
+                    }
+                  </label>
+                  <div class="input-group">
+                    <input type="text" class="form-control" formControlName="values" placeholder="value1, value2, value3" />
+                    @if (canOpenAutocomplete($index)) {
+                      <button
+                        type="button"
+                        class="btn btn-outline-primary"
+                        (click)="openAutocompleteModal($index)"
+                        title="Open autocomplete search">
+                        <i class="bi bi-search"></i>
+                      </button>
+                    }
+                  </div>
+                  <div class="form-text">
+                    @if (canOpenAutocomplete($index)) {
+                      <i class="bi bi-info-circle me-1"></i>
+                      Enter values manually or use autocomplete search button
+                    } @else {
+                      <i class="bi bi-info-circle me-1"></i>
+                      Enter comma-separated values
+                    }
+                  </div>
+                </div>
+              }
+
+              @if (getVariationType($index) === 'pattern') {
+                <div class="col-md-8 mb-2">
+                  <label class="form-label">Pattern</label>
+                  <input type="text" class="form-control" formControlName="pattern" placeholder="sample_{{ '{' }}i{{ '}' }}" />
+                  <div class="form-text">Use {{ '{' }}i{{ '}' }} as placeholder</div>
+                </div>
+                <div class="col-md-4 mb-2">
+                  <label class="form-label">Count</label>
+                  <input type="number" class="form-control" formControlName="count" />
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</form>

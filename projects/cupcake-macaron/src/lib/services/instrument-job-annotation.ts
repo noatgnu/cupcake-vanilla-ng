@@ -12,6 +12,7 @@ import {
 export interface InstrumentJobAnnotationQueryParams {
   instrumentJob?: number;
   folder?: number;
+  annotation?: number;
   role?: InstrumentJobAnnotationRole;
   search?: string;
   ordering?: string;
@@ -85,6 +86,13 @@ export class InstrumentJobAnnotationService extends BaseApiService {
    */
   createStaffAnnotation(annotation: Omit<InstrumentJobAnnotationCreateRequest, 'role'>): Observable<InstrumentJobAnnotation> {
     return this.createInstrumentJobAnnotation({ ...annotation, role: 'staff' });
+  }
+
+  /**
+   * Get all instrument job annotations for a specific annotation
+   */
+  getJobAnnotationsForAnnotation(annotationId: number, params?: Omit<InstrumentJobAnnotationQueryParams, 'annotation'>): Observable<InstrumentJobAnnotationQueryResponse> {
+    return this.getInstrumentJobAnnotations({ ...params, annotation: annotationId });
   }
 
   /**

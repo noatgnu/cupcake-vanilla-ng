@@ -51,6 +51,13 @@ export interface InstrumentJobAnnotationUpdateRequest {
   language?: string;
   translation?: string;
   scratched?: boolean;
+  annotationData?: {
+    annotation?: string;
+    transcription?: string;
+    language?: string;
+    translation?: string;
+    scratched?: boolean;
+  };
 }
 
 export interface InstrumentJobAnnotationQueryResponse {

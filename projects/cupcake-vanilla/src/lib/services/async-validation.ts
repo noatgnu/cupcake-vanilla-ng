@@ -5,7 +5,7 @@ import { BaseApiService } from '@noatgnu/cupcake-core';
 import {
   MetadataValidationRequest,
   AsyncTaskCreateResponse
-} from '../models';
+} from '@noatgnu/cupcake-core';
 
 @Injectable({
   providedIn: 'root'

@@ -1,12 +1,13 @@
-import { Component, signal, inject, OnInit, DOCUMENT, effect } from '@angular/core';
+import { Component, signal, inject, OnInit, OnDestroy, DOCUMENT, effect } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { CommonModule } from '@angular/common';
 import { NavbarComponent } from './shared/components/navbar/navbar';
-import { AsyncTaskUIService, ElectronService } from '@noatgnu/cupcake-vanilla';
+import { ElectronService } from '@noatgnu/cupcake-vanilla';
+import { AsyncTaskMonitorService, AuthService, WebSocketService } from '@noatgnu/cupcake-core';
 import { SiteConfigService, ThemeService, ToastService, ToastContainerComponent, PoweredByFooterComponent } from '@noatgnu/cupcake-core';
 
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, Subscription } from 'rxjs';
 import { environment } from '../environments/environment';
 
 @Component({
@@ -16,19 +17,22 @@ import { environment } from '../environments/environment';
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })
-export class App implements OnInit {
+export class App implements OnInit, OnDestroy {
   protected readonly title = signal('cupcake-vanilla-ng');
   protected readonly environment = environment;
 
   private document = inject(DOCUMENT);
   private siteConfigService = inject(SiteConfigService);
   private themeService = inject(ThemeService);
-  private asyncTaskService = inject(AsyncTaskUIService);
+  private asyncTaskService = inject(AsyncTaskMonitorService);
   private toastService = inject(ToastService);
   private electronService = inject(ElectronService);
+  private authService = inject(AuthService);
+  private websocket = inject(WebSocketService);
 
   private appInitializedSubject = new BehaviorSubject<boolean>(false);
   public appInitialized$ = this.appInitializedSubject.asObservable();
+  private authSubscription?: Subscription;
 
   private themeEffect = effect(() => {
     this.themeService.isDark();
@@ -40,7 +44,31 @@ export class App implements OnInit {
   });
 
   ngOnInit(): void {
+    this.initializeWebSocket();
     this.initializeApp();
+  }
+
+  ngOnDestroy(): void {
+    if (this.authSubscription) {
+      this.authSubscription.unsubscribe();
+    }
+    this.websocket.disconnect();
+  }
+
+  private initializeWebSocket(): void {
+    this.authSubscription = this.authService.currentUser$.subscribe(user => {
+      if (user) {
+        console.log('User authenticated, connecting WebSocket for async task monitoring...');
+        this.websocket.connect();
+        if (environment.features?.asyncTasks) {
+          console.log('Starting async task real-time updates');
+          this.asyncTaskService.startRealtimeUpdates();
+        }
+      } else {
+        console.log('User not authenticated, disconnecting WebSocket');
+        this.websocket.disconnect();
+      }
+    });
   }
 
   /**
@@ -51,11 +79,6 @@ export class App implements OnInit {
       this.siteConfigService.config$.subscribe(config => {
         this.updatePrimaryColorTheme(config.primaryColor || '#1976d2');
       });
-
-      if (environment.features?.asyncTasks) {
-        console.log('Initializing async task service with WebSocket connection');
-        this.asyncTaskService.startRealtimeUpdates();
-      }
 
       this.appInitializedSubject.next(true);
       this.electronService.getAppVersion().then(appVersion => {
