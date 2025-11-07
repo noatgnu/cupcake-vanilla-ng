@@ -79,9 +79,9 @@
                   <span class="input-group-text">
                     <i class="bi bi-lock"></i>
                   </span>
-                  <input 
-                    type="password" 
-                    class="form-control" 
+                  <input
+                    type="password"
+                    class="form-control"
                     id="password"
                     formControlName="password"
                     [class.is-invalid]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
@@ -94,8 +94,23 @@
                 }
               </div>
 
-              <button 
-                type="submit" 
+              <div class="mb-3 form-check">
+                <input
+                  type="checkbox"
+                  class="form-check-input"
+                  id="rememberMe"
+                  formControlName="rememberMe">
+                <label class="form-check-label" for="rememberMe">
+                  <i class="bi bi-clock-history me-1"></i>
+                  Remember me for {{ rememberMeDuration() }} days
+                </label>
+                <div class="form-text">
+                  Keep me logged in on this device
+                </div>
+              </div>
+
+              <button
+                type="submit"
                 class="btn btn-outline-primary w-100"
                 [disabled]="loginForm.invalid || loading()">
                 @if (loading()) {

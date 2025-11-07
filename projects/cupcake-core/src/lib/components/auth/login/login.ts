@@ -36,7 +36,8 @@ export class LoginComponent implements OnInit {
   constructor() {
     this.loginForm = this.fb.group({
       username: ['', [Validators.required]],
-      password: ['', [Validators.required]]
+      password: ['', [Validators.required]],
+      rememberMe: [false]
     });
   }
 
@@ -159,9 +160,9 @@ export class LoginComponent implements OnInit {
       this.loading.set(true);
       this.error.set(null);
 
-      const { username, password } = this.loginForm.value;
+      const { username, password, rememberMe } = this.loginForm.value;
 
-      this.authService.login(username, password).subscribe({
+      this.authService.login(username, password, rememberMe || false).subscribe({
         next: (response) => {
           this.success.set('Login successful!');
           setTimeout(() => {
@@ -211,7 +212,9 @@ export class LoginComponent implements OnInit {
 
     sessionStorage.removeItem('orcid_state');
 
-    this.authService.handleORCIDCallback(code, state).subscribe({
+    const rememberMe = this.loginForm.get('rememberMe')?.value || false;
+
+    this.authService.handleORCIDCallback(code, state, rememberMe).subscribe({
       next: (response) => {
         this.success.set(`Welcome, ${response.user.firstName || response.user.username}!`);
         setTimeout(() => {
@@ -246,6 +249,11 @@ export class LoginComponent implements OnInit {
   shouldShowRegistration = computed(() => this.registrationStatus()?.registrationEnabled === true);
   shouldShowRegularLogin = computed(() => this.authConfig()?.regularLoginEnabled !== false);
   registrationMessage = computed(() => this.registrationStatus()?.message || 'Registration is currently enabled');
+  rememberMeDuration = computed(() => {
+    const config = this.authConfig();
+    const days = config?.jwtTokenLifetimes?.rememberMe?.refreshTokenDays || 30;
+    return days;
+  });
 
   /**
    * Navigate to registration page

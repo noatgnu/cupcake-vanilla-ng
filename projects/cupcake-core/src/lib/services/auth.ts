@@ -154,27 +154,29 @@ export class AuthService {
       );
   }
 
-  handleORCIDCallback(code: string, state: string): Observable<AuthResponse> {
-    const params = new URLSearchParams({ code, state });
+  handleORCIDCallback(code: string, state: string, rememberMe: boolean = false): Observable<AuthResponse> {
+    const params = new URLSearchParams({ code, state, remember_me: rememberMe.toString() });
     return this.http.get<AuthResponse>(`${this.apiUrl}/auth/orcid/callback/?${params}`)
       .pipe(
         tap(response => this.setAuthData(response))
       );
   }
 
-  exchangeORCIDToken(accessToken: string, orcidId: string): Observable<AuthResponse> {
+  exchangeORCIDToken(accessToken: string, orcidId: string, rememberMe: boolean = false): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${this.apiUrl}/auth/orcid/token/`, {
       access_token: accessToken,
-      orcid_id: orcidId
+      orcid_id: orcidId,
+      remember_me: rememberMe
     }).pipe(
       tap(response => this.setAuthData(response))
     );
   }
 
-  login(username: string, password: string): Observable<AuthResponse> {
+  login(username: string, password: string, rememberMe: boolean = false): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${this.apiUrl}/auth/login/`, {
       username,
-      password
+      password,
+      remember_me: rememberMe
     }).pipe(
       tap(response => this.setAuthData(response))
     );

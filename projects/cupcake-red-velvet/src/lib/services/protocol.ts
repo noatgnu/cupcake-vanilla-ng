@@ -123,4 +123,11 @@ export class ProtocolService extends BaseApiService {
   getProtocolsByLabGroup(labGroupId: number): Observable<PaginatedResponse<ProtocolModel>> {
     return this.getProtocols({ labGroup: labGroupId });
   }
+
+  /**
+   * Import protocol from protocols.io
+   */
+  importFromProtocolsIO(url: string): Observable<ProtocolModel> {
+    return this.post<ProtocolModel>(`${this.apiUrl}/protocols/import_from_protocols_io/`, { url });
+  }
 }

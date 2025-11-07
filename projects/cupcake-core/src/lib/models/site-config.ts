@@ -35,6 +35,16 @@ export interface AuthConfig {
   registrationEnabled: boolean;
   orcidLoginEnabled: boolean;
   regularLoginEnabled: boolean;
+  jwtTokenLifetimes?: {
+    default: {
+      accessTokenMinutes: number;
+      refreshTokenDays: number;
+    };
+    rememberMe: {
+      accessTokenHours: number;
+      refreshTokenDays: number;
+    };
+  };
 }
 
 export interface RegistrationStatus {
