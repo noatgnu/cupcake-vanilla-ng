@@ -62,4 +62,5 @@ export interface ProtocolQueryParams {
   offset?: number;
   protocol?: number;
   stepSection?: number;
+  accessType?: 'public' | 'owned' | 'shared';
 }

@@ -67,13 +67,19 @@ export class WebSocketService {
   }
 
   protected getWebSocketUrl(): string {
+    const endpoint = this.config?.endpoint || 'ccc/notifications';
+
+    if (this.config_token.websocketUrl) {
+      const wsUrl = this.config_token.websocketUrl.replace(/\/$/, '');
+      return `${wsUrl}/${endpoint}/`;
+    }
+
     const apiUrl = this.config_token.apiUrl;
 
     try {
       const url = new URL(apiUrl);
       const protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
       const host = url.host;
-      const endpoint = this.config?.endpoint || 'ccc/notifications';
 
       return `${protocol}//${host}/ws/${endpoint}/`;
     } catch (error) {
@@ -81,7 +87,6 @@ export class WebSocketService {
 
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
       const host = window.location.host;
-      const endpoint = this.config?.endpoint || 'ccc/notifications';
       return `${protocol}//${host}/ws/${endpoint}/`;
     }
   }

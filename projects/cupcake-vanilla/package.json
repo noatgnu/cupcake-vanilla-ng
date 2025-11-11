@@ -1,6 +1,6 @@
 {
   "name": "@noatgnu/cupcake-vanilla",
-  "version": "1.3.3",
+  "version": "1.3.12",
   "description": "An extension for cupcake-core that provides additional api and interfaces for facility to manage and compose metadata.",
   "author": "Toan Phung",
   "license": "MIT",

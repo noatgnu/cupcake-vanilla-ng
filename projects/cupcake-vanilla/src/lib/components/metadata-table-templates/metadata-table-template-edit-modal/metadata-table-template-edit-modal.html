@@ -154,7 +154,10 @@
               </thead>
               <tbody cdkDropList (cdkDropListDropped)="onColumnDrop($event)" [cdkDropListData]="_templateColumns()">
                 @for (column of _templateColumns(); track column.id; let i = $index) {
-                  <tr cdkDrag [cdkDragData]="column" class="column-row" [attr.data-column-id]="column.id">
+                  <tr cdkDrag [cdkDragData]="column"
+                      class="column-row"
+                      [class.recently-modified]="column.id && recentlyModifiedColumnId() === column.id"
+                      [attr.data-column-id]="column.id">
                     <td class="text-center">
                       <input type="checkbox" class="form-check-input"
                              [checked]="column.id && selectedColumnIds().has(column.id)"

@@ -6,6 +6,7 @@ import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-
 import { LabGroup, ResourceVisibility } from '@noatgnu/cupcake-core';
 import { MetadataTableTemplate, MetadataColumn } from '../../../models';
 import { MetadataTableTemplateService } from '../../../services/metadata-table-template';
+import { MetadataColumnService } from '../../../services/metadata-column';
 import { ColumnEditModal } from '../column-edit-modal/column-edit-modal';
 import { ToastService } from '@noatgnu/cupcake-core';
 
@@ -27,6 +28,7 @@ export class MetadataTableTemplateEditModal implements OnInit {
   // Column management
   _templateColumns = signal<MetadataColumn[]>([]);
   selectedColumnIds = signal<Set<number>>(new Set());
+  recentlyModifiedColumnId = signal<number | null>(null);
 
   templateColumns = computed(() => {
     // Sort columns by position, then by name+type for grouping same columns together
@@ -65,6 +67,7 @@ export class MetadataTableTemplateEditModal implements OnInit {
     private activeModal: NgbActiveModal,
     private modalService: NgbModal,
     private metadataTableTemplateService: MetadataTableTemplateService,
+    private metadataColumnService: MetadataColumnService,
     private toastService: ToastService
   ) {
     this.editForm = this.fb.group({
@@ -335,30 +338,44 @@ export class MetadataTableTemplateEditModal implements OnInit {
 
   private handleColumnSave(columnData: Partial<MetadataColumn>, originalColumn: MetadataColumn | null, isEdit: boolean) {
     const currentColumns = this._templateColumns();
-    
-    if (isEdit && originalColumn) {
-      // Update existing column
-      const updatedColumns = currentColumns.map(col => 
-        col.id === originalColumn.id 
-          ? { ...col, ...columnData }
-          : col
-      );
-      
-      // Check if name/type changed and needs regrouping
-      if (columnData.name !== originalColumn.name || columnData.type !== originalColumn.type) {
-        this.enforceGrouping(updatedColumns);
-      }
-      
-      this.normalizeColumnPositions(updatedColumns);
-      this._templateColumns.set(updatedColumns);
+
+    if (isEdit && originalColumn && originalColumn.id) {
+      this.isLoading.set(true);
+      this.metadataColumnService.patchMetadataColumn(originalColumn.id, columnData).subscribe({
+        next: (updatedColumn) => {
+          this.isLoading.set(false);
+          const updatedColumns = currentColumns.map(col =>
+            col.id === originalColumn.id
+              ? updatedColumn
+              : col
+          );
+
+          if (columnData.name !== originalColumn.name || columnData.type !== originalColumn.type) {
+            this.enforceGrouping(updatedColumns);
+          }
+
+          this.normalizeColumnPositions(updatedColumns);
+          this._templateColumns.set(updatedColumns);
+          this.toastService.success('Column updated successfully');
+
+          this.recentlyModifiedColumnId.set(updatedColumn.id);
+          setTimeout(() => {
+            this.recentlyModifiedColumnId.set(null);
+          }, 3000);
+        },
+        error: (error) => {
+          this.isLoading.set(false);
+          console.error('Error updating column:', error);
+          this.toastService.error('Failed to update column');
+        }
+      });
     } else {
-      // Add new column
       const newColumn: MetadataColumn = {
         ...columnData as MetadataColumn,
         id: this.generateTempId(),
         columnPosition: this.getNextPositionForNameType(columnData.name!, columnData.type!)
       };
-      
+
       const updatedColumns = [...currentColumns, newColumn];
       this.enforceGrouping(updatedColumns);
       this.normalizeColumnPositions(updatedColumns);

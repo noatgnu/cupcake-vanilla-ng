@@ -6,6 +6,7 @@ import { resetRefreshState } from '../interceptors';
 
 export interface CupcakeCoreConfig {
   apiUrl: string;
+  websocketUrl?: string;
 }
 
 export const CUPCAKE_CORE_CONFIG = new InjectionToken<CupcakeCoreConfig>('CUPCAKE_CORE_CONFIG');

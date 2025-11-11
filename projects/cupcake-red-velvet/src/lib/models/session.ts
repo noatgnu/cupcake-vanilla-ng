@@ -18,6 +18,7 @@ export interface Session extends BaseTimestampedModel, RemoteSystemModel, OwnedM
   status?: string;
   importInfo?: any;
   remoteHostInfo?: any;
+  webrtcSessions?: string[];
 }
 
 export interface SessionAnnotation extends BaseTimestampedModel {

@@ -93,7 +93,14 @@
       </div>
 
       <div class="col-md-6 mb-3">
-        <label for="defaultValue" class="form-label">Default Value</label>
+        <label for="defaultValue" class="form-label">
+          Default Value
+          @if (hasOntologyType) {
+            <span class="badge bg-success ms-2">
+              <i class="bi bi-search me-1"></i>Autocomplete Available
+            </span>
+          }
+        </label>
         @if (editForm.get('notApplicable')?.value || editForm.get('notAvailable')?.value) {
           <div class="mb-2">
             <div class="btn-group btn-group-sm" role="group">
@@ -116,12 +123,48 @@
             </div>
           </div>
         }
-        <input
-          type="text"
-          class="form-control"
-          id="defaultValue"
-          formControlName="defaultValue"
-          placeholder="Optional default value">
+        @if (hasOntologyType) {
+          <div class="input-group">
+            <input
+              type="text"
+              class="form-control"
+              id="defaultValue"
+              formControlName="defaultValue"
+              placeholder="Type to search ontology suggestions..."
+              [ngbTypeahead]="searchDefaultValue"
+              [resultFormatter]="formatSuggestion"
+              [inputFormatter]="inputFormatter"
+              (selectItem)="onSuggestionSelected($event)"
+              [editable]="true"
+              [showHint]="true"
+              [focusFirst]="false"
+              container="body">
+            @if (isLoadingSuggestions()) {
+              <span class="input-group-text">
+                <div class="spinner-border spinner-border-sm" role="status">
+                  <span class="visually-hidden">Loading...</span>
+                </div>
+              </span>
+            } @else {
+              <span class="input-group-text">
+                <i class="bi bi-search text-muted"></i>
+              </span>
+            }
+          </div>
+          <div class="form-text">
+            <i class="bi bi-info-circle me-1"></i>Type to search for ontology suggestions
+          </div>
+        } @else {
+          <input
+            type="text"
+            class="form-control"
+            id="defaultValue"
+            formControlName="defaultValue"
+            placeholder="Optional default value">
+          <div class="form-text text-muted">
+            Select an ontology type to enable autocomplete
+          </div>
+        }
       </div>
 
       <div class="col-md-6 mb-3">
@@ -132,7 +175,7 @@
           formControlName="ontologyType"
           (change)="onOntologyTypeChange()">
           @for (ontology of ontologyTypes; track $index) {
-            <option [value]="ontology.value">{{ ontology.label }}</option>
+            <option [value]="getOptionValue(ontology, $index)">{{ ontology.label }}</option>
           }
         </select>
       </div>

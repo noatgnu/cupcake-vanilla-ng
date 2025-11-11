@@ -133,4 +133,19 @@ export class SessionService extends BaseApiService {
   getSessionFolders(id: number): Observable<AnnotationFolder[]> {
     return this.get<AnnotationFolder[]>(`${this.apiUrl}/sessions/${id}/folders/`);
   }
+
+  /**
+   * Get WebRTC sessions associated with this experimental session
+   */
+  getWebRTCSessions(id: number): Observable<any[]> {
+    return this.get<any[]>(`${this.apiUrl}/sessions/${id}/webrtc_sessions/`);
+  }
+
+  /**
+   * Join or create the default WebRTC session for this experimental session
+   * By default, all users join the same call unless they create a named session
+   */
+  joinDefaultWebRTC(id: number): Observable<any> {
+    return this.post<any>(`${this.apiUrl}/sessions/${id}/join_default_webrtc/`, {});
+  }
 }

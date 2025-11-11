@@ -94,15 +94,17 @@ export class ColumnEditModal implements OnInit {
 
   private populateForm() {
     if (this.column) {
-      const ontologyTypeIndex = this.column.ontologyType
-        ? this.ontologyTypes.findIndex(o => o.value === this.column!.ontologyType)
-        : 0;
+      const customFilters = this.column.customOntologyFilters || undefined;
+      const ontologyTypeIndex = this.getOntologyTypeIndex(
+        this.column.ontologyType,
+        customFilters
+      );
 
       this.editForm.patchValue({
         name: this.column.name,
         type: this.getCorrectedColumnType(this.column.name, this.column.type),
         value: this.column.value || '',
-        ontologyType: ontologyTypeIndex >= 0 ? ontologyTypeIndex.toString() : '0',
+        ontologyType: ontologyTypeIndex.toString(),
         enableTypeahead: this.column.enableTypeahead || false,
         mandatory: this.column.mandatory || false,
         hidden: this.column.hidden || false,
@@ -112,6 +114,66 @@ export class ColumnEditModal implements OnInit {
         staffOnly: this.column.staffOnly || false
       });
     }
+  }
+
+  private getOntologyTypeIndex(ontologyType?: string, customFilters?: any): number {
+    if (!ontologyType) return 0;
+
+    if (!customFilters || Object.keys(customFilters).length === 0) {
+      const index = this.ontologyTypes.findIndex(o => o.value === ontologyType && (!o.customFilters || Object.keys(o.customFilters).length === 0));
+      return index >= 0 ? index : 0;
+    }
+
+    console.log('[Column] Looking for ontology match:', {
+      ontologyType,
+      customFilters,
+      keys: Object.keys(customFilters)
+    });
+
+    // Handle both wrapped and unwrapped formats
+    // Also handle camelCase from API vs snake_case in config
+    // API returns: {"msUniqueVocabularies": {"termType": "cell line"}}
+    // Config has: {"ms_unique_vocabularies": {"term_type": "cell line"}}
+
+    // Convert ontologyType to camelCase to match API format
+    const camelOntologyType = ontologyType.replace(/_([a-z])/g, (g) => g[1].toUpperCase());
+
+    let actualFilters = customFilters[ontologyType] || customFilters[camelOntologyType] || customFilters;
+
+    console.log('[Column] Actual filters after unwrapping:', actualFilters);
+
+    const matchingIndex = this.ontologyTypes.findIndex(opt => {
+      if (opt.value !== ontologyType) return false;
+
+      if (!opt.customFilters) return false;
+
+      // Get the filter value from config (wrapped with snake_case key)
+      const optFilterValue = opt.customFilters[ontologyType];
+      if (!optFilterValue) return false;
+
+      // Compare term_type values (handle both snake_case and camelCase)
+      const optTermType = optFilterValue['term_type'];
+      const actualTermType = actualFilters['term_type'] || actualFilters['termType'];
+
+      const matches = optTermType === actualTermType;
+
+      console.log('[Column] Comparing:', {
+        label: opt.label,
+        optTermType,
+        actualTermType,
+        matches
+      });
+
+      return matches;
+    });
+
+    if (matchingIndex >= 0) {
+      console.log('[Column] Found match at index:', matchingIndex, this.ontologyTypes[matchingIndex].label);
+    } else {
+      console.warn('[Column] No match found for:', { ontologyType, customFilters });
+    }
+
+    return matchingIndex >= 0 ? matchingIndex : 0;
   }
 
   onSubmit() {
@@ -126,13 +188,25 @@ export class ColumnEditModal implements OnInit {
       const formValue = this.editForm.getRawValue();
 
       const ontologyTypeIndex = parseInt(formValue.ontologyType);
-      const ontologyTypeValue = ontologyTypeIndex > 0 ? this.ontologyTypes[ontologyTypeIndex]?.value as OntologyType : undefined;
+      const selectedOntology = ontologyTypeIndex > 0 ? this.ontologyTypes[ontologyTypeIndex] : null;
+      const ontologyTypeValue = selectedOntology?.value as OntologyType | undefined;
+
+      // Extract custom filters from the selected ontology config
+      const customOntologyFilters = selectedOntology?.customFilters || {};
+
+      console.log('[Column Edit] Submitting column:', {
+        ontologyTypeIndex,
+        selectedOntology,
+        ontologyTypeValue,
+        customOntologyFilters
+      });
 
       const columnData: Partial<MetadataColumn> = {
         name: formValue.name,
         type: formValue.type,
         value: formValue.value || '',
         ontologyType: ontologyTypeValue,
+        customOntologyFilters: customOntologyFilters,
         enableTypeahead: formValue.enableTypeahead || false,
         mandatory: formValue.mandatory || false,
         hidden: formValue.hidden || false,
@@ -141,6 +215,8 @@ export class ColumnEditModal implements OnInit {
         notAvailable: formValue.notAvailable || false,
         staffOnly: formValue.staffOnly || false
       };
+
+      console.log('[Column Edit] Final columnData:', columnData);
 
       this.columnSaved.emit(columnData);
     } else {
@@ -288,20 +364,19 @@ export class ColumnEditModal implements OnInit {
       if (template) {
         this.selectedTemplate = template;
 
-        // Enable controls to update values, then disable again
         this.editForm.get('name')?.enable();
         this.editForm.get('type')?.enable();
 
-        // Auto-fill form with template data
-        const ontologyTypeIndex = template.ontologyType
-          ? this.ontologyTypes.findIndex(o => o.value === template.ontologyType)
-          : 0;
+        const ontologyTypeIndex = this.getOntologyTypeIndex(
+          template.ontologyType,
+          template.customOntologyFilters
+        );
 
         this.editForm.patchValue({
           name: template.columnName,
           type: template.columnType,
           value: template.defaultValue || '',
-          ontologyType: ontologyTypeIndex >= 0 ? ontologyTypeIndex.toString() : '0',
+          ontologyType: ontologyTypeIndex.toString(),
           enableTypeahead: template.enableTypeahead || false,
           mandatory: false,
           hidden: false,
@@ -309,11 +384,9 @@ export class ColumnEditModal implements OnInit {
           notApplicable: false
         });
 
-        // Disable controls again
         this.editForm.get('name')?.disable();
         this.editForm.get('type')?.disable();
 
-        // Mark form as touched to trigger validation display
         Object.keys(this.editForm.controls).forEach(key => {
           this.editForm.get(key)?.markAsTouched();
         });
@@ -528,22 +601,21 @@ export class ColumnEditModal implements OnInit {
     this.selectedTemplate = template;
     this.selectedTemplateId = template.id;
 
-    // Update form with template data, preserving current value
     const currentValue = this.editForm.get('value')?.value || '';
 
-    // Enable controls to update values, then disable again
     this.editForm.get('name')?.enable();
     this.editForm.get('type')?.enable();
 
-    const ontologyTypeIndex = template.ontologyType
-      ? this.ontologyTypes.findIndex(o => o.value === template.ontologyType)
-      : 0;
+    const ontologyTypeIndex = this.getOntologyTypeIndex(
+      template.ontologyType,
+      template.customOntologyFilters
+    );
 
     this.editForm.patchValue({
       name: template.columnName,
       type: template.columnType,
       value: currentValue,
-      ontologyType: ontologyTypeIndex >= 0 ? ontologyTypeIndex.toString() : '0',
+      ontologyType: ontologyTypeIndex.toString(),
       enableTypeahead: template.enableTypeahead || false,
       mandatory: this.editForm.get('mandatory')?.value || false,
       hidden: this.editForm.get('hidden')?.value || false,
@@ -551,11 +623,9 @@ export class ColumnEditModal implements OnInit {
       notApplicable: this.editForm.get('notApplicable')?.value || false
     });
 
-    // Disable controls again
     this.editForm.get('name')?.disable();
     this.editForm.get('type')?.disable();
 
-    // Mark form as touched
     Object.keys(this.editForm.controls).forEach(key => {
       this.editForm.get(key)?.markAsTouched();
     });
@@ -582,18 +652,8 @@ export class ColumnEditModal implements OnInit {
     this.showCreateCustomTemplate = false;
   }
 
-  // Toggle advanced mode
   toggleAdvancedMode(): void {
     this.showAdvancedMode.set(!this.showAdvancedMode());
-
-    // Reset ontology type when disabling advanced mode
-    if (!this.showAdvancedMode()) {
-      this.editForm.patchValue({
-        ontologyType: '0',
-        enableTypeahead: false
-      });
-      this.selectedOntologyConfig = null;
-    }
   }
 
   // Handle ontology type selection change

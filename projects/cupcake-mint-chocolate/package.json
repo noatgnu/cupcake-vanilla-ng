@@ -1,6 +1,6 @@
 {
   "name": "@noatgnu/cupcake-mint-chocolate",
-  "version": "1.2.4",
+  "version": "1.2.35",
   "description": "An extension for cupcake-core that provides additional api and interfaces for managing notifications and messaging.",
   "author": "Toan Phung",
   "license": "MIT",

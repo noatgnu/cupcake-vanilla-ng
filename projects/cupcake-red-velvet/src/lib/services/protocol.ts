@@ -125,6 +125,56 @@ export class ProtocolService extends BaseApiService {
   }
 
   /**
+   * Get protocols with specific access type filter
+   * @param accessType - 'public', 'owned', or 'shared'
+   */
+  getProtocolsByAccessType(accessType: 'public' | 'owned' | 'shared', params?: ProtocolQueryParams): Observable<PaginatedResponse<ProtocolModel>> {
+    return this.getProtocols({ ...params, accessType });
+  }
+
+  /**
+   * Get all publicly accessible protocols using dedicated endpoint
+   */
+  getPublicProtocolsList(): Observable<ProtocolModel[]> {
+    return this.get<ProtocolModel[]>(`${this.apiUrl}/protocols/public_protocols/`);
+  }
+
+  /**
+   * Get protocols owned by the current user using dedicated endpoint
+   */
+  getMyProtocols(): Observable<ProtocolModel[]> {
+    return this.get<ProtocolModel[]>(`${this.apiUrl}/protocols/my_protocols/`);
+  }
+
+  /**
+   * Get protocols shared with the current user using dedicated endpoint
+   */
+  getSharedWithMe(): Observable<ProtocolModel[]> {
+    return this.get<ProtocolModel[]>(`${this.apiUrl}/protocols/shared_with_me/`);
+  }
+
+  /**
+   * Get enabled protocols
+   */
+  getEnabledProtocols(): Observable<ProtocolModel[]> {
+    return this.get<ProtocolModel[]>(`${this.apiUrl}/protocols/enabled_protocols/`);
+  }
+
+  /**
+   * Get vaulted/imported protocols
+   */
+  getVaultedProtocols(): Observable<ProtocolModel[]> {
+    return this.get<ProtocolModel[]>(`${this.apiUrl}/protocols/vaulted_protocols/`);
+  }
+
+  /**
+   * Toggle enabled status of a protocol
+   */
+  toggleEnabled(id: number): Observable<{message: string, enabled: boolean}> {
+    return this.post<{message: string, enabled: boolean}>(`${this.apiUrl}/protocols/${id}/toggle_enabled/`, {});
+  }
+
+  /**
    * Import protocol from protocols.io
    */
   importFromProtocolsIO(url: string): Observable<ProtocolModel> {

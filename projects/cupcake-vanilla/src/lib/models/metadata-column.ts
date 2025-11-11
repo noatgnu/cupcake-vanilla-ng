@@ -26,6 +26,7 @@ export interface MetadataColumn extends BaseTimestampedModel {
   modifiers: MetadataColumnModifier[]; // default=list
   ontologyType?: OntologyType; // null=True, blank=True
   ontologyOptions?: any; // null=True, blank=True
+  customOntologyFilters?: any; // null=True, blank=True - custom filters for ontology queries
   suggestedValues: any[]; // default=list
   enableTypeahead: boolean; // default=True
   possibleDefaultValues: any[]; // default=list
@@ -48,6 +49,7 @@ export interface MetadataColumnCreateRequest {
   modifiers?: MetadataColumnModifier[]; // Has default=list
   ontologyType?: OntologyType;
   ontologyOptions?: any;
+  customOntologyFilters?: any;
   enableTypeahead?: boolean; // Has default=True
   staffOnly?: boolean; // Has default=False
 }
@@ -66,6 +68,7 @@ export interface MetadataColumnUpdateRequest {
   modifiers?: MetadataColumnModifier[];
   ontologyType?: OntologyType;
   ontologyOptions?: any;
+  customOntologyFilters?: any;
   enableTypeahead?: boolean;
   staffOnly?: boolean;
 }
