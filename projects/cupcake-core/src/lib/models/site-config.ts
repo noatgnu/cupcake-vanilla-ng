@@ -1,5 +1,17 @@
 import { BaseTimestampedModel } from './base';
 
+export interface UIFeatures {
+  [featureName: string]: boolean;
+  show_metadata_tables?: boolean;
+  show_instruments?: boolean;
+  show_sessions?: boolean;
+  show_protocols?: boolean;
+  show_messages?: boolean;
+  show_notifications?: boolean;
+  show_sample_management?: boolean;
+  show_webrtc?: boolean;
+}
+
 export interface SiteConfig extends BaseTimestampedModel {
   siteName: string;
   logoUrl?: string;
@@ -9,6 +21,7 @@ export interface SiteConfig extends BaseTimestampedModel {
   allowUserRegistration: boolean;
   enableOrcidLogin: boolean;
   bookingDeletionWindowMinutes: number;
+  uiFeatures: UIFeatures;
   installedApps: {
     [appCode: string]: {
       name: string;
@@ -29,6 +42,7 @@ export interface SiteConfigUpdateRequest {
   allowUserRegistration?: boolean;
   enableOrcidLogin?: boolean;
   bookingDeletionWindowMinutes?: number;
+  uiFeatures?: UIFeatures;
 }
 
 export interface AuthConfig {
