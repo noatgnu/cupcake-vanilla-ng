@@ -16,6 +16,7 @@ export class SiteConfigService extends BaseApiService {
     allowUserRegistration: false,
     enableOrcidLogin: false,
     bookingDeletionWindowMinutes: 30,
+    uiFeatures: {},
     installedApps: {},
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()

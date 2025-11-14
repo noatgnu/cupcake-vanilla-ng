@@ -1,15 +1,16 @@
 import { BaseTimestampedModel } from './base';
 
 export interface UIFeatures {
-  [featureName: string]: boolean;
+  [featureName: string]: boolean|undefined;
   show_metadata_tables?: boolean;
   show_instruments?: boolean;
   show_sessions?: boolean;
   show_protocols?: boolean;
   show_messages?: boolean;
   show_notifications?: boolean;
-  show_sample_management?: boolean;
+  show_storage?: boolean;
   show_webrtc?: boolean;
+  show_billing?: boolean;
 }
 
 export interface SiteConfig extends BaseTimestampedModel {
