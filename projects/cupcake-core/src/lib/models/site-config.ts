@@ -22,7 +22,9 @@ export interface SiteConfig extends BaseTimestampedModel {
   allowUserRegistration: boolean;
   enableOrcidLogin: boolean;
   bookingDeletionWindowMinutes: number;
+  whisperCppModel: string;
   uiFeatures: UIFeatures;
+  uiFeaturesWithDefaults: UIFeatures;
   installedApps: {
     [appCode: string]: {
       name: string;
@@ -32,6 +34,8 @@ export interface SiteConfig extends BaseTimestampedModel {
     };
   };
   updatedBy?: number;
+  demoMode?: boolean;
+  demoCleanupIntervalMinutes?: number;
 }
 
 export interface SiteConfigUpdateRequest {
@@ -43,6 +47,7 @@ export interface SiteConfigUpdateRequest {
   allowUserRegistration?: boolean;
   enableOrcidLogin?: boolean;
   bookingDeletionWindowMinutes?: number;
+  whisperCppModel?: string;
   uiFeatures?: UIFeatures;
 }
 

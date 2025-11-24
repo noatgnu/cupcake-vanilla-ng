@@ -1,8 +1,8 @@
-import { Component, inject, OnInit, OnDestroy } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { NgbDropdownModule } from '@ng-bootstrap/ng-bootstrap';
-import { AuthService, User, SiteConfigService, UserManagementService, ThemeService } from '@noatgnu/cupcake-core';
+import { AuthService, User, SiteConfigService, UserManagementService, ThemeService, DemoModeService } from '@noatgnu/cupcake-core';
 import { AsyncTaskUIService, NotificationService, Websocket } from '@noatgnu/cupcake-vanilla';
 import { NotificationPanel } from '../notification-panel/notification-panel';
 import { AsyncTaskMonitorComponent } from '../async-task-monitor/async-task-monitor';
@@ -27,21 +27,23 @@ export class NavbarComponent implements OnInit, OnDestroy {
   private notificationService = inject(NotificationService);
   private webSocketService = inject(Websocket);
   private asyncTaskService = inject(AsyncTaskUIService);
+  private demoModeService = inject(DemoModeService);
 
   isAuthenticated$ = this.authService.isAuthenticated$;
   currentUser$ = this.authService.currentUser$;
-  
+
   siteConfig$ = this.siteConfigService.config$;
-  
+
   activeTasks$ = this.asyncTaskService.activeTasks$;
   activeTaskCount$ = this.activeTasks$.pipe(
     map(tasks => tasks.length)
   );
-  
+
   protected readonly environment = environment;
-  
+
   unreadCount = this.notificationService.unreadCount;
-  
+  isDemoMode = signal(false);
+
   private subscriptions = new Subscription();
 
   ngOnInit(): void {
@@ -57,6 +59,12 @@ export class NavbarComponent implements OnInit, OnDestroy {
           console.log('Navbar: User not authenticated, disconnecting WebSocket');
           this.webSocketService.disconnect();
         }
+      })
+    );
+
+    this.subscriptions.add(
+      this.demoModeService.demoMode$.subscribe(info => {
+        this.isDemoMode.set(info.isActive);
       })
     );
   }

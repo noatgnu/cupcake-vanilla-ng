@@ -3,6 +3,7 @@ import { BehaviorSubject, Observable, interval } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { BaseApiService } from './base-api';
 import { SiteConfig } from '../models/site-config';
+import { DemoModeService } from './demo-mode';
 
 @Injectable({
   providedIn: 'root'
@@ -16,7 +17,19 @@ export class SiteConfigService extends BaseApiService {
     allowUserRegistration: false,
     enableOrcidLogin: false,
     bookingDeletionWindowMinutes: 30,
+    whisperCppModel: '/app/whisper.cpp/models/ggml-medium.bin',
     uiFeatures: {},
+    uiFeaturesWithDefaults: {
+      show_metadata_tables: true,
+      show_instruments: true,
+      show_sessions: true,
+      show_protocols: true,
+      show_messages: true,
+      show_notifications: true,
+      show_storage: true,
+      show_webrtc: true,
+      show_billing: true
+    },
     installedApps: {},
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
@@ -25,7 +38,7 @@ export class SiteConfigService extends BaseApiService {
   private configSubject = new BehaviorSubject<SiteConfig>(this.defaultConfig);
   public config$ = this.configSubject.asObservable();
 
-  constructor() {
+  constructor(private demoModeService: DemoModeService) {
     super();
     this.loadConfig();
     this.startPeriodicRefresh();
@@ -37,6 +50,7 @@ export class SiteConfigService extends BaseApiService {
         next: (config) => {
           this.configSubject.next({ ...this.defaultConfig, ...config });
           localStorage.setItem('site_config', JSON.stringify(config));
+          this.handleDemoMode(config);
         },
         error: () => {}
       });
@@ -49,6 +63,7 @@ export class SiteConfigService extends BaseApiService {
       try {
         const config = JSON.parse(savedConfig);
         this.configSubject.next({ ...this.defaultConfig, ...config });
+        this.handleDemoMode(config);
       } catch (error) {
         // Invalid config, use defaults
       }
@@ -58,6 +73,7 @@ export class SiteConfigService extends BaseApiService {
       next: (config) => {
         this.configSubject.next({ ...this.defaultConfig, ...config });
         localStorage.setItem('site_config', JSON.stringify(config));
+        this.handleDemoMode(config);
       },
       error: () => {
         // Continue with current config
@@ -78,6 +94,7 @@ export class SiteConfigService extends BaseApiService {
       tap(config => {
         this.configSubject.next({ ...this.defaultConfig, ...config });
         localStorage.setItem('site_config', JSON.stringify(config));
+        this.handleDemoMode(config);
       })
     );
   }
@@ -114,5 +131,25 @@ export class SiteConfigService extends BaseApiService {
 
   isOrcidLoginEnabled(): boolean {
     return this.configSubject.value.enableOrcidLogin === true;
+  }
+
+  getAvailableWhisperModels(): Observable<{models: any[], count: number}> {
+    return this.get<{models: any[], count: number}>(`${this.apiUrl}/site-config/available_whisper_models/`);
+  }
+
+  refreshWhisperModels(): Observable<{status: string, message: string, job_id: string}> {
+    return this.post<{status: string, message: string, job_id: string}>(`${this.apiUrl}/site-config/refresh_whisper_models/`, {});
+  }
+
+  getWorkerStatus(): Observable<any> {
+    return this.get<any>(`${this.apiUrl}/site-config/worker_status/`);
+  }
+
+  private handleDemoMode(config: Partial<SiteConfig>): void {
+    if (config.demoMode) {
+      this.demoModeService.setDemoMode(true, config.demoCleanupIntervalMinutes || 15);
+    } else {
+      this.demoModeService.setDemoMode(false);
+    }
   }
 }

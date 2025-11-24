@@ -2,6 +2,7 @@ export * from './auth';
 export * from './api';
 export * from './async-task-monitor';
 export * from './base-api';
+export * from './demo-mode';
 export * from './notification';
 export * from './site-config';
 export * from './theme';

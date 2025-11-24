@@ -148,4 +148,13 @@ export class SessionService extends BaseApiService {
   joinDefaultWebRTC(id: number): Observable<any> {
     return this.post<any>(`${this.apiUrl}/sessions/${id}/join_default_webrtc/`, {});
   }
+
+  /**
+   * Get signed download URL for session HTML export with all protocols and annotations
+   * @param id Session ID
+   * @returns Observable with download URL containing signed token
+   */
+  getExportUrl(id: number): Observable<{downloadUrl: string}> {
+    return this.get<{downloadUrl: string}>(`${this.apiUrl}/sessions/${id}/get_export_url/`);
+  }
 }

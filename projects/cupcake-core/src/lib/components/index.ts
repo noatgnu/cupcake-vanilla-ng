@@ -11,5 +11,6 @@ export * from './user-management/user-profile/user-profile';
 export * from './site-config/site-config';
 
 // Utility components
+export * from './demo-mode-banner/demo-mode-banner';
 export * from './toast-container/toast-container';
 export * from './powered-by-footer/powered-by-footer';

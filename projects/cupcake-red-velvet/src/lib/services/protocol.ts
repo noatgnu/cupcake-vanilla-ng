@@ -180,4 +180,16 @@ export class ProtocolService extends BaseApiService {
   importFromProtocolsIO(url: string): Observable<ProtocolModel> {
     return this.post<ProtocolModel>(`${this.apiUrl}/protocols/import_from_protocols_io/`, { url });
   }
+
+  /**
+   * Get signed download URL for protocol HTML export
+   * @param id Protocol ID
+   * @param sessionId Optional session ID to include session-specific annotations
+   * @returns Observable with download URL containing signed token
+   */
+  getExportUrl(id: number, sessionId?: number): Observable<{download_url: string}> {
+    const params = sessionId ? {session: sessionId.toString()} : {};
+    const httpParams = this.buildHttpParams(params);
+    return this.get<{download_url: string}>(`${this.apiUrl}/protocols/${id}/get_export_url/`, { params: httpParams });
+  }
 }

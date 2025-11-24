@@ -184,9 +184,17 @@ export class InstrumentJobService extends BaseApiService {
   }
 
   /**
-   * Get autocomplete values for funder and cost_center from user's existing jobs
+   * Get autocomplete values for funder, cost_center, and search_engines from user's existing jobs
    */
-  getAutocompleteFields(): Observable<{ funders: string[]; cost_centers: string[] }> {
-    return this.get<{ funders: string[]; cost_centers: string[] }>(`${this.apiUrl}/instrument-jobs/autocomplete_fields/`);
+  getAutocompleteFields(): Observable<{
+    funders: string[];
+    cost_centers: string[];
+    search_engines: { [key: string]: string[] };
+  }> {
+    return this.get<{
+      funders: string[];
+      cost_centers: string[];
+      search_engines: { [key: string]: string[] };
+    }>(`${this.apiUrl}/instrument-jobs/autocomplete_fields/`);
   }
 }

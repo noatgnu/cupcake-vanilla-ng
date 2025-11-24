@@ -1,0 +1,147 @@
+.demo-mode-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  z-index: 9999;
+  transition: all 0.3s ease;
+
+  &.collapsed {
+    .banner-details {
+      display: none;
+    }
+  }
+
+  .banner-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 12px 24px;
+  }
+
+  .banner-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    .banner-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+
+      svg {
+        width: 20px;
+        height: 20px;
+      }
+    }
+
+    .banner-title {
+      flex: 1;
+      font-size: 16px;
+      line-height: 1.5;
+
+      strong {
+        font-weight: 600;
+      }
+    }
+
+    .banner-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .collapse-btn,
+    .dismiss-btn {
+      background: transparent;
+      border: none;
+      color: white;
+      cursor: pointer;
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      transition: background-color 0.2s ease;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.1);
+      }
+
+      &:focus {
+        outline: 2px solid rgba(255, 255, 255, 0.5);
+        outline-offset: 2px;
+      }
+    }
+
+    .dismiss-btn {
+      &:hover {
+        background: rgba(255, 255, 255, 0.2);
+      }
+    }
+  }
+
+  .banner-details {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+
+    .banner-message {
+      margin: 0 0 12px 0;
+      font-size: 14px;
+      line-height: 1.6;
+
+      strong {
+        font-weight: 600;
+        text-decoration: underline;
+      }
+    }
+
+    .banner-info {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      font-size: 13px;
+
+      .info-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(255, 255, 255, 0.1);
+        padding: 6px 12px;
+        border-radius: 4px;
+
+        svg {
+          flex-shrink: 0;
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .demo-mode-banner {
+    .banner-content {
+      padding: 10px 16px;
+    }
+
+    .banner-header {
+      .banner-title {
+        font-size: 14px;
+      }
+    }
+
+    .banner-details {
+      .banner-info {
+        flex-direction: column;
+        gap: 8px;
+      }
+    }
+  }
+}

@@ -3,7 +3,9 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { CommonModule } from '@angular/common';
 import { NgbAlert } from '@ng-bootstrap/ng-bootstrap';
 import { SiteConfigService } from '../../services/site-config';
+import { AuthService } from '../../services/auth';
 import { SiteConfig } from '../../models';
+import { toSignal } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'ccc-site-config',
@@ -15,20 +17,34 @@ import { SiteConfig } from '../../models';
 export class SiteConfigComponent implements OnInit {
   private fb = inject(FormBuilder);
   private siteConfigService = inject(SiteConfigService);
+  private authService = inject(AuthService);
 
   configForm: FormGroup;
-  
+
   // Signals for reactive state management
   loading = signal(false);
   error = signal<string | null>(null);
   success = signal<string | null>(null);
   selectedLogoFile = signal<File | null>(null);
   currentConfig = signal<SiteConfig | null>(null);
+  availableModels = signal<any[]>([]);
+  loadingModels = signal(false);
+  refreshingModels = signal(false);
+  workerStatus = signal<any>(null);
+  loadingWorkerStatus = signal(false);
+
+  currentUser = toSignal(this.authService.currentUser$);
+
+  Object = Object;
 
   // Computed signal for preview configuration
   previewConfig = computed(() => {
     if (!this.currentConfig()) return null;
     return { ...this.currentConfig()!, ...this.configForm.value };
+  });
+
+  isSuperuser = computed(() => {
+    return this.currentUser()?.isSuperuser === true;
   });
 
   constructor() {
@@ -38,7 +54,8 @@ export class SiteConfigComponent implements OnInit {
       primaryColor: ['#1976d2', [Validators.pattern(/^#[0-9A-Fa-f]{6}$/)]],
       showPoweredBy: [true],
       allowUserRegistration: [false],
-      enableOrcidLogin: [false]
+      enableOrcidLogin: [false],
+      whisperCppModel: ['/app/whisper.cpp/models/ggml-medium.bin']
     });
   }
 
@@ -51,6 +68,54 @@ export class SiteConfigComponent implements OnInit {
       },
       error: (error) => {
         this.error.set('Failed to load current configuration.');
+      }
+    });
+
+    // Load available Whisper models
+    this.loadAvailableModels();
+  }
+
+  loadAvailableModels() {
+    this.loadingModels.set(true);
+    this.siteConfigService.getAvailableWhisperModels().subscribe({
+      next: (response) => {
+        this.availableModels.set(response.models || []);
+        this.loadingModels.set(false);
+      },
+      error: (error) => {
+        this.loadingModels.set(false);
+        console.error('Failed to load available models:', error);
+      }
+    });
+  }
+
+  refreshAvailableModels() {
+    this.refreshingModels.set(true);
+    this.siteConfigService.refreshWhisperModels().subscribe({
+      next: (response) => {
+        this.success.set('Model scan queued. Refreshing in 5 seconds...');
+        setTimeout(() => {
+          this.loadAvailableModels();
+          this.refreshingModels.set(false);
+        }, 5000);
+      },
+      error: (error) => {
+        this.error.set('Failed to queue model scan.');
+        this.refreshingModels.set(false);
+      }
+    });
+  }
+
+  loadWorkerStatus() {
+    this.loadingWorkerStatus.set(true);
+    this.siteConfigService.getWorkerStatus().subscribe({
+      next: (response) => {
+        this.workerStatus.set(response);
+        this.loadingWorkerStatus.set(false);
+      },
+      error: (error) => {
+        this.loadingWorkerStatus.set(false);
+        console.error('Failed to load worker status:', error);
       }
     });
   }
