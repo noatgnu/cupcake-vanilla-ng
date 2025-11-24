@@ -31,6 +31,8 @@ export class SiteConfigService extends BaseApiService {
       show_billing: true
     },
     installedApps: {},
+    maxUploadSize: 104857600,
+    maxChunkedUploadSize: 2147483648,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   };
@@ -145,11 +147,50 @@ export class SiteConfigService extends BaseApiService {
     return this.get<any>(`${this.apiUrl}/site-config/worker_status/`);
   }
 
+  getMaxUploadSize(): number {
+    return this.configSubject.value.maxUploadSize || 104857600;
+  }
+
+  getMaxChunkedUploadSize(): number {
+    return this.configSubject.value.maxChunkedUploadSize || 2147483648;
+  }
+
+  getMaxUploadSizeMB(): number {
+    return Math.floor(this.getMaxUploadSize() / 1048576);
+  }
+
+  getMaxChunkedUploadSizeMB(): number {
+    return Math.floor(this.getMaxChunkedUploadSize() / 1048576);
+  }
+
   private handleDemoMode(config: Partial<SiteConfig>): void {
     if (config.demoMode) {
       this.demoModeService.setDemoMode(true, config.demoCleanupIntervalMinutes || 15);
     } else {
       this.demoModeService.setDemoMode(false);
     }
+  }
+
+  formatFileSize(bytes: number): string {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+  }
+
+  validateFileSize(fileSize: number, isChunked: boolean = false): { valid: boolean; message?: string } {
+    const maxSize = isChunked ? this.getMaxChunkedUploadSize() : this.getMaxUploadSize();
+
+    if (fileSize > maxSize) {
+      const formattedMaxSize = this.formatFileSize(maxSize);
+      const formattedFileSize = this.formatFileSize(fileSize);
+      return {
+        valid: false,
+        message: `File size (${formattedFileSize}) exceeds the maximum allowed size of ${formattedMaxSize}`
+      };
+    }
+
+    return { valid: true };
   }
 }

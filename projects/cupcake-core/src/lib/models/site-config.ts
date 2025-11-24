@@ -33,6 +33,8 @@ export interface SiteConfig extends BaseTimestampedModel {
       installed: boolean;
     };
   };
+  maxUploadSize: number;
+  maxChunkedUploadSize: number;
   updatedBy?: number;
   demoMode?: boolean;
   demoCleanupIntervalMinutes?: number;

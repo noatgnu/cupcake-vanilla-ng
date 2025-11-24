@@ -1,7 +1,7 @@
-import { Injectable } from '@angular/core';
-import { Observable, from } from 'rxjs';
+import { Injectable, inject } from '@angular/core';
+import { Observable, from, throwError } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
-import { BaseApiService } from '@noatgnu/cupcake-core';
+import { BaseApiService, SiteConfigService } from '@noatgnu/cupcake-core';
 import jsSHA from 'jssha';
 
 import {
@@ -21,6 +21,7 @@ import {
   providedIn: 'root'
 })
 export class AnnotationChunkedUploadService extends BaseApiService {
+  private siteConfigService = inject(SiteConfigService);
 
   uploadInstrumentAnnotationChunk(
     request: InstrumentAnnotationChunkedUploadRequest,
@@ -28,6 +29,14 @@ export class AnnotationChunkedUploadService extends BaseApiService {
     offset?: number,
     totalSize?: number
   ): Observable<AnnotationChunkedUploadResponse> {
+    const fileSize = totalSize || request.file.size;
+    const isChunkedUpload = offset !== undefined && totalSize !== undefined;
+
+    const validation = this.siteConfigService.validateFileSize(fileSize, isChunkedUpload);
+    if (!validation.valid) {
+      return throwError(() => new Error(validation.message));
+    }
+
     const formData = new FormData();
     formData.append('file', request.file);
 
@@ -48,7 +57,6 @@ export class AnnotationChunkedUploadService extends BaseApiService {
       : `${this.apiUrl}/upload/instrument-annotation-chunks/`;
 
     const httpOptions: any = {};
-    const isChunkedUpload = offset !== undefined && totalSize !== undefined;
 
     if (isChunkedUpload) {
       const chunkEnd = offset + request.file.size - 1;
