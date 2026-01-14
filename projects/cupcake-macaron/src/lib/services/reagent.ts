@@ -39,6 +39,12 @@ export interface StoredReagentQueryParams {
   expired?: boolean;
   expirationDateAfter?: string;
   expirationDateBefore?: string;
+  molecularWeight?: number;
+  molecularWeight__gt?: number;
+  molecularWeight__lt?: number;
+  molecularWeight__gte?: number;
+  molecularWeight__lte?: number;
+  molecularWeight__isnull?: boolean;
   limit?: number;
   offset?: number;
   ordering?: string;

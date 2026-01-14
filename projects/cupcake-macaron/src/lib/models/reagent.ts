@@ -14,6 +14,7 @@ export interface StoredReagent extends BaseTimestampedModel {
   storageObject?: number;
   storageObjectName?: string;
   quantity: number;
+  molecularWeight?: number;
   currentQuantity: number;
   notes?: string;
   user?: number;
@@ -46,6 +47,7 @@ export interface StoredReagentCreateRequest {
   reagent: number;
   storageObject?: number;
   quantity: number;
+  molecularWeight?: number;
   notes?: string;
   pngBase64?: string;
   barcode?: string;
@@ -62,6 +64,7 @@ export interface StoredReagentCreateRequest {
 export interface StoredReagentUpdateRequest {
   storageObject?: number;
   currentQuantity?: number;
+  molecularWeight?: number;
   notes?: string;
   pngBase64?: string;
   barcode?: string;

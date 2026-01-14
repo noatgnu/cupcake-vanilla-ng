@@ -1,7 +1,7 @@
-import { Injectable, NgZone, inject } from '@angular/core';
+import { Injectable, NgZone, Inject, Optional } from '@angular/core';
 import { webSocket, WebSocketSubject } from 'rxjs/webSocket';
 import { BehaviorSubject, Subject, Subscription } from 'rxjs';
-import { AuthService, CUPCAKE_CORE_CONFIG } from '@noatgnu/cupcake-core';
+import { AuthService, CUPCAKE_CORE_CONFIG, CupcakeCoreConfig } from '@noatgnu/cupcake-core';
 import {
   WebRTCMessage,
   PeerInfo,
@@ -34,11 +34,10 @@ export class WebRTCSignallingService {
   messages$ = this._messages.asObservable();
   iceServers$ = this._iceServers.asObservable();
 
-  private config = inject(CUPCAKE_CORE_CONFIG);
-
   constructor(
     private authService: AuthService,
-    private zone: NgZone
+    private zone: NgZone,
+    @Optional() @Inject(CUPCAKE_CORE_CONFIG) private config: CupcakeCoreConfig | null
   ) {
     this.baseUrl = this.getBaseUrl();
   }
