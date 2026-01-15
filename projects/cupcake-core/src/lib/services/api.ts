@@ -203,11 +203,11 @@ export class ApiService {
 
   // Authentication configuration
   getAuthConfig(): Observable<AuthConfig> {
-    return this.http.get<AuthConfig>(`${this.apiUrl}/users/auth_config/`);
+    return this.get<AuthConfig>(`${this.apiUrl}/users/auth_config/`);
   }
 
   getRegistrationStatus(): Observable<RegistrationStatus> {
-    return this.http.get<RegistrationStatus>(`${this.apiUrl}/users/registration_status/`);
+    return this.get<RegistrationStatus>(`${this.apiUrl}/users/registration_status/`);
   }
 
   // ===================================================================
