@@ -234,6 +234,10 @@ export class AuthService {
     return localStorage.getItem('ccvRefreshToken');
   }
 
+  handleExternalLogin(response: AuthResponse): void {
+    this.setAuthData(response);
+  }
+
   private setAuthData(response: AuthResponse): void {
     const accessToken = response.accessToken || (response as any).access_token || (response as any).access;
     const refreshToken = response.refreshToken || (response as any).refresh_token || (response as any).refresh;
