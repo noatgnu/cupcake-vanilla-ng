@@ -49,7 +49,30 @@ export class LoginComponent implements OnInit {
     this.route.queryParams.subscribe(params => {
       this.returnUrl = this.cleanReturnUrl(params['returnUrl']) || '/';
 
-      if (params['code'] && params['state']) {
+      if (params['access_token'] && params['refresh_token']) {
+        // Handle redirect from backend with tokens
+        const authResponse: any = {
+          access_token: params['access_token'],
+          refresh_token: params['refresh_token'],
+          user: {
+            username: params['username'] || '',
+            email: '', // Placeholder, will be fetched
+            is_staff: false,
+            is_superuser: false,
+            is_active: true,
+            has_orcid: !!params['orcid_id'],
+            orcid_id: params['orcid_id']
+          }
+        };
+        
+        this.authService.handleExternalLogin(authResponse);
+        
+        // Fetch full profile to fill in missing details
+        this.authService.fetchUserProfile().subscribe();
+        
+        this.success.set('Login successful!');
+        this.navigateToReturnUrl();
+      } else if (params['code'] && params['state']) {
         this.handleORCIDCallback(params['code'], params['state']);
       } else if (params['error']) {
         this.error.set(`ORCID authentication failed: ${params['error']}`);
