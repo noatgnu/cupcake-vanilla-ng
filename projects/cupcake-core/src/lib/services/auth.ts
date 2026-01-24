@@ -145,8 +145,9 @@ export class AuthService {
     }
   }
 
-  initiateORCIDLogin(): Observable<{authorizationUrl: string, state: string}> {
-    return this.http.get<{authorization_url: string, state: string}>(`${this.apiUrl}/auth/orcid/login/`)
+  initiateORCIDLogin(rememberMe: boolean = false): Observable<{authorizationUrl: string, state: string}> {
+    const params = rememberMe ? '?remember_me=true' : '';
+    return this.http.get<{authorization_url: string, state: string}>(`${this.apiUrl}/auth/orcid/login/${params}`)
       .pipe(
         map(response => ({
           authorizationUrl: response.authorization_url,

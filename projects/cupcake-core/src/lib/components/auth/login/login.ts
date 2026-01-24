@@ -207,7 +207,9 @@ export class LoginComponent implements OnInit {
     this.loading.set(true);
     this.error.set(null);
 
-    this.authService.initiateORCIDLogin().subscribe({
+    const rememberMe = this.loginForm.get('rememberMe')?.value || false;
+
+    this.authService.initiateORCIDLogin(rememberMe).subscribe({
       next: (response) => {
         sessionStorage.setItem('orcid_state', response.state);
         window.location.href = response.authorizationUrl;
