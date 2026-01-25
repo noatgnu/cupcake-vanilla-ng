@@ -45,34 +45,12 @@ export class LoginComponent implements OnInit {
 
   ngOnInit() {
     this.loadAuthConfig();
+    this.handleHashParams();
 
     this.route.queryParams.subscribe(params => {
       this.returnUrl = this.cleanReturnUrl(params['returnUrl']) || '/';
 
-      if (params['access_token'] && params['refresh_token']) {
-        // Handle redirect from backend with tokens
-        const authResponse: any = {
-          access_token: params['access_token'],
-          refresh_token: params['refresh_token'],
-          user: {
-            username: params['username'] || '',
-            email: '', // Placeholder, will be fetched
-            is_staff: false,
-            is_superuser: false,
-            is_active: true,
-            has_orcid: !!params['orcid_id'],
-            orcid_id: params['orcid_id']
-          }
-        };
-        
-        this.authService.handleExternalLogin(authResponse);
-        
-        // Fetch full profile to fill in missing details
-        this.authService.fetchUserProfile().subscribe();
-        
-        this.success.set('Login successful!');
-        this.navigateToReturnUrl();
-      } else if (params['code'] && params['state']) {
+      if (params['code'] && params['state']) {
         this.handleORCIDCallback(params['code'], params['state']);
       } else if (params['error']) {
         this.error.set(`ORCID authentication failed: ${params['error']}`);
@@ -91,6 +69,52 @@ export class LoginComponent implements OnInit {
         this.navigateToReturnUrl();
       }
     });
+  }
+
+  private handleHashParams(): void {
+    const hash = window.location.hash;
+    const queryIndex = hash.indexOf('?');
+    if (queryIndex === -1) return;
+
+    const queryString = hash.substring(queryIndex + 1);
+    const params = new URLSearchParams(queryString);
+
+    const authCode = params.get('auth_code');
+    const errorParam = params.get('error');
+
+    if (errorParam) {
+      this.error.set(`ORCID authentication failed: ${errorParam}`);
+      this.cleanHashParams();
+      return;
+    }
+
+    if (authCode) {
+      this.loading.set(true);
+      this.error.set(null);
+      this.cleanHashParams();
+
+      this.authService.exchangeAuthCode(authCode).subscribe({
+        next: () => {
+          this.success.set('Login successful!');
+          setTimeout(() => {
+            this.navigateToReturnUrl();
+          }, 1000);
+        },
+        error: (error) => {
+          this.loading.set(false);
+          this.error.set(error.error?.error || error.error?.detail || 'Failed to complete authentication.');
+        }
+      });
+    }
+  }
+
+  private cleanHashParams(): void {
+    const hash = window.location.hash;
+    const queryIndex = hash.indexOf('?');
+    if (queryIndex !== -1) {
+      const cleanHash = hash.substring(0, queryIndex);
+      window.history.replaceState(null, '', window.location.pathname + cleanHash);
+    }
   }
 
   /**

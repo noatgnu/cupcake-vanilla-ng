@@ -156,6 +156,14 @@ export class AuthService {
       );
   }
 
+  exchangeAuthCode(authCode: string): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>(`${this.apiUrl}/auth/exchange-code/`, {
+      auth_code: authCode
+    }).pipe(
+      tap(response => this.setAuthData(response))
+    );
+  }
+
   handleORCIDCallback(code: string, state: string, rememberMe: boolean = false): Observable<AuthResponse> {
     const params = new URLSearchParams({ code, state, remember_me: rememberMe.toString() });
     return this.http.get<AuthResponse>(`${this.apiUrl}/auth/orcid/callback/?${params}`)

@@ -22,10 +22,11 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const http = inject(HttpClient);
   const config = inject(CUPCAKE_CORE_CONFIG);
 
-  if (req.url.includes('/auth/login/') || 
-      req.url.includes('/auth/token/') || 
-      req.url.includes('/auth/orcid/') || 
+  if (req.url.includes('/auth/login/') ||
+      req.url.includes('/auth/token/') ||
+      req.url.includes('/auth/orcid/') ||
       req.url.includes('/auth/register/') ||
+      req.url.includes('/auth/exchange-code/') ||
       req.url.includes('/site-config/public/')) {
     return next(req);
   }
