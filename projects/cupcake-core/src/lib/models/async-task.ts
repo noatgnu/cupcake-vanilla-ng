@@ -117,6 +117,15 @@ export interface MetadataValidationRequest {
   metadataTableId: number;
   validateSdrfFormat?: boolean;
   includePools?: boolean;
+  schemaNames?: string[];
+  skipOntology?: boolean;
+}
+
+export interface ValidationSchema {
+  name: string;
+  displayName: string;
+  description: string;
+  columnCount: number;
 }
 
 export interface MetadataValidationConfig {

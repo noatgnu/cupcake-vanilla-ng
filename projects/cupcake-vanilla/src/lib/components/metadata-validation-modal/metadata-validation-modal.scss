@@ -1,6 +1,6 @@
 .validation-info {
   border-radius: 0.375rem;
-  padding: 1rem;
+  padding: 0.75rem;
   border: 1px solid var(--bs-border-color);
 }
 
@@ -14,4 +14,31 @@
 
 .alert {
   border-radius: 0.5rem;
+}
+
+.schema-list {
+  background-color: var(--bs-body-bg);
+}
+
+.schema-item {
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  border: 1px solid transparent;
+  margin-bottom: 0.25rem;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  &:hover {
+    background-color: var(--bs-tertiary-bg);
+  }
+
+  &.bg-primary-subtle {
+    border-color: var(--bs-primary);
+  }
+}
+
+.cursor-pointer {
+  cursor: pointer;
 }

@@ -3,9 +3,9 @@
     <i class="bi bi-check-circle me-2 text-success"></i>
     Validate Metadata Table
   </h4>
-  <button 
-    type="button" 
-    class="btn-close" 
+  <button
+    type="button"
+    class="btn-close"
     aria-label="Close"
     (click)="activeModal.dismiss()"
     [disabled]="isValidating()">
@@ -14,49 +14,124 @@
 
 <form [formGroup]="validationForm" (ngSubmit)="onSubmit()">
   <div class="modal-body">
-    <div class="alert alert-info">
+    <div class="alert alert-info py-2">
       <i class="bi bi-info-circle me-2"></i>
-      <strong>{{ config?.metadataTableName }}</strong> will be validated against SDRF format standards using SDRFDataFrame.
+      <strong>{{ config?.metadataTableName }}</strong> will be validated against SDRF format standards.
     </div>
 
     <div class="row">
+      <div class="col-12 mb-3">
+        <h6 class="mb-2">
+          <i class="bi bi-diagram-3 me-1"></i>
+          Validation Schemas
+          <span class="badge bg-primary ms-2">{{ selectedSchemas().size }} selected</span>
+        </h6>
+
+        <div class="d-flex gap-2 mb-2">
+          <button
+            type="button"
+            class="btn btn-outline-secondary btn-sm"
+            (click)="selectAllSchemas()"
+            [disabled]="isLoadingSchemas()">
+            Select All
+          </button>
+          <button
+            type="button"
+            class="btn btn-outline-secondary btn-sm"
+            (click)="clearAllSchemas()"
+            [disabled]="isLoadingSchemas()">
+            Clear All
+          </button>
+        </div>
+
+        @if (isLoadingSchemas()) {
+          <div class="text-center py-3">
+            <span class="spinner-border spinner-border-sm me-2"></span>
+            Loading schemas...
+          </div>
+        } @else {
+          <div class="schema-list border rounded p-2" style="max-height: 200px; overflow-y: auto;">
+            @for (schema of availableSchemas(); track schema.name) {
+              <div
+                class="schema-item d-flex align-items-center p-2 rounded cursor-pointer"
+                [class.bg-primary-subtle]="isSchemaSelected(schema.name)"
+                [class.border-primary]="isSchemaSelected(schema.name)"
+                (click)="toggleSchema(schema.name)">
+                <input
+                  type="checkbox"
+                  class="form-check-input me-2"
+                  [checked]="isSchemaSelected(schema.name)"
+                  (click)="$event.stopPropagation()">
+                <div class="flex-grow-1">
+                  <div class="fw-medium">{{ schema.displayName }}</div>
+                  @if (schema.description) {
+                    <small class="text-muted">{{ schema.description }}</small>
+                  }
+                </div>
+                @if (schema.columnCount > 0) {
+                  <span class="badge bg-secondary ms-2">{{ schema.columnCount }} cols</span>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+
       <div class="col-md-6">
-        <h6 class="mb-3">Validation Options</h6>
-        
-        <div class="form-check mb-3">
-          <input 
-            class="form-check-input" 
-            type="checkbox" 
+        <h6 class="mb-2">Validation Options</h6>
+
+        <div class="form-check mb-2">
+          <input
+            class="form-check-input"
+            type="checkbox"
             id="validate_sdrf_format"
             formControlName="validate_sdrf_format">
           <label class="form-check-label" for="validate_sdrf_format">
-            <i class="bi bi-file-earmark-text me-1 text-warning"></i>
             SDRF Format Validation
           </label>
-          <small class="form-text text-muted d-block">
-            Validate against MAGE-TAB SDRF standard format using SDRFDataFrame
-          </small>
+        </div>
+
+        <div class="form-check mb-2">
+          <input
+            class="form-check-input"
+            type="checkbox"
+            id="include_pools"
+            formControlName="include_pools">
+          <label class="form-check-label" for="include_pools">
+            Include Sample Pools
+          </label>
+        </div>
+
+        <div class="form-check mb-2">
+          <input
+            class="form-check-input"
+            type="checkbox"
+            id="skip_ontology"
+            formControlName="skip_ontology">
+          <label class="form-check-label" for="skip_ontology">
+            Skip Ontology Validation
+          </label>
+          <small class="form-text text-muted d-block">Faster validation without OLS lookups</small>
         </div>
       </div>
 
       <div class="col-md-6">
-        <h6 class="mb-3">What gets checked?</h6>
-        
-        <div class="validation-info">
-          <div class="mb-2">
-            <i class="bi bi-check-circle text-success me-2"></i>
-            Required SDRF columns presence
+        <h6 class="mb-2">What gets checked?</h6>
+        <div class="validation-info small">
+          <div class="mb-1">
+            <i class="bi bi-check-circle text-success me-1"></i>
+            Required columns presence
           </div>
-          <div class="mb-2">
-            <i class="bi bi-check-circle text-success me-2"></i>
+          <div class="mb-1">
+            <i class="bi bi-check-circle text-success me-1"></i>
             SDRF format compliance
           </div>
-          <div class="mb-2">
-            <i class="bi bi-check-circle text-success me-2"></i>
+          <div class="mb-1">
+            <i class="bi bi-check-circle text-success me-1"></i>
             Column header validation
           </div>
-          <div class="mb-2">
-            <i class="bi bi-check-circle text-success me-2"></i>
+          <div class="mb-1">
+            <i class="bi bi-check-circle text-success me-1"></i>
             Data structure integrity
           </div>
         </div>
@@ -64,7 +139,7 @@
     </div>
 
     @if (validationError()) {
-      <div class="alert alert-danger mt-3">
+      <div class="alert alert-danger mt-3 py-2">
         <i class="bi bi-exclamation-triangle me-2"></i>
         {{ validationError() }}
       </div>
@@ -72,24 +147,24 @@
   </div>
 
   <div class="modal-footer">
-    <button 
-      type="button" 
-      class="btn btn-secondary"
+    <button
+      type="button"
+      class="btn btn-secondary btn-sm"
       (click)="activeModal.dismiss()"
       [disabled]="isValidating()">
       Cancel
     </button>
-    
-    <button 
-      type="submit" 
-      class="btn btn-success"
-      [disabled]="validationForm.invalid || isValidating()">
+
+    <button
+      type="submit"
+      class="btn btn-success btn-sm"
+      [disabled]="validationForm.invalid || isValidating() || selectedSchemas().size === 0">
       @if (isValidating()) {
-        <span class="spinner-border spinner-border-sm me-2" role="status"></span>
-        Starting Validation...
+        <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+        Starting...
       } @else {
-        <i class="bi bi-play me-2"></i>
-        Start Validation
+        <i class="bi bi-play me-1"></i>
+        Validate ({{ selectedSchemas().size }} schema{{ selectedSchemas().size !== 1 ? 's' : '' }})
       }
     </button>
   </div>
