@@ -21,6 +21,9 @@ export interface MetadataColumnTemplate extends BaseTimestampedModel {
   ownerUsername?: string;
   labGroup?: number;
   labGroupName?: string;
+  schema?: number;
+  schemaName?: string;
+  sourceSchema?: string;
   isSystemTemplate: boolean;
   isActive: boolean;
   usageCount?: number;

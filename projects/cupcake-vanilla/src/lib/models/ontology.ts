@@ -92,6 +92,10 @@ export interface Schema {
   version?: string;
   url?: string;
   isActive: boolean;
+  isBuiltin: boolean;
+  isPublic?: boolean;
+  creator?: number;
+  creatorUsername?: string;
   columnsCount?: number;
 }
 

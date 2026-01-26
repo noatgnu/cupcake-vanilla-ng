@@ -10,6 +10,9 @@
           @if (selectedLabGroup()) {
             <span class="badge bg-primary ms-3">{{ selectedLabGroup()!.name }}</span>
           }
+          @if (selectedSchema()) {
+            <span class="badge bg-info ms-2">{{ selectedSchema()!.displayName || selectedSchema()!.name }}</span>
+          }
         </div>
         <div class="d-flex gap-2">
           <button class="btn btn-primary btn-sm" (click)="createTemplate()">
@@ -77,7 +80,42 @@
             }
           </div>
           <div class="col-md-4">
-            <div class="form-check form-switch mt-3">
+            <div class="form-floating">
+              <input
+                type="text"
+                class="form-control"
+                id="schemaSearch"
+                placeholder="Search schemas..."
+                [ngbTypeahead]="searchSchemas"
+                [resultFormatter]="formatSchema"
+                [inputFormatter]="formatSchema"
+                (selectItem)="onSchemaSelected($event)"
+                [editable]="true"
+                [showHint]="true"
+                [focusFirst]="false"
+                container="body"
+                [(ngModel)]="schemaSearchText">
+              <label for="schemaSearch">
+                <i class="bi bi-file-earmark-text me-1"></i>Schema
+              </label>
+            </div>
+            @if (selectedSchema()) {
+              <div class="d-flex align-items-center mt-1">
+                <small class="text-muted me-2">Filtering: {{ selectedSchema()!.displayName || selectedSchema()!.name }}</small>
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-secondary py-0 px-1"
+                  (click)="clearSchemaFilter()"
+                  title="Clear schema filter">
+                  <i class="bi bi-x"></i>
+                </button>
+              </div>
+            }
+          </div>
+        </form>
+        <div class="row mt-3">
+          <div class="col-md-4">
+            <div class="form-check form-switch">
               <input
                 class="form-check-input"
                 type="checkbox"
@@ -88,7 +126,32 @@
               </label>
             </div>
           </div>
-        </form>
+          <div class="col-md-4">
+            <div class="btn-group btn-group-sm" role="group" aria-label="Schema type filter">
+              <button
+                type="button"
+                class="btn"
+                [class]="schemaTypeFilter() === 'all' ? 'btn-primary' : 'btn-outline-primary'"
+                (click)="onSchemaTypeFilterChange('all')">
+                All Schemas
+              </button>
+              <button
+                type="button"
+                class="btn"
+                [class]="schemaTypeFilter() === 'builtin' ? 'btn-primary' : 'btn-outline-primary'"
+                (click)="onSchemaTypeFilterChange('builtin')">
+                Builtin
+              </button>
+              <button
+                type="button"
+                class="btn"
+                [class]="schemaTypeFilter() === 'user' ? 'btn-primary' : 'btn-outline-primary'"
+                (click)="onSchemaTypeFilterChange('user')">
+                User
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -184,6 +247,14 @@
                         <i class="bi ms-1" [class]="getSortIcon('visibility')"></i>
                       </div>
                     </th>
+                    <th class="sortable"
+                        (click)="sortBy('schema')"
+                        [class.sorted]="isSorted('schema')">
+                      <div class="d-flex align-items-center justify-content-between">
+                        <span><i class="bi bi-file-earmark-text me-1"></i>Schema</span>
+                        <i class="bi ms-1" [class]="getSortIcon('schema')"></i>
+                      </div>
+                    </th>
                     <th><i class="bi bi-folder me-1"></i>Category</th>
                     <th><i class="bi bi-gear me-1"></i>Actions</th>
                   </tr>
@@ -222,6 +293,27 @@
                           @default {
                             <span class="badge bg-secondary">{{ template.visibility }}</span>
                           }
+                        }
+                      </td>
+                      <td>
+                        @if (template.schemaName) {
+                          <span
+                            class="badge bg-info cursor-pointer"
+                            role="button"
+                            (click)="filterBySchema(template)"
+                            title="Click to filter by this schema">
+                            {{ template.schemaName }}
+                          </span>
+                        } @else if (template.sourceSchema) {
+                          <span
+                            class="badge bg-info cursor-pointer"
+                            role="button"
+                            (click)="filterBySourceSchema(template.sourceSchema)"
+                            title="Click to filter by this schema">
+                            {{ template.sourceSchema }}
+                          </span>
+                        } @else {
+                          <span class="text-muted">-</span>
                         }
                       </td>
                       <td>
@@ -279,7 +371,7 @@
               <i class="bi bi-clipboard-list fs-1 text-muted mb-3"></i>
               <h5 class="text-muted">No Column Templates Found</h5>
               <p class="text-muted">
-                @if (searchForm.get('search')?.value || searchForm.get('labGroupId')?.value) {
+                @if (searchForm.get('search')?.value || searchForm.get('labGroupId')?.value || searchForm.get('schemaId')?.value) {
                   Try adjusting your search criteria or create a new template.
                 } @else {
                   Get started by creating your first column template.

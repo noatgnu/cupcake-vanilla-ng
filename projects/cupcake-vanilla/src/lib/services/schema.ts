@@ -11,6 +11,8 @@ export interface SchemaQueryParams {
   search?: string;
   category?: string;
   isActive?: boolean;
+  isBuiltin?: boolean;
+  isPublic?: boolean;
   limit?: number;
   offset?: number;
   ordering?: string;

@@ -1,3 +1,12 @@
+.cursor-pointer {
+  cursor: pointer;
+
+  &:hover {
+    opacity: 0.8;
+    text-decoration: underline;
+  }
+}
+
 // Sortable column headers
 .sortable {
   cursor: pointer;

@@ -1,21 +1,23 @@
 import { Component, OnInit, signal, computed, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
-import { NgbModule, NgbModal, NgbPaginationModule } from '@ng-bootstrap/ng-bootstrap';
-import { debounceTime, distinctUntilChanged } from 'rxjs';
+import { ReactiveFormsModule, FormsModule, FormBuilder, FormGroup } from '@angular/forms';
+import { NgbModule, NgbModal, NgbPaginationModule, NgbTypeahead } from '@ng-bootstrap/ng-bootstrap';
+import { debounceTime, distinctUntilChanged, switchMap, map, Observable, OperatorFunction, of, catchError } from 'rxjs';
 import { ColumnTemplateEditModal } from './column-template-edit-modal/column-template-edit-modal';
 import {
   MetadataColumnTemplate,
-  MetadataColumnTemplateCreateRequest
+  MetadataColumnTemplateCreateRequest,
+  Schema,
+  PaginatedResponse
 } from '../../models';
-import { MetadataColumnTemplateService } from '../../services';
+import { MetadataColumnTemplateService, SchemaService } from '../../services';
 import { ResourceVisibility } from '@noatgnu/cupcake-core';
 import { LabGroupService, LabGroup, LabGroupQueryResponse } from '@noatgnu/cupcake-core';
 
 @Component({
   selector: 'ccv-column-templates',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, NgbModule, NgbPaginationModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, NgbModule, NgbPaginationModule, NgbTypeahead],
   templateUrl: './column-templates.html',
   styleUrl: './column-templates.scss'
 })
@@ -27,6 +29,7 @@ export class ColumnTemplates implements OnInit {
     search: '',
     labGroupId: null as number | null,
     visibility: null as string | null,
+    schemaId: null as number | null,
     limit: 10,
     offset: 0
   });
@@ -57,10 +60,15 @@ export class ColumnTemplates implements OnInit {
   // Direct signal-based data management
   templatesData = signal<{count: number, results: MetadataColumnTemplate[]}>({ count: 0, results: [] });
   labGroupsData = signal<LabGroupQueryResponse>({ count: 0, results: [] });
+  schemasData = signal<PaginatedResponse<Schema>>({ count: 0, results: [] });
+  selectedSchema = signal<Schema | null>(null);
+  schemaSearchText: string = '';
+  schemaTypeFilter = signal<'all' | 'builtin' | 'user'>('all');
 
   // Computed values for better performance
   hasTemplates = computed(() => this.templatesData().results.length > 0);
   hasLabGroups = computed(() => this.labGroupsData().results.length > 0);
+  hasSchemas = computed(() => this.schemasData().results.length > 0);
   showTemplatesPagination = computed(() => this.templatesData().count > this.pageSize());
   showLabGroupsPagination = computed(() => this.labGroupsData().count > this.labGroupsPageSize());
   
@@ -105,6 +113,10 @@ export class ColumnTemplates implements OnInit {
             aValue = a.visibility?.toLowerCase() || '';
             bValue = b.visibility?.toLowerCase() || '';
             break;
+          case 'schema':
+            aValue = (a.schemaName || a.sourceSchema || '').toLowerCase();
+            bValue = (b.schemaName || b.sourceSchema || '').toLowerCase();
+            break;
           default:
             return 0;
         }
@@ -122,6 +134,7 @@ export class ColumnTemplates implements OnInit {
     private fb: FormBuilder,
     private metadataColumnTemplateService: MetadataColumnTemplateService,
     private labGroupService: LabGroupService,
+    private schemaService: SchemaService,
     private modalService: NgbModal
   ) {
     this.searchForm = this.fb.group({
@@ -154,13 +167,140 @@ export class ColumnTemplates implements OnInit {
       limit: this.labGroupsPageSize(),
       offset: 0
     });
-    
+
     this.searchParams.set({
       search: '',
       labGroupId: null,
       visibility: null,
+      schemaId: null,
       limit: this.pageSize(),
       offset: 0
+    });
+
+    this.loadSchemas();
+  }
+
+  private loadSchemas() {
+    const params = this.getSchemaQueryParams();
+    this.schemaService.getSchemas(params).subscribe({
+      next: (response) => {
+        this.schemasData.set(response);
+      },
+      error: (error: any) => {
+        console.error('Error loading schemas:', error);
+        this.schemasData.set({ count: 0, results: [] });
+      }
+    });
+  }
+
+  private getSchemaQueryParams(search?: string): { search?: string; limit: number; isActive: boolean; isBuiltin?: boolean } {
+    const params: { search?: string; limit: number; isActive: boolean; isBuiltin?: boolean } = {
+      limit: 20,
+      isActive: true
+    };
+    if (search) {
+      params.search = search;
+    }
+    const typeFilter = this.schemaTypeFilter();
+    if (typeFilter === 'builtin') {
+      params.isBuiltin = true;
+    } else if (typeFilter === 'user') {
+      params.isBuiltin = false;
+    }
+    return params;
+  }
+
+  searchSchemas: OperatorFunction<string, readonly Schema[]> = (text$: Observable<string>) =>
+    text$.pipe(
+      debounceTime(200),
+      distinctUntilChanged(),
+      switchMap(term => {
+        const params = this.getSchemaQueryParams(term.length >= 1 ? term : undefined);
+        return this.schemaService.getSchemas(params).pipe(
+          map(response => response.results),
+          catchError(() => of([]))
+        );
+      })
+    );
+
+  onSchemaTypeFilterChange(type: 'all' | 'builtin' | 'user'): void {
+    this.schemaTypeFilter.set(type);
+    this.clearSchemaFilter();
+    this.loadSchemas();
+  }
+
+  formatSchema = (schema: Schema): string => {
+    return schema.displayName || schema.name;
+  };
+
+  onSchemaSelected = (event: any): void => {
+    const schema: Schema = event.item;
+    if (schema) {
+      this.selectedSchema.set(schema);
+      this.currentPage.set(1);
+      this.searchParams.update(params => ({
+        ...params,
+        schemaId: schema.id,
+        offset: 0
+      }));
+    }
+  };
+
+  clearSchemaFilter(): void {
+    this.selectedSchema.set(null);
+    this.schemaSearchText = '';
+    this.currentPage.set(1);
+    this.searchParams.update(params => ({
+      ...params,
+      schemaId: null,
+      offset: 0
+    }));
+  }
+
+  filterBySchema(template: MetadataColumnTemplate): void {
+    if (template.schema) {
+      const schema = this.schemasData().results.find(s => s.id === template.schema);
+      if (schema) {
+        this.selectedSchema.set(schema);
+        this.schemaSearchText = schema.displayName || schema.name;
+        this.currentPage.set(1);
+        this.searchParams.update(params => ({
+          ...params,
+          schemaId: schema.id,
+          offset: 0
+        }));
+      } else {
+        this.schemaService.getSchema(template.schema).subscribe({
+          next: (schema) => {
+            this.selectedSchema.set(schema);
+            this.schemaSearchText = schema.displayName || schema.name;
+            this.currentPage.set(1);
+            this.searchParams.update(params => ({
+              ...params,
+              schemaId: schema.id,
+              offset: 0
+            }));
+          }
+        });
+      }
+    }
+  }
+
+  filterBySourceSchema(sourceSchema: string): void {
+    this.schemaService.getSchemas({ search: sourceSchema, limit: 1, isActive: true }).subscribe({
+      next: (response) => {
+        if (response.results.length > 0) {
+          const schema = response.results[0];
+          this.selectedSchema.set(schema);
+          this.schemaSearchText = schema.displayName || schema.name;
+          this.currentPage.set(1);
+          this.searchParams.update(params => ({
+            ...params,
+            schemaId: schema.id,
+            offset: 0
+          }));
+        }
+      }
     });
   }
 
@@ -185,25 +325,27 @@ export class ColumnTemplates implements OnInit {
     ).subscribe(formValue => {
       // Reset to first page when searching
       this.currentPage.set(1);
-      
+
       // Update search params signal - this will trigger the effect
-      this.searchParams.set({
+      // Note: schemaId is handled separately via typeahead
+      this.searchParams.update(params => ({
+        ...params,
         search: formValue.search || '',
         labGroupId: formValue.labGroupId || null,
         visibility: formValue.visibility || null,
-        limit: this.pageSize(),
-        offset: 0 // Always start from first page when searching
-      });
+        offset: 0
+      }));
     });
   }
 
   private loadTemplatesWithParams(params: any) {
     this.isLoading.set(true);
-    
+
     this.metadataColumnTemplateService.getMetadataColumnTemplates({
       search: params.search || undefined,
       labGroupId: params.labGroupId || undefined,
       visibility: params.visibility || undefined,
+      schemaId: params.schemaId || undefined,
       limit: params.limit,
       offset: params.offset
     }).subscribe({
@@ -227,7 +369,7 @@ export class ColumnTemplates implements OnInit {
     const labGroup = id ? this.findLabGroupById(id) : null;
     this.selectedLabGroup.set(labGroup);
     this.currentPage.set(1);
-    
+
     // Update search params - effect will trigger reload
     this.searchParams.update(params => ({
       ...params,
