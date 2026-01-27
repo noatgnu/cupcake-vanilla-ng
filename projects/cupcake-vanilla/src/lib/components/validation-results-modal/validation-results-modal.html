@@ -8,9 +8,9 @@
       Validation Failed
     }
   </h4>
-  <button 
-    type="button" 
-    class="btn-close" 
+  <button
+    type="button"
+    class="btn-close"
     aria-label="Close"
     (click)="activeModal.dismiss()">
   </button>
@@ -110,8 +110,8 @@
         <strong>Need Help?</strong>
         <ul class="mb-0 mt-2">
           <li>Errors must be fixed before your metadata can be exported as valid SDRF</li>
-          <li>Warnings indicate potential issues but don't prevent SDRF export</li>
-          <li>Check the <a href="/help/sdrf-validation" target="_blank">SDRF validation guide</a> for detailed explanations</li>
+          <li>Warnings indicate potential issues but don't prevent SDRF export or validation</li>
+          <li>Check the <a href="https://sdrf.quantms.org" target="_blank">SDRF Specification</a> for detailed explanations of column and their requirements</li>
         </ul>
       </div>
     }
@@ -119,8 +119,8 @@
 </div>
 
 <div class="modal-footer">
-  <button 
-    type="button" 
+  <button
+    type="button"
     class="btn btn-secondary"
     (click)="activeModal.dismiss()">
     Close
