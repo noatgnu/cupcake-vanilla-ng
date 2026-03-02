@@ -35,7 +35,7 @@ export class MetadataTablesComponent implements OnInit, OnDestroy {
     labGroupId: null as number | null,
     isLocked: null as boolean | null,
     isPublished: null as boolean | null,
-    showShared: false,
+    showShared: true,
     adminView: false,
     limit: 12,
     offset: 0
@@ -65,7 +65,7 @@ export class MetadataTablesComponent implements OnInit, OnDestroy {
 
   currentUser = signal<User | null>(null);
   isStaff = computed(() => this.currentUser()?.isStaff === true);
-  showSharedTables = signal(false);
+  showSharedTables = signal(true);
   showAdminView = signal(false);
 
   hasTables = computed(() => this.tablesData().results.length > 0);
@@ -90,7 +90,7 @@ export class MetadataTablesComponent implements OnInit, OnDestroy {
       labGroupId: [null],
       isLocked: [null],
       isPublished: [null],
-      showShared: [false],
+      showShared: [true],
       adminView: [false]
     });
 

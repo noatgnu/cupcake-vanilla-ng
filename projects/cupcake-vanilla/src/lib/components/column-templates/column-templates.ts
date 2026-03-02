@@ -28,7 +28,7 @@ export class ColumnTemplates implements OnInit {
   private searchParams = signal({
     search: '',
     labGroupId: null as number | null,
-    visibility: null as string | null,
+    visibility: ResourceVisibility.PRIVATE as string | null,
     schemaId: null as number | null,
     limit: 10,
     offset: 0
@@ -140,7 +140,7 @@ export class ColumnTemplates implements OnInit {
     this.searchForm = this.fb.group({
       search: [''],
       labGroupId: [null],
-      visibility: [null]
+      visibility: [ResourceVisibility.PRIVATE]
     });
 
     // Effect to automatically reload templates when search params change

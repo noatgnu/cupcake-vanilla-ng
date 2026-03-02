@@ -92,6 +92,20 @@
             }
           </div>
           <div class="col-md-3">
+            <div class="form-floating">
+              <select
+                class="form-select"
+                id="visibilityFilter"
+                formControlName="visibility">
+                <option [ngValue]="null">All Accessible</option>
+                <option value="private">Private (My Templates)</option>
+                <option value="group">Lab Group</option>
+                <option value="public">Public</option>
+              </select>
+              <label for="visibilityFilter">Visibility</label>
+            </div>
+          </div>
+          <div class="col-md-3">
             <div class="form-check form-switch mt-3">
               <input
                 class="form-check-input"

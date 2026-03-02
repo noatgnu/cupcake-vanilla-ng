@@ -4,7 +4,7 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
 import { NgbActiveModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { Observable, of, catchError, debounceTime, distinctUntilChanged, tap, switchMap, map } from 'rxjs';
 import { MetadataColumnTemplate, ONTOLOGY_TYPE_CONFIGS, COLUMN_TYPE_CONFIGS, OntologyTypeConfig, ColumnTypeConfig, OntologySuggestion } from '../../../models';
-import { LabGroup } from '@noatgnu/cupcake-core';
+import { LabGroup, ResourceVisibility } from '@noatgnu/cupcake-core';
 import { MetadataColumnTemplateService, OntologySearchService } from '../../../services';
 
 @Component({
@@ -29,9 +29,9 @@ export class ColumnTemplateEditModal implements OnInit {
   columnTypes: ColumnTypeConfig[] = COLUMN_TYPE_CONFIGS;
 
   visibilityOptions = [
-    { value: 'private', label: 'Private' },
-    { value: 'labGroup', label: 'Lab Group' },
-    { value: 'public', label: 'Public' },
+    { value: ResourceVisibility.PRIVATE, label: 'Private' },
+    { value: ResourceVisibility.GROUP, label: 'Lab Group' },
+    { value: ResourceVisibility.PUBLIC, label: 'Public' },
     { value: 'global', label: 'Global' }
   ];
 
@@ -52,7 +52,7 @@ export class ColumnTemplateEditModal implements OnInit {
       defaultPosition: [0, [Validators.min(0)]],
       ontologyType: [''],
       customOntologyFilters: [{}],
-      visibility: ['private', Validators.required],
+      visibility: [ResourceVisibility.PRIVATE, Validators.required],
       labGroup: [null],
       enableTypeahead: [false],
       notApplicable: [false],
@@ -160,7 +160,7 @@ export class ColumnTemplateEditModal implements OnInit {
     const visibility = this.editForm.get('visibility')?.value;
     const labGroupControl = this.editForm.get('labGroup');
 
-    if (visibility === 'labGroup') {
+    if (visibility === ResourceVisibility.GROUP) {
       labGroupControl?.setValidators([Validators.required]);
       labGroupControl?.enable();
     } else {
@@ -226,7 +226,7 @@ export class ColumnTemplateEditModal implements OnInit {
         ...formValue,
         ontologyType: ontologyType,
         customOntologyFilters: formValue.customOntologyFilters,
-        labGroup: formValue.visibility === 'labGroup' ? formValue.labGroup : null,
+        labGroup: formValue.visibility === ResourceVisibility.GROUP ? formValue.labGroup : null,
         defaultPosition: Number(formValue.defaultPosition) || 0
       };
 

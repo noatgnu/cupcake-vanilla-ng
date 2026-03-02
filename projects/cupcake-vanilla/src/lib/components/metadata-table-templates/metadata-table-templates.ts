@@ -32,7 +32,7 @@ export class MetadataTableTemplates implements OnInit {
   private searchParams = signal({
     search: '',
     labGroupId: null as number | null,
-    visibility: ResourceVisibility.PRIVATE,
+    visibility: ResourceVisibility.PRIVATE as string | null,
     isDefault: false,
     limit: 10,
     offset: 0
@@ -146,7 +146,7 @@ export class MetadataTableTemplates implements OnInit {
       this.searchParams.set({
         search: formValue.search || '',
         labGroupId: formValue.labGroupId || null,
-        visibility: formValue.visibility || ResourceVisibility.PRIVATE,
+        visibility: formValue.visibility || null,
         isDefault: formValue.isDefault || false,
         limit: this.pageSize(),
         offset: 0 // Always start from first page when searching
