@@ -20,10 +20,8 @@ export interface ElectronAPI {
   onWindowStateChange(callback: (state: 'maximized' | 'unmaximized') => void): () => void;
 }
 
-declare global {
-  interface Window {
-    electronAPI?: ElectronAPI;
-  }
+interface WindowWithElectron extends Window {
+  electronAPI?: ElectronAPI;
 }
 
 @Injectable({
@@ -33,7 +31,7 @@ export class ElectronService {
   private electronAPI: ElectronAPI | null = null;
 
   constructor() {
-    this.electronAPI = window.electronAPI || null;
+    this.electronAPI = (window as unknown as WindowWithElectron).electronAPI || null;
   }
 
   get isElectron(): boolean {
