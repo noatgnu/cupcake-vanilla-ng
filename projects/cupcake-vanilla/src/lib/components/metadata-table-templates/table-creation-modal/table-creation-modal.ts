@@ -10,7 +10,7 @@ export interface TableCreationData {
   templateId: number;
   sampleCount?: number;
   description?: string;
-  labGroupId?: number;
+  labGroup?: number;
 }
 
 @Component({
@@ -23,7 +23,7 @@ export interface TableCreationData {
 export class TableCreationModalComponent implements OnInit {
   @Input() template!: MetadataTableTemplate;
   @Input() labGroups: LabGroup[] = [];
-  @Input() selectedLabGroupId?: number;
+  @Input() selectedLabGroup?: number;
   @Output() tableCreated = new EventEmitter<TableCreationData>();
 
   tableForm: FormGroup;
@@ -38,7 +38,7 @@ export class TableCreationModalComponent implements OnInit {
       name: ['', [Validators.required, Validators.minLength(2)]],
       sampleCount: [1, [Validators.required, Validators.min(1), Validators.max(10000)]],
       description: [''],
-      labGroupId: [null]
+      labGroup: [null]
     });
   }
 
@@ -47,7 +47,7 @@ export class TableCreationModalComponent implements OnInit {
     if (this.template) {
       this.tableForm.patchValue({
         name: `${this.template.name} - Table`,
-        labGroupId: this.selectedLabGroupId
+        labGroup: this.selectedLabGroup
       });
     }
   }
@@ -63,7 +63,7 @@ export class TableCreationModalComponent implements OnInit {
         templateId: this.template.id!,
         sampleCount: formValue.sampleCount || 1,
         description: formValue.description || undefined,
-        labGroupId: formValue.labGroupId || undefined
+        labGroup: formValue.labGroup || undefined
       };
 
       this.tableCreated.emit(tableData);
@@ -106,7 +106,7 @@ export class TableCreationModalComponent implements OnInit {
       name: 'Table name',
       sampleCount: 'Sample count',
       description: 'Description',
-      labGroupId: 'Lab group'
+      labGroup: 'Lab group'
     };
     return labels[fieldName] || fieldName;
   }

@@ -75,7 +75,7 @@
             <select
               class="form-select"
               id="labGroupSelect"
-              formControlName="labGroupId">
+              formControlName="labGroup">
               <option [ngValue]="null">No Lab Group</option>
               @for (group of labGroups; track group.id) {
                 <option [ngValue]="group.id">{{ group.name }}</option>

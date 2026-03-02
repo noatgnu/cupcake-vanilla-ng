@@ -75,7 +75,7 @@ export class MetadataTableTemplateEditModal implements OnInit {
       description: [''],
       visibility: [ResourceVisibility.PRIVATE],
       isDefault: [false],
-      labGroupId: [null]
+      labGroup: [null]
     });
   }
 
@@ -87,14 +87,12 @@ export class MetadataTableTemplateEditModal implements OnInit {
 
   private populateForm() {
     if (this.template) {
-      const labGroupId = this.template.labGroup;
-      
       this.editForm.patchValue({
         name: this.template.name,
         description: this.template.description || '',
         visibility: this.template.visibility || ResourceVisibility.PRIVATE,
         isDefault: this.template.isDefault || false,
-        labGroupId: labGroupId || null
+        labGroup: this.template.labGroup || null
       });
       
       // Load existing columns if editing
@@ -115,7 +113,7 @@ export class MetadataTableTemplateEditModal implements OnInit {
         description: formValue.description || '',
         visibility: formValue.visibility || ResourceVisibility.PRIVATE,
         isDefault: formValue.isDefault || false,
-        labGroup: formValue.labGroupId || null,
+        labGroup: formValue.labGroup || null,
         // Include updated columns
         userColumns: this._templateColumns(),
         // Keep existing field mapping if editing

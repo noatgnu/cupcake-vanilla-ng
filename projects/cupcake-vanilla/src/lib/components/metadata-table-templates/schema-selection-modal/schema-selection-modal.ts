@@ -8,7 +8,7 @@ export interface TemplateSchemaSelectionResult {
   name: string;
   description: string;
   schemaIds: number[];
-  labGroupId?: number;
+  labGroup?: number;
   visibility: ResourceVisibility;
   isDefault: boolean;
 }
@@ -38,7 +38,7 @@ export class TemplateSchemaSelectionModal {
     this.templateForm = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(1)]],
       description: [''],
-      labGroupId: [null],
+      labGroup: [null],
       visibility: [ResourceVisibility.PRIVATE],
       isDefault: [false]
     });
@@ -128,7 +128,7 @@ export class TemplateSchemaSelectionModal {
       name: formValue.name,
       description: formValue.description || '',
       schemaIds: this.getSelectedSchemas(),
-      labGroupId: formValue.labGroupId || undefined,
+      labGroup: formValue.labGroup || undefined,
       visibility: formValue.visibility || ResourceVisibility.PRIVATE,
       isDefault: formValue.isDefault || false
     };

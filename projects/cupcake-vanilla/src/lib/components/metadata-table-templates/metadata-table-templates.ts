@@ -364,16 +364,12 @@ export class MetadataTableTemplates implements OnInit {
       name: result.name,
       schemaIds: result.schemaIds,
       description: result.description,
-      labGroupId: result.labGroupId,
+      labGroup: result.labGroup,
       visibility: result.visibility,
       isDefault: result.isDefault
     };
 
-    this.metadataTableTemplateService.createFromSchema({
-      schemaIds: result.schemaIds,
-      name: result.name,
-      description: result.description
-    }).subscribe({
+    this.metadataTableTemplateService.createFromSchema(templateData).subscribe({
       next: (response) => {
         this.isLoading.set(false);
         console.log('Template created from schemas:', response);
@@ -400,7 +396,7 @@ export class MetadataTableTemplates implements OnInit {
 
     modalRef.componentInstance.template = template;
     modalRef.componentInstance.labGroups = this.labGroupsData().results;
-    modalRef.componentInstance.selectedLabGroupId = this.selectedLabGroup()?.id;
+    modalRef.componentInstance.selectedLabGroup = this.selectedLabGroup()?.id;
 
     modalRef.componentInstance.tableCreated.subscribe((tableData: TableCreationData) => {
       this.handleTableCreation(tableData, modalRef);
@@ -419,7 +415,8 @@ export class MetadataTableTemplates implements OnInit {
       templateId: data.templateId,
       name: data.name,
       description: data.description,
-      sampleCount: data.sampleCount || 1
+      sampleCount: data.sampleCount || 1,
+      labGroup: data.labGroup
     }).subscribe({
       next: (response: MetadataTable) => {
         this.isLoading.set(false);

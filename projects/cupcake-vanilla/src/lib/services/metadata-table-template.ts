@@ -171,14 +171,27 @@ export class MetadataTableTemplateService extends BaseApiService {
   /**
    * Create a new template from schema definitions
    */
-  createFromSchema(request: { schemaIds: number[]; name: string; description?: string }): Observable<{ message: string; template: MetadataTableTemplate }> {
+  createFromSchema(request: {
+    schemaIds: number[];
+    name: string;
+    description?: string;
+    labGroup?: number | null;
+    visibility?: string;
+    isDefault?: boolean;
+  }): Observable<{ message: string; template: MetadataTableTemplate }> {
     return this.post<{ message: string; template: MetadataTableTemplate }>(`${this.apiUrl}/metadata-table-templates/create_from_schema/`, request);
   }
 
   /**
    * Create a new metadata table from an existing template
    */
-  createTableFromTemplate(request: { templateId: number; name: string; description?: string; sampleCount: number }): Observable<MetadataTable> {
+  createTableFromTemplate(request: {
+    templateId: number;
+    name: string;
+    description?: string;
+    sampleCount: number;
+    labGroup?: number;
+  }): Observable<MetadataTable> {
     return this.post<MetadataTable>(`${this.apiUrl}/metadata-table-templates/create_table_from_template/`, request);
   }
 
