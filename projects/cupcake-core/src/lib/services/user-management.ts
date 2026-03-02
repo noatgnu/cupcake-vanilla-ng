@@ -82,6 +82,10 @@ export class UserManagementService {
       return `${user.firstName} ${user.lastName}`.trim();
     }
     
+    if (user.orcidName) {
+      return user.orcidName;
+    }
+    
     return user.username || user.email || 'User';
   }
 

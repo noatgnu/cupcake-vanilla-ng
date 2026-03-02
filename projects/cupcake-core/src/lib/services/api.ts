@@ -141,8 +141,8 @@ export class ApiService {
   }
 
   // USER PROFILE
-  getUserProfile(): Observable<{user: any}> {
-    return this.http.get<{user: any}>(`${this.apiUrl}/auth/profile/`);
+  getUserProfile(): Observable<{user: User}> {
+    return this.get<{user: User}>(`${this.apiUrl}/auth/profile/`);
   }
 
 
@@ -177,11 +177,11 @@ export class ApiService {
     if (params?.limit) httpParams = httpParams.set('limit', params.limit.toString());
     if (params?.offset !== undefined) httpParams = httpParams.set('offset', params.offset.toString());
 
-    return this.http.get<UserListResponse>(`${this.apiUrl}/users/`, { params: httpParams });
+    return this.get<UserListResponse>(`${this.apiUrl}/users/`, { params: httpParams });
   }
 
   getUser(id: number): Observable<User> {
-    return this.http.get<User>(`${this.apiUrl}/users/${id}/`);
+    return this.get<User>(`${this.apiUrl}/users/${id}/`);
   }
 
   createUser(userData: UserCreateRequest): Observable<UserResponse> {
@@ -189,16 +189,16 @@ export class ApiService {
   }
 
   updateUser(id: number, userData: Partial<User>): Observable<User> {
-    return this.http.patch<User>(`${this.apiUrl}/users/${id}/`, userData);
+    return this.patch<User>(`${this.apiUrl}/users/${id}/`, userData);
   }
 
   deleteUser(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/users/${id}/`);
+    return this.delete<void>(`${this.apiUrl}/users/${id}/`);
   }
 
   // Public user registration
   registerUser(userData: UserRegistrationRequest): Observable<UserResponse> {
-    return this.http.post<UserResponse>(`${this.apiUrl}/users/register/`, userData);
+    return this.post<UserResponse>(`${this.apiUrl}/users/register/`, userData);
   }
 
   // Authentication configuration
@@ -216,43 +216,36 @@ export class ApiService {
 
   // User password change (authenticated user)
   changePassword(passwordData: PasswordChangeRequest): Observable<PasswordChangeResponse> {
-    return this.http.post<PasswordChangeResponse>(`${this.apiUrl}/users/change_password/`, passwordData);
+    return this.post<PasswordChangeResponse>(`${this.apiUrl}/users/change_password/`, passwordData);
   }
 
   // User profile update
   updateProfile(profileData: UserProfileUpdateRequest): Observable<UserResponse> {
-    return this.http.post<UserResponse>(`${this.apiUrl}/users/update_profile/`, profileData);
+    return this.post<UserResponse>(`${this.apiUrl}/users/update_profile/`, profileData);
   }
 
   // Email change with verification
   requestEmailChange(emailData: EmailChangeRequest): Observable<{message: string, new_email: string}> {
-    return this.http.post<{message: string, new_email: string}>(`${this.apiUrl}/users/request_email_change/`, emailData);
+    return this.post<{message: string, new_email: string}>(`${this.apiUrl}/users/request_email_change/`, emailData);
   }
 
   confirmEmailChange(confirmData: EmailChangeConfirmRequest): Observable<{message: string}> {
-    return this.http.post<{message: string}>(`${this.apiUrl}/users/confirm_email_change/`, confirmData);
+    return this.post<{message: string}>(`${this.apiUrl}/users/confirm_email_change/`, confirmData);
   }
 
   // Admin password reset
   resetUserPassword(userId: number, passwordData: AdminPasswordResetRequest): Observable<PasswordChangeResponse> {
-    const apiData = {
-      user_id: passwordData.userId,
-      new_password: passwordData.newPassword,
-      confirm_password: passwordData.confirmPassword,
-      force_password_change: passwordData.forcePasswordChange,
-      reason: passwordData.reason
-    };
-    return this.http.post<PasswordChangeResponse>(`${this.apiUrl}/users/${userId}/reset_password/`, apiData);
+    return this.post<PasswordChangeResponse>(`${this.apiUrl}/users/${userId}/reset_password/`, passwordData);
   }
 
   // Password reset request (forgot password)
   requestPasswordReset(resetData: PasswordResetRequest): Observable<PasswordChangeResponse> {
-    return this.http.post<PasswordChangeResponse>(`${this.apiUrl}/users/request_password_reset/`, resetData);
+    return this.post<PasswordChangeResponse>(`${this.apiUrl}/users/request_password_reset/`, resetData);
   }
 
   // Confirm password reset with token
   confirmPasswordReset(confirmData: PasswordResetConfirmRequest): Observable<PasswordChangeResponse> {
-    return this.http.post<PasswordChangeResponse>(`${this.apiUrl}/users/confirm_password_reset/`, confirmData);
+    return this.post<PasswordChangeResponse>(`${this.apiUrl}/users/confirm_password_reset/`, confirmData);
   }
 
   // ===================================================================
@@ -261,12 +254,12 @@ export class ApiService {
 
   // Link ORCID to current user account
   linkOrcid(orcidData: { orcidId: string; verificationCode?: string }): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/users/link_orcid/`, orcidData);
+    return this.post<any>(`${this.apiUrl}/users/link_orcid/`, orcidData);
   }
 
   // Unlink ORCID from current user account
   unlinkOrcid(): Observable<PasswordChangeResponse> {
-    return this.http.delete<PasswordChangeResponse>(`${this.apiUrl}/users/unlink_orcid/`);
+    return this.delete<PasswordChangeResponse>(`${this.apiUrl}/users/unlink_orcid/`);
   }
 
   // Detect duplicate accounts
@@ -276,7 +269,7 @@ export class ApiService {
     firstName?: string;
     lastName?: string;
   }): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/users/detect_duplicates/`, searchData);
+    return this.post<any>(`${this.apiUrl}/users/detect_duplicates/`, searchData);
   }
 
   // Request account merge
@@ -284,7 +277,7 @@ export class ApiService {
     duplicateUserId: number;
     reason: string;
   }): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/users/request_merge/`, mergeData);
+    return this.post<any>(`${this.apiUrl}/users/request_merge/`, mergeData);
   }
 
   // ANNOTATION MANAGEMENT

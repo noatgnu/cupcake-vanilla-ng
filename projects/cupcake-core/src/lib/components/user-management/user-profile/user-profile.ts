@@ -43,7 +43,7 @@ export class UserProfileComponent implements OnInit {
   // Computed signals for derived values
   fullName = computed(() => {
     const user = this.currentUser();
-    return user ? `${user.firstName} ${user.lastName}`.trim() : '';
+    return this.userManagementService.getUserDisplayName(user);
   });
 
   isStaff = computed(() => this.currentUser()?.isStaff || false);

@@ -57,6 +57,7 @@ export class LabGroupsComponent implements OnInit {
   selectedGroup = signal<LabGroup | null>(null);
   groupMembers = signal<LabGroupMember[]>([]);
   pendingInvitations = signal<LabGroupInvitation[]>([]);
+  myPendingInvitations = signal<LabGroupInvitation[]>([]);
 
   // UI state
   showCreateForm = signal(false);
@@ -71,6 +72,7 @@ export class LabGroupsComponent implements OnInit {
 
   // Computed values
   hasLabGroups = computed(() => this.labGroupsData().results.length > 0);
+  hasMyPendingInvitations = computed(() => this.myPendingInvitations().length > 0);
   showPagination = computed(() => this.labGroupsData().count > this.pageSize());
   totalPages = computed(() => Math.ceil(this.labGroupsData().count / this.pageSize()));
   hasSearchValue = computed(() => (this.searchForm?.get('search')?.value || '').trim().length > 0);
@@ -111,6 +113,7 @@ export class LabGroupsComponent implements OnInit {
   ngOnInit() {
     this.setupSearch();
     this.loadInitialData();
+    this.loadMyPendingInvitations();
   }
 
   private loadInitialData(): void {
@@ -119,6 +122,52 @@ export class LabGroupsComponent implements OnInit {
       limit: this.pageSize(),
       offset: 0
     });
+  }
+
+  private loadMyPendingInvitations(): void {
+    this.labGroupService.getMyPendingInvitations().subscribe({
+      next: (invitations) => {
+        this.myPendingInvitations.set(invitations);
+      },
+      error: (error) => {
+        console.error('Error loading my invitations:', error);
+      }
+    });
+  }
+
+  acceptMyInvitation(invitationId: number): void {
+    this.isLoading.set(true);
+    this.labGroupService.acceptLabGroupInvitation(invitationId).subscribe({
+      next: (response) => {
+        this.toastService.success(response.message);
+        this.loadMyPendingInvitations();
+        this.refreshLabGroups();
+        this.isLoading.set(false);
+      },
+      error: (error) => {
+        this.isLoading.set(false);
+        const errorMsg = error?.error?.detail || error?.message || 'Failed to accept invitation.';
+        this.toastService.error(errorMsg);
+      }
+    });
+  }
+
+  rejectMyInvitation(invitationId: number): void {
+    if (confirm('Are you sure you want to reject this invitation?')) {
+      this.isLoading.set(true);
+      this.labGroupService.rejectLabGroupInvitation(invitationId).subscribe({
+        next: (response) => {
+          this.toastService.success(response.message);
+          this.loadMyPendingInvitations();
+          this.isLoading.set(false);
+        },
+        error: (error) => {
+          this.isLoading.set(false);
+          const errorMsg = error?.error?.detail || error?.message || 'Failed to reject invitation.';
+          this.toastService.error(errorMsg);
+        }
+      });
+    }
   }
 
   private setupSearch(): void {

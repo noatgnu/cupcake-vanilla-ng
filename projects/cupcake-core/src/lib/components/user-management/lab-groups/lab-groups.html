@@ -18,6 +18,53 @@
   </nav>
 
   <div class="groups-content p-4">
+    <!-- My Pending Invitations -->
+    @if (hasMyPendingInvitations()) {
+      <div class="card mb-4 border-primary shadow-sm">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0">
+            <i class="bi bi-envelope-paper me-2"></i>Lab Group Invitations
+            <span class="badge bg-white text-primary ms-2">{{ myPendingInvitations().length }}</span>
+          </h5>
+        </div>
+        <div class="card-body p-0">
+          <div class="list-group list-group-flush">
+            @for (invitation of myPendingInvitations(); track invitation.id) {
+              <div class="list-group-item p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <h6 class="mb-1">You've been invited to join <strong>{{ invitation.labGroupName }}</strong></h6>
+                    <p class="mb-1 text-muted small">
+                      Invited by {{ invitation.inviterName }} on {{ invitation.createdAt | date:'mediumDate' }}
+                    </p>
+                    @if (invitation.message) {
+                      <div class="alert alert-info py-2 px-3 mt-2 mb-0 small">
+                        <i class="bi bi-chat-left-quote me-2"></i>{{ invitation.message }}
+                      </div>
+                    }
+                  </div>
+                  <div class="d-flex gap-2">
+                    <button 
+                      type="button" 
+                      class="btn btn-success btn-sm px-3"
+                      (click)="acceptMyInvitation(invitation.id)">
+                      <i class="bi bi-check-circle me-1"></i>Accept
+                    </button>
+                    <button 
+                      type="button" 
+                      class="btn btn-outline-danger btn-sm"
+                      (click)="rejectMyInvitation(invitation.id)">
+                      <i class="bi bi-x-circle me-1"></i>Reject
+                    </button>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    }
+
     <!-- Create Group Form -->
     @if (showCreateForm()) {
       <div class="card mb-4">

@@ -13,6 +13,7 @@ export interface User {
   lastLogin?: string;
   hasOrcid: boolean;
   orcidId?: string;
+  orcidName?: string;
 }
 
 export interface UserCreateRequest {
