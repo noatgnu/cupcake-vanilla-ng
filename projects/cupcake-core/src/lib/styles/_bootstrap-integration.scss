@@ -12,6 +12,7 @@
 
 // Override Bootstrap primary colors with CSS custom properties
 .btn-primary {
+  --bs-btn-color: var(--cupcake-primary-contrast);
   --bs-btn-bg: var(--cupcake-primary);
   --bs-btn-border-color: var(--cupcake-primary);
   --bs-btn-hover-bg: var(--cupcake-primary-dark);

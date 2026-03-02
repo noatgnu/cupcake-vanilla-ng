@@ -27,7 +27,9 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
       req.url.includes('/auth/orcid/') ||
       req.url.includes('/auth/register/') ||
       req.url.includes('/auth/exchange-code/') ||
-      req.url.includes('/site-config/public/')) {
+      req.url.includes('/site-config/public/') ||
+      req.url.includes('/users/auth_config/') ||
+      req.url.includes('/users/registration_status/')) {
     return next(req);
   }
 

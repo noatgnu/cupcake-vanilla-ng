@@ -19,6 +19,8 @@ export interface AuthResponse {
 
 export interface AuthStatus {
   authenticated: boolean;
+  orcidLoginEnabled?: boolean;
+  registrationEnabled?: boolean;
   user?: User;
 }
 

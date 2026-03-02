@@ -107,11 +107,23 @@ export class App implements OnInit, OnDestroy {
     const rgbValues = this.hexToRgb(adjustedPrimary);
     const darkerColor = this.adjustColorBrightness(adjustedPrimary, isDark ? -15 : -20);
     const lighterColor = this.adjustColorBrightness(adjustedPrimary, isDark ? 15 : 20);
+    const contrastColor = this.getContrastColor(adjustedPrimary);
 
     root.style.setProperty('--cupcake-primary', adjustedPrimary);
     root.style.setProperty('--cupcake-primary-rgb', rgbValues);
     root.style.setProperty('--cupcake-primary-dark', darkerColor);
     root.style.setProperty('--cupcake-primary-light', lighterColor);
+    root.style.setProperty('--cupcake-primary-contrast', contrastColor);
+  }
+
+  /**
+   * Calculate contrast color (black or white) for a given background color
+   */
+  private getContrastColor(hex: string): string {
+    const rgb = this.hexToRgb(hex).split(', ').map(Number);
+    const [r, g, b] = rgb;
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    return luminance > 0.5 ? '#000000' : '#ffffff';
   }
 
   /**

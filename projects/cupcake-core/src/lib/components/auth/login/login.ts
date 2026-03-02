@@ -294,8 +294,15 @@ export class LoginComponent implements OnInit {
   /**
    * Computed signals for UI display logic
    */
-  shouldShowOrcidLogin = computed(() => this.authConfig()?.orcidLoginEnabled === true);
-  shouldShowRegistration = computed(() => this.registrationStatus()?.registrationEnabled === true);
+  shouldShowOrcidLogin = computed(() => {
+    const config = this.siteConfigService.configSubject.value;
+    return config.enableOrcidLogin === true || this.authConfig()?.orcidLoginEnabled === true;
+  });
+
+  shouldShowRegistration = computed(() => {
+    const config = this.siteConfigService.configSubject.value;
+    return config.allowUserRegistration === true || this.registrationStatus()?.registrationEnabled === true;
+  });
   shouldShowRegularLogin = computed(() => this.authConfig()?.regularLoginEnabled !== false);
   registrationMessage = computed(() => this.registrationStatus()?.message || 'Registration is currently enabled');
   rememberMeDuration = computed(() => {

@@ -37,7 +37,7 @@ export class SiteConfigService extends BaseApiService {
     updatedAt: new Date().toISOString()
   };
 
-  private configSubject = new BehaviorSubject<SiteConfig>(this.defaultConfig);
+  public configSubject = new BehaviorSubject<SiteConfig>(this.defaultConfig);
   public config$ = this.configSubject.asObservable();
 
   constructor(private demoModeService: DemoModeService) {
