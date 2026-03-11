@@ -1,5 +1,4 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { toObservable } from '@angular/core/rxjs-interop';
 import { Observable } from 'rxjs';
 import { ApiService } from './api';
 import { AuthService } from './auth';
@@ -24,11 +23,9 @@ export class UserManagementService {
 
   private _users = signal<User[]>([]);
   public users = this._users.asReadonly();
-  public users$ = toObservable(this._users);
 
   private _totalUsers = signal<number>(0);
   public totalUsers = this._totalUsers.asReadonly();
-  public totalUsers$ = toObservable(this._totalUsers);
 
   constructor() { }
 

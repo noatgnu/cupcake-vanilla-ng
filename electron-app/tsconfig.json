@@ -24,7 +24,7 @@
   },
   "include": [
     "src/**/*",
-    "../projects/cupcake-core/src/lib/models/electron-api.interface.ts"
+    "../projects/cupcake-core/src/lib/models/electron-api.ts"
   ],
   "exclude": [
     "node_modules",

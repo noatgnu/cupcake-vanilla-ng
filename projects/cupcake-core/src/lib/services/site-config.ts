@@ -1,5 +1,4 @@
 import { Injectable, signal } from '@angular/core';
-import { toObservable } from '@angular/core/rxjs-interop';
 import { Observable, interval } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { BaseApiService } from './base-api';
@@ -40,7 +39,6 @@ export class SiteConfigService extends BaseApiService {
 
   private _siteConfig = signal<SiteConfig>(this.defaultConfig);
   public siteConfig = this._siteConfig.asReadonly();
-  public config$ = toObservable(this._siteConfig);
 
   constructor(private demoModeService: DemoModeService) {
     super();

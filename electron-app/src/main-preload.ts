@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import { ElectronAPI } from '../../projects/cupcake-core/src/lib/models/electron-api.interface';
+import { ElectronAPI } from '../../projects/cupcake-core/src/lib/models/electron-api';
 
 const electronAPI: ElectronAPI = {
   platform: process.platform,

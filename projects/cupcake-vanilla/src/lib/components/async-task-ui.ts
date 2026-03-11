@@ -1,4 +1,4 @@
-import { Injectable, OnDestroy, inject } from '@angular/core';
+import { Injectable, OnDestroy, inject, effect, untracked } from '@angular/core';
 import { Observable, Subject } from 'rxjs';
 import { takeUntil, tap } from 'rxjs/operators';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
@@ -46,18 +46,19 @@ export class AsyncTaskUIService implements OnDestroy {
   private modalService = inject(NgbModal);
   private electronService = inject(ElectronService);
 
-  public tasks$ = this.asyncTaskMonitor.tasks$;
-  public activeTasks$ = this.asyncTaskMonitor.activeTasks$;
+  public tasks = this.asyncTaskMonitor.tasks;
+  public activeTasks = this.asyncTaskMonitor.activeTasks;
 
   public metadataTableRefresh$ = this.metadataTableRefreshSubject.asObservable();
   public taskCompleted$ = this.taskCompletedSubject.asObservable();
   public exportTaskCompleted$ = this.exportTaskCompletedSubject.asObservable();
 
   constructor() {
-    this.asyncTaskMonitor.tasks$.pipe(
-      takeUntil(this.destroy$)
-    ).subscribe(tasks => {
-      this.handleTasksUpdate(tasks);
+    effect(() => {
+      const tasks = this.tasks();
+      untracked(() => {
+        this.handleTasksUpdate(tasks);
+      });
     });
   }
 

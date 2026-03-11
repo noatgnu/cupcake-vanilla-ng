@@ -28,7 +28,7 @@ export class RegisterComponent implements OnInit {
   error = signal<string | null>(null);
   success = signal<string | null>(null);
   
-  siteConfig$ = this.siteConfigService.config$;
+  siteConfig = this.siteConfigService.siteConfig;
 
   registrationStatus = signal<RegistrationStatus | null>(null);
   registrationEnabled = signal(false);

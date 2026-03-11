@@ -1,9 +1,9 @@
 @if (isAuthenticated()) {
   <nav class="navbar navbar-expand-lg navbar-dark" 
-       [style.background-color]="(siteConfig$ | async)?.primaryColor || '#1976d2'">
+       [style.background-color]="siteConfig().primaryColor || '#1976d2'">
   <div class="container-fluid">
     <!-- Brand -->
-    @if (siteConfig$ | async; as config) {
+    @if (siteConfig(); as config) {
       <a class="navbar-brand" routerLink="/">
         <i class="bi bi-flask me-2"></i>
         {{ config.siteName }}
@@ -124,14 +124,14 @@
           <button
             class="nav-link btn btn-link position-relative"
             ngbDropdownToggle
-            [title]="'Background Tasks (' + ((activeTaskCount$ | async) || 0) + ' active)'"
-            [attr.aria-label]="'Background tasks: ' + ((activeTaskCount$ | async) || 0) + ' active'"
+            [title]="'Background Tasks (' + activeTaskCount() + ' active)'"
+            [attr.aria-label]="'Background tasks: ' + activeTaskCount() + ' active'"
             style="border: none; background: none; color: inherit;">
             <i class="bi bi-list-task" aria-hidden="true"></i>
-            @if ((activeTaskCount$ | async) && (activeTaskCount$ | async)! > 0) {
+            @if (activeTaskCount() > 0) {
               <span class="position-absolute badge rounded-pill bg-primary"
                     style="font-size: 0.6rem; min-width: 1.2rem; height: 1.2rem; top: -2px; right: -8px;">
-                {{ (activeTaskCount$ | async)! > 99 ? '99+' : (activeTaskCount$ | async) }}
+                {{ activeTaskCount() > 99 ? '99+' : activeTaskCount() }}
               </span>
             }
           </button>

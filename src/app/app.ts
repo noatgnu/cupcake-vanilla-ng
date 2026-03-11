@@ -7,7 +7,6 @@ import { ElectronService } from '@noatgnu/cupcake-vanilla';
 import { AsyncTaskMonitorService, AuthService, WebSocketService } from '@noatgnu/cupcake-core';
 import { SiteConfigService, ThemeService, ToastService, ToastContainerComponent, PoweredByFooterComponent } from '@noatgnu/cupcake-core';
 
-import { toObservable } from '@angular/core/rxjs-interop';
 import { environment } from '../environments/environment';
 
 @Component({
@@ -33,7 +32,6 @@ export class App implements OnInit, OnDestroy {
 
   private _appInitialized = signal<boolean>(false);
   public appInitialized = this._appInitialized.asReadonly();
-  public appInitialized$ = toObservable(this._appInitialized);
 
   private themeEffect = effect(() => {
     const isDark = this.themeService.isDark();
@@ -68,9 +66,6 @@ export class App implements OnInit, OnDestroy {
     this.websocket.disconnect();
   }
 
-  /**
-   * Initialize the application - load config (auth is handled by AuthService)
-   */
   private async initializeApp(): Promise<void> {
     try {
       this._appInitialized.set(true);
@@ -84,10 +79,6 @@ export class App implements OnInit, OnDestroy {
     }
   }
 
-
-  /**
-   * Update CSS custom properties for primary color theming
-   */
   private updatePrimaryColorTheme(primaryColor: string): void {
     const root = this.document.documentElement;
     const isDark = this.themeService.isDark();
@@ -109,9 +100,6 @@ export class App implements OnInit, OnDestroy {
     root.style.setProperty('--cupcake-primary-contrast', contrastColor);
   }
 
-  /**
-   * Calculate contrast color (black or white) for a given background color
-   */
   private getContrastColor(hex: string): string {
     const rgb = this.hexToRgb(hex).split(', ').map(Number);
     const [r, g, b] = rgb;
@@ -119,9 +107,6 @@ export class App implements OnInit, OnDestroy {
     return luminance > 0.5 ? '#000000' : '#ffffff';
   }
 
-  /**
-   * Convert hex color to RGB values
-   */
   private hexToRgb(hex: string): string {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
     if (!result) return '25, 118, 210';
@@ -133,9 +118,6 @@ export class App implements OnInit, OnDestroy {
     return `${r}, ${g}, ${b}`;
   }
 
-  /**
-   * Adjust color brightness (positive for lighter, negative for darker)
-   */
   private adjustColorBrightness(hex: string, percent: number): string {
     const num = parseInt(hex.replace('#', ''), 16);
     const amt = Math.round(2.55 * percent);
@@ -148,9 +130,6 @@ export class App implements OnInit, OnDestroy {
       (B < 255 ? B < 1 ? 0 : B : 255)).toString(16).slice(1);
   }
 
-  /**
-   * Adjust primary color for better contrast in dark mode
-   */
   private adjustColorForDarkMode(hex: string): string {
     const rgb = this.hexToRgb(hex).split(', ').map(Number);
     const [r, g, b] = rgb;

@@ -2,7 +2,7 @@
   <div class="register-wrapper">
     <div class="card">
       <div class="card-body">
-        @if (siteConfig$ | async; as config) {
+        @if (siteConfig(); as config) {
           <h3 class="card-title text-center mb-4">
             <i class="bi bi-person-plus me-2"></i>Create Account - {{ config.siteName }}
           </h3>
@@ -197,7 +197,7 @@
         }
 
         <!-- Additional Information -->
-        @if (siteConfig$ | async; as config) {
+        @if (siteConfig(); as config) {
           <div class="mt-4 text-center">
             <p class="text-muted small">
               {{ config.siteName }} - Scientific Metadata Management

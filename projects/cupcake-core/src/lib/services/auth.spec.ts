@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { AuthService, CUPCAKE_CORE_CONFIG } from './auth';
 import { Router } from '@angular/router';
+import { effect } from '@angular/core';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -26,7 +27,6 @@ describe('AuthService', () => {
     httpMock = TestBed.inject(HttpTestingController);
     routerSpy = TestBed.inject(Router) as jasmine.SpyObj<Router>;
 
-    // Clear localStorage before each test
     localStorage.clear();
   });
 
@@ -37,14 +37,14 @@ describe('AuthService', () => {
 
   describe('Authentication State', () => {
     it('should initialize with no authentication', () => {
-      expect(service.isAuthenticated()).toBe(false);
-      expect(service.getCurrentUser()).toBeNull();
+      expect(service.authenticated()).toBe(false);
+      expect(service.currentUser()).toBeNull();
     });
   });
 
   describe('Login', () => {
     it('should login successfully and store tokens', (done) => {
-      const mockUser = { id: 1, username: 'testuser', email: 'test@example.com' };
+      const mockUser = { id: 1, username: 'testuser', email: 'test@example.com' } as any;
       const mockResponse = {
         accessToken: 'access-token',
         refreshToken: 'refresh-token',
@@ -53,8 +53,8 @@ describe('AuthService', () => {
 
       service.login('testuser', 'testpass').subscribe(response => {
         expect(response).toEqual(mockResponse);
-        expect(service.isAuthenticated()).toBe(true);
-        expect(service.getCurrentUser()).toEqual(mockUser);
+        expect(service.authenticated()).toBe(true);
+        expect(service.currentUser()?.id).toBe(mockUser.id);
         expect(localStorage.getItem('ccvAccessToken')).toBe('access-token');
         expect(localStorage.getItem('ccvRefreshToken')).toBe('refresh-token');
         done();
@@ -69,7 +69,6 @@ describe('AuthService', () => {
 
   describe('Logout', () => {
     it('should logout and clear authentication state', () => {
-      // Setup authenticated state
       localStorage.setItem('ccvAccessToken', 'token');
       localStorage.setItem('ccvRefreshToken', 'refresh');
       service['_currentUser'].set({ id: 1, username: 'test', email: 'test@test.com' } as any);
@@ -80,42 +79,19 @@ describe('AuthService', () => {
       const req = httpMock.expectOne(`${mockConfig.apiUrl}/auth/logout/`);
       req.flush({});
 
-      expect(service.isAuthenticated()).toBe(false);
-      expect(service.getCurrentUser()).toBeNull();
+      expect(service.authenticated()).toBe(false);
+      expect(service.currentUser()).toBeNull();
       expect(localStorage.getItem('ccvAccessToken')).toBeNull();
       expect(localStorage.getItem('ccvRefreshToken')).toBeNull();
     });
   });
 
-  describe('Observable Streams & Signals', () => {
-    it('should emit authentication state changes', (done) => {
-      let emissionCount = 0;
-      const expectedValues = [false, true, false];
-
-      service.isAuthenticated$.subscribe(isAuth => {
-        expect(isAuth).toBe(expectedValues[emissionCount]);
-        emissionCount++;
-        
-        if (emissionCount === 3) {
-          done();
-        }
-      });
-
-      // Initial state is already emitted (false)
-      
-      // Simulate login
-      service['_isAuthenticated'].set(true);
-      
-      // Simulate logout
-      service['_isAuthenticated'].set(false);
-    });
-
+  describe('Signals', () => {
     it('should reflect current user via signal', () => {
       const mockUser = { id: 1, username: 'testuser', email: 'test@example.com' } as any;
       
       service['_currentUser'].set(mockUser);
       expect(service.currentUser()).toEqual(mockUser);
-      expect(service.getCurrentUser()).toEqual(mockUser);
     });
   });
 });

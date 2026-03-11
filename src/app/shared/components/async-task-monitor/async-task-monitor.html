@@ -7,7 +7,7 @@
         <h6 class="mb-0 fw-bold text-body">
           <i class="bi bi-list-task me-2"></i>Background Tasks
         </h6>
-        @if ((activeTasks$ | async)?.length; as activeCount) {
+        @if (activeTasks().length; as activeCount) {
           <span class="badge bg-primary ms-2">{{ activeCount }} active</span>
         }
       </div>
@@ -29,7 +29,7 @@
         class="btn btn-sm flex-shrink-0 me-1"
         [class]="selectedFilter() === 'all' ? 'btn-primary' : 'btn-outline-secondary'"
         (click)="setFilter('all')">
-        All ({{ (tasks$ | async)?.length || 0 }})
+        All ({{ tasks().length || 0 }})
       </button>
 
       <button 
@@ -235,10 +235,10 @@
       }
       
       <!-- Show More Tasks Info -->
-      @if ((tasks$ | async)?.length && (tasks$ | async)!.length > maxTasks) {
+      @if (tasks().length && tasks().length > maxTasks) {
         <div class="text-center p-2 border-top bg-body-secondary">
           <small class="text-muted">
-            Showing {{ maxTasks }} of {{ (tasks$ | async)!.length }} tasks
+            Showing {{ maxTasks }} of {{ tasks().length }} tasks
           </small>
         </div>
       }

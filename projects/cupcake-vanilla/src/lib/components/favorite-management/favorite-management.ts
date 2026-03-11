@@ -1,4 +1,4 @@
-import {Component, OnInit, signal, computed, inject, ChangeDetectionStrategy} from '@angular/core';
+import {Component, OnInit, signal, computed, inject, ChangeDetectionStrategy, effect, untracked} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -165,17 +165,20 @@ export class FavoriteManagement implements OnInit {
         this.selectedOntologyValue = null;
       }
     });
+
+    effect(() => {
+      const user = this.currentUser();
+      untracked(() => {
+        if (user) {
+          this.loadUserLabGroups();
+        } else {
+          this.loadFavorites();
+        }
+      });
+    });
   }
 
   ngOnInit() {
-    this.authService.currentUser$.subscribe(user => {
-      if (user) {
-        this.loadUserLabGroups();
-      } else {
-        this.loadFavorites();
-      }
-    });
-
     this.loadAvailableColumnTemplates();
 
     this.searchForm.valueChanges.subscribe(formValues => {

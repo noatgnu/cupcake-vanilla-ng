@@ -38,10 +38,10 @@ export class WebSocketService {
   protected lastError = signal<string | null>(null);
 
   protected messageSubject = new Subject<WebSocketMessage>();
-  protected connectionSubject = new BehaviorSubject<boolean>(false);
+  private _connected = signal<boolean>(false);
 
   readonly messages$ = this.messageSubject.asObservable();
-  readonly isConnected$ = this.connectionSubject.asObservable();
+  readonly isConnected = this._connected.asReadonly();
   readonly connectionState$ = computed(() => this.connectionState());
   readonly lastError$ = computed(() => this.lastError());
 
@@ -171,7 +171,7 @@ export class WebSocketService {
     }
 
     this.connectionState.set('disconnected');
-    this.connectionSubject.next(false);
+    this._connected.set(false);
     this.reconnectAttempts = 0;
   }
 
@@ -195,7 +195,7 @@ export class WebSocketService {
     console.log('WebSocket connected');
     this.isConnecting = false;
     this.connectionState.set('connected');
-    this.connectionSubject.next(true);
+    this._connected.set(true);
     this.reconnectAttempts = 0;
     this.lastError.set(null);
   }
@@ -221,7 +221,7 @@ export class WebSocketService {
     console.log(`WebSocket closed: ${event.code} ${event.reason}`);
     this.isConnecting = false;
     this.connectionState.set('disconnected');
-    this.connectionSubject.next(false);
+    this._connected.set(false);
 
     if (event.code === 4001) {
       this.lastError.set('Authentication failed');

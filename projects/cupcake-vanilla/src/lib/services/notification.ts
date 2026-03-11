@@ -1,4 +1,4 @@
-import { Injectable, signal, computed, inject } from '@angular/core';
+import { Injectable, signal, computed, inject, effect, untracked } from '@angular/core';
 import { NotificationService as BaseNotificationService, NotificationItem, ToastService } from '@noatgnu/cupcake-core';
 import { Websocket, WebSocketMessage } from './websocket';
 
@@ -25,17 +25,21 @@ export class NotificationService extends BaseNotificationService {
     toastService: ToastService
   ) {
     super(toastService);
+    
+    effect(() => {
+      const connected = this.websocketService.isConnected();
+      untracked(() => {
+        this.isConnected.set(connected);
+        if (connected) {
+          console.log('CCV WebSocket connected - notifications active');
+        }
+      });
+    });
+
     this.initializeWebSocket();
   }
 
   private initializeWebSocket(): void {
-    this.websocketService.isConnected$.subscribe(connected => {
-      this.isConnected.set(connected);
-      if (connected) {
-        console.log('CCV WebSocket connected - notifications active');
-      }
-    });
-
     this.websocketService.messages$.subscribe(message => {
       this.handleWebSocketMessage(message);
     });

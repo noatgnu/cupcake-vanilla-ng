@@ -1,5 +1,5 @@
-import { Injectable } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { Injectable, signal } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
 
 /**
  * Frontend-only navigation state service for tracking navigation context
@@ -9,20 +9,21 @@ import { BehaviorSubject } from 'rxjs';
   providedIn: 'root'
 })
 export class NavigationState {
-  private navigationTypeSubject = new BehaviorSubject<'table' | 'template'>('table');
-  public navigationType$ = this.navigationTypeSubject.asObservable();
+  private _navigationType = signal<'table' | 'template'>('table');
+  public navigationType = this._navigationType.asReadonly();
+  public navigationType$ = toObservable(this._navigationType);
 
   /**
    * Set the current navigation type
    */
   setNavigationType(type: 'table' | 'template'): void {
-    this.navigationTypeSubject.next(type);
+    this._navigationType.set(type);
   }
 
   /**
    * Get the current navigation type
    */
   getCurrentNavigationType(): 'table' | 'template' {
-    return this.navigationTypeSubject.value;
+    return this._navigationType();
   }
 }

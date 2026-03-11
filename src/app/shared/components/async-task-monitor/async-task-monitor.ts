@@ -1,12 +1,13 @@
-import { Component, OnInit, OnDestroy, Input, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, OnDestroy, Input, signal, computed, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Observable, Subject } from 'rxjs';
+import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { AsyncTaskStatus, TaskStatus, TaskType, TASK_TYPE_LABELS, TASK_STATUS_LABELS, TASK_STATUS_COLORS, AsyncTaskMonitorService } from '@noatgnu/cupcake-core';
 import { AsyncTaskUIService } from '@noatgnu/cupcake-vanilla';
 
 @Component({
   selector: 'app-async-task-monitor',
+  standalone: true,
   imports: [CommonModule],
   templateUrl: './async-task-monitor.html',
   styleUrl: './async-task-monitor.scss',
@@ -18,22 +19,19 @@ export class AsyncTaskMonitorComponent implements OnInit, OnDestroy {
   @Input() autoRefresh = true;
 
   private destroy$ = new Subject<void>();
+  private asyncTaskMonitor = inject(AsyncTaskMonitorService);
+  private asyncTaskService = inject(AsyncTaskUIService);
   
-  tasks$!: Observable<AsyncTaskStatus[]>;
-  activeTasks$!: Observable<AsyncTaskStatus[]>;
+  tasks = this.asyncTaskMonitor.tasks;
+  activeTasks = this.asyncTaskMonitor.activeTasks;
 
-  // Filter state using signals
   selectedFilter = signal<'all' | 'active' | 'completed' | 'failed'>('all');
-  allTasks = signal<AsyncTaskStatus[]>([]);
   
-  // Computed filtered tasks
   filteredTasks = computed(() => {
-    const tasks = this.allTasks();
+    const tasks = this.tasks();
     const filter = this.selectedFilter();
     
-    // Ensure tasks is always an array
     if (!Array.isArray(tasks)) {
-      console.warn('filteredTasks: tasks is not an array:', tasks);
       return [];
     }
     
@@ -49,28 +47,13 @@ export class AsyncTaskMonitorComponent implements OnInit, OnDestroy {
     }
   });
 
-  // Labels and colors for display
   readonly taskTypeLabels = TASK_TYPE_LABELS;
   readonly taskStatusLabels = TASK_STATUS_LABELS;
   readonly taskStatusColors = TASK_STATUS_COLORS;
 
-  constructor(
-    private asyncTaskMonitor: AsyncTaskMonitorService,
-    private asyncTaskService: AsyncTaskUIService
-  ) {}
+  constructor() {}
 
   ngOnInit(): void {
-    console.log('AsyncTaskMonitorComponent ngOnInit');
-    this.tasks$ = this.asyncTaskService.tasks$;
-    this.activeTasks$ = this.asyncTaskService.activeTasks$;
-    
-    // Subscribe to tasks and update signal - component only displays data
-    this.tasks$.pipe(takeUntil(this.destroy$)).subscribe(tasks => {
-      // Ensure tasks is always an array
-      const taskArray = Array.isArray(tasks) ? tasks : [];
-      console.log('AsyncTaskMonitor received tasks:', taskArray.length);
-      this.allTasks.set(taskArray);
-    });
   }
 
   ngOnDestroy(): void {
@@ -78,9 +61,6 @@ export class AsyncTaskMonitorComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  /**
-   * Cancel a task
-   */
   cancelTask(taskId: string): void {
     this.asyncTaskService.cancelTask(taskId).pipe(
       takeUntil(this.destroy$)
@@ -94,37 +74,22 @@ export class AsyncTaskMonitorComponent implements OnInit, OnDestroy {
     });
   }
 
-  /**
-   * Download task result
-   */
   downloadResult(task: AsyncTaskStatus): void {
     this.asyncTaskService.downloadTaskResult(task.id);
   }
 
-  /**
-   * Check if task can be cancelled
-   */
   canCancelTask(task: AsyncTaskStatus): boolean {
     return this.asyncTaskService.canCancelTask(task.status);
   }
 
-  /**
-   * Check if task result can be downloaded
-   */
   canDownloadResult(task: AsyncTaskStatus): boolean {
     return this.asyncTaskService.canDownloadResult(task);
   }
 
-  /**
-   * Format task duration
-   */
   formatDuration(duration: number | null): string {
     return this.asyncTaskService.formatDuration(duration);
   }
 
-  /**
-   * Get task status badge class
-   */
   getStatusBadgeClass(status: TaskStatus): string {
     const colorMap: Record<TaskStatus, string> = {
       'QUEUED': 'bg-secondary',
@@ -136,9 +101,6 @@ export class AsyncTaskMonitorComponent implements OnInit, OnDestroy {
     return `badge ${colorMap[status] || 'bg-secondary'}`;
   }
 
-  /**
-   * Get progress bar class based on status
-   */
   getProgressBarClass(status: TaskStatus): string {
     const colorMap: Record<TaskStatus, string> = {
       'QUEUED': 'bg-secondary',
@@ -150,47 +112,28 @@ export class AsyncTaskMonitorComponent implements OnInit, OnDestroy {
     return colorMap[status] || 'bg-secondary';
   }
 
-  /**
-   * Generate filename for download if not provided
-   */
   private generateFilename(task: AsyncTaskStatus): string {
     const extension = task.taskType === 'EXPORT_EXCEL' ? '.xlsx' : '.sdrf.tsv';
     const tableName = task.metadataTableName ? `_${task.metadataTableName}` : '';
     return `export${tableName}${extension}`;
   }
 
-  /**
-   * Refresh task list manually
-   */
   refreshTasks(): void {
     this.asyncTaskMonitor.loadAllTasks();
   }
 
-  /**
-   * Track by function for task list
-   */
   trackByTaskId(index: number, task: AsyncTaskStatus): string {
     return task.id;
   }
 
-  /**
-   * Set filter for tasks
-   */
   setFilter(filter: 'all' | 'active' | 'completed' | 'failed'): void {
     this.selectedFilter.set(filter);
   }
 
-  /**
-   * Clear completed tasks
-   */
   clearCompletedTasks(): void {
-    // This would typically call a service method to clear completed tasks
     console.log('Clear completed tasks - to be implemented');
   }
 
-  /**
-   * Get task icon based on task type and status
-   */
   getTaskIcon(task: AsyncTaskStatus): string {
     if (task.status === 'STARTED') {
       return 'bi bi-hourglass-split';
@@ -213,9 +156,6 @@ export class AsyncTaskMonitorComponent implements OnInit, OnDestroy {
     }
   }
 
-  /**
-   * Get task badge class based on status
-   */
   getTaskBadgeClass(task: AsyncTaskStatus): string {
     const baseClass = 'task-icon';
     
@@ -235,9 +175,6 @@ export class AsyncTaskMonitorComponent implements OnInit, OnDestroy {
     }
   }
 
-  /**
-   * Get relative time string
-   */
   getRelativeTime(dateString: string): string {
     const date = new Date(dateString);
     const now = new Date();

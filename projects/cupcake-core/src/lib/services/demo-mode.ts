@@ -1,5 +1,4 @@
 import { Injectable, signal } from '@angular/core';
-import { toObservable } from '@angular/core/rxjs-interop';
 import { Observable } from 'rxjs';
 
 export interface DemoModeInfo {
@@ -18,7 +17,6 @@ export class DemoModeService {
   });
 
   public demoMode = this._demoMode.asReadonly();
-  public demoMode$ = toObservable(this._demoMode);
 
   setDemoMode(isActive: boolean, cleanupInterval: number = 15): void {
     const currentInfo = this._demoMode();

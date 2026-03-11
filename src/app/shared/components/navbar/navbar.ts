@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, OnDestroy, signal, ChangeDetectionStrategy, effect, untracked } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, signal, ChangeDetectionStrategy, effect, untracked, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { NgbDropdownModule } from '@ng-bootstrap/ng-bootstrap';
@@ -33,17 +33,15 @@ export class NavbarComponent implements OnInit, OnDestroy {
   isAuthenticated = this.authService.authenticated;
   currentUser = this.authService.currentUser;
 
-  siteConfig$ = this.siteConfigService.config$;
+  siteConfig = this.siteConfigService.siteConfig;
 
-  activeTasks$ = this.asyncTaskService.activeTasks$;
-  activeTaskCount$ = this.activeTasks$.pipe(
-    map(tasks => tasks.length)
-  );
+  activeTasks = this.asyncTaskService.activeTasks;
+  activeTaskCount = computed(() => this.activeTasks().length);
 
   protected readonly environment = environment;
 
   unreadCount = this.notificationService.unreadCount;
-  isDemoMode = signal(false);
+  isDemoMode = computed(() => this.demoModeService.demoMode().isActive);
 
   private subscriptions = new Subscription();
 
@@ -66,11 +64,6 @@ export class NavbarComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.subscriptions.add(
-      this.demoModeService.demoMode$.subscribe(info => {
-        this.isDemoMode.set(info.isActive);
-      })
-    );
   }
 
   ngOnDestroy(): void {
@@ -78,9 +71,6 @@ export class NavbarComponent implements OnInit, OnDestroy {
     this.webSocketService.disconnect();
   }
 
-  /**
-   * Logout user and redirect to login page
-   */
   logout(): void {
     console.log('NavbarComponent: logout() called');
     this.authService.logout().subscribe({
@@ -98,44 +88,26 @@ export class NavbarComponent implements OnInit, OnDestroy {
     });
   }
 
-  /**
-   * Get user display name using the service method
-   */
   getUserDisplayName(user: User | null): string {
     return this.userManagementService.getUserDisplayName(user);
   }
 
-  /**
-   * Toggle theme
-   */
   toggleTheme(): void {
     this.themeService.toggleTheme();
   }
 
-  /**
-   * Get theme icon
-   */
   getThemeIcon(): string {
     return this.themeService.getThemeIcon();
   }
 
-  /**
-   * Get theme label
-   */
   getThemeLabel(): string {
     return this.themeService.getThemeLabel();
   }
 
-  /**
-   * Get display name for task type
-   */
   getTaskDisplayName(taskType: TaskType): string {
     return this.asyncTaskService.getTaskDisplayName(taskType);
   }
 
-  /**
-   * Get progress bar class based on status
-   */
   getProgressBarClass(status: TaskStatus): string {
     const colorMap: Record<TaskStatus, string> = {
       'QUEUED': 'bg-secondary',

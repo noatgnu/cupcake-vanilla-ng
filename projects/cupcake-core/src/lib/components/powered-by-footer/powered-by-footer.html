@@ -1,4 +1,4 @@
-@if ((siteConfig$ | async)?.showPoweredBy !== false) {
+@if (siteConfig().showPoweredBy !== false) {
   <div class="powered-by-footer">
     <div class="footer-trigger"></div>
     <div class="footer-content">

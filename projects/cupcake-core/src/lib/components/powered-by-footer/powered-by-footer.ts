@@ -13,5 +13,5 @@ import { SiteConfigService } from '../../services/site-config';
 export class PoweredByFooterComponent {
   private siteConfigService = inject(SiteConfigService);
 
-  siteConfig$ = this.siteConfigService.config$;
+  siteConfig = this.siteConfigService.siteConfig;
 }
