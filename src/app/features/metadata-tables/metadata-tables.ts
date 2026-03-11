@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, signal, computed, effect, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, computed, effect, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
@@ -29,6 +29,16 @@ import { AuthService } from '@noatgnu/cupcake-core';
 })
 export class MetadataTablesComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
+  
+  private fb = inject(FormBuilder);
+  private labGroupService = inject(LabGroupService);
+  private metadataTableService = inject(MetadataTableService);
+  private navigationState = inject(NavigationState);
+  private asyncTaskService = inject(AsyncTaskUIService);
+  private toastService = inject(ToastService);
+  private modalService = inject(NgbModal);
+  private authService = inject(AuthService);
+
   searchForm: FormGroup;
 
   private searchParams = signal({
@@ -64,7 +74,7 @@ export class MetadataTablesComponent implements OnInit, OnDestroy {
   selectAllChecked = signal<boolean>(false);
   selectAllIndeterminate = signal<boolean>(false);
 
-  currentUser = signal<User | null>(null);
+  currentUser = this.authService.currentUser;
   isStaff = computed(() => this.currentUser()?.isStaff === true);
   showSharedTables = signal(true);
   showAdminView = signal(false);
@@ -76,16 +86,7 @@ export class MetadataTablesComponent implements OnInit, OnDestroy {
   hasSelectedTables = computed(() => this.selectedTables().size > 0);
   selectedTablesCount = computed(() => this.selectedTables().size);
 
-  constructor(
-    private fb: FormBuilder,
-    private labGroupService: LabGroupService,
-    private metadataTableService: MetadataTableService,
-    private navigationState: NavigationState,
-    private asyncTaskService: AsyncTaskUIService,
-    private toastService: ToastService,
-    private modalService: NgbModal,
-    private authService: AuthService
-  ) {
+  constructor() {
     this.searchForm = this.fb.group({
       search: [''],
       labGroupId: [null],
@@ -124,21 +125,9 @@ export class MetadataTablesComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.initializeUser();
     this.setupSearch();
     this.loadInitialData();
     this.setupAsyncTaskRefreshListener();
-  }
-
-  private initializeUser(): void {
-    const user = this.authService.getCurrentUser();
-    this.currentUser.set(user);
-
-    this.authService.currentUser$.pipe(
-      takeUntil(this.destroy$)
-    ).subscribe(user => {
-      this.currentUser.set(user);
-    });
   }
 
   ngOnDestroy(): void {

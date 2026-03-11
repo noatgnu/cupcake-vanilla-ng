@@ -101,11 +101,19 @@ export class FavoriteManagement implements OnInit {
   showEditModal = signal(false);
 
   private sdrfSyntaxService = inject(SdrfSyntaxService);
+  private fb = inject(FormBuilder);
+  private favouriteMetadataOptionService = inject(FavouriteMetadataOptionService);
+  private metadataColumnTemplateService = inject(MetadataColumnTemplateService);
+  private labGroupService = inject(LabGroupService);
+  private toastService = inject(ToastService);
+  private modalService = inject(NgbModal);
+  private authService = inject(AuthService);
+
   specialSyntaxType = signal<SyntaxType | null>(null);
   showSpecialInput = signal(false);
   specialInputValue = signal('');
 
-  currentUser = signal<User | null>(null);
+  currentUser = this.authService.currentUser;
   isAdmin = computed(() => {
     const user = this.currentUser();
     return user?.isStaff || user?.isSuperuser || false;
@@ -131,15 +139,7 @@ export class FavoriteManagement implements OnInit {
     { value: ColumnType.SPECIAL, label: 'Special' }
   ];
 
-  constructor(
-    private fb: FormBuilder,
-    private favouriteMetadataOptionService: FavouriteMetadataOptionService,
-    private metadataColumnTemplateService: MetadataColumnTemplateService,
-    private labGroupService: LabGroupService,
-    private toastService: ToastService,
-    private modalService: NgbModal,
-    private authService: AuthService
-  ) {
+  constructor() {
     this.searchForm = this.fb.group({
       search: [''],
       scope: [''],
@@ -168,23 +168,13 @@ export class FavoriteManagement implements OnInit {
   }
 
   ngOnInit() {
-    this.currentUser.set(this.authService.getCurrentUser());
-
-
     this.authService.currentUser$.subscribe(user => {
-      this.currentUser.set(user);
       if (user) {
         this.loadUserLabGroups();
       } else {
         this.loadFavorites();
       }
     });
-
-    if (this.currentUser()) {
-      this.loadUserLabGroups();
-    } else {
-      this.loadFavorites();
-    }
 
     this.loadAvailableColumnTemplates();
 

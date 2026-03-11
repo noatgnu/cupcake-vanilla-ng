@@ -6,7 +6,6 @@ import { NgbAlert } from '@ng-bootstrap/ng-bootstrap';
 import { SiteConfigService } from '../../services/site-config';
 import { AuthService } from '../../services/auth';
 import { SiteConfig } from '../../models';
-import { toSignal } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'ccc-site-config',
@@ -35,7 +34,7 @@ export class SiteConfigComponent implements OnInit {
   workerStatus = signal<any>(null);
   loadingWorkerStatus = signal(false);
 
-  currentUser = toSignal(this.authService.currentUser$);
+  currentUser = this.authService.currentUser;
 
   Object = Object;
 

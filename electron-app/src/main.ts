@@ -109,6 +109,23 @@ function sendBackendStatus(service: string, status: 'starting' | 'ready' | 'erro
 
 // Helper function to send log messages to splash screen
 function sendBackendLog(message: string, type: 'info' | 'warning' | 'error' | 'success' = 'info'): void {
+  const logDir = path.join(userDataPath, 'logs');
+  const logFile = path.join(logDir, 'app.log');
+  
+  // Ensure log directory exists
+  if (!fs.existsSync(logDir)) {
+    fs.mkdirSync(logDir, { recursive: true });
+  }
+
+  const timestamp = new Date().toISOString();
+  const logEntry = `[${timestamp}] [${type.toUpperCase()}] ${message}\n`;
+  
+  try {
+    fs.appendFileSync(logFile, logEntry);
+  } catch (err) {
+    console.error('Failed to write to log file:', err);
+  }
+
   console.log(`[LOG] ${message}`);
   if (splashWindow && !splashWindow.isDestroyed() && splashReady) {
     const logMessage: LogMessage = { message, type };
@@ -892,7 +909,7 @@ ipcMain.handle('show-message-box', async (event, options) => {
 });
 
 ipcMain.handle('get-backend-port', () => {
-  return backendPort;
+  return backendManager.getBackendPort();
 });
 
 ipcMain.handle('is-backend-ready', () => {

@@ -1,4 +1,4 @@
-import { Injectable, signal, computed, inject, InjectionToken, Optional } from '@angular/core';
+import { Injectable, signal, computed, inject, InjectionToken, Optional, effect, untracked } from '@angular/core';
 import { BehaviorSubject, Subject, Observable, timer, EMPTY } from 'rxjs';
 import { takeUntil, switchMap, retry, tap } from 'rxjs/operators';
 import { AuthService, CUPCAKE_CORE_CONFIG } from './auth';
@@ -56,10 +56,13 @@ export class WebSocketService {
       maxReconnectAttempts: 3
     };
 
-    this.authService.isAuthenticated$.subscribe(isAuthenticated => {
+    effect(() => {
+      const isAuthenticated = this.authService.authenticated();
       if (!isAuthenticated && this.ws) {
-        console.log('User logged out - disconnecting WebSocket');
-        this.disconnect();
+        untracked(() => {
+          console.log('User logged out - disconnecting WebSocket');
+          this.disconnect();
+        });
       }
     });
 

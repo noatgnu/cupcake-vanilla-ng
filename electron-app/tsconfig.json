@@ -23,7 +23,8 @@
     "types": ["node", "electron"]
   },
   "include": [
-    "src/**/*"
+    "src/**/*",
+    "../projects/cupcake-core/src/lib/models/electron-api.interface.ts"
   ],
   "exclude": [
     "node_modules",

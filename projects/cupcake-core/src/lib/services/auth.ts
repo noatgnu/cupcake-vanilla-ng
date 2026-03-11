@@ -1,6 +1,7 @@
-import { Injectable, inject, Inject, InjectionToken } from '@angular/core';
+import { Injectable, inject, Inject, InjectionToken, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, BehaviorSubject, tap, throwError, catchError, map } from 'rxjs';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { Observable, tap, throwError, catchError, map } from 'rxjs';
 import { User } from '../models';
 import { resetRefreshState } from '../interceptors';
 
@@ -32,10 +33,13 @@ export class AuthService {
   private config = inject(CUPCAKE_CORE_CONFIG);
   private apiUrl = this.config.apiUrl;
 
-  private currentUserSubject = new BehaviorSubject<User | null>(null);
-  public currentUser$ = this.currentUserSubject.asObservable();
-  private isAuthenticatedSubject = new BehaviorSubject<boolean>(this.hasValidTokenOnInit());
-  public isAuthenticated$ = this.isAuthenticatedSubject.asObservable();
+  private _currentUser = signal<User | null>(null);
+  public currentUser = this._currentUser.asReadonly();
+  public currentUser$ = toObservable(this._currentUser);
+
+  private _isAuthenticated = signal<boolean>(this.hasValidTokenOnInit());
+  public authenticated = this._isAuthenticated.asReadonly();
+  public isAuthenticated$ = toObservable(this._isAuthenticated);
 
   constructor() {
     this.initializeAuthState();
@@ -71,11 +75,11 @@ export class AuthService {
     const refreshToken = this.getRefreshToken();
     
     if (token && !this.isTokenExpired(token)) {
-      this.isAuthenticatedSubject.next(true);
+      this._isAuthenticated.set(true);
       
       const user = this.getUserFromToken();
       if (user) {
-        this.currentUserSubject.next(user);
+        this._currentUser.set(user);
       }
 
       this.fetchUserProfile().subscribe({
@@ -85,14 +89,14 @@ export class AuthService {
         }
       });
     } else if (refreshToken && token && this.isTokenExpired(token)) {
-      this.isAuthenticatedSubject.next(false);
-      this.currentUserSubject.next(null);
+      this._isAuthenticated.set(false);
+      this._currentUser.set(null);
     } else if (refreshToken && !token) {
-      this.isAuthenticatedSubject.next(false);
-      this.currentUserSubject.next(null);
+      this._isAuthenticated.set(false);
+      this._currentUser.set(null);
     } else {
-      this.isAuthenticatedSubject.next(false);
-      this.currentUserSubject.next(null);
+      this._isAuthenticated.set(false);
+      this._currentUser.set(null);
     }
   }
 
@@ -209,8 +213,8 @@ export class AuthService {
       .pipe(
         tap(status => {
           if (status.authenticated && status.user) {
-            this.currentUserSubject.next(status.user);
-            this.isAuthenticatedSubject.next(true);
+            this._currentUser.set(status.user);
+            this._isAuthenticated.set(true);
           } else {
             this.clearAuthData();
           }
@@ -223,18 +227,18 @@ export class AuthService {
       .pipe(
         map(response => this.convertUserFromSnakeToCamel(response.user)),
         tap(user => {
-          this.currentUserSubject.next(user);
-          this.isAuthenticatedSubject.next(true);
+          this._currentUser.set(user);
+          this._isAuthenticated.set(true);
         })
       );
   }
 
   getCurrentUser(): User | null {
-    return this.currentUserSubject.value;
+    return this._currentUser();
   }
 
   isAuthenticated(): boolean {
-    return this.isAuthenticatedSubject.value;
+    return this._isAuthenticated();
   }
 
   getAccessToken(): string | null {
@@ -256,8 +260,8 @@ export class AuthService {
     localStorage.setItem('ccvAccessToken', accessToken);
     localStorage.setItem('ccvRefreshToken', refreshToken);
     const convertedUser = this.convertUserFromSnakeToCamel(response.user);
-    this.currentUserSubject.next(convertedUser);
-    this.isAuthenticatedSubject.next(true);
+    this._currentUser.set(convertedUser);
+    this._isAuthenticated.set(true);
     resetRefreshState();
   }
 
@@ -274,11 +278,11 @@ export class AuthService {
     }).pipe(
       tap((response) => {
         localStorage.setItem('ccvAccessToken', response.access);
-        this.isAuthenticatedSubject.next(true);
+        this._isAuthenticated.set(true);
 
         const user = this.getUserFromToken();
         if (user) {
-          this.currentUserSubject.next(user);
+          this._currentUser.set(user);
         }
 
         this.fetchUserProfile().subscribe({
@@ -306,7 +310,7 @@ export class AuthService {
     }).pipe(
       tap(response => {
         localStorage.setItem('ccvAccessToken', response.access);
-        this.isAuthenticatedSubject.next(true);
+        this._isAuthenticated.set(true);
 
         this.fetchUserProfile().subscribe({
           next: (fullUser) => {
@@ -321,11 +325,11 @@ export class AuthService {
   updateAuthStateAfterRefresh(): void {
     const token = this.getAccessToken();
     if (token && !this.isTokenExpired(token)) {
-      this.isAuthenticatedSubject.next(true);
+      this._isAuthenticated.set(true);
 
       const user = this.getUserFromToken();
       if (user) {
-        this.currentUserSubject.next(user);
+        this._currentUser.set(user);
       }
 
       this.fetchUserProfile().subscribe({
@@ -340,7 +344,7 @@ export class AuthService {
   private clearAuthData(): void {
     localStorage.removeItem('ccvAccessToken');
     localStorage.removeItem('ccvRefreshToken');
-    this.currentUserSubject.next(null);
-    this.isAuthenticatedSubject.next(false);
+    this._currentUser.set(null);
+    this._isAuthenticated.set(false);
   }
 }

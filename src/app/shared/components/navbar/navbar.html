@@ -1,4 +1,4 @@
-@if (isAuthenticated$ | async) {
+@if (isAuthenticated()) {
   <nav class="navbar navbar-expand-lg navbar-dark" 
        [style.background-color]="(siteConfig$ | async)?.primaryColor || '#1976d2'">
   <div class="container-fluid">
@@ -75,7 +75,7 @@
             </li>
           </ul>
         </li>
-        @if (currentUser$ | async; as user) {
+        @if (currentUser(); as user) {
           @if (user.isStaff) {
             <li class="nav-item dropdown" ngbDropdown>
               <a class="nav-link dropdown-toggle" 
@@ -161,7 +161,7 @@
           </div>
         </li>
         
-        @if (currentUser$ | async; as user) {
+        @if (currentUser(); as user) {
         <li class="nav-item dropdown" ngbDropdown>
           <a class="nav-link dropdown-toggle" 
              id="userDropdown" 

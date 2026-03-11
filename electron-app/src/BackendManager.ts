@@ -1,6 +1,7 @@
 import { spawn, ChildProcess } from 'child_process';
 import * as path from 'path';
 import * as fs from 'fs';
+import * as net from 'net';
 import { BrowserWindow, ipcMain, dialog } from 'electron';
 import { RedisManager } from './RedisManager';
 
@@ -122,6 +123,23 @@ export class BackendManager {
   }
 
   private sendBackendLog(message: string, type: string = 'info'): void {
+    const logDir = path.join(this.userDataPath, 'logs');
+    const logFile = path.join(logDir, 'app.log');
+
+    // Ensure log directory exists
+    if (!fs.existsSync(logDir)) {
+      fs.mkdirSync(logDir, { recursive: true });
+    }
+
+    const timestamp = new Date().toISOString();
+    const logEntry = `[${timestamp}] [${type.toUpperCase()}] ${message}\n`;
+
+    try {
+      fs.appendFileSync(logFile, logEntry);
+    } catch (err) {
+      console.error('Failed to write to log file:', err);
+    }
+
     if (this.splashWindow && !this.splashWindow.isDestroyed()) {
       this.splashWindow.webContents.send('backend-log', { message, type });
     }
@@ -364,12 +382,27 @@ export class BackendManager {
     });
   }
 
+  private async findAvailablePort(startPort: number = 8000): Promise<number> {
+    return new Promise((resolve, reject) => {
+      const server = net.createServer();
+      server.listen(startPort, () => {
+        const port = (server.address() as net.AddressInfo).port;
+        server.close(() => resolve(port));
+      });
+      server.on('error', () => {
+        this.findAvailablePort(startPort + 1).then(resolve).catch(reject);
+      });
+    });
+  }
+
   async startDjangoServer(backendDir: string, venvPython: string): Promise<void> {
-    return new Promise<void>((resolve) => {
+    return new Promise<void>(async (resolve) => {
       this.sendBackendStatus('django', 'starting', 'Starting Django server with Gunicorn...');
       this.sendBackendLog('Starting Django server with Gunicorn...');
 
-      this.backendPort = 8000;
+      // Find an available port starting from 8000
+      this.backendPort = await this.findAvailablePort(8000);
+      this.sendBackendLog(`Using port ${this.backendPort} for Django backend`, 'info');
 
       const { command, args } = this.getCommandAndArgs(backendDir, venvPython, [
         '-m', 'gunicorn',

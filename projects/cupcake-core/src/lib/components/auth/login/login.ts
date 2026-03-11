@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, OnInit, signal, computed, ChangeDetectionStrategy, effect, untracked } from '@angular/core';
 import { timer } from 'rxjs';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
@@ -41,6 +41,12 @@ export class LoginComponent implements OnInit {
       password: ['', [Validators.required]],
       rememberMe: [false]
     });
+
+    effect(() => {
+      if (this.authService.authenticated()) {
+        untracked(() => this.navigateToReturnUrl());
+      }
+    });
   }
 
   private returnUrl: string = '/';
@@ -63,12 +69,6 @@ export class LoginComponent implements OnInit {
         if (params['username']) {
           this.loginForm.patchValue({ username: params['username'] });
         }
-      }
-    });
-
-    this.authService.isAuthenticated$.subscribe(isAuthenticated => {
-      if (isAuthenticated) {
-        this.navigateToReturnUrl();
       }
     });
   }
@@ -297,12 +297,12 @@ export class LoginComponent implements OnInit {
    * Computed signals for UI display logic
    */
   shouldShowOrcidLogin = computed(() => {
-    const config = this.siteConfigService.configSubject.value;
+    const config = this.siteConfigService.siteConfig();
     return config.enableOrcidLogin === true || this.authConfig()?.orcidLoginEnabled === true;
   });
 
   shouldShowRegistration = computed(() => {
-    const config = this.siteConfigService.configSubject.value;
+    const config = this.siteConfigService.siteConfig();
     return config.allowUserRegistration === true || this.registrationStatus()?.registrationEnabled === true;
   });
   shouldShowRegularLogin = computed(() => this.authConfig()?.regularLoginEnabled !== false);

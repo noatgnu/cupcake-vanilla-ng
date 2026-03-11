@@ -1,4 +1,4 @@
-import { Component, signal, inject, OnInit, OnDestroy, DOCUMENT, effect, ChangeDetectionStrategy } from '@angular/core';
+import { Component, signal, inject, OnInit, OnDestroy, DOCUMENT, effect, ChangeDetectionStrategy, untracked } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { CommonModule } from '@angular/common';
@@ -7,7 +7,7 @@ import { ElectronService } from '@noatgnu/cupcake-vanilla';
 import { AsyncTaskMonitorService, AuthService, WebSocketService } from '@noatgnu/cupcake-core';
 import { SiteConfigService, ThemeService, ToastService, ToastContainerComponent, PoweredByFooterComponent } from '@noatgnu/cupcake-core';
 
-import { BehaviorSubject, Subscription } from 'rxjs';
+import { toObservable } from '@angular/core/rxjs-interop';
 import { environment } from '../environments/environment';
 
 @Component({
@@ -31,33 +31,21 @@ export class App implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private websocket = inject(WebSocketService);
 
-  private appInitializedSubject = new BehaviorSubject<boolean>(false);
-  public appInitialized$ = this.appInitializedSubject.asObservable();
-  private authSubscription?: Subscription;
+  private _appInitialized = signal<boolean>(false);
+  public appInitialized = this._appInitialized.asReadonly();
+  public appInitialized$ = toObservable(this._appInitialized);
 
   private themeEffect = effect(() => {
-    this.themeService.isDark();
-    this.siteConfigService.getCurrentConfig().subscribe(currentConfig => {
-      if (currentConfig) {
-        this.updatePrimaryColorTheme(currentConfig.primaryColor || '#1976d2');
-      }
+    const isDark = this.themeService.isDark();
+    const config = this.siteConfigService.siteConfig();
+    untracked(() => {
+      this.updatePrimaryColorTheme(config.primaryColor || '#1976d2');
     });
   });
 
-  ngOnInit(): void {
-    this.initializeWebSocket();
-    this.initializeApp();
-  }
-
-  ngOnDestroy(): void {
-    if (this.authSubscription) {
-      this.authSubscription.unsubscribe();
-    }
-    this.websocket.disconnect();
-  }
-
-  private initializeWebSocket(): void {
-    this.authSubscription = this.authService.currentUser$.subscribe(user => {
+  private authEffect = effect(() => {
+    const user = this.authService.currentUser();
+    untracked(() => {
       if (user) {
         console.log('User authenticated, connecting WebSocket for async task monitoring...');
         this.websocket.connect();
@@ -70,6 +58,14 @@ export class App implements OnInit, OnDestroy {
         this.websocket.disconnect();
       }
     });
+  });
+
+  ngOnInit(): void {
+    this.initializeApp();
+  }
+
+  ngOnDestroy(): void {
+    this.websocket.disconnect();
   }
 
   /**
@@ -77,18 +73,14 @@ export class App implements OnInit, OnDestroy {
    */
   private async initializeApp(): Promise<void> {
     try {
-      this.siteConfigService.config$.subscribe(config => {
-        this.updatePrimaryColorTheme(config.primaryColor || '#1976d2');
-      });
-
-      this.appInitializedSubject.next(true);
+      this._appInitialized.set(true);
       this.electronService.getAppVersion().then(appVersion => {
         console.log('App Version:', appVersion);
         this.toastService.show("Application initialized")
       })
     } catch (error) {
       console.error('Failed to initialize app:', error);
-      this.appInitializedSubject.next(true);
+      this._appInitialized.set(true);
     }
   }
 

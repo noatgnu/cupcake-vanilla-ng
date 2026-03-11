@@ -1,5 +1,6 @@
-import { Injectable, inject } from '@angular/core';
-import { Observable, BehaviorSubject } from 'rxjs';
+import { Injectable, inject, signal } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { Observable } from 'rxjs';
 import { ApiService } from './api';
 import { AuthService } from './auth';
 import { 
@@ -21,11 +22,13 @@ export class UserManagementService {
   private apiService = inject(ApiService);
   private authService = inject(AuthService);
 
-  private usersSubject = new BehaviorSubject<User[]>([]);
-  public users$ = this.usersSubject.asObservable();
+  private _users = signal<User[]>([]);
+  public users = this._users.asReadonly();
+  public users$ = toObservable(this._users);
 
-  private totalUsersSubject = new BehaviorSubject<number>(0);
-  public totalUsers$ = this.totalUsersSubject.asObservable();
+  private _totalUsers = signal<number>(0);
+  public totalUsers = this._totalUsers.asReadonly();
+  public totalUsers$ = toObservable(this._totalUsers);
 
   constructor() { }
 
@@ -104,15 +107,15 @@ export class UserManagementService {
   }
 
   updateUsersState(users: User[], total: number): void {
-    this.usersSubject.next(users);
-    this.totalUsersSubject.next(total);
+    this._users.set(users);
+    this._totalUsers.set(total);
   }
 
   getCurrentUsers(): User[] {
-    return this.usersSubject.getValue();
+    return this._users();
   }
 
   getCurrentTotalUsers(): number {
-    return this.totalUsersSubject.getValue();
+    return this._totalUsers();
   }
 }

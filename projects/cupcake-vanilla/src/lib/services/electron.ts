@@ -1,24 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Observable, NEVER } from 'rxjs';
-
-export interface ElectronAPI {
-  platform: string;
-  isElectron: boolean;
-  getAppVersion(): Promise<string>;
-  getElectronVersion(): Promise<string>;
-  minimize(): void;
-  maximize(): void;
-  close(): void;
-  isMaximized(): Promise<boolean>;
-  showOpenDialog(options?: any): Promise<any>;
-  showSaveDialog(options?: any): Promise<any>;
-  showMessageBox(options: any): Promise<any>;
-  downloadFile(url: string, filename?: string): Promise<string>;
-  getBackendPort(): Promise<number>;
-  isBackendReady(): Promise<boolean>;
-  onBackendStatusChange(callback: (status: any) => void): () => void;
-  onWindowStateChange(callback: (state: 'maximized' | 'unmaximized') => void): () => void;
-}
+import { ElectronAPI } from '@noatgnu/cupcake-core';
 
 interface WindowWithElectron extends Window {
   electronAPI?: ElectronAPI;

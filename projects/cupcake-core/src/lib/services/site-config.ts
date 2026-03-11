@@ -1,5 +1,6 @@
-import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, interval } from 'rxjs';
+import { Injectable, signal } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { Observable, interval } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { BaseApiService } from './base-api';
 import { SiteConfig } from '../models/site-config';
@@ -37,8 +38,9 @@ export class SiteConfigService extends BaseApiService {
     updatedAt: new Date().toISOString()
   };
 
-  public configSubject = new BehaviorSubject<SiteConfig>(this.defaultConfig);
-  public config$ = this.configSubject.asObservable();
+  private _siteConfig = signal<SiteConfig>(this.defaultConfig);
+  public siteConfig = this._siteConfig.asReadonly();
+  public config$ = toObservable(this._siteConfig);
 
   constructor(private demoModeService: DemoModeService) {
     super();
@@ -50,7 +52,7 @@ export class SiteConfigService extends BaseApiService {
     interval(60000).subscribe(() => {
       this.fetchConfigFromBackend().subscribe({
         next: (config) => {
-          this.configSubject.next({ ...this.defaultConfig, ...config });
+          this._siteConfig.set({ ...this.defaultConfig, ...config });
           localStorage.setItem('site_config', JSON.stringify(config));
           this.handleDemoMode(config);
         },
@@ -64,7 +66,7 @@ export class SiteConfigService extends BaseApiService {
     if (savedConfig) {
       try {
         const config = JSON.parse(savedConfig);
-        this.configSubject.next({ ...this.defaultConfig, ...config });
+        this._siteConfig.set({ ...this.defaultConfig, ...config });
         this.handleDemoMode(config);
       } catch (error) {
         // Invalid config, use defaults
@@ -73,7 +75,7 @@ export class SiteConfigService extends BaseApiService {
 
     this.fetchConfigFromBackend().subscribe({
       next: (config) => {
-        this.configSubject.next({ ...this.defaultConfig, ...config });
+        this._siteConfig.set({ ...this.defaultConfig, ...config });
         localStorage.setItem('site_config', JSON.stringify(config));
         this.handleDemoMode(config);
       },
@@ -94,7 +96,7 @@ export class SiteConfigService extends BaseApiService {
   getCurrentConfig(): Observable<SiteConfig> {
     return this.get<SiteConfig>(`${this.apiUrl}/site-config/current/`).pipe(
       tap(config => {
-        this.configSubject.next({ ...this.defaultConfig, ...config });
+        this._siteConfig.set({ ...this.defaultConfig, ...config });
         localStorage.setItem('site_config', JSON.stringify(config));
         this.handleDemoMode(config);
       })
@@ -104,35 +106,35 @@ export class SiteConfigService extends BaseApiService {
   updateConfig(config: Partial<SiteConfig>): Observable<SiteConfig> {
     return this.put<SiteConfig>(`${this.apiUrl}/site-config/update_config/`, config).pipe(
       tap(updatedConfig => {
-        this.configSubject.next({ ...this.defaultConfig, ...updatedConfig });
+        this._siteConfig.set({ ...this.defaultConfig, ...updatedConfig });
         localStorage.setItem('site_config', JSON.stringify(updatedConfig));
       })
     );
   }
 
   getSiteName(): string {
-    return this.configSubject.value.siteName;
+    return this._siteConfig().siteName;
   }
 
   shouldShowPoweredBy(): boolean {
-    return this.configSubject.value.showPoweredBy !== false;
+    return this._siteConfig().showPoweredBy !== false;
   }
 
   getLogoUrl(): string | null {
-    const config = this.configSubject.value;
+    const config = this._siteConfig();
     return config.logoImage || config.logoUrl || null;
   }
 
   getPrimaryColor(): string {
-    return this.configSubject.value.primaryColor || '#1976d2';
+    return this._siteConfig().primaryColor || '#1976d2';
   }
 
   isRegistrationEnabled(): boolean {
-    return this.configSubject.value.allowUserRegistration === true;
+    return this._siteConfig().allowUserRegistration === true;
   }
 
   isOrcidLoginEnabled(): boolean {
-    return this.configSubject.value.enableOrcidLogin === true;
+    return this._siteConfig().enableOrcidLogin === true;
   }
 
   getAvailableWhisperModels(): Observable<{models: any[], count: number}> {
@@ -148,11 +150,11 @@ export class SiteConfigService extends BaseApiService {
   }
 
   getMaxUploadSize(): number {
-    return this.configSubject.value.maxUploadSize || 104857600;
+    return this._siteConfig().maxUploadSize || 104857600;
   }
 
   getMaxChunkedUploadSize(): number {
-    return this.configSubject.value.maxChunkedUploadSize || 2147483648;
+    return this._siteConfig().maxChunkedUploadSize || 2147483648;
   }
 
   getMaxUploadSizeMB(): number {

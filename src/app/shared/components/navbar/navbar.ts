@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, OnDestroy, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, signal, ChangeDetectionStrategy, effect, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { NgbDropdownModule } from '@ng-bootstrap/ng-bootstrap';
@@ -30,8 +30,8 @@ export class NavbarComponent implements OnInit, OnDestroy {
   private asyncTaskService = inject(AsyncTaskUIService);
   private demoModeService = inject(DemoModeService);
 
-  isAuthenticated$ = this.authService.isAuthenticated$;
-  currentUser$ = this.authService.currentUser$;
+  isAuthenticated = this.authService.authenticated;
+  currentUser = this.authService.currentUser;
 
   siteConfig$ = this.siteConfigService.config$;
 
@@ -47,9 +47,10 @@ export class NavbarComponent implements OnInit, OnDestroy {
 
   private subscriptions = new Subscription();
 
-  ngOnInit(): void {
-    this.subscriptions.add(
-      this.isAuthenticated$.subscribe(isAuthenticated => {
+  constructor() {
+    effect(() => {
+      const isAuthenticated = this.authService.authenticated();
+      untracked(() => {
         if (isAuthenticated && this.webSocketService.shouldConnect()) {
           const currentState = this.webSocketService.connectionState$();
           if (currentState === 'disconnected' || currentState === 'error') {
@@ -60,9 +61,11 @@ export class NavbarComponent implements OnInit, OnDestroy {
           console.log('Navbar: User not authenticated, disconnecting WebSocket');
           this.webSocketService.disconnect();
         }
-      })
-    );
+      });
+    });
+  }
 
+  ngOnInit(): void {
     this.subscriptions.add(
       this.demoModeService.demoMode$.subscribe(info => {
         this.isDemoMode.set(info.isActive);

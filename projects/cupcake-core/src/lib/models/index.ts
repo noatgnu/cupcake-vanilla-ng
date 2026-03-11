@@ -17,3 +17,4 @@ export * from './remote-host';
 export * from './notification';
 export * from './async-task';
 export * from './worker-status';
+export * from './electron-api.interface';

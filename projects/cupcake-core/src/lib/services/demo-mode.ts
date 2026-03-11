@@ -1,5 +1,6 @@
-import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { Injectable, signal } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { Observable } from 'rxjs';
 
 export interface DemoModeInfo {
   isActive: boolean;
@@ -11,18 +12,19 @@ export interface DemoModeInfo {
   providedIn: 'root'
 })
 export class DemoModeService {
-  private demoModeSubject = new BehaviorSubject<DemoModeInfo>({
+  private _demoMode = signal<DemoModeInfo>({
     isActive: false,
     cleanupIntervalMinutes: 15
   });
 
-  public demoMode$ = this.demoModeSubject.asObservable();
+  public demoMode = this._demoMode.asReadonly();
+  public demoMode$ = toObservable(this._demoMode);
 
   setDemoMode(isActive: boolean, cleanupInterval: number = 15): void {
-    const currentInfo = this.demoModeSubject.value;
+    const currentInfo = this._demoMode();
 
     if (isActive !== currentInfo.isActive) {
-      this.demoModeSubject.next({
+      this._demoMode.set({
         isActive,
         cleanupIntervalMinutes: cleanupInterval,
         lastDetected: new Date()
@@ -39,11 +41,11 @@ export class DemoModeService {
   }
 
   isDemoMode(): boolean {
-    return this.demoModeSubject.value.isActive;
+    return this._demoMode().isActive;
   }
 
   getDemoModeInfo(): DemoModeInfo {
-    return this.demoModeSubject.value;
+    return this._demoMode();
   }
 
   checkLocalStorage(): void {
