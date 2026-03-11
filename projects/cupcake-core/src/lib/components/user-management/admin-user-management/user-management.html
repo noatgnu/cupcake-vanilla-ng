@@ -72,15 +72,15 @@
     <!-- Success/Error Messages -->
     @if (successMessage()) {
       <div class="alert alert-success alert-dismissible">
-        <i class="bi bi-check-circle me-2"></i>{{ successMessage() }}
-        <button type="button" class="btn-close" (click)="clearMessages()"></button>
+        <i class="bi bi-check-circle me-2" aria-hidden="true"></i>{{ successMessage() }}
+        <button type="button" class="btn-close" aria-label="Dismiss success message" (click)="clearMessages()"></button>
       </div>
     }
 
     @if (errorMessage()) {
       <div class="alert alert-danger alert-dismissible">
-        <i class="bi bi-exclamation-triangle me-2"></i>{{ errorMessage() }}
-        <button type="button" class="btn-close" (click)="clearMessages()"></button>
+        <i class="bi bi-exclamation-triangle me-2" aria-hidden="true"></i>{{ errorMessage() }}
+        <button type="button" class="btn-close" aria-label="Dismiss error message" (click)="clearMessages()"></button>
       </div>
     }
 
@@ -140,43 +140,48 @@
                     <td>{{ formatDate(user.dateJoined) }}</td>
                     <td>{{ formatDate(user.lastLogin) }}</td>
                     <td class="text-end">
-                      <div class="btn-group btn-group-sm" role="group">
+                      <div class="btn-group btn-group-sm" role="group" [attr.aria-label]="'Actions for ' + getUserDisplayName(user)">
                         <button
                           type="button"
                           class="btn btn-outline-primary"
                           (click)="openEditUserModal(editUserModal, user)"
-                          title="Edit user">
-                          <i class="bi bi-pencil"></i>
+                          title="Edit user"
+                          [attr.aria-label]="'Edit ' + getUserDisplayName(user)">
+                          <i class="bi bi-pencil" aria-hidden="true"></i>
                         </button>
                         <button
                           type="button"
                           class="btn btn-outline-warning"
                           (click)="openPasswordResetModal(passwordResetModal, user)"
-                          title="Reset password">
-                          <i class="bi bi-shield-lock"></i>
+                          title="Reset password"
+                          [attr.aria-label]="'Reset password for ' + getUserDisplayName(user)">
+                          <i class="bi bi-shield-lock" aria-hidden="true"></i>
                         </button>
                         <button
                           type="button"
                           class="btn"
                           [class]="user.isActive ? 'btn-outline-secondary' : 'btn-outline-success'"
                           (click)="toggleUserStatus(user)"
-                          [title]="user.isActive ? 'Deactivate user' : 'Activate user'">
-                          <i class="bi" [class]="user.isActive ? 'bi-person-dash' : 'bi-person-check'"></i>
+                          [title]="user.isActive ? 'Deactivate user' : 'Activate user'"
+                          [attr.aria-label]="user.isActive ? 'Deactivate ' + getUserDisplayName(user) : 'Activate ' + getUserDisplayName(user)">
+                          <i class="bi" [class]="user.isActive ? 'bi-person-dash' : 'bi-person-check'" aria-hidden="true"></i>
                         </button>
                         <button
                           type="button"
                           class="btn"
                           [class]="user.isStaff ? 'btn-outline-secondary' : 'btn-outline-info'"
                           (click)="toggleStaffStatus(user)"
-                          [title]="user.isStaff ? 'Remove staff privileges' : 'Grant staff privileges'">
-                          <i class="bi" [class]="user.isStaff ? 'bi-person-x' : 'bi-person-badge'"></i>
+                          [title]="user.isStaff ? 'Remove staff privileges' : 'Grant staff privileges'"
+                          [attr.aria-label]="user.isStaff ? 'Remove staff privileges from ' + getUserDisplayName(user) : 'Grant staff privileges to ' + getUserDisplayName(user)">
+                          <i class="bi" [class]="user.isStaff ? 'bi-person-x' : 'bi-person-badge'" aria-hidden="true"></i>
                         </button>
                         <button
                           type="button"
                           class="btn btn-outline-danger"
                           (click)="deleteUser(user)"
-                          title="Delete user">
-                          <i class="bi bi-trash"></i>
+                          title="Delete user"
+                          [attr.aria-label]="'Delete ' + getUserDisplayName(user)">
+                          <i class="bi bi-trash" aria-hidden="true"></i>
                         </button>
                       </div>
                     </td>
@@ -192,21 +197,21 @@
               <div class="text-muted">
                 Showing {{ showingFrom() }} to {{ showingTo() }} of {{ totalUsers() }} users
               </div>
-              <nav>
+              <nav aria-label="User list pagination">
                 <ul class="pagination pagination-sm mb-0">
                   <li class="page-item" [class.disabled]="!canGoToPreviousPage()">
-                    <button class="page-link" (click)="onPageChange(currentPage() - 1)" [disabled]="!canGoToPreviousPage()">
-                      <i class="bi bi-chevron-left"></i>
+                    <button class="page-link" (click)="onPageChange(currentPage() - 1)" [disabled]="!canGoToPreviousPage()" aria-label="Go to previous page">
+                      <i class="bi bi-chevron-left" aria-hidden="true"></i>
                     </button>
                   </li>
                   @for (page of pages(); track page) {
                     <li class="page-item" [class.active]="page === currentPage()">
-                      <button class="page-link" (click)="onPageChange(page)">{{ page }}</button>
+                      <button class="page-link" (click)="onPageChange(page)" [attr.aria-label]="'Go to page ' + page" [attr.aria-current]="page === currentPage() ? 'page' : null">{{ page }}</button>
                     </li>
                   }
                   <li class="page-item" [class.disabled]="!canGoToNextPage()">
-                    <button class="page-link" (click)="onPageChange(currentPage() + 1)" [disabled]="!canGoToNextPage()">
-                      <i class="bi bi-chevron-right"></i>
+                    <button class="page-link" (click)="onPageChange(currentPage() + 1)" [disabled]="!canGoToNextPage()" aria-label="Go to next page">
+                      <i class="bi bi-chevron-right" aria-hidden="true"></i>
                     </button>
                   </li>
                 </ul>
@@ -227,10 +232,10 @@
 <!-- Create User Modal -->
 <ng-template #createUserModal let-modal>
   <div class="modal-header">
-    <h4 class="modal-title">
-      <i class="bi bi-person-plus me-2"></i>Create User
+    <h4 class="modal-title" id="createUserModalTitle">
+      <i class="bi bi-person-plus me-2" aria-hidden="true"></i>Create User
     </h4>
-    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
   </div>
   <div class="modal-body">
     <form #createForm="ngForm" (ngSubmit)="createUser(createForm.value)">
@@ -377,10 +382,10 @@
 <!-- Edit User Modal -->
 <ng-template #editUserModal let-modal>
   <div class="modal-header">
-    <h4 class="modal-title">
-      <i class="bi bi-pencil me-2"></i>Edit User
+    <h4 class="modal-title" id="editUserModalTitle">
+      <i class="bi bi-pencil me-2" aria-hidden="true"></i>Edit User
     </h4>
-    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
   </div>
   <div class="modal-body">
     @if (hasSelectedUser()) {
@@ -499,10 +504,10 @@
 <!-- Password Reset Modal -->
 <ng-template #passwordResetModal let-modal>
   <div class="modal-header">
-    <h4 class="modal-title">
-      <i class="bi bi-shield-lock me-2"></i>Reset Password
+    <h4 class="modal-title" id="passwordResetModalTitle">
+      <i class="bi bi-shield-lock me-2" aria-hidden="true"></i>Reset Password
     </h4>
-    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
   </div>
   <div class="modal-body">
     @if (hasSelectedUser()) {

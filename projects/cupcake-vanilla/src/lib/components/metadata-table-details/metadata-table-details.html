@@ -162,8 +162,9 @@
                 type="button"
                 class="btn btn-outline-danger btn-sm dropdown-toggle"
                 ngbDropdownToggle
-                [disabled]="isLoading()">
-                <i class="bi bi-three-dots-vertical"></i>
+                [disabled]="isLoading()"
+                aria-label="More actions">
+                <i class="bi bi-three-dots-vertical" aria-hidden="true"></i>
               </button>
               <div class="dropdown-menu dropdown-menu-end" ngbDropdownMenu>
                 <a class="dropdown-item text-danger" href="#" (click)="deleteTable(); $event.preventDefault()">
@@ -360,8 +361,9 @@
                       type="button"
                       class="btn btn-outline-secondary"
                       (click)="clearColumnFilter()"
-                      title="Clear filter">
-                      <i class="bi bi-x"></i>
+                      title="Clear filter"
+                      aria-label="Clear column filter">
+                      <i class="bi bi-x" aria-hidden="true"></i>
                     </button>
                   }
                 </div>
@@ -526,36 +528,42 @@
                         <div class="btn-group btn-group-sm">
                           <button type="button" class="btn btn-outline-primary"
                                   (click)="viewColumnDetails(column)"
-                                  title="View column details">
-                            <i class="bi bi-eye"></i>
+                                  title="View column details"
+                                  [attr.aria-label]="'View details for ' + column.name">
+                            <i class="bi bi-eye" aria-hidden="true"></i>
                           </button>
                           @if (table()!.canEdit) {
-                            <button type="button" 
+                            <button type="button"
                                     class="btn"
                                     [class]="column.hidden ? 'btn-outline-warning' : 'btn-outline-success'"
                                     (click)="toggleColumnHidden(column)"
-                                    [title]="column.hidden ? 'Show column' : 'Hide column'">
-                              <i class="bi" [class]="column.hidden ? 'bi-eye-slash' : 'bi-eye'"></i>
+                                    [title]="column.hidden ? 'Show column' : 'Hide column'"
+                                    [attr.aria-label]="column.hidden ? 'Show ' + column.name : 'Hide ' + column.name">
+                              <i class="bi" [class]="column.hidden ? 'bi-eye-slash' : 'bi-eye'" aria-hidden="true"></i>
                             </button>
                             <button type="button" class="btn btn-outline-success"
                                     (click)="editColumnValue(column)"
-                                    title="Edit default value">
-                              <i class="bi bi-pencil-square"></i>
+                                    title="Edit default value"
+                                    [attr.aria-label]="'Edit default value for ' + column.name">
+                              <i class="bi bi-pencil-square" aria-hidden="true"></i>
                             </button>
                             <button type="button" class="btn btn-outline-info"
                                     (click)="autofillColumnValues(column)"
-                                    title="Auto-fill values">
-                              <i class="bi bi-magic"></i>
+                                    title="Auto-fill values"
+                                    [attr.aria-label]="'Auto-fill values for ' + column.name">
+                              <i class="bi bi-magic" aria-hidden="true"></i>
                             </button>
                             <button type="button" class="btn btn-outline-secondary"
                                     (click)="editColumnSettings(column)"
-                                    title="Edit column settings">
-                              <i class="bi bi-gear"></i>
+                                    title="Edit column settings"
+                                    [attr.aria-label]="'Edit settings for ' + column.name">
+                              <i class="bi bi-gear" aria-hidden="true"></i>
                             </button>
                             <button type="button" class="btn btn-outline-info"
                                     (click)="openColumnHistory(column)"
-                                    title="View column history">
-                              <i class="bi bi-clock-history"></i>
+                                    title="View column history"
+                                    [attr.aria-label]="'View history for ' + column.name">
+                              <i class="bi bi-clock-history" aria-hidden="true"></i>
                             </button>
                           }
                         </div>

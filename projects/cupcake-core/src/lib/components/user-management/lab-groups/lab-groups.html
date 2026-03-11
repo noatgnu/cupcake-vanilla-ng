@@ -218,30 +218,33 @@
                       <small>{{ group.createdAt | date:'short' }}</small>
                     </td>
                     <td>
-                      <div class="btn-group btn-group-sm" role="group">
-                        <button 
+                      <div class="btn-group btn-group-sm" role="group" [attr.aria-label]="'Actions for ' + group.name">
+                        <button
                           type="button"
-                          class="btn btn-outline-info" 
+                          class="btn btn-outline-info"
                           (click)="viewGroupMembers(group)"
-                          title="View members">
-                          <i class="bi bi-people"></i>
+                          title="View members"
+                          [attr.aria-label]="'View members of ' + group.name">
+                          <i class="bi bi-people" aria-hidden="true"></i>
                         </button>
                         @if (group.isMember && !group.isCreator) {
-                          <button 
+                          <button
                             type="button"
-                            class="btn btn-outline-warning" 
+                            class="btn btn-outline-warning"
                             (click)="leaveGroup(group)"
-                            title="Leave group">
-                            <i class="bi bi-box-arrow-right"></i>
+                            title="Leave group"
+                            [attr.aria-label]="'Leave ' + group.name">
+                            <i class="bi bi-box-arrow-right" aria-hidden="true"></i>
                           </button>
                         }
                         @if (group.canManage) {
-                          <button 
+                          <button
                             type="button"
-                            class="btn btn-outline-danger" 
+                            class="btn btn-outline-danger"
                             (click)="deleteGroup(group)"
-                            title="Delete group">
-                            <i class="bi bi-trash"></i>
+                            title="Delete group"
+                            [attr.aria-label]="'Delete ' + group.name">
+                            <i class="bi bi-trash" aria-hidden="true"></i>
                           </button>
                         }
                       </div>
@@ -293,14 +296,14 @@
 <!-- Group Members Modal -->
 @if (selectedGroupForMembers()) {
   <div class="modal-backdrop fade show"></div>
-  <div class="modal fade show d-block" tabindex="-1">
+  <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="groupMembersModalTitle">
     <div class="modal-dialog modal-lg">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title">
-            <i class="bi bi-people me-2"></i>{{ currentGroupName() }} - Members
+          <h5 class="modal-title" id="groupMembersModalTitle">
+            <i class="bi bi-people me-2" aria-hidden="true"></i>{{ currentGroupName() }} - Members
           </h5>
-          <button type="button" class="btn-close" (click)="closeGroupDetails()"></button>
+          <button type="button" class="btn-close" aria-label="Close" (click)="closeGroupDetails()"></button>
         </div>
         <div class="modal-body">
           <!-- Invite Form -->
@@ -410,12 +413,13 @@
                         }
                       </div>
                       @if (canManageCurrentGroup() && selectedGroupForMembers() && member.id !== selectedGroupForMembers()!.creator) {
-                        <button 
+                        <button
                           type="button"
-                          class="btn btn-outline-danger btn-sm" 
+                          class="btn btn-outline-danger btn-sm"
                           (click)="removeMember(member.id)"
-                          title="Remove member">
-                          <i class="bi bi-person-dash"></i>
+                          title="Remove member"
+                          [attr.aria-label]="'Remove ' + member.firstName + ' ' + member.lastName + ' from group'">
+                          <i class="bi bi-person-dash" aria-hidden="true"></i>
                         </button>
                       }
                     </div>
@@ -470,12 +474,13 @@
                         }
                       </div>
                       @if (canManageCurrentGroup()) {
-                        <button 
+                        <button
                           type="button"
-                          class="btn btn-outline-danger btn-sm" 
+                          class="btn btn-outline-danger btn-sm"
                           (click)="cancelInvitation(invitation.id)"
-                          title="Cancel invitation">
-                          <i class="bi bi-x-circle"></i>
+                          title="Cancel invitation"
+                          [attr.aria-label]="'Cancel invitation for ' + invitation.invitedEmail">
+                          <i class="bi bi-x-circle" aria-hidden="true"></i>
                         </button>
                       }
                     </div>

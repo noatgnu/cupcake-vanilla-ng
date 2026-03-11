@@ -109,12 +109,13 @@
       <ul class="navbar-nav">
         <!-- Theme Toggle -->
         <li class="nav-item">
-          <button 
-            class="nav-link btn btn-link" 
+          <button
+            class="nav-link btn btn-link"
             (click)="toggleTheme()"
             [title]="getThemeLabel()"
+            [attr.aria-label]="'Toggle theme: ' + getThemeLabel()"
             style="border: none; background: none; color: inherit;">
-            <i [class]="getThemeIcon()"></i>
+            <i [class]="getThemeIcon()" aria-hidden="true"></i>
           </button>
         </li>
         
@@ -124,8 +125,9 @@
             class="nav-link btn btn-link position-relative"
             ngbDropdownToggle
             [title]="'Background Tasks (' + ((activeTaskCount$ | async) || 0) + ' active)'"
+            [attr.aria-label]="'Background tasks: ' + ((activeTaskCount$ | async) || 0) + ' active'"
             style="border: none; background: none; color: inherit;">
-            <i class="bi bi-list-task"></i>
+            <i class="bi bi-list-task" aria-hidden="true"></i>
             @if ((activeTaskCount$ | async) && (activeTaskCount$ | async)! > 0) {
               <span class="position-absolute badge rounded-pill bg-primary"
                     style="font-size: 0.6rem; min-width: 1.2rem; height: 1.2rem; top: -2px; right: -8px;">
@@ -144,8 +146,9 @@
             class="nav-link btn btn-link position-relative"
             ngbDropdownToggle
             [title]="'Notifications (' + unreadCount() + ' unread)'"
+            [attr.aria-label]="'Notifications: ' + unreadCount() + ' unread'"
             style="border: none; background: none; color: inherit;">
-            <i class="bi bi-bell"></i>
+            <i class="bi bi-bell" aria-hidden="true"></i>
             @if (unreadCount() > 0) {
               <span class="position-absolute badge rounded-pill bg-danger"
                     style="font-size: 0.6rem; min-width: 1.2rem; height: 1.2rem; top: -2px; right: -8px;">
