@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, Output, EventEmitter, inject } from '@angular/core';
+import { Component, Input, OnInit, Output, EventEmitter, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormArray } from '@angular/forms';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
@@ -16,7 +16,8 @@ export interface AdvancedAutofillConfig {
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './advanced-autofill.html',
-  styleUrl: './advanced-autofill.scss'
+  styleUrl: './advanced-autofill.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AdvancedAutofillComponent implements OnInit {
   @Input() config!: AdvancedAutofillConfig;

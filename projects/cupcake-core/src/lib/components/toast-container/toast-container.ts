@@ -1,4 +1,4 @@
-import { Component, inject, ChangeDetectorRef, effect } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { ToastService, ToastMessage } from '../../services/toast';
@@ -8,20 +8,13 @@ import { ToastService, ToastMessage } from '../../services/toast';
   standalone: true,
   imports: [CommonModule, NgbModule],
   templateUrl: './toast-container.html',
-  styleUrl: './toast-container.scss'
+  styleUrl: './toast-container.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ToastContainerComponent {
   private toastService = inject(ToastService);
-  private cdr = inject(ChangeDetectorRef);
 
   toasts = this.toastService.toasts;
-
-  constructor() {
-    effect(() => {
-      const currentToasts = this.toasts();
-      this.cdr.detectChanges();
-    });
-  }
 
   remove(toast: ToastMessage) {
     this.toastService.remove(toast.id);

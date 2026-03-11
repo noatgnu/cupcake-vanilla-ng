@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, signal, computed } from '@angular/core';
+import { Component, EventEmitter, Input, Output, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgbActiveModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
@@ -18,7 +18,8 @@ export interface TemplateSchemaSelectionResult {
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, NgbModule],
   templateUrl: './schema-selection-modal.html',
-  styleUrl: './schema-selection-modal.scss'
+  styleUrl: './schema-selection-modal.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class TemplateSchemaSelectionModal {
   @Input() availableSchemas: any[] = [];

@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit, signal, computed } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgbActiveModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
@@ -17,7 +17,8 @@ interface SampleSelectionItem {
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, NgbModule],
   templateUrl: './sample-pool-create-modal.html',
-  styleUrl: './sample-pool-create-modal.scss'
+  styleUrl: './sample-pool-create-modal.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class SamplePoolCreateModal implements OnInit {
   @Input() metadataTable!: MetadataTable;

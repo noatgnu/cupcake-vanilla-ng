@@ -1,4 +1,5 @@
-import { Component, inject, OnInit, signal, computed } from '@angular/core';
+import { Component, inject, OnInit, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import { timer } from 'rxjs';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, AbstractControl } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
@@ -12,7 +13,8 @@ import { UserRegistrationRequest, UserResponse, RegistrationStatus } from '../..
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, NgbAlert],
   templateUrl: './register.html',
-  styleUrl: './register.scss'
+  styleUrl: './register.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class RegisterComponent implements OnInit {
   private apiService = inject(ApiService);
@@ -106,15 +108,15 @@ export class RegisterComponent implements OnInit {
           this.loading.set(false);
           this.success.set(response.message || 'Registration successful! You can now log in with your credentials.');
           
-          setTimeout(() => {
+          timer(2000).subscribe(() => {
             this.router.navigate(['/login'], {
-              queryParams: { 
+              queryParams: {
                 returnUrl: this.returnUrl,
                 registered: 'true',
                 username: registrationData.username
               }
             });
-          }, 2000);
+          });
         },
         error: (error) => {
           this.loading.set(false);

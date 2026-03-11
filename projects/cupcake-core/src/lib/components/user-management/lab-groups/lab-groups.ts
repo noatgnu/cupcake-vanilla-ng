@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, computed, effect, inject } from '@angular/core';
+import { Component, OnInit, signal, computed, effect, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, NonNullableFormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgbModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
@@ -19,7 +19,8 @@ import { ToastService } from '../../../services/toast';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, NgbModule],
   templateUrl: './lab-groups.html',
-  styleUrls: ['./lab-groups.scss']
+  styleUrls: ['./lab-groups.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class LabGroupsComponent implements OnInit {
   // Inject services using modern inject() syntax

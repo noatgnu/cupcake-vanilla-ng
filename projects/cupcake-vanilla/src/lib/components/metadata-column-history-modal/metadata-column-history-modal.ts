@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, Output, EventEmitter } from '@angular/core';
+import { Component, Input, OnInit, Output, EventEmitter, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 
@@ -15,7 +15,8 @@ export interface ColumnHistoryModalConfig {
   standalone: true,
   imports: [CommonModule],
   templateUrl: './metadata-column-history-modal.html',
-  styleUrl: './metadata-column-history-modal.scss'
+  styleUrl: './metadata-column-history-modal.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class MetadataColumnHistoryModal implements OnInit {
   @Input() config!: ColumnHistoryModalConfig;

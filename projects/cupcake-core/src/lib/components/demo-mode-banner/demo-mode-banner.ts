@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, Inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, Inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule, DOCUMENT } from '@angular/common';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -9,15 +9,16 @@ import { DemoModeService, DemoModeInfo } from '../../services/demo-mode';
   standalone: true,
   imports: [CommonModule],
   templateUrl: './demo-mode-banner.html',
-  styleUrls: ['./demo-mode-banner.scss']
+  styleUrls: ['./demo-mode-banner.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DemoModeBannerComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
 
-  isDemoMode = false;
-  demoModeInfo: DemoModeInfo | null = null;
-  isCollapsed = false;
-  isDismissed = false;
+  isDemoMode = signal(false);
+  demoModeInfo = signal<DemoModeInfo | null>(null);
+  isCollapsed = signal(false);
+  isDismissed = signal(false);
 
   constructor(
     private demoModeService: DemoModeService,
@@ -28,18 +29,18 @@ export class DemoModeBannerComponent implements OnInit, OnDestroy {
     this.demoModeService.demoMode$
       .pipe(takeUntil(this.destroy$))
       .subscribe(info => {
-        this.isDemoMode = info.isActive;
-        this.demoModeInfo = info;
+        this.isDemoMode.set(info.isActive);
+        this.demoModeInfo.set(info);
 
         const dismissed = localStorage.getItem('demo_banner_dismissed');
-        this.isDismissed = dismissed === 'true';
+        this.isDismissed.set(dismissed === 'true');
 
         this.updateBodyClasses();
       });
 
     const collapsed = localStorage.getItem('demo_banner_collapsed');
     if (collapsed === 'true') {
-      this.isCollapsed = true;
+      this.isCollapsed.set(true);
     }
   }
 
@@ -51,21 +52,22 @@ export class DemoModeBannerComponent implements OnInit, OnDestroy {
   }
 
   toggleCollapse(): void {
-    this.isCollapsed = !this.isCollapsed;
-    localStorage.setItem('demo_banner_collapsed', this.isCollapsed.toString());
+    const newValue = !this.isCollapsed();
+    this.isCollapsed.set(newValue);
+    localStorage.setItem('demo_banner_collapsed', newValue.toString());
     this.updateBodyClasses();
   }
 
   dismissBanner(): void {
-    this.isDismissed = true;
+    this.isDismissed.set(true);
     localStorage.setItem('demo_banner_dismissed', 'true');
     this.updateBodyClasses();
   }
 
   private updateBodyClasses(): void {
-    if (this.isDemoMode && !this.isDismissed) {
+    if (this.isDemoMode() && !this.isDismissed()) {
       this.document.body.classList.add('demo-mode-active');
-      if (this.isCollapsed) {
+      if (this.isCollapsed()) {
         this.document.body.classList.add('demo-mode-collapsed');
       } else {
         this.document.body.classList.remove('demo-mode-collapsed');
@@ -77,12 +79,13 @@ export class DemoModeBannerComponent implements OnInit, OnDestroy {
   }
 
   getMinutesRemaining(): number {
-    if (!this.demoModeInfo?.lastDetected) {
-      return this.demoModeInfo?.cleanupIntervalMinutes || 15;
+    const info = this.demoModeInfo();
+    if (!info?.lastDetected) {
+      return info?.cleanupIntervalMinutes || 15;
     }
 
-    const elapsed = (Date.now() - this.demoModeInfo.lastDetected.getTime()) / 1000 / 60;
-    const remaining = this.demoModeInfo.cleanupIntervalMinutes - elapsed;
+    const elapsed = (Date.now() - info.lastDetected.getTime()) / 1000 / 60;
+    const remaining = info.cleanupIntervalMinutes - elapsed;
     return Math.max(0, Math.floor(remaining));
   }
 }

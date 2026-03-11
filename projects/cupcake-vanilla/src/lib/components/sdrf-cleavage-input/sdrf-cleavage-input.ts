@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit, inject, signal } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgbTypeahead, NgbModule } from '@ng-bootstrap/ng-bootstrap';
@@ -11,7 +11,8 @@ import { MetadataColumnService, MetadataColumnTemplateService } from '../../serv
   selector: 'ccv-sdrf-cleavage-input',
   imports: [CommonModule, ReactiveFormsModule, NgbTypeahead, NgbModule],
   templateUrl: './sdrf-cleavage-input.html',
-  styleUrl: './sdrf-cleavage-input.scss'
+  styleUrl: './sdrf-cleavage-input.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class SdrfCleavageInput implements OnInit {
   @Input() value: string = '';

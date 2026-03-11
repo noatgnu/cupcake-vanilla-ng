@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, computed, effect } from '@angular/core';
+import { Component, OnInit, signal, computed, effect, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
 import { NgbModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
@@ -23,7 +23,8 @@ import { ToastService } from '@noatgnu/cupcake-core';
   selector: 'ccv-metadata-table-templates',
   imports: [CommonModule, ReactiveFormsModule, NgbModule],
   templateUrl: './metadata-table-templates.html',
-  styleUrl: './metadata-table-templates.scss'
+  styleUrl: './metadata-table-templates.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class MetadataTableTemplates implements OnInit {
   searchForm: FormGroup;

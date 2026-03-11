@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, OnInit } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
@@ -15,7 +15,8 @@ export interface ExcelExportOptions {
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './excel-export-modal.html',
-  styleUrl: './excel-export-modal.scss'
+  styleUrl: './excel-export-modal.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ExcelExportModalComponent implements OnInit {
   activeModal = inject(NgbActiveModal);

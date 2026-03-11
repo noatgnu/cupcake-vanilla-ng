@@ -1223,7 +1223,7 @@ export class WebRTCService {
         chunks.push(chunk);
       },
       close() {
-        const blob = new Blob(chunks);
+        const blob = new Blob(chunks as BlobPart[]);
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;

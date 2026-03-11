@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, signal, computed, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, computed, ViewChild, ElementRef, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { NgbModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
@@ -44,7 +44,8 @@ import { ToastService } from '@noatgnu/cupcake-core';
   standalone: true,
   imports: [CommonModule, RouterModule, NgbModule, DragDropModule],
   templateUrl: './metadata-table-details.html',
-  styleUrl: './metadata-table-details.scss'
+  styleUrl: './metadata-table-details.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class MetadataTableDetails implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();

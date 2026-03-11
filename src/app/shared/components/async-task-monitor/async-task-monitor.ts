@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, Input, signal, computed } from '@angular/core';
+import { Component, OnInit, OnDestroy, Input, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Observable, Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -9,7 +9,8 @@ import { AsyncTaskUIService } from '@noatgnu/cupcake-vanilla';
   selector: 'app-async-task-monitor',
   imports: [CommonModule],
   templateUrl: './async-task-monitor.html',
-  styleUrl: './async-task-monitor.scss'
+  styleUrl: './async-task-monitor.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AsyncTaskMonitorComponent implements OnInit, OnDestroy {
   @Input() showCompleted = true;

@@ -1,6 +1,6 @@
 import { Injectable, NgZone, Inject, Optional } from '@angular/core';
 import { webSocket, WebSocketSubject } from 'rxjs/webSocket';
-import { BehaviorSubject, Subject, Subscription } from 'rxjs';
+import { BehaviorSubject, Subject, Subscription, timer } from 'rxjs';
 import { AuthService, CUPCAKE_CORE_CONFIG, CupcakeCoreConfig } from '@noatgnu/cupcake-core';
 import {
   WebRTCMessage,
@@ -150,12 +150,12 @@ export class WebRTCSignallingService {
 
         if (this.shouldReconnect && this._sessionId.value) {
           console.log('Attempting to reconnect in 5 seconds...');
-          setTimeout(() => {
+          timer(5000).subscribe(() => {
             if (this.shouldReconnect && this._sessionId.value) {
               console.log('Reconnecting to WebRTC signalling...');
               this.connect(this._sessionId.value);
             }
-          }, 5000);
+          });
         } else {
           console.log('Reconnection disabled due to authentication error');
         }

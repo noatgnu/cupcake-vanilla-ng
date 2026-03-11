@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit, signal, inject } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, signal, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgbActiveModal, NgbModule, NgbNavModule } from '@ng-bootstrap/ng-bootstrap';
@@ -43,7 +43,8 @@ export interface MetadataValueEditConfig {
     SdrfSpikedCompoundInput
   ],
   templateUrl: './metadata-value-edit-modal.html',
-  styleUrl: './metadata-value-edit-modal.scss'
+  styleUrl: './metadata-value-edit-modal.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class MetadataValueEditModal implements OnInit {
   @Input() config!: MetadataValueEditConfig;

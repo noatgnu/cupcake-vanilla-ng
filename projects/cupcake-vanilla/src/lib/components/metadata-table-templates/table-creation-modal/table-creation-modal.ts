@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Output, Input, OnInit } from '@angular/core';
+import { Component, EventEmitter, Output, Input, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
@@ -18,7 +18,8 @@ export interface TableCreationData {
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './table-creation-modal.html',
-  styleUrl: './table-creation-modal.scss'
+  styleUrl: './table-creation-modal.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class TableCreationModalComponent implements OnInit {
   @Input() template!: MetadataTableTemplate;

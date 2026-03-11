@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, computed, effect } from '@angular/core';
+import { Component, OnInit, signal, computed, effect, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormsModule, FormBuilder, FormGroup } from '@angular/forms';
 import { NgbModule, NgbModal, NgbPaginationModule, NgbTypeahead } from '@ng-bootstrap/ng-bootstrap';
@@ -19,7 +19,8 @@ import { LabGroupService, LabGroup, LabGroupQueryResponse } from '@noatgnu/cupca
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, FormsModule, NgbModule, NgbPaginationModule, NgbTypeahead],
   templateUrl: './column-templates.html',
-  styleUrl: './column-templates.scss'
+  styleUrl: './column-templates.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ColumnTemplates implements OnInit {
   searchForm: FormGroup;

@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit, inject } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { SdrfSyntaxService, AgeFormat } from '../../services/sdrf-syntax';
@@ -7,7 +7,8 @@ import { SdrfSyntaxService, AgeFormat } from '../../services/sdrf-syntax';
   selector: 'ccv-sdrf-age-input',
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './sdrf-age-input.html',
-  styleUrl: './sdrf-age-input.scss'
+  styleUrl: './sdrf-age-input.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class SdrfAgeInput implements OnInit {
   @Input() value: string = '';

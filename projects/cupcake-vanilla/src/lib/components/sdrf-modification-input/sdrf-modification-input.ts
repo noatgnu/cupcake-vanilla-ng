@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChanges, inject, signal } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChanges, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgbTypeahead, NgbModule } from '@ng-bootstrap/ng-bootstrap';
@@ -21,7 +21,8 @@ import {
   selector: 'ccv-sdrf-modification-input',
   imports: [CommonModule, ReactiveFormsModule, NgbTypeahead, NgbModule],
   templateUrl: './sdrf-modification-input.html',
-  styleUrl: './sdrf-modification-input.scss'
+  styleUrl: './sdrf-modification-input.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class SdrfModificationInput implements OnInit {
   @Input() value: string = '';

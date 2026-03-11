@@ -1,4 +1,4 @@
-import { Component, inject, Input, OnInit, signal } from '@angular/core';
+import { Component, inject, Input, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder } from '@angular/forms';
 import { NgbActiveModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
@@ -13,7 +13,8 @@ import { MetadataValidationRequest, MetadataValidationConfig, ValidationSchema }
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, NgbModule],
   templateUrl: './metadata-validation-modal.html',
-  styleUrl: './metadata-validation-modal.scss'
+  styleUrl: './metadata-validation-modal.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class MetadataValidationModal implements OnInit {
   @Input() config?: MetadataValidationConfig;

@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit, inject } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { SdrfSyntaxService, SpikedCompound } from '../../services/sdrf-syntax';
@@ -7,7 +7,8 @@ import { SdrfSyntaxService, SpikedCompound } from '../../services/sdrf-syntax';
   selector: 'ccv-sdrf-spiked-compound-input',
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './sdrf-spiked-compound-input.html',
-  styleUrl: './sdrf-spiked-compound-input.scss'
+  styleUrl: './sdrf-spiked-compound-input.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class SdrfSpikedCompoundInput implements OnInit {
   @Input() value: string = '';

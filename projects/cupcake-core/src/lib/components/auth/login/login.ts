@@ -1,4 +1,5 @@
-import { Component, inject, OnInit, signal, computed } from '@angular/core';
+import { Component, inject, OnInit, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import { timer } from 'rxjs';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
@@ -13,7 +14,8 @@ import { AuthConfig, RegistrationStatus } from '../../../models';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, NgbAlert],
   templateUrl: './login.html',
-  styleUrl: './login.scss'
+  styleUrl: './login.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class LoginComponent implements OnInit {
   private authService = inject(AuthService);
@@ -96,9 +98,9 @@ export class LoginComponent implements OnInit {
       this.authService.exchangeAuthCode(authCode).subscribe({
         next: () => {
           this.success.set('Login successful!');
-          setTimeout(() => {
+          timer(1000).subscribe(() => {
             this.navigateToReturnUrl();
-          }, 1000);
+          });
         },
         error: (error) => {
           this.loading.set(false);
@@ -212,9 +214,9 @@ export class LoginComponent implements OnInit {
       this.authService.login(username, password, rememberMe || false).subscribe({
         next: (response) => {
           this.success.set('Login successful!');
-          setTimeout(() => {
+          timer(1000).subscribe(() => {
             this.navigateToReturnUrl();
-          }, 1000);
+          });
         },
         error: (error) => {
           this.loading.set(false);
@@ -266,9 +268,9 @@ export class LoginComponent implements OnInit {
     this.authService.handleORCIDCallback(code, state, rememberMe).subscribe({
       next: (response) => {
         this.success.set(`Welcome, ${response.user.firstName || response.user.username}!`);
-        setTimeout(() => {
+        timer(1000).subscribe(() => {
           this.navigateToReturnUrl();
-        }, 1000);
+        });
       },
       error: (error) => {
         this.loading.set(false);

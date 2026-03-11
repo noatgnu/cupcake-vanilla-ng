@@ -1,4 +1,4 @@
-import { Component, Input, signal } from '@angular/core';
+import { Component, Input, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
@@ -18,7 +18,8 @@ export interface SearchReplaceConfig {
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './search-replace-modal.html',
-  styleUrl: './search-replace-modal.scss'
+  styleUrl: './search-replace-modal.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class SearchReplaceModal {
   @Input() config!: SearchReplaceConfig;

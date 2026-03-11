@@ -19,7 +19,6 @@
           "options": {
             "browser": "src/main.ts",
             "polyfills": [
-              "zone.js",
               "@angular/localize/init"
             ],
             "tsConfig": "tsconfig.app.json",
@@ -94,8 +93,6 @@
           "builder": "@angular/build:karma",
           "options": {
             "polyfills": [
-              "zone.js",
-              "zone.js/testing",
               "@angular/localize/init"
             ],
             "tsConfig": "tsconfig.spec.json",
@@ -135,10 +132,7 @@
           "builder": "@angular/build:karma",
           "options": {
             "tsConfig": "projects/cupcake-core/tsconfig.spec.json",
-            "polyfills": [
-              "zone.js",
-              "zone.js/testing"
-            ]
+            "polyfills": []
           }
         }
       }
@@ -165,10 +159,7 @@
           "builder": "@angular/build:karma",
           "options": {
             "tsConfig": "projects/cupcake-macaron/tsconfig.spec.json",
-            "polyfills": [
-              "zone.js",
-              "zone.js/testing"
-            ]
+            "polyfills": []
           }
         }
       }
@@ -195,10 +186,7 @@
           "builder": "@angular/build:karma",
           "options": {
             "tsConfig": "projects/cupcake-mint-chocolate/tsconfig.spec.json",
-            "polyfills": [
-              "zone.js",
-              "zone.js/testing"
-            ]
+            "polyfills": []
           }
         }
       }
@@ -225,10 +213,7 @@
           "builder": "@angular/build:karma",
           "options": {
             "tsConfig": "projects/cupcake-salted-caramel/tsconfig.spec.json",
-            "polyfills": [
-              "zone.js",
-              "zone.js/testing"
-            ]
+            "polyfills": []
           }
         }
       }
@@ -255,10 +240,7 @@
           "builder": "@angular/build:karma",
           "options": {
             "tsConfig": "projects/cupcake-red-velvet/tsconfig.spec.json",
-            "polyfills": [
-              "zone.js",
-              "zone.js/testing"
-            ]
+            "polyfills": []
           }
         }
       }
@@ -285,10 +267,7 @@
           "builder": "@angular/build:karma",
           "options": {
             "tsConfig": "projects/cupcake-vanilla/tsconfig.spec.json",
-            "polyfills": [
-              "zone.js",
-              "zone.js/testing"
-            ]
+            "polyfills": []
           }
         }
       }

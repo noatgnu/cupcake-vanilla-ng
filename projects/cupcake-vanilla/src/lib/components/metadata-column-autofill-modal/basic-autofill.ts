@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, signal, computed, Output, EventEmitter } from '@angular/core';
+import { Component, Input, OnInit, signal, computed, Output, EventEmitter, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgbPaginationModule } from '@ng-bootstrap/ng-bootstrap';
@@ -22,7 +22,8 @@ export interface BasicAutofillResult {
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, NgbPaginationModule],
   templateUrl: './basic-autofill.html',
-  styleUrl: './basic-autofill.scss'
+  styleUrl: './basic-autofill.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class BasicAutofillComponent implements OnInit {
   @Input() config!: BasicAutofillConfig;

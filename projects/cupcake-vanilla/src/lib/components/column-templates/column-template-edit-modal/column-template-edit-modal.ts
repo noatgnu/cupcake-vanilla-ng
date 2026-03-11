@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit, signal } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgbActiveModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
@@ -12,7 +12,8 @@ import { MetadataColumnTemplateService, OntologySearchService } from '../../../s
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, NgbModule],
   templateUrl: './column-template-edit-modal.html',
-  styleUrl: './column-template-edit-modal.scss'
+  styleUrl: './column-template-edit-modal.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ColumnTemplateEditModal implements OnInit {
   @Input() template: MetadataColumnTemplate | null = null;

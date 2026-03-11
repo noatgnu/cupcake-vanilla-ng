@@ -1,4 +1,5 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, signal, computed, ChangeDetectionStrategy, inject } from '@angular/core';
+import { timer } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { NotificationItem } from '@noatgnu/cupcake-core';
@@ -8,7 +9,8 @@ import { NotificationService, NotificationType } from '@noatgnu/cupcake-vanilla'
   selector: 'app-notification-panel',
   imports: [CommonModule, NgbModule],
   templateUrl: './notification-panel.html',
-  styleUrl: './notification-panel.scss'
+  styleUrl: './notification-panel.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class NotificationPanel {
   selectedFilter = signal<NotificationType | 'all'>('all');
@@ -116,8 +118,8 @@ export class NotificationPanel {
 
   reconnectWebSocket(): void {
     this.notificationService.disconnect();
-    setTimeout(() => {
+    timer(1000).subscribe(() => {
       this.notificationService.connect();
-    }, 1000);
+    });
   }
 }

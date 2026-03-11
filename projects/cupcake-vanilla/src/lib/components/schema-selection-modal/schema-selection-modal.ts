@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NgbActiveModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
@@ -17,7 +17,8 @@ export interface SchemaSelectionResult {
   standalone: true,
   imports: [CommonModule, FormsModule, NgbModule],
   templateUrl: './schema-selection-modal.html',
-  styleUrl: './schema-selection-modal.scss'
+  styleUrl: './schema-selection-modal.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class SchemaSelectionModal implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();

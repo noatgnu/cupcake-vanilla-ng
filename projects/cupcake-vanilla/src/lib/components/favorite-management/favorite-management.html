@@ -199,14 +199,15 @@
                             </small>
                           </td>
                           <td>
-                            <div class="btn-group btn-group-sm">
+                            <div class="btn-group btn-group-sm" role="group" [attr.aria-label]="'Actions for ' + favorite.name">
                               @if (canEditFavorite(favorite)) {
                                 <button
                                   type="button"
                                   class="btn btn-outline-primary"
                                   (click)="openEditModal(favorite)"
-                                  title="Edit favorite">
-                                  <i class="bi bi-pencil"></i>
+                                  title="Edit favorite"
+                                  [attr.aria-label]="'Edit ' + favorite.name">
+                                  <i class="bi bi-pencil" aria-hidden="true"></i>
                                 </button>
                               }
                               @if (canDeleteFavorite(favorite)) {
@@ -214,8 +215,9 @@
                                   type="button"
                                   class="btn btn-outline-danger"
                                   (click)="deleteFavorite(favorite)"
-                                  title="Delete favorite">
-                                  <i class="bi bi-trash"></i>
+                                  title="Delete favorite"
+                                  [attr.aria-label]="'Delete ' + favorite.name">
+                                  <i class="bi bi-trash" aria-hidden="true"></i>
                                 </button>
                               }
                             </div>
@@ -272,14 +274,14 @@
 
 <!-- Edit/Create Modal -->
 @if (showEditModal()) {
-  <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
+  <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);" role="dialog" aria-modal="true" aria-labelledby="favoriteModalTitle">
     <div class="modal-dialog modal-lg">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title">
-            <i class="bi bi-heart me-2"></i>{{ editModalTitle }}
+          <h5 class="modal-title" id="favoriteModalTitle">
+            <i class="bi bi-heart me-2" aria-hidden="true"></i>{{ editModalTitle }}
           </h5>
-          <button type="button" class="btn-close" (click)="closeEditModal()"></button>
+          <button type="button" class="btn-close" aria-label="Close" (click)="closeEditModal()"></button>
         </div>
 
         <div class="modal-body">

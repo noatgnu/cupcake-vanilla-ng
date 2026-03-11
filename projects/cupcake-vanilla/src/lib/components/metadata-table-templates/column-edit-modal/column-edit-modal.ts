@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit, signal } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormsModule } from '@angular/forms';
 import { NgbActiveModal, NgbModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
@@ -11,7 +11,8 @@ import { SdrfSyntaxService } from '../../../services/sdrf-syntax';
   selector: 'ccv-column-edit-modal',
   imports: [CommonModule, ReactiveFormsModule, FormsModule, NgbModule],
   templateUrl: './column-edit-modal.html',
-  styleUrl: './column-edit-modal.scss'
+  styleUrl: './column-edit-modal.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ColumnEditModal implements OnInit {
   @Input() column: MetadataColumn | null = null;

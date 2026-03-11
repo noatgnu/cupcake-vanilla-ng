@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, signal } from '@angular/core';
+import { Component, Input, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NgbActiveModal, NgbNavModule } from '@ng-bootstrap/ng-bootstrap';
 import { MetadataColumn, AdvancedAutofillRequest } from '../../models';
@@ -18,7 +18,8 @@ export interface MetadataColumnAutofillConfig {
   standalone: true,
   imports: [CommonModule, NgbNavModule, BasicAutofillComponent, AdvancedAutofillComponent],
   templateUrl: './metadata-column-autofill-modal.html',
-  styleUrl: './metadata-column-autofill-modal.scss'
+  styleUrl: './metadata-column-autofill-modal.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class MetadataColumnAutofillModal implements OnInit {
   @Input() config!: MetadataColumnAutofillConfig;

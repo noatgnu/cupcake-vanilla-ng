@@ -1,4 +1,5 @@
-import { Component, inject, OnInit, signal, computed } from '@angular/core';
+import { Component, inject, OnInit, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import { timer } from 'rxjs';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { NgbAlert } from '@ng-bootstrap/ng-bootstrap';
@@ -12,7 +13,8 @@ import { toSignal } from '@angular/core/rxjs-interop';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, NgbAlert],
   templateUrl: './site-config.html',
-  styleUrl: './site-config.scss'
+  styleUrl: './site-config.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class SiteConfigComponent implements OnInit {
   private fb = inject(FormBuilder);
@@ -94,10 +96,10 @@ export class SiteConfigComponent implements OnInit {
     this.siteConfigService.refreshWhisperModels().subscribe({
       next: (response) => {
         this.success.set('Model scan queued. Refreshing in 5 seconds...');
-        setTimeout(() => {
+        timer(5000).subscribe(() => {
           this.loadAvailableModels();
           this.refreshingModels.set(false);
-        }, 5000);
+        });
       },
       error: (error) => {
         this.error.set('Failed to queue model scan.');
@@ -139,17 +141,17 @@ export class SiteConfigComponent implements OnInit {
 
           localStorage.setItem('site_config', JSON.stringify(updatedConfig));
 
-          setTimeout(() => {
+          timer(3000).subscribe(() => {
             this.success.set(null);
-          }, 3000);
+          });
         },
         error: (error) => {
           this.loading.set(false);
           this.error.set(error.error?.detail || 'Failed to update site configuration.');
 
-          setTimeout(() => {
+          timer(5000).subscribe(() => {
             this.error.set(null);
-          }, 5000);
+          });
         }
       });
     }

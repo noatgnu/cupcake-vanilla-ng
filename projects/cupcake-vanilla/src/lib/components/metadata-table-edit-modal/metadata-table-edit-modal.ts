@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit, signal } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgbActiveModal, NgbModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
@@ -11,7 +11,8 @@ import { LabGroupService, LabGroup } from '@noatgnu/cupcake-core';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, NgbModule],
   templateUrl: './metadata-table-edit-modal.html',
-  styleUrl: './metadata-table-edit-modal.scss'
+  styleUrl: './metadata-table-edit-modal.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class MetadataTableEditModal implements OnInit {
   @Input() table?: MetadataTable; // Make optional for creation mode

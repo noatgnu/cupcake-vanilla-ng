@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit, signal, computed } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgbActiveModal, NgbModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
@@ -14,7 +14,8 @@ import { ToastService } from '@noatgnu/cupcake-core';
   selector: 'ccv-metadata-table-template-edit-modal',
   imports: [CommonModule, ReactiveFormsModule, NgbModule, DragDropModule],
   templateUrl: './metadata-table-template-edit-modal.html',
-  styleUrl: './metadata-table-template-edit-modal.scss'
+  styleUrl: './metadata-table-template-edit-modal.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class MetadataTableTemplateEditModal implements OnInit {
   @Input() template: MetadataTableTemplate | null = null;

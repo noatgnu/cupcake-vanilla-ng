@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit, inject, signal } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgbActiveModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
@@ -10,7 +10,8 @@ import { SamplePoolService } from '../../services';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, NgbModule],
   templateUrl: './sample-pool-edit-modal.html',
-  styleUrl: './sample-pool-edit-modal.scss'
+  styleUrl: './sample-pool-edit-modal.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class SamplePoolEditModal implements OnInit {
   @Input() pool!: SamplePool;

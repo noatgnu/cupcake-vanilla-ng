@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NgbActiveModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { SamplePool } from '../../models';
@@ -8,7 +8,8 @@ import { SamplePool } from '../../models';
   standalone: true,
   imports: [CommonModule, NgbModule],
   templateUrl: './sample-pool-details-modal.html',
-  styleUrl: './sample-pool-details-modal.scss'
+  styleUrl: './sample-pool-details-modal.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class SamplePoolDetailsModal {
   @Input() pool!: SamplePool;

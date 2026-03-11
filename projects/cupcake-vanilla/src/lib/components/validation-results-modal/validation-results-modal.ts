@@ -1,4 +1,4 @@
-import { Component, inject, Input } from '@angular/core';
+import { Component, inject, Input, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NgbActiveModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
 
@@ -13,9 +13,11 @@ export interface ValidationResults {
 
 @Component({
   selector: 'ccv-validation-results-modal',
+  standalone: true,
   imports: [CommonModule, NgbModule],
   templateUrl: './validation-results-modal.html',
-  styleUrl: './validation-results-modal.scss'
+  styleUrl: './validation-results-modal.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ValidationResultsModal {
   @Input() results?: ValidationResults;

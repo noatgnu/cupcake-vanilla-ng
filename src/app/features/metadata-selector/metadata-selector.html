@@ -8,10 +8,10 @@
             Metadata Management
           </h4>
         </div>
-        
+
         <div class="card-body">
           <!-- Loading State -->
-          @if (loading) {
+          @if (loading()) {
             <div class="text-center py-4">
               <div class="spinner-border text-primary" role="status">
                 <span class="visually-hidden">Loading...</span>
@@ -21,10 +21,10 @@
           }
 
           <!-- Error State -->
-          @if (error && !loading) {
+          @if (error() && !loading()) {
             <ngb-alert type="danger" [dismissible]="false">
               <i class="bi bi-exclamation-triangle me-2"></i>
-              {{ error }}
+              {{ error() }}
               <button type="button" class="btn btn-sm btn-outline-danger ms-3" (click)="checkUserData()">
                 Try Again
               </button>
@@ -32,7 +32,7 @@
           }
 
           <!-- Selection Interface -->
-          @if (!loading && !error) {
+          @if (!loading() && !error()) {
             <!-- Recommendation Message -->
             <div class="alert alert-info mb-4">
               <i class="bi bi-info-circle me-2"></i>
@@ -43,17 +43,17 @@
             <div class="row g-3">
               <!-- Metadata Tables Option -->
               <div class="col-md-6">
-                <div class="card h-100" [class.border-primary]="recommendation === 'table'">
+                <div class="card h-100" [class.border-primary]="recommendation() === 'table'">
                   <div class="card-body text-center">
                     <i class="bi bi-table text-primary" style="font-size: 2rem;"></i>
                     <h5 class="card-title mt-3">Metadata Tables</h5>
                     <p class="card-text text-muted">
                       Work with existing metadata tables or create new ones for your experiments.
                     </p>
-                    
+
                     <div class="mt-3">
-                      <button 
-                        type="button" 
+                      <button
+                        type="button"
                         class="btn btn-primary w-100"
                         (click)="navigateToTables()">
                         <i class="bi bi-arrow-right me-2"></i>
@@ -64,9 +64,9 @@
                     <!-- Status indicators -->
                     <div class="mt-2">
                       <small class="text-muted">
-                        @if (hasTables) {
+                        @if (hasTables()) {
                           <i class="bi bi-check-circle text-success me-1"></i>
-                          {{ tablesCount }} {{ tablesCount === 1 ? 'table' : 'tables' }}
+                          {{ tablesCount() }} {{ tablesCount() === 1 ? 'table' : 'tables' }}
                         } @else {
                           <i class="bi bi-circle text-muted me-1"></i>
                           No tables yet
@@ -79,17 +79,17 @@
 
               <!-- Metadata Templates Option -->
               <div class="col-md-6">
-                <div class="card h-100" [class.border-primary]="recommendation === 'template'">
+                <div class="card h-100" [class.border-primary]="recommendation() === 'template'">
                   <div class="card-body text-center">
                     <i class="bi bi-file-earmark-text text-success" style="font-size: 2rem;"></i>
                     <h5 class="card-title mt-3">Metadata Templates</h5>
                     <p class="card-text text-muted">
                       Create reusable templates and generate tables from schemas automatically.
                     </p>
-                    
+
                     <div class="mt-3">
-                      <button 
-                        type="button" 
+                      <button
+                        type="button"
                         class="btn btn-success w-100"
                         (click)="navigateToTemplates()">
                         <i class="bi bi-arrow-right me-2"></i>
@@ -100,9 +100,9 @@
                     <!-- Status indicators -->
                     <div class="mt-2">
                       <small class="text-muted">
-                        @if (hasTemplates) {
+                        @if (hasTemplates()) {
                           <i class="bi bi-check-circle text-success me-1"></i>
-                          {{ templatesCount }} {{ templatesCount === 1 ? 'template' : 'templates' }}
+                          {{ templatesCount() }} {{ templatesCount() === 1 ? 'template' : 'templates' }}
                         } @else {
                           <i class="bi bi-circle text-muted me-1"></i>
                           No templates yet

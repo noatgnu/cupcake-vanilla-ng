@@ -1,4 +1,4 @@
-import {Component, OnInit, signal, computed, inject} from '@angular/core';
+import {Component, OnInit, signal, computed, inject, ChangeDetectionStrategy} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -35,7 +35,8 @@ import { AuthService, User, LabGroupService, ToastService, LabGroup } from '@noa
     NgbTypeahead
   ],
   templateUrl: './favorite-management.html',
-  styleUrl: './favorite-management.scss'
+  styleUrl: './favorite-management.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class FavoriteManagement implements OnInit {
 

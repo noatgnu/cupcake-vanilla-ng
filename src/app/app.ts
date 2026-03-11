@@ -1,4 +1,4 @@
-import { Component, signal, inject, OnInit, OnDestroy, DOCUMENT, effect } from '@angular/core';
+import { Component, signal, inject, OnInit, OnDestroy, DOCUMENT, effect, ChangeDetectionStrategy } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { CommonModule } from '@angular/common';
@@ -15,7 +15,8 @@ import { environment } from '../environments/environment';
   standalone: true,
   imports: [RouterOutlet, NgbModule, CommonModule, NavbarComponent, PoweredByFooterComponent, ToastContainerComponent],
   templateUrl: './app.html',
-  styleUrl: './app.scss'
+  styleUrl: './app.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class App implements OnInit, OnDestroy {
   protected readonly title = signal('cupcake-vanilla-ng');

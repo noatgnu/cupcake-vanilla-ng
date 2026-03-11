@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, signal, computed, effect } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, computed, effect, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
@@ -24,7 +24,8 @@ import { AuthService } from '@noatgnu/cupcake-core';
   standalone: true,
   imports: [CommonModule, RouterModule, ReactiveFormsModule, NgbModule],
   templateUrl: './metadata-tables.html',
-  styleUrl: './metadata-tables.scss'
+  styleUrl: './metadata-tables.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class MetadataTablesComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
