@@ -151,14 +151,29 @@
               <i class="bi bi-search me-1"></i>Autocomplete Available
             </span>
           }
-          @if (specialSyntaxType()) {
+          @if (specialSyntaxType() && !validatorInputType()) {
             <span class="badge bg-info ms-2">
               <i class="bi bi-gear me-1"></i>{{ getSpecialInputTitle() }}
             </span>
           }
+          @if (validatorInputType()) {
+            <span class="badge bg-warning text-dark ms-2">
+              @switch (validatorInputType()) {
+                @case ('number_with_unit') {
+                  <i class="bi bi-123 me-1"></i>Number + Unit
+                }
+                @case ('select') {
+                  <i class="bi bi-list me-1"></i>Predefined Values
+                }
+                @default {
+                  <i class="bi bi-gear me-1"></i>Structured Input
+                }
+              }
+            </span>
+          }
         </label>
 
-        @if (specialSyntaxType()) {
+        @if (specialSyntaxType() || validatorInputType()) {
           <div class="form-check form-switch">
             <input
               class="form-check-input"
@@ -198,8 +213,55 @@
         </div>
       }
 
+      <!-- Validator-based Input Components -->
+      @if (validatorInputType() && showSpecialInput()) {
+        <div class="border rounded p-3 mb-3 bg-body-secondary">
+          <div class="mb-2">
+            <small class="text-muted fw-semibold">
+              @switch (validatorInputType()) {
+                @case ('number_with_unit') {
+                  <i class="bi bi-123 me-1"></i>Number with Unit
+                }
+                @case ('select') {
+                  <i class="bi bi-list me-1"></i>Predefined Values
+                }
+                @default {
+                  <i class="bi bi-gear me-1"></i>Structured Input
+                }
+              }
+            </small>
+          </div>
+
+          @switch (validatorInputType()) {
+            @case ('number_with_unit') {
+              <ccv-sdrf-number-with-unit-input
+                [value]="specialInputValue()"
+                [units]="validatorUnits()"
+                [description]="validatorDescription()"
+                [examples]="validatorExamples()"
+                (valueChange)="onValidatorInputChange($event)">
+              </ccv-sdrf-number-with-unit-input>
+            }
+            @case ('select') {
+              <ccv-sdrf-select-input
+                [value]="specialInputValue()"
+                [options]="validatorOptions()"
+                [description]="validatorDescription()"
+                [allowCustom]="true"
+                (valueChange)="onValidatorInputChange($event)">
+              </ccv-sdrf-select-input>
+            }
+          }
+
+          <div class="form-text mt-2">
+            <i class="bi bi-info-circle me-1"></i>
+            Use the structured input, or toggle off for manual text entry.
+          </div>
+        </div>
+      }
+
       <!-- Special SDRF Syntax Input Components -->
-      @if (showSpecialInput() && specialSyntaxType()) {
+      @if (showSpecialInput() && specialSyntaxType() && !validatorInputType()) {
         <div class="border rounded p-3 mb-3 bg-body-secondary">
           <div class="mb-2">
             <small class="text-muted fw-semibold">

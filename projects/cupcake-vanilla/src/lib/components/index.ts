@@ -2,6 +2,8 @@ export * from './sdrf-age-input/sdrf-age-input';
 export * from './sdrf-modification-input/sdrf-modification-input';
 export * from './sdrf-spiked-compound-input/sdrf-spiked-compound-input';
 export * from './sdrf-cleavage-input/sdrf-cleavage-input';
+export * from './sdrf-number-with-unit-input/sdrf-number-with-unit-input';
+export * from './sdrf-select-input/sdrf-select-input';
 export * from './metadata-value-edit-modal/metadata-value-edit-modal';
 export * from './excel-export-modal/excel-export-modal';
 export * from './validation-results-modal/validation-results-modal';

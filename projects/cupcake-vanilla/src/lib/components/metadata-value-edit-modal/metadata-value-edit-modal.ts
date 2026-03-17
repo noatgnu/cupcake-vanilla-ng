@@ -3,11 +3,11 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgbActiveModal, NgbModule, NgbNavModule } from '@ng-bootstrap/ng-bootstrap';
 import { Observable, of, catchError, debounceTime, distinctUntilChanged, tap, switchMap, map } from 'rxjs';
-import { MetadataColumn, OntologySuggestion, FavouriteMetadataOption, FavouriteMetadataOptionCreateRequest, OntologyType } from '../../models';
+import { MetadataColumn, OntologySuggestion, FavouriteMetadataOption, FavouriteMetadataOptionCreateRequest, OntologyType, ColumnInputType, ColumnValidator } from '../../models';
 import { FavouriteMetadataOptionService, MetadataColumnService, MetadataColumnTemplateService, OntologySearchService } from '../../services';
 import { AuthService, User, LabGroupService } from '@noatgnu/cupcake-core';
 import { SdrfSyntaxService, SyntaxType } from '../../services/sdrf-syntax';
-import { SdrfAgeInput, SdrfModificationInput, SdrfCleavageInput, SdrfSpikedCompoundInput } from '../';
+import { SdrfAgeInput, SdrfModificationInput, SdrfCleavageInput, SdrfSpikedCompoundInput, SdrfNumberWithUnitInput, SdrfSelectInput } from '../';
 
 
 export interface MetadataValueEditConfig {
@@ -27,6 +27,10 @@ export interface MetadataValueEditConfig {
   maxSampleCount?: number;
   allowNotApplicable?: boolean;
   allowNotAvailable?: boolean;
+  inputType?: ColumnInputType;
+  validators?: ColumnValidator[];
+  units?: string[];
+  possibleDefaultValues?: (string | number)[];
 }
 
 @Component({
@@ -40,7 +44,9 @@ export interface MetadataValueEditConfig {
     SdrfAgeInput,
     SdrfModificationInput,
     SdrfCleavageInput,
-    SdrfSpikedCompoundInput
+    SdrfSpikedCompoundInput,
+    SdrfNumberWithUnitInput,
+    SdrfSelectInput
   ],
   templateUrl: './metadata-value-edit-modal.html',
   styleUrl: './metadata-value-edit-modal.scss',
@@ -71,6 +77,12 @@ export class MetadataValueEditModal implements OnInit {
   showSpecialInput = signal(false);
   specialInputValue = signal('');
 
+  validatorInputType = signal<ColumnInputType | null>(null);
+  validatorUnits = signal<string[]>([]);
+  validatorOptions = signal<string[]>([]);
+  validatorDescription = signal<string>('');
+  validatorExamples = signal<(string | number)[]>([]);
+
   selectedSampleIndices = signal<Set<number>>(new Set());
   showSamplePanel = signal(false);
 
@@ -90,13 +102,14 @@ export class MetadataValueEditModal implements OnInit {
   }
 
   ngOnInit() {
+    this.initializeValidatorInputType();
 
     const syntaxType = this.sdrfSyntaxService.detectSpecialSyntax(
       this.config.columnName,
       this.config.columnType
     );
 
-    if (syntaxType) {
+    if (syntaxType && !this.validatorInputType()) {
       this.specialSyntaxType.set(syntaxType);
       this.showSpecialInput.set(true);
       this.specialInputValue.set(this.config?.currentValue || '');
@@ -136,6 +149,48 @@ export class MetadataValueEditModal implements OnInit {
     });
   }
 
+  private initializeValidatorInputType() {
+    if (this.config?.inputType) {
+      this.validatorInputType.set(this.config.inputType);
+    }
+
+    if (this.config?.units && this.config.units.length > 0) {
+      this.validatorUnits.set(this.config.units);
+    }
+
+    if (this.config?.possibleDefaultValues && this.config.possibleDefaultValues.length > 0) {
+      this.validatorOptions.set(this.config.possibleDefaultValues.map(v => String(v)));
+    }
+
+    if (this.config?.validators) {
+      for (const validator of this.config.validators) {
+        if (validator.params?.description) {
+          this.validatorDescription.set(validator.params.description);
+        }
+        if (validator.params?.examples) {
+          this.validatorExamples.set(validator.params.examples);
+        }
+        if (validator.type === 'number_with_unit' && validator.params?.units) {
+          this.validatorUnits.set(validator.params.units);
+          this.validatorInputType.set('number_with_unit');
+        }
+        if (validator.type === 'values' && validator.params?.values) {
+          this.validatorOptions.set(validator.params.values);
+          this.validatorInputType.set('select');
+        }
+      }
+    }
+
+    if (this.validatorInputType()) {
+      this.showSpecialInput.set(true);
+      this.specialInputValue.set(this.config?.currentValue || '');
+    }
+  }
+
+  onValidatorInputChange(value: string) {
+    this.specialInputValue.set(value);
+    this.editForm.patchValue({ value });
+  }
 
   onCancel() {
     this.activeModal.dismiss();

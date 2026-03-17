@@ -1,5 +1,23 @@
 import { BaseTimestampedModel } from './base';
 
+export type ColumnInputType = 'text' | 'select' | 'number_with_unit' | 'pattern' | 'ontology' | 'semver' | 'accession' | 'identifier';
+
+export interface ColumnValidator {
+  type: string;
+  params: {
+    values?: string[];
+    units?: string[];
+    pattern?: string;
+    ontologies?: string[];
+    examples?: (string | number)[];
+    description?: string;
+    error_level?: string;
+    format?: string;
+    special_values?: string[];
+    [key: string]: unknown;
+  };
+}
+
 export interface MetadataColumnTemplate extends BaseTimestampedModel {
   id: number;
   name: string;
@@ -32,6 +50,12 @@ export interface MetadataColumnTemplate extends BaseTimestampedModel {
   lastUsedAt?: string;
   canEdit?: boolean;
   canDelete?: boolean;
+  validators?: ColumnValidator[];
+  inputType?: ColumnInputType;
+  units?: string[];
+  possibleDefaultValues?: (string | number)[];
+  ontologyOptions?: string[];
+  baseColumn?: boolean;
 }
 
 export interface MetadataColumnTemplateShare extends BaseTimestampedModel {

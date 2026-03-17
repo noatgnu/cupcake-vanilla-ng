@@ -1,0 +1,38 @@
+<div class="number-with-unit-input">
+  <form [formGroup]="form">
+    <div class="input-group input-group-sm">
+      <input
+        type="number"
+        class="form-control"
+        formControlName="number"
+        [placeholder]="placeholder"
+        step="any">
+      @if (units.length > 0) {
+        <select class="form-select" formControlName="unit" style="max-width: 80px;">
+          @for (unit of units; track unit) {
+            <option [value]="unit">{{ unit }}</option>
+          }
+        </select>
+      }
+    </div>
+  </form>
+
+  @if (description) {
+    <small class="text-muted d-block mt-1">{{ description }}</small>
+  }
+
+  @if (examples.length > 0) {
+    <div class="examples mt-2">
+      <small class="text-muted me-1">Examples:</small>
+      @for (example of examples; track $index) {
+        <button
+          type="button"
+          class="btn btn-outline-secondary btn-sm me-1 mb-1"
+          style="font-size: 0.7rem; padding: 0.1rem 0.4rem;"
+          (click)="selectExample(example)">
+          {{ example }}
+        </button>
+      }
+    </div>
+  }
+</div>

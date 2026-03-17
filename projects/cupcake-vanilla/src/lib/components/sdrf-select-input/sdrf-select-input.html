@@ -1,0 +1,36 @@
+<div class="select-input">
+  @if (!isCustomMode()) {
+    <select
+      class="form-select form-select-sm"
+      [ngModel]="selectedValue()"
+      (ngModelChange)="onSelectionChange($event)">
+      <option value="" disabled>{{ placeholder }}</option>
+      @for (option of options; track option) {
+        <option [value]="option">{{ option }}</option>
+      }
+      @if (allowCustom) {
+        <option value="__custom__">Custom value...</option>
+      }
+    </select>
+  } @else {
+    <div class="input-group input-group-sm">
+      <input
+        type="text"
+        class="form-control"
+        [ngModel]="customValue()"
+        (ngModelChange)="onCustomValueChange($event)"
+        placeholder="Enter custom value">
+      <button
+        type="button"
+        class="btn btn-outline-secondary"
+        (click)="toggleCustomMode()"
+        title="Back to dropdown">
+        <i class="bi bi-list"></i>
+      </button>
+    </div>
+  }
+
+  @if (description) {
+    <small class="text-muted d-block mt-1">{{ description }}</small>
+  }
+</div>
