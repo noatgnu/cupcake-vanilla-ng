@@ -40,7 +40,10 @@ export interface TaskResultData {
   fileName?: string;
   downloadUrl?: string;
   validationErrors?: string[];
+  errors?: string[];
+  warnings?: string[];
   importedRows?: number;
+  isValid?: boolean;
   [key: string]: unknown;
 }
 

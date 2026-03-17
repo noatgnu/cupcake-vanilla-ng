@@ -163,11 +163,11 @@
                     </div>
                   }
                   
-                  @if (task.result['errors'] && task.result['errors'].length > 0) {
+                  @if ($any(task.result)?.['errors']?.length > 0) {
                     <div class="mt-2">
                       <strong class="text-danger">Errors:</strong>
                       <ul class="list-unstyled ms-3 mb-0">
-                        @for (error of task.result['errors']; track $index) {
+                        @for (error of $any(task.result)?.['errors']; track $index) {
                           <li class="text-danger small">
                             <i class="bi bi-dot me-1"></i>{{ error }}
                           </li>
@@ -175,12 +175,12 @@
                       </ul>
                     </div>
                   }
-                  
-                  @if (task.result['warnings'] && task.result['warnings'].length > 0) {
+
+                  @if ($any(task.result)?.['warnings']?.length > 0) {
                     <div class="mt-2">
                       <strong class="text-warning">Warnings:</strong>
                       <ul class="list-unstyled ms-3 mb-0">
-                        @for (warning of task.result['warnings']; track $index) {
+                        @for (warning of $any(task.result)?.['warnings']; track $index) {
                           <li class="text-warning small">
                             <i class="bi bi-dot me-1"></i>{{ warning }}
                           </li>

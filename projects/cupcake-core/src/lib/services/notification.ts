@@ -7,6 +7,9 @@ export interface NotificationData {
   tableId?: number;
   tableName?: string;
   downloadUrl?: string;
+  metadata_table_name?: string;
+  lab_group_name?: string;
+  progress_percentage?: number;
   [key: string]: unknown;
 }
 
