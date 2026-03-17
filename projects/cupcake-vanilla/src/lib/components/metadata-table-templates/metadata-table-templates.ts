@@ -483,16 +483,64 @@ export class MetadataTableTemplates implements OnInit {
       next: (response) => {
         console.log('Template column reorder task started:', response);
         this.toastService.success(`Template column reorder task queued successfully! Task ID: ${response.taskId}`);
-        
+
         // Mark task for monitoring and start real-time updates (same pattern as other async operations)
         this.asyncTaskService.monitorTask(response.taskId);
-        
+
         this.isLoading.set(false);
       },
       error: (error) => {
         console.error('Error starting template column reorder:', error);
         this.toastService.error('Failed to start template column reordering');
         this.isLoading.set(false);
+      }
+    });
+  }
+
+  /**
+   * Sync template columns from linked schemas.
+   * Updates columns with latest ontology settings and adds new columns from schemas.
+   */
+  syncTemplateFromSchemas(template: MetadataTableTemplate): void {
+    const confirmMessage = `Sync template "${template.name}" from linked schemas?\n\nThis will:\n- Update existing columns with latest ontology settings\n- Add any new columns from schemas\n\nContinue?`;
+
+    if (!confirm(confirmMessage)) {
+      return;
+    }
+
+    this.isLoading.set(true);
+
+    this.metadataTableTemplateService.syncFromSchemas(template.id, {
+      add_new: true,
+      update_existing: true,
+      remove_orphans: false
+    }).subscribe({
+      next: (response) => {
+        this.isLoading.set(false);
+
+        const changes: string[] = [];
+        if (response.added > 0) changes.push(`${response.added} added`);
+        if (response.updated > 0) changes.push(`${response.updated} updated`);
+        if (response.removed > 0) changes.push(`${response.removed} removed`);
+
+        if (changes.length > 0) {
+          this.toastService.success(`Template synced: ${changes.join(', ')}`);
+        } else {
+          this.toastService.info('Template is already up to date');
+        }
+
+        if (response.errors && response.errors.length > 0) {
+          console.warn('Sync errors:', response.errors);
+          this.toastService.warning(`Sync completed with ${response.errors.length} warning(s)`);
+        }
+
+        this.refreshTemplates();
+      },
+      error: (error) => {
+        this.isLoading.set(false);
+        const errorMsg = error?.error?.error || error?.error?.detail || error?.message || 'Failed to sync template';
+        this.toastService.error(errorMsg);
+        console.error('Error syncing template:', error);
       }
     });
   }

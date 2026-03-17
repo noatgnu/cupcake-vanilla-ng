@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { WebSocketService as BaseWebSocketService, WebSocketMessage, AuthService, WEBSOCKET_ENDPOINT } from '@noatgnu/cupcake-core';
+import { WebSocketService as BaseWebSocketService, WebSocketMessage } from '@noatgnu/cupcake-core';
 
 export type { WebSocketMessage };
 
@@ -9,8 +9,8 @@ export type { WebSocketMessage };
 })
 export class Websocket extends BaseWebSocketService {
 
-  constructor(authService: AuthService) {
-    super(authService);
+  constructor() {
+    super();
     this.endpoint = 'ccc/notifications';
     this.config.endpoint = 'ccc/notifications';
     this.config.url = this.getWebSocketUrl();

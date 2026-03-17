@@ -1,18 +1,27 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { RouterTestingModule } from '@angular/router/testing';
 
-import { MetadataTables } from './metadata-tables';
+import { MetadataTablesComponent } from './metadata-tables';
+import { CUPCAKE_CORE_CONFIG } from '@noatgnu/cupcake-core';
 
-describe('MetadataTables', () => {
-  let component: MetadataTables;
-  let fixture: ComponentFixture<MetadataTables>;
+describe('MetadataTablesComponent', () => {
+  let component: MetadataTablesComponent;
+  let fixture: ComponentFixture<MetadataTablesComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [MetadataTables]
+      imports: [MetadataTablesComponent, RouterTestingModule],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: CUPCAKE_CORE_CONFIG, useValue: { apiUrl: 'http://localhost:8000/api' } }
+      ]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(MetadataTables);
+    fixture = TestBed.createComponent(MetadataTablesComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

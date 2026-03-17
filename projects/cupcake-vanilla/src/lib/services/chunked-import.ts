@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Observable, from, throwError } from 'rxjs';
 import { switchMap, map, tap } from 'rxjs/operators';
 import { BaseApiService } from '@noatgnu/cupcake-core';
@@ -23,8 +23,9 @@ export interface ChunkedImportProgress {
   providedIn: 'root'
 })
 export class ChunkedImportService extends BaseApiService {
+  private chunkedUploadService = inject(ChunkedUploadService);
 
-  constructor(private chunkedUploadService: ChunkedUploadService) {
+  constructor() {
     super();
   }
 

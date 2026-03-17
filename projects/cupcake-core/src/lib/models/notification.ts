@@ -29,6 +29,13 @@ export interface SystemNotification extends BaseNotification {
   title: string;
 }
 
+export interface AsyncTaskResult {
+  fileId?: number;
+  fileName?: string;
+  downloadUrl?: string;
+  [key: string]: unknown;
+}
+
 export interface AsyncTaskUpdateNotification extends BaseNotification {
   type: 'async_task.update';
   task_id: string;
@@ -36,7 +43,7 @@ export interface AsyncTaskUpdateNotification extends BaseNotification {
   progress_percentage?: number;
   progress_description?: string;
   error_message?: string;
-  result?: any;
+  result?: AsyncTaskResult;
   download_url?: string;
 }
 

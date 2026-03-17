@@ -25,9 +25,16 @@ export interface PaginatedResponse<T> {
   results: T[];
 }
 
-export interface ApiResponse<T = any> {
+export interface ApiError {
+  message?: string;
+  code?: string;
+  details?: Record<string, string[]>;
+  [key: string]: unknown;
+}
+
+export interface ApiResponse<T = unknown> {
   data?: T;
-  error?: any;
+  error?: ApiError;
   status: number;
   success: boolean;
 }

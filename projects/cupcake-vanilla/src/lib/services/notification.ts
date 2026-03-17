@@ -1,5 +1,5 @@
 import { Injectable, signal, computed, inject, effect, untracked } from '@angular/core';
-import { NotificationService as BaseNotificationService, NotificationItem, ToastService } from '@noatgnu/cupcake-core';
+import { NotificationService as BaseNotificationService, NotificationItem, NotificationData } from '@noatgnu/cupcake-core';
 import { Websocket, WebSocketMessage } from './websocket';
 
 export enum NotificationType {
@@ -12,20 +12,23 @@ export enum NotificationType {
   USER = 'user'
 }
 
+function getMessageString(message: WebSocketMessage, key: string, defaultValue = ''): string {
+  const value = message[key];
+  return typeof value === 'string' ? value : defaultValue;
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class NotificationService extends BaseNotificationService {
+  private websocketService = inject(Websocket);
   private isConnected = signal(false);
 
   readonly isWebSocketConnected = computed(() => this.isConnected());
 
-  constructor(
-    private websocketService: Websocket,
-    toastService: ToastService
-  ) {
-    super(toastService);
-    
+  constructor() {
+    super();
+
     effect(() => {
       const connected = this.websocketService.isConnected();
       untracked(() => {
@@ -52,14 +55,15 @@ export class NotificationService extends BaseNotificationService {
       const notification = this.createNotificationFromWebSocket(message, NotificationType.SYSTEM);
       this.addNotification(notification);
 
+      const toastMessage = message.message || getMessageString(message, 'title', 'Notification');
       if (message['level'] === 'error') {
-        this.toastService.error(message.message || message['title']);
+        this.toastService.error(toastMessage);
       } else if (message['level'] === 'warning') {
-        this.toastService.warning(message.message || message['title']);
+        this.toastService.warning(toastMessage);
       } else if (message['level'] === 'success') {
-        this.toastService.success(message.message || message['title']);
+        this.toastService.success(toastMessage);
       } else {
-        this.toastService.info(message.message || message['title']);
+        this.toastService.info(toastMessage);
       }
     });
 
@@ -145,8 +149,8 @@ export class NotificationService extends BaseNotificationService {
 
     switch (type) {
       case NotificationType.SYSTEM:
-        title = message['title'] || 'System Notification';
-        level = (message['level'] as any) || 'info';
+        title = getMessageString(message, 'title', 'System Notification');
+        level = (getMessageString(message, 'level', 'info') as 'info' | 'success' | 'warning' | 'error') || 'info';
         break;
       case NotificationType.METADATA_TABLE:
         title = 'Metadata Table Update';
@@ -181,7 +185,7 @@ export class NotificationService extends BaseNotificationService {
       read: false,
       level,
       autoClose: level === 'success' || level === 'info',
-      data: message
+      data: message as unknown as NotificationData
     };
   }
 

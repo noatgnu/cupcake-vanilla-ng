@@ -1,9 +1,24 @@
 import { Injectable, OnDestroy, inject, signal, computed, effect, untracked } from '@angular/core';
 import { Observable, Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
-import { AsyncTaskStatus, TaskStatus, PaginatedResponse } from '../models';
+import { AsyncTaskStatus, TaskStatus, TaskResultData, PaginatedResponse } from '../models';
 import { BaseApiService } from './base-api';
-import { WebSocketService } from './websocket';
+import { WebSocketService, WebSocketMessage } from './websocket';
+
+interface TaskUpdateMessage extends WebSocketMessage {
+  task_id: string;
+  status: TaskStatus;
+  progress_percentage?: number;
+  progress_description?: string;
+  error_message?: string;
+  result?: TaskResultData;
+}
+
+interface HttpError {
+  status?: number;
+  message?: string;
+  error?: unknown;
+}
 
 @Injectable({
   providedIn: 'root'
@@ -54,9 +69,9 @@ export class AsyncTaskMonitorService extends BaseApiService implements OnDestroy
     console.log('AsyncTaskMonitorService: Starting real-time updates');
     this._isSubscribed.set(true);
 
-    this.websocket.filterMessages('async_task.update').pipe(
+    this.websocket.filterMessages<TaskUpdateMessage>('async_task.update').pipe(
       takeUntil(this.destroy$)
-    ).subscribe((message: any) => {
+    ).subscribe((message: TaskUpdateMessage) => {
       console.log('AsyncTaskMonitorService: Received async_task.update message:', message);
       this.handleTaskUpdate(message);
     });
@@ -78,7 +93,7 @@ export class AsyncTaskMonitorService extends BaseApiService implements OnDestroy
         console.log('AsyncTaskMonitorService: Loaded tasks from server:', taskArray.length);
         this._tasks.set(taskArray);
       },
-      error: (error: any) => {
+      error: (error: HttpError) => {
         console.error('AsyncTaskMonitorService: Error loading tasks:', error);
       }
     });
@@ -88,7 +103,7 @@ export class AsyncTaskMonitorService extends BaseApiService implements OnDestroy
     return this.delete<{ message: string }>(`${this.apiUrl}/async-tasks/${taskId}/cancel/`);
   }
 
-  private handleTaskUpdate(message: any): void {
+  private handleTaskUpdate(message: TaskUpdateMessage): void {
     console.log('AsyncTaskMonitorService: handleTaskUpdate called with message:', message);
     const taskId = message.task_id;
     const currentTasks = this._tasks();
@@ -142,7 +157,7 @@ export class AsyncTaskMonitorService extends BaseApiService implements OnDestroy
           this._tasks.set([task, ...currentTasks]);
         }
       },
-      error: (error: any) => {
+      error: (error: HttpError) => {
         console.error('AsyncTaskMonitorService: Error loading single task:', error);
         this.loadAllTasks();
       }

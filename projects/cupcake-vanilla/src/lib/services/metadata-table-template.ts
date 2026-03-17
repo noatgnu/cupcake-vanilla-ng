@@ -7,6 +7,8 @@ import {
   MetadataTableTemplateCreateRequest,
   MetadataTableTemplateUpdateRequest,
   MetadataTableTemplateQueryResponse,
+  MetadataTableTemplateSyncRequest,
+  MetadataTableTemplateSyncResponse,
   MetadataTable,
   MetadataColumn,
   Schema,
@@ -228,5 +230,16 @@ export class MetadataTableTemplateService extends BaseApiService {
     staffOnly: boolean;
   }> {
     return this.post(`${this.apiUrl}/metadata-table-templates/${id}/bulk_update_staff_only/`, request);
+  }
+
+  /**
+   * Sync template columns from linked schemas.
+   * Updates existing columns with latest ontology settings and optionally adds new columns.
+   */
+  syncFromSchemas(id: number, request?: MetadataTableTemplateSyncRequest): Observable<MetadataTableTemplateSyncResponse> {
+    return this.post<MetadataTableTemplateSyncResponse>(
+      `${this.apiUrl}/metadata-table-templates/${id}/sync_from_schemas/`,
+      request || {}
+    );
   }
 }

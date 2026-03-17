@@ -20,6 +20,30 @@ export enum TaskType {
   TRANSCRIBE_VIDEO = 'TRANSCRIBE_VIDEO'
 }
 
+export interface TaskParameters {
+  metadataTableId?: number;
+  metadataColumnIds?: number[];
+  includePools?: boolean;
+  replaceExisting?: boolean;
+  validateOntologies?: boolean;
+  validateSdrf?: boolean;
+  exportFormat?: string;
+  labGroupIds?: number[];
+  sampleNumber?: number;
+  schemaNames?: string[];
+  skipOntology?: boolean;
+  [key: string]: unknown;
+}
+
+export interface TaskResultData {
+  fileId?: number;
+  fileName?: string;
+  downloadUrl?: string;
+  validationErrors?: string[];
+  importedRows?: number;
+  [key: string]: unknown;
+}
+
 export interface AsyncTaskStatus {
   id: string;
   taskType: TaskType;
@@ -30,8 +54,8 @@ export interface AsyncTaskStatus {
   metadataTableName?: string;
   taskTypeDisplay?: string;
   statusDisplay?: string;
-  parameters?: any;
-  result?: any;
+  parameters?: TaskParameters;
+  result?: TaskResultData;
   errorMessage?: string;
   traceback?: string;
   createdAt: string;

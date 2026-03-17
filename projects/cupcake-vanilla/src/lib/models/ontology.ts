@@ -83,6 +83,8 @@ export interface CellOntology {
   crossReferences?: any;
 }
 
+export type SchemaLayer = 'technology' | 'sample' | 'experiment' | '';
+
 export interface Schema {
   id: number;
   name: string;
@@ -90,6 +92,12 @@ export interface Schema {
   description?: string;
   category?: string;
   version?: string;
+  extends?: string;
+  usableAlone?: boolean;
+  layer?: SchemaLayer;
+  requires?: any[];
+  excludes?: any;
+  tags?: string[];
   url?: string;
   isActive: boolean;
   isBuiltin: boolean;
@@ -97,6 +105,7 @@ export interface Schema {
   creator?: number;
   creatorUsername?: string;
   columnsCount?: number;
+  usageCount?: number;
 }
 
 export interface OntologySuggestion {

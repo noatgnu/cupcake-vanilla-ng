@@ -1,6 +1,14 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, signal, computed, inject } from '@angular/core';
 import { Subject } from 'rxjs';
 import { ToastService } from './toast';
+
+export interface NotificationData {
+  taskId?: string;
+  tableId?: number;
+  tableName?: string;
+  downloadUrl?: string;
+  [key: string]: unknown;
+}
 
 export interface NotificationItem {
   id: string;
@@ -12,7 +20,7 @@ export interface NotificationItem {
   level?: 'info' | 'success' | 'warning' | 'error';
   actions?: NotificationAction[];
   autoClose?: boolean;
-  data?: any;
+  data?: NotificationData;
 }
 
 export interface NotificationAction {
@@ -36,7 +44,7 @@ export class NotificationService {
 
   readonly notification$ = this.notificationSubject.asObservable();
 
-  constructor(protected toastService: ToastService) {}
+  protected toastService = inject(ToastService);
 
   protected addNotification(notification: NotificationItem): void {
     this.notifications.update(notifications => {

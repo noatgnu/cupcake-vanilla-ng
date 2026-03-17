@@ -54,11 +54,11 @@
       </div>
     </div>
 
-    <!-- Schema Selection -->
+    <!-- Schema Selection by Layer -->
     <div class="card mb-4">
       <div class="card-header d-flex justify-content-between align-items-center">
         <h6 class="mb-0">
-          <i class="bi bi-check2-square me-1"></i>Select Schemas
+          <i class="bi bi-layers me-1"></i>Select Schemas by Layer
         </h6>
         <small class="text-muted">{{ selectedSchemasCount() }} selected</small>
       </div>
@@ -69,53 +69,70 @@
             No schemas available
           </div>
         } @else {
-          <div class="row">
-            @for (schema of availableSchemas; track schema.id) {
-              <div class="col-md-6 mb-2">
-                <div class="card schema-card"
-                     [class.selected]="isSchemaSelected(schema.id)"
-                     (click)="toggleSchema(schema.id)">
-                  <div class="card-body p-3">
-                    <div class="form-check">
-                      <input
-                        class="form-check-input"
-                        type="checkbox"
-                        [id]="'schema-' + schema.id"
-                        [checked]="isSchemaSelected(schema.id)"
-                        (change)="onSchemaCheckChange($event, schema.id)">
-                      <label class="form-check-label w-100" [for]="'schema-' + schema.id">
-                        <div class="d-flex justify-content-between align-items-start">
-                          <div class="flex-grow-1">
-                            <strong class="schema-title">{{ schema.displayName }}</strong>
-                            @if (schema.description) {
-                              <p class="schema-description text-muted small mb-1">
-                                {{ schema.description }}
-                              </p>
-                            }
-                            <div class="schema-metadata">
-                              @if (schema.tags && schema.tags.length > 0) {
-                                @for (tag of schema.tags; track tag) {
-                                  <span class="badge bg-secondary me-1">{{ tag }}</span>
+          <div class="alert alert-info py-2 mb-3">
+            <i class="bi bi-info-circle me-1"></i>
+            <small>Select a <strong>Technology</strong> schema as your base, then add <strong>Sample/Organism</strong> and <strong>Experiment</strong> schemas as needed.</small>
+          </div>
+
+          @for (layer of getLayerKeys(); track layer) {
+            @if (hasLayerSchemas(layer)) {
+              <div class="layer-section mb-3">
+                <div class="layer-header d-flex align-items-center mb-2">
+                  <span class="badge bg-{{ layerInfo[layer].color }} me-2">
+                    <i class="bi {{ layerInfo[layer].icon }} me-1"></i>{{ layerInfo[layer].label }}
+                  </span>
+                  <small class="text-muted">{{ layerInfo[layer].description }}</small>
+                </div>
+                <div class="row">
+                  @for (schema of getLayerSchemas(layer); track schema.id) {
+                    <div class="col-md-6 col-lg-4 mb-2">
+                      <div class="card schema-card h-100"
+                           [class.selected]="isSchemaSelected(schema.id)"
+                           [class.border-primary]="isSchemaSelected(schema.id)"
+                           (click)="toggleSchema(schema.id)">
+                        <div class="card-body p-2">
+                          <div class="form-check">
+                            <input
+                              class="form-check-input"
+                              type="checkbox"
+                              [id]="'schema-' + schema.id"
+                              [checked]="isSchemaSelected(schema.id)"
+                              (change)="onSchemaCheckChange($event, schema.id)">
+                            <label class="form-check-label w-100" [for]="'schema-' + schema.id">
+                              <div class="d-flex flex-column">
+                                <div class="d-flex align-items-center">
+                                  <strong class="schema-title small">{{ schema.displayName || schema.name }}</strong>
+                                  @if (schema.usableAlone) {
+                                    <span class="badge bg-success ms-1" style="font-size: 0.6rem;">Standalone</span>
+                                  }
+                                  @if (schema.version) {
+                                    <span class="badge bg-light text-dark ms-1" style="font-size: 0.6rem;">v{{ schema.version }}</span>
+                                  }
+                                </div>
+                                @if (schema.extends) {
+                                  <small class="text-muted" style="font-size: 0.7rem;">
+                                    <i class="bi bi-arrow-return-right me-1"></i>extends {{ schema.extends }}
+                                  </small>
                                 }
-                              }
-                              @if (schema.usage_count > 0) {
-                                <small class="text-muted">
-                                  <i class="bi bi-graph-up me-1"></i>{{ schema.usage_count }} uses
-                                </small>
-                              }
-                            </div>
+                                @if (schema.description) {
+                                  <small class="schema-description text-muted mt-1" style="font-size: 0.7rem; line-height: 1.2;">
+                                    {{ schema.description | slice:0:80 }}{{ schema.description && schema.description.length > 80 ? '...' : '' }}
+                                  </small>
+                                }
+                              </div>
+                            </label>
                           </div>
                         </div>
-                      </label>
+                      </div>
                     </div>
-                  </div>
+                  }
                 </div>
               </div>
             }
-          </div>
+          }
 
           @if (selectedSchemasCount() === 0) {
-            <div class="alert alert-warning mt-3" role="alert">
+            <div class="alert alert-warning mt-3 py-2" role="alert">
               <i class="bi bi-exclamation-triangle me-2"></i>
               Please select at least one schema to create a template.
             </div>
@@ -174,7 +191,8 @@
         <div class="card-body">
           <div class="d-flex flex-wrap gap-2">
             @for (schemaId of getSelectedSchemas(); track schemaId) {
-              <span class="badge bg-primary fs-6 py-2 px-3">
+              <span class="badge bg-{{ layerInfo[getSchemaLayer(schemaId)]?.color || 'secondary' }} py-2 px-3">
+                <i class="bi {{ layerInfo[getSchemaLayer(schemaId)]?.icon || 'bi-grid' }} me-1"></i>
                 {{ getSchemaDisplayName(schemaId) }}
                 <button
                   type="button"
@@ -187,7 +205,9 @@
             }
           </div>
           <p class="text-muted small mt-2 mb-0">
+            <i class="bi bi-info-circle me-1"></i>
             This template will combine columns from {{ selectedSchemasCount() }} schema{{ selectedSchemasCount() === 1 ? '' : 's' }}.
+            Duplicate columns across schemas will be merged.
           </p>
         </div>
       </div>

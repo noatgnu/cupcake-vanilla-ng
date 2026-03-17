@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { BaseApiService, AnnotationFolder } from '@noatgnu/cupcake-core';
 import { MetadataTable, MetadataColumn, MetadataColumnCreateRequest } from '@noatgnu/cupcake-vanilla';
@@ -54,8 +54,9 @@ export interface StoredReagentQueryParams {
   providedIn: 'root'
 })
 export class ReagentService extends BaseApiService {
+  private annotationChunkedUploadService = inject(AnnotationChunkedUploadService);
 
-  constructor(private annotationChunkedUploadService: AnnotationChunkedUploadService) {
+  constructor() {
     super();
   }
 

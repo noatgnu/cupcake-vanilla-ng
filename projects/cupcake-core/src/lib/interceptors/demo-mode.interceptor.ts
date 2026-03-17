@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import {
   HttpEvent,
   HttpInterceptor,
@@ -12,8 +12,7 @@ import { DemoModeService } from '../services/demo-mode';
 
 @Injectable()
 export class DemoModeInterceptor implements HttpInterceptor {
-
-  constructor(private demoModeService: DemoModeService) {}
+  private demoModeService = inject(DemoModeService);
 
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     return next.handle(req).pipe(

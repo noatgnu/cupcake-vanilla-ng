@@ -1,8 +1,9 @@
-import { Component, EventEmitter, Input, Output, signal, computed, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, EventEmitter, Input, Output, signal, computed, ChangeDetectionStrategy, OnInit } from '@angular/core';
+import { CommonModule, SlicePipe } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgbActiveModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { ResourceVisibility } from '@noatgnu/cupcake-core';
+import { Schema, SchemaLayer } from '../../../models';
 
 export interface TemplateSchemaSelectionResult {
   name: string;
@@ -13,6 +14,13 @@ export interface TemplateSchemaSelectionResult {
   isDefault: boolean;
 }
 
+export interface SchemasByLayer {
+  technology: Schema[];
+  sample: Schema[];
+  experiment: Schema[];
+  other: Schema[];
+}
+
 @Component({
   selector: 'ccv-template-schema-selection-modal',
   standalone: true,
@@ -21,15 +29,48 @@ export interface TemplateSchemaSelectionResult {
   styleUrl: './schema-selection-modal.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class TemplateSchemaSelectionModal {
-  @Input() availableSchemas: any[] = [];
+export class TemplateSchemaSelectionModal implements OnInit {
+  @Input() availableSchemas: Schema[] = [];
   @Input() labGroups: any[] = [];
   @Output() templateCreated = new EventEmitter<TemplateSchemaSelectionResult>();
 
   templateForm: FormGroup;
   selectedSchemas = signal<Set<number>>(new Set());
 
-  // Computed values
+  schemasByLayer = signal<SchemasByLayer>({
+    technology: [],
+    sample: [],
+    experiment: [],
+    other: []
+  });
+
+  layerInfo: Record<string, { label: string; icon: string; description: string; color: string }> = {
+    technology: {
+      label: 'Technology',
+      icon: 'bi-cpu',
+      description: 'Core technology schemas (e.g., MS proteomics, affinity proteomics)',
+      color: 'primary'
+    },
+    sample: {
+      label: 'Sample/Organism',
+      icon: 'bi-droplet',
+      description: 'Sample type and organism-specific schemas',
+      color: 'success'
+    },
+    experiment: {
+      label: 'Experiment',
+      icon: 'bi-flask',
+      description: 'Experiment-specific extensions (e.g., DIA, single-cell)',
+      color: 'info'
+    },
+    other: {
+      label: 'Other',
+      icon: 'bi-grid',
+      description: 'Base and utility schemas',
+      color: 'secondary'
+    }
+  };
+
   selectedSchemasCount = computed(() => this.selectedSchemas().size);
 
   constructor(
@@ -43,6 +84,53 @@ export class TemplateSchemaSelectionModal {
       visibility: [ResourceVisibility.PRIVATE],
       isDefault: [false]
     });
+  }
+
+  ngOnInit() {
+    this.groupSchemasByLayer();
+  }
+
+  private groupSchemasByLayer() {
+    const grouped: SchemasByLayer = {
+      technology: [],
+      sample: [],
+      experiment: [],
+      other: []
+    };
+
+    for (const schema of this.availableSchemas) {
+      const layer = schema.layer as SchemaLayer;
+      if (layer === 'technology') {
+        grouped.technology.push(schema);
+      } else if (layer === 'sample') {
+        grouped.sample.push(schema);
+      } else if (layer === 'experiment') {
+        grouped.experiment.push(schema);
+      } else {
+        grouped.other.push(schema);
+      }
+    }
+
+    grouped.technology.sort((a, b) => (b.usableAlone ? 1 : 0) - (a.usableAlone ? 1 : 0));
+    grouped.sample.sort((a, b) => (a.displayName || a.name).localeCompare(b.displayName || b.name));
+    grouped.experiment.sort((a, b) => (a.displayName || a.name).localeCompare(b.displayName || b.name));
+    grouped.other.sort((a, b) => (a.displayName || a.name).localeCompare(b.displayName || b.name));
+
+    this.schemasByLayer.set(grouped);
+  }
+
+  getLayerKeys(): string[] {
+    return ['technology', 'sample', 'experiment', 'other'];
+  }
+
+  hasLayerSchemas(layer: string): boolean {
+    const grouped = this.schemasByLayer();
+    return (grouped[layer as keyof SchemasByLayer] || []).length > 0;
+  }
+
+  getLayerSchemas(layer: string): Schema[] {
+    const grouped = this.schemasByLayer();
+    return grouped[layer as keyof SchemasByLayer] || [];
   }
 
   toggleSchema(schemaId: number) {
@@ -82,9 +170,18 @@ export class TemplateSchemaSelectionModal {
     this.updateDescription();
   }
 
+  getSchemaById(schemaId: number): Schema | undefined {
+    return this.availableSchemas.find(s => s.id === schemaId);
+  }
+
   getSchemaDisplayName(schemaId: number): string {
-    const schema = this.availableSchemas.find(s => s.id === schemaId);
+    const schema = this.getSchemaById(schemaId);
     return schema?.displayName || schema?.name || `Schema ${schemaId}`;
+  }
+
+  getSchemaLayer(schemaId: number): string {
+    const schema = this.getSchemaById(schemaId);
+    return schema?.layer || 'other';
   }
 
   private updateDescription() {

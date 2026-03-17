@@ -12,7 +12,13 @@ export interface WebSocketMessage {
   type: string;
   message?: string;
   timestamp?: string;
-  [key: string]: any;
+  [key: string]: unknown;
+}
+
+export interface WebSocketSubscriptionOptions {
+  tableId?: number;
+  userId?: number;
+  [key: string]: unknown;
 }
 
 export interface WebSocketConfig {
@@ -47,8 +53,9 @@ export class WebSocketService {
 
   protected config_token = inject(CUPCAKE_CORE_CONFIG);
   protected endpoint = inject(WEBSOCKET_ENDPOINT, { optional: true }) || 'ccc/notifications';
+  protected authService = inject(AuthService);
 
-  constructor(protected authService: AuthService) {
+  constructor() {
     this.config = {
       url: this.getWebSocketUrl(),
       endpoint: this.endpoint,
@@ -175,7 +182,7 @@ export class WebSocketService {
     this.reconnectAttempts = 0;
   }
 
-  send(message: any): void {
+  send(message: Record<string, unknown>): void {
     if (this.ws?.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(message));
     } else {
@@ -183,7 +190,7 @@ export class WebSocketService {
     }
   }
 
-  subscribe(subscriptionType: string, options: any = {}): void {
+  subscribe(subscriptionType: string, options: WebSocketSubscriptionOptions = {}): void {
     this.send({
       type: 'subscribe',
       subscription_type: subscriptionType,

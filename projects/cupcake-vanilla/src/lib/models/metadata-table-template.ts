@@ -40,3 +40,18 @@ export interface MetadataTableTemplateQueryResponse {
   previous?: string;
   results: MetadataTableTemplate[];
 }
+
+export interface MetadataTableTemplateSyncRequest {
+  add_new?: boolean;
+  update_existing?: boolean;
+  remove_orphans?: boolean;
+}
+
+export interface MetadataTableTemplateSyncResponse {
+  message: string;
+  added: number;
+  updated: number;
+  removed: number;
+  errors: string[];
+  schemas: string[];
+}

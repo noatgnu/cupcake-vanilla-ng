@@ -1,4 +1,4 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, signal, inject } from '@angular/core';
 import { Observable, interval } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { BaseApiService } from './base-api';
@@ -40,7 +40,9 @@ export class SiteConfigService extends BaseApiService {
   private _siteConfig = signal<SiteConfig>(this.defaultConfig);
   public siteConfig = this._siteConfig.asReadonly();
 
-  constructor(private demoModeService: DemoModeService) {
+  private demoModeService = inject(DemoModeService);
+
+  constructor() {
     super();
     this.loadConfig();
     this.startPeriodicRefresh();
