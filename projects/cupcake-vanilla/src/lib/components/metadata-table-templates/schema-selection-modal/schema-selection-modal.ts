@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, signal, computed, ChangeDetectionStrategy, OnInit } from '@angular/core';
+import { Component, EventEmitter, Input, Output, signal, computed, ChangeDetectionStrategy, OnInit, effect } from '@angular/core';
 import { CommonModule, SlicePipe } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgbActiveModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
@@ -30,7 +30,16 @@ export interface SchemasByLayer {
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class TemplateSchemaSelectionModal implements OnInit {
-  @Input() availableSchemas: Schema[] = [];
+  private _availableSchemas = signal<Schema[]>([]);
+  
+  @Input() set availableSchemas(value: Schema[]) {
+    this._availableSchemas.set(value || []);
+  }
+  
+  get availableSchemas(): Schema[] {
+    return this._availableSchemas();
+  }
+
   @Input() labGroups: any[] = [];
   @Output() templateCreated = new EventEmitter<TemplateSchemaSelectionResult>();
 
@@ -84,6 +93,11 @@ export class TemplateSchemaSelectionModal implements OnInit {
       visibility: [ResourceVisibility.PRIVATE],
       isDefault: [false]
     });
+
+    // Effect to automatically regroup schemas when availableSchemas signal changes
+    effect(() => {
+      this.groupSchemasByLayer();
+    });
   }
 
   ngOnInit() {
@@ -98,7 +112,13 @@ export class TemplateSchemaSelectionModal implements OnInit {
       other: []
     };
 
-    for (const schema of this.availableSchemas) {
+    const currentSchemas = this._availableSchemas();
+    if (currentSchemas.length === 0) {
+      this.schemasByLayer.set(grouped);
+      return;
+    }
+
+    for (const schema of currentSchemas) {
       const layer = schema.layer as SchemaLayer;
       if (layer === 'technology') {
         grouped.technology.push(schema);
@@ -171,7 +191,7 @@ export class TemplateSchemaSelectionModal implements OnInit {
   }
 
   getSchemaById(schemaId: number): Schema | undefined {
-    return this.availableSchemas.find(s => s.id === schemaId);
+    return this._availableSchemas().find(s => s.id === schemaId);
   }
 
   getSchemaDisplayName(schemaId: number): string {
@@ -197,20 +217,6 @@ export class TemplateSchemaSelectionModal implements OnInit {
   canCreateTemplate(): boolean {
     const formValid = this.templateForm.valid;
     const hasSchemas = this.selectedSchemasCount() > 0;
-    
-    // Debug logging
-    if (!formValid) {
-      console.log('Form errors:', this.templateForm.errors);
-      console.log('Form controls errors:', Object.keys(this.templateForm.controls).reduce((acc, key) => {
-        const control = this.templateForm.get(key);
-        if (control?.errors) {
-          acc[key] = control.errors;
-        }
-        return acc;
-      }, {} as any));
-    }
-    
-    console.log('canCreateTemplate:', { formValid, hasSchemas, result: formValid && hasSchemas });
     return formValid && hasSchemas;
   }
 
