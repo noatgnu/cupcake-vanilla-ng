@@ -1,20 +1,28 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ReactiveFormsModule } from '@angular/forms';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { RouterTestingModule } from '@angular/router/testing';
+import { CUPCAKE_CORE_CONFIG } from '../../../services/auth';
+import { LoginComponent } from './login';
 
-import { Login } from './login';
-
-describe('Login', () => {
-  let component: Login;
-  let fixture: ComponentFixture<Login>;
+describe('LoginComponent', () => {
+  let component: LoginComponent;
+  let fixture: ComponentFixture<LoginComponent>;
+  const mockConfig = {
+    apiUrl: 'https://api.test.com',
+    siteName: 'Test Site'
+  };
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [Login]
-    })
-    .compileComponents();
+      imports: [LoginComponent, ReactiveFormsModule, HttpClientTestingModule, RouterTestingModule],
+      providers: [
+        { provide: CUPCAKE_CORE_CONFIG, useValue: mockConfig }
+      ]
+    }).compileComponents();
 
-    fixture = TestBed.createComponent(Login);
+    fixture = TestBed.createComponent(LoginComponent);
     component = fixture.componentInstance;
-    fixture.detectChanges();
   });
 
   it('should create', () => {

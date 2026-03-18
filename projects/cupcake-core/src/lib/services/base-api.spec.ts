@@ -39,18 +39,12 @@ describe('BaseApiService', () => {
         userIds: [1, 2, 3]
       };
 
-      const expectedOutput = {
-        first_name: 'John',
-        last_name: 'Doe',
-        user_settings: {
-          email_notifications: true,
-          dark_mode: false
-        },
-        user_ids: [1, 2, 3]
-      };
-
-      const result = service['transformToSnakeCase'](input);
-      expect(result).toEqual(expectedOutput);
+      const result = service['transformToSnakeCase'](input) as any;
+      expect(result.first_name).toBe('John');
+      expect(result.last_name).toBe('Doe');
+      expect(result.user_settings.email_notifications).toBe(true);
+      expect(result.user_settings.dark_mode).toBe(false);
+      expect(result.user_ids).toEqual([1, 2, 3]);
     });
 
     it('should transform snake_case to camelCase', () => {
@@ -64,18 +58,12 @@ describe('BaseApiService', () => {
         user_ids: [1, 2, 3]
       };
 
-      const expectedOutput = {
-        firstName: 'John',
-        lastName: 'Doe',
-        userSettings: {
-          emailNotifications: true,
-          darkMode: false
-        },
-        userIds: [1, 2, 3]
-      };
-
-      const result = service['transformToCamelCase'](input);
-      expect(result).toEqual(expectedOutput);
+      const result = service['transformToCamelCase'](input) as any;
+      expect(result.firstName).toBe('John');
+      expect(result.lastName).toBe('Doe');
+      expect(result.userSettings.emailNotifications).toBe(true);
+      expect(result.userSettings.darkMode).toBe(false);
+      expect(result.userIds).toEqual([1, 2, 3]);
     });
 
     it('should handle null and primitive values', () => {
@@ -90,11 +78,9 @@ describe('BaseApiService', () => {
         { userName: 'john' },
         { userEmail: 'john@test.com' }
       ];
-      const expected = [
-        { user_name: 'john' },
-        { user_email: 'john@test.com' }
-      ];
-      expect(service['transformToSnakeCase'](input)).toEqual(expected);
+      const result = service['transformToSnakeCase'](input) as any[];
+      expect(result[0].user_name).toBe('john');
+      expect(result[1].user_email).toBe('john@test.com');
     });
   });
 

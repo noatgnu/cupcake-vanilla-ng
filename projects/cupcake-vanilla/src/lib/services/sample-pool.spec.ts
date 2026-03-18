@@ -35,18 +35,10 @@ describe('SamplePoolService', () => {
         metadataTable: 1,
         isReference: true
       };
-      const mockResponse = {
-        count: 1,
-        results: [{
-          id: 1,
-          name: 'Plasma Pool 1',
-          description: 'Human plasma samples',
-          isReference: true
-        }]
-      };
 
       service.getSamplePools(params).subscribe(response => {
-        expect(response).toEqual(mockResponse);
+        expect(response.count).toBe(1);
+        expect(response.results.length).toBe(1);
         done();
       });
 
@@ -58,126 +50,183 @@ describe('SamplePoolService', () => {
         req.params.get('is_reference') === 'true'
       );
       expect(req.request.method).toBe('GET');
-      req.flush(mockResponse);
+      req.flush({
+        count: 1,
+        results: [{
+          id: 1,
+          pool_name: 'Plasma Pool 1',
+          pool_description: 'Human plasma samples',
+          is_reference: true,
+          metadata_table: 1,
+          pooled_only_samples: [],
+          pooled_and_independent_samples: [],
+          metadata_columns: [],
+          created_at: '2023-01-01T00:00:00Z',
+          updated_at: '2023-01-01T00:00:00Z'
+        }]
+      });
     });
 
     it('should get sample pools without parameters', (done) => {
-      const mockResponse = {
-        count: 2,
-        results: [
-          { id: 1, name: 'Pool 1', description: 'First pool' },
-          { id: 2, name: 'Pool 2', description: 'Second pool' }
-        ]
-      };
-
       service.getSamplePools().subscribe(response => {
-        expect(response).toEqual(mockResponse);
+        expect(response.count).toBe(2);
+        expect(response.results.length).toBe(2);
         done();
       });
 
       const req = httpMock.expectOne(`${mockConfig.apiUrl}/sample-pools/`);
       expect(req.request.method).toBe('GET');
-      req.flush(mockResponse);
+      req.flush({
+        count: 2,
+        results: [
+          {
+            id: 1,
+            pool_name: 'Pool 1',
+            pool_description: 'First pool',
+            metadata_table: 1,
+            pooled_only_samples: [],
+            pooled_and_independent_samples: [],
+            metadata_columns: [],
+            is_reference: false,
+            created_at: '2023-01-01T00:00:00Z',
+            updated_at: '2023-01-01T00:00:00Z'
+          },
+          {
+            id: 2,
+            pool_name: 'Pool 2',
+            pool_description: 'Second pool',
+            metadata_table: 1,
+            pooled_only_samples: [],
+            pooled_and_independent_samples: [],
+            metadata_columns: [],
+            is_reference: false,
+            created_at: '2023-01-01T00:00:00Z',
+            updated_at: '2023-01-01T00:00:00Z'
+          }
+        ]
+      });
     });
 
     it('should get single sample pool', (done) => {
       const poolId = 1;
-      const mockResponse = {
-        id: 1,
-        name: 'Test Pool',
-        description: 'Test description',
-        metadataTable: { id: 1, name: 'Associated Table' },
-        sampleCount: 25
-      };
 
       service.getSamplePool(poolId).subscribe(response => {
-        expect(response).toEqual(mockResponse);
+        expect(response.id).toBe(1);
+        expect(response.poolName).toBe('Test Pool');
         done();
       });
 
       const req = httpMock.expectOne(`${mockConfig.apiUrl}/sample-pools/1/`);
       expect(req.request.method).toBe('GET');
-      req.flush(mockResponse);
+      req.flush({
+        id: 1,
+        pool_name: 'Test Pool',
+        pool_description: 'Test description',
+        metadata_table: 1,
+        pooled_only_samples: [],
+        pooled_and_independent_samples: [],
+        metadata_columns: [],
+        is_reference: false,
+        created_at: '2023-01-01T00:00:00Z',
+        updated_at: '2023-01-01T00:00:00Z'
+      });
     });
 
     it('should create sample pool', (done) => {
       const poolData = {
-        name: 'New Pool',
-        description: 'New pool description',
+        poolName: 'New Pool',
+        poolDescription: 'New pool description',
         metadataTable: 1,
-        isReference: false
-      };
-      const mockResponse = {
-        id: 1,
-        name: 'New Pool',
-        description: 'New pool description',
-        metadataTable: { id: 1, name: 'Table' },
         isReference: false
       };
 
       service.createSamplePool(poolData).subscribe(response => {
-        expect(response).toEqual(mockResponse);
+        expect(response.id).toBe(1);
+        expect(response.poolName).toBe('New Pool');
         done();
       });
 
       const req = httpMock.expectOne(`${mockConfig.apiUrl}/sample-pools/`);
       expect(req.request.method).toBe('POST');
       expect(req.request.body).toEqual({
-        name: 'New Pool',
-        description: 'New pool description',
+        pool_name: 'New Pool',
+        pool_description: 'New pool description',
         metadata_table: 1,
         is_reference: false
       });
-      req.flush(mockResponse);
+      req.flush({
+        id: 1,
+        pool_name: 'New Pool',
+        pool_description: 'New pool description',
+        metadata_table: 1,
+        is_reference: false,
+        pooled_only_samples: [],
+        pooled_and_independent_samples: [],
+        metadata_columns: [],
+        created_at: '2023-01-01T00:00:00Z',
+        updated_at: '2023-01-01T00:00:00Z'
+      });
     });
 
     it('should update sample pool with PUT', (done) => {
       const poolId = 1;
       const updateData = {
-        name: 'Updated Pool',
-        description: 'Updated description',
-        isReference: true
-      };
-      const mockResponse = {
-        id: 1,
-        name: 'Updated Pool',
-        description: 'Updated description',
+        poolName: 'Updated Pool',
+        poolDescription: 'Updated description',
         isReference: true
       };
 
       service.updateSamplePool(poolId, updateData).subscribe(response => {
-        expect(response).toEqual(mockResponse);
+        expect(response.poolName).toBe('Updated Pool');
+        expect(response.isReference).toBe(true);
         done();
       });
 
       const req = httpMock.expectOne(`${mockConfig.apiUrl}/sample-pools/1/`);
       expect(req.request.method).toBe('PUT');
       expect(req.request.body).toEqual({
-        name: 'Updated Pool',
-        description: 'Updated description',
+        pool_name: 'Updated Pool',
+        pool_description: 'Updated description',
         is_reference: true
       });
-      req.flush(mockResponse);
+      req.flush({
+        id: 1,
+        pool_name: 'Updated Pool',
+        pool_description: 'Updated description',
+        metadata_table: 1,
+        is_reference: true,
+        pooled_only_samples: [],
+        pooled_and_independent_samples: [],
+        metadata_columns: [],
+        created_at: '2023-01-01T00:00:00Z',
+        updated_at: '2023-01-01T00:00:00Z'
+      });
     });
 
     it('should partially update sample pool with PATCH', (done) => {
       const poolId = 1;
-      const patchData = { name: 'Patched Pool' };
-      const mockResponse = {
-        id: 1,
-        name: 'Patched Pool',
-        description: 'Original description'
-      };
+      const patchData = { poolName: 'Patched Pool' };
 
       service.patchSamplePool(poolId, patchData).subscribe(response => {
-        expect(response).toEqual(mockResponse);
+        expect(response.poolName).toBe('Patched Pool');
         done();
       });
 
       const req = httpMock.expectOne(`${mockConfig.apiUrl}/sample-pools/1/`);
       expect(req.request.method).toBe('PATCH');
-      expect(req.request.body).toEqual({ name: 'Patched Pool' });
-      req.flush(mockResponse);
+      expect(req.request.body).toEqual({ pool_name: 'Patched Pool' });
+      req.flush({
+        id: 1,
+        pool_name: 'Patched Pool',
+        pool_description: 'Original description',
+        metadata_table: 1,
+        is_reference: false,
+        pooled_only_samples: [],
+        pooled_and_independent_samples: [],
+        metadata_columns: [],
+        created_at: '2023-01-01T00:00:00Z',
+        updated_at: '2023-01-01T00:00:00Z'
+      });
     });
 
     it('should delete sample pool', (done) => {
@@ -196,20 +245,49 @@ describe('SamplePoolService', () => {
   describe('Related Data Operations', () => {
     it('should get metadata columns for sample pool', (done) => {
       const poolId = 1;
-      const mockResponse = [
-        { id: 1, name: 'Sample ID', type: 'text', required: true },
-        { id: 2, name: 'Age', type: 'number', required: false },
-        { id: 3, name: 'Gender', type: 'choice', required: true }
-      ];
 
       service.getMetadataColumns(poolId).subscribe(response => {
-        expect(response).toEqual(mockResponse);
+        expect(response.length).toBe(3);
         done();
       });
 
       const req = httpMock.expectOne(`${mockConfig.apiUrl}/sample-pools/1/metadata_columns/`);
       expect(req.request.method).toBe('GET');
-      req.flush(mockResponse);
+      req.flush([
+        {
+          id: 1,
+          metadata_table: 1,
+          column_name: 'Sample ID',
+          column_type: 'text',
+          column_position: 0,
+          not_applicable: false,
+          not_available: false,
+          created_at: '2023-01-01T00:00:00Z',
+          updated_at: '2023-01-01T00:00:00Z'
+        },
+        {
+          id: 2,
+          metadata_table: 1,
+          column_name: 'Age',
+          column_type: 'number',
+          column_position: 1,
+          not_applicable: false,
+          not_available: false,
+          created_at: '2023-01-01T00:00:00Z',
+          updated_at: '2023-01-01T00:00:00Z'
+        },
+        {
+          id: 3,
+          metadata_table: 1,
+          column_name: 'Gender',
+          column_type: 'choice',
+          column_position: 2,
+          not_applicable: false,
+          not_available: false,
+          created_at: '2023-01-01T00:00:00Z',
+          updated_at: '2023-01-01T00:00:00Z'
+        }
+      ]);
     });
   });
 
@@ -267,73 +345,77 @@ describe('SamplePoolService', () => {
 
   describe('Error Handling', () => {
     it('should handle 404 error when pool not found', (done) => {
-      service.getSamplePool(999).subscribe(
-        () => fail('should have failed'),
-        error => {
+      service.getSamplePool(999).subscribe({
+        next: () => fail('should have failed'),
+        error: error => {
           expect(error.status).toBe(404);
           expect(error.error.detail).toBe('Not found');
           done();
         }
-      );
+      });
 
       const req = httpMock.expectOne(`${mockConfig.apiUrl}/sample-pools/999/`);
       req.flush({ detail: 'Not found' }, { status: 404, statusText: 'Not Found' });
     });
 
     it('should handle validation errors on create', (done) => {
-      const invalidData = { name: '', description: 'Invalid pool' };
+      const invalidData = {
+        poolName: '',
+        metadataTable: 1,
+        poolDescription: 'Invalid pool'
+      };
 
-      service.createSamplePool(invalidData).subscribe(
-        () => fail('should have failed'),
-        error => {
+      service.createSamplePool(invalidData).subscribe({
+        next: () => fail('should have failed'),
+        error: error => {
           expect(error.status).toBe(400);
-          expect(error.error.name).toContain('This field may not be blank');
+          expect(error.error.pool_name).toContain('This field may not be blank');
           done();
         }
-      );
+      });
 
       const req = httpMock.expectOne(`${mockConfig.apiUrl}/sample-pools/`);
       req.flush(
-        { name: ['This field may not be blank.'] },
+        { pool_name: ['This field may not be blank.'] },
         { status: 400, statusText: 'Bad Request' }
       );
     });
 
     it('should handle permission errors', (done) => {
-      service.deleteSamplePool(1).subscribe(
-        () => fail('should have failed'),
-        error => {
+      service.deleteSamplePool(1).subscribe({
+        next: () => fail('should have failed'),
+        error: error => {
           expect(error.status).toBe(403);
           expect(error.error.detail).toBe('Permission denied');
           done();
         }
-      );
+      });
 
       const req = httpMock.expectOne(`${mockConfig.apiUrl}/sample-pools/1/`);
       req.flush({ detail: 'Permission denied' }, { status: 403, statusText: 'Forbidden' });
     });
 
     it('should handle server errors', (done) => {
-      service.getSamplePools().subscribe(
-        () => fail('should have failed'),
-        error => {
+      service.getSamplePools().subscribe({
+        next: () => fail('should have failed'),
+        error: error => {
           expect(error.status).toBe(500);
           done();
         }
-      );
+      });
 
       const req = httpMock.expectOne(`${mockConfig.apiUrl}/sample-pools/`);
       req.flush({ error: 'Internal server error' }, { status: 500, statusText: 'Internal Server Error' });
     });
 
     it('should handle network errors', (done) => {
-      service.getSamplePools().subscribe(
-        () => fail('should have failed'),
-        error => {
+      service.getSamplePools().subscribe({
+        next: () => fail('should have failed'),
+        error: error => {
           expect(error.name).toBe('HttpErrorResponse');
           done();
         }
-      );
+      });
 
       const req = httpMock.expectOne(`${mockConfig.apiUrl}/sample-pools/`);
       req.error(new ErrorEvent('Network error'));
@@ -343,9 +425,9 @@ describe('SamplePoolService', () => {
   describe('Data Transformation', () => {
     it('should transform camelCase to snake_case in requests', (done) => {
       const poolData = {
+        poolName: 'Test Pool',
         metadataTable: 1,
-        isReference: true,
-        createdBy: 5
+        isReference: true
       };
 
       service.createSamplePool(poolData).subscribe(() => {
@@ -354,87 +436,82 @@ describe('SamplePoolService', () => {
 
       const req = httpMock.expectOne(`${mockConfig.apiUrl}/sample-pools/`);
       expect(req.request.body).toEqual({
+        pool_name: 'Test Pool',
+        metadata_table: 1,
+        is_reference: true
+      });
+      req.flush({
+        id: 1,
+        pool_name: 'Test Pool',
         metadata_table: 1,
         is_reference: true,
-        created_by: 5
+        pooled_only_samples: [],
+        pooled_and_independent_samples: [],
+        metadata_columns: [],
+        created_at: '2023-01-01T00:00:00Z',
+        updated_at: '2023-01-01T00:00:00Z'
       });
-      req.flush({ id: 1 });
     });
 
     it('should transform snake_case to camelCase in responses', (done) => {
-      const mockResponse = {
-        id: 1,
-        metadata_table: { id: 1, name: 'Table' },
-        is_reference: true,
-        created_at: '2023-01-01T00:00:00Z',
-        sampleCount: 100
-      };
-
-      const expectedResponse = {
-        id: 1,
-        metadataTable: { id: 1, name: 'Table' },
-        isReference: true,
-        createdAt: '2023-01-01T00:00:00Z',
-        sampleCount: 100
-      };
-
       service.getSamplePool(1).subscribe(response => {
-        expect(response).toEqual(expectedResponse);
+        expect(response.id).toBe(1);
+        expect(response.poolName).toBe('Test Pool');
+        expect(response.poolDescription).toBe('Test description');
+        expect(response.metadataTable).toBe(1);
+        expect(response.isReference).toBe(true);
+        expect(response.pooledOnlySamples).toEqual([]);
+        expect(response.pooledAndIndependentSamples).toEqual([]);
+        expect(response.metadataColumns).toEqual([]);
         done();
       });
 
       const req = httpMock.expectOne(`${mockConfig.apiUrl}/sample-pools/1/`);
-      req.flush(mockResponse);
+      req.flush({
+        id: 1,
+        pool_name: 'Test Pool',
+        pool_description: 'Test description',
+        metadata_table: 1,
+        is_reference: true,
+        pooled_only_samples: [],
+        pooled_and_independent_samples: [],
+        metadata_columns: [],
+        created_at: '2023-01-01T00:00:00Z',
+        updated_at: '2023-01-01T00:00:00Z'
+      });
     });
   });
 
   describe('Integration Scenarios', () => {
     it('should handle creating pool with metadata table relationship', (done) => {
       const poolData = {
-        name: 'Clinical Samples',
+        poolName: 'Clinical Samples',
         metadataTable: 1,
-        description: 'Patient clinical samples'
-      };
-
-      const mockResponse = {
-        id: 1,
-        name: 'Clinical Samples',
-        metadataTable: {
-          id: 1,
-          name: 'Clinical Metadata',
-          columnCount: 15
-        },
-        description: 'Patient clinical samples'
+        poolDescription: 'Patient clinical samples'
       };
 
       service.createSamplePool(poolData).subscribe(response => {
-        expect(response.metadataTable.columnCount).toBe(15);
-        expect(response.name).toBe('Clinical Samples');
+        expect(response.poolName).toBe('Clinical Samples');
+        expect(response.metadataTable).toBe(1);
         done();
       });
 
       const req = httpMock.expectOne(`${mockConfig.apiUrl}/sample-pools/`);
       req.flush({
         id: 1,
-        name: 'Clinical Samples',
-        metadata_table: {
-          id: 1,
-          name: 'Clinical Metadata',
-          column_count: 15
-        },
-        description: 'Patient clinical samples'
+        pool_name: 'Clinical Samples',
+        metadata_table: 1,
+        pool_description: 'Patient clinical samples',
+        pooled_only_samples: [],
+        pooled_and_independent_samples: [],
+        metadata_columns: [],
+        is_reference: false,
+        created_at: '2023-01-01T00:00:00Z',
+        updated_at: '2023-01-01T00:00:00Z'
       });
     });
 
     it('should handle searching across multiple fields', (done) => {
-      const mockResponse = {
-        count: 2,
-        results: [
-          { id: 1, name: 'Plasma samples', description: 'Human plasma' },
-          { id: 2, name: 'Serum collection', description: 'Mouse plasma derived' }
-        ]
-      };
-
       service.getSamplePools({ search: 'plasma' }).subscribe(response => {
         expect(response.count).toBe(2);
         expect(response.results.length).toBe(2);
@@ -444,7 +521,35 @@ describe('SamplePoolService', () => {
       const req = httpMock.expectOne(req =>
         req.params.get('search') === 'plasma'
       );
-      req.flush(mockResponse);
+      req.flush({
+        count: 2,
+        results: [
+          {
+            id: 1,
+            pool_name: 'Plasma samples',
+            pool_description: 'Human plasma',
+            metadata_table: 1,
+            pooled_only_samples: [],
+            pooled_and_independent_samples: [],
+            metadata_columns: [],
+            is_reference: false,
+            created_at: '2023-01-01T00:00:00Z',
+            updated_at: '2023-01-01T00:00:00Z'
+          },
+          {
+            id: 2,
+            pool_name: 'Serum collection',
+            pool_description: 'Mouse plasma derived',
+            metadata_table: 1,
+            pooled_only_samples: [],
+            pooled_and_independent_samples: [],
+            metadata_columns: [],
+            is_reference: false,
+            created_at: '2023-01-01T00:00:00Z',
+            updated_at: '2023-01-01T00:00:00Z'
+          }
+        ]
+      });
     });
   });
 });

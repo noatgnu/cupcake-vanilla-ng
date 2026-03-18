@@ -1,20 +1,26 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { CUPCAKE_CORE_CONFIG } from '../../../services/auth';
+import { UserManagementComponent } from './user-management';
 
-import { UserManagement } from './user-management';
-
-describe('UserManagement', () => {
-  let component: UserManagement;
-  let fixture: ComponentFixture<UserManagement>;
+describe('UserManagementComponent', () => {
+  let component: UserManagementComponent;
+  let fixture: ComponentFixture<UserManagementComponent>;
+  const mockConfig = {
+    apiUrl: 'https://api.test.com',
+    siteName: 'Test Site'
+  };
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [UserManagement]
-    })
-    .compileComponents();
+      imports: [UserManagementComponent, HttpClientTestingModule],
+      providers: [
+        { provide: CUPCAKE_CORE_CONFIG, useValue: mockConfig }
+      ]
+    }).compileComponents();
 
-    fixture = TestBed.createComponent(UserManagement);
+    fixture = TestBed.createComponent(UserManagementComponent);
     component = fixture.componentInstance;
-    fixture.detectChanges();
   });
 
   it('should create', () => {

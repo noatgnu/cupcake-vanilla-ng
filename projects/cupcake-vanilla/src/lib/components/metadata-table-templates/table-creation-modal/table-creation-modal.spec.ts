@@ -1,18 +1,32 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ReactiveFormsModule } from '@angular/forms';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
+import { CUPCAKE_CORE_CONFIG } from '@noatgnu/cupcake-core';
+import { TableCreationModalComponent } from './table-creation-modal';
 
-import { TableCreationModal } from './table-creation-modal';
-
-describe('TableCreationModal', () => {
-  let component: TableCreationModal;
-  let fixture: ComponentFixture<TableCreationModal>;
+describe('TableCreationModalComponent', () => {
+  let component: TableCreationModalComponent;
+  let fixture: ComponentFixture<TableCreationModalComponent>;
+  const mockConfig = {
+    apiUrl: 'https://api.test.com',
+    siteName: 'Test Site'
+  };
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [TableCreationModal]
-    })
-    .compileComponents();
+      imports: [
+        TableCreationModalComponent,
+        ReactiveFormsModule,
+        HttpClientTestingModule
+      ],
+      providers: [
+        NgbActiveModal,
+        { provide: CUPCAKE_CORE_CONFIG, useValue: mockConfig }
+      ]
+    }).compileComponents();
 
-    fixture = TestBed.createComponent(TableCreationModal);
+    fixture = TestBed.createComponent(TableCreationModalComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

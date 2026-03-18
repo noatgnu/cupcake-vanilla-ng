@@ -10,6 +10,7 @@ export * from './notification';
 export * from './ontology-search';
 export * from './schema';
 export * from './sdrf-defaults';
+export * from './official-column-cache';
 export * from './async-task';
 export * from './async-export';
 export * from './async-import';

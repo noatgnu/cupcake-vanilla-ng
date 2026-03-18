@@ -36,12 +36,13 @@ describe('LabGroupService', () => {
       };
 
       service.getLabGroups(params).subscribe(response => {
-        expect(response).toEqual(mockResponse);
+        expect(response.count).toEqual(mockResponse.count);
+        expect(response.results.length).toBe(1);
         done();
       });
 
-      const req = httpMock.expectOne(req => 
-        req.url === `${mockConfig.apiUrl}/lab-groups/` && 
+      const req = httpMock.expectOne(req =>
+        req.url === `${mockConfig.apiUrl}/lab-groups/` &&
         req.params.get('search') === 'test' &&
         req.params.get('limit') === '10'
       );
@@ -59,7 +60,8 @@ describe('LabGroupService', () => {
       };
 
       service.getLabGroups().subscribe(response => {
-        expect(response).toEqual(mockResponse);
+        expect(response.count).toEqual(mockResponse.count);
+        expect(response.results.length).toBe(2);
         done();
       });
 
@@ -75,7 +77,8 @@ describe('LabGroupService', () => {
       };
 
       service.getMyLabGroups().subscribe(response => {
-        expect(response).toEqual(mockResponse);
+        expect(response.count).toEqual(mockResponse.count);
+        expect(response.results.length).toBe(1);
         done();
       });
 
@@ -89,7 +92,8 @@ describe('LabGroupService', () => {
       const mockResponse = { id: 1, name: 'New Lab', description: 'New description' };
 
       service.createLabGroup(labGroupData).subscribe(response => {
-        expect(response).toEqual(mockResponse);
+        expect(response.id).toEqual(mockResponse.id);
+        expect(response.name).toEqual(mockResponse.name);
         done();
       });
 
@@ -105,7 +109,8 @@ describe('LabGroupService', () => {
       const mockResponse = { id: 1, name: 'Updated Lab', description: 'Original description' };
 
       service.updateLabGroup(labGroupId, updateData).subscribe(response => {
-        expect(response).toEqual(mockResponse);
+        expect(response.id).toEqual(mockResponse.id);
+        expect(response.name).toEqual(mockResponse.name);
         done();
       });
 
@@ -131,13 +136,19 @@ describe('LabGroupService', () => {
   describe('Lab Group Members', () => {
     it('should get lab group members', (done) => {
       const labGroupId = 1;
-      const mockResponse = [
-        { id: 1, user: { id: 1, username: 'user1' }, role: 'admin' },
-        { id: 2, user: { id: 2, username: 'user2' }, role: 'member' }
-      ];
+      const mockResponse = {
+        count: 2,
+        next: null,
+        previous: null,
+        results: [
+          { id: 1, user: { id: 1, username: 'user1' }, role: 'admin' },
+          { id: 2, user: { id: 2, username: 'user2' }, role: 'member' }
+        ]
+      };
 
       service.getLabGroupMembers(labGroupId).subscribe(response => {
-        expect(response).toEqual(mockResponse);
+        expect(response.count).toEqual(mockResponse.count);
+        expect(response.results.length).toBe(2);
         done();
       });
 

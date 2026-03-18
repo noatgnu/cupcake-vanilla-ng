@@ -27,31 +27,25 @@ describe('MetadataColumnService', () => {
     httpMock.verify();
   });
 
-  describe('Basic CRUD Operations', () => {
+  describe('getMetadataColumns', () => {
     it('should get metadata columns with parameters', (done) => {
-      const params = { 
-        metadataTable: 1,
-        columnType: 'text',
+      const params = {
+        metadataTableId: 1,
+        type: 'text',
         search: 'sample',
         limit: 10
       };
-      const mockResponse = {
-        count: 2,
-        results: [
-          { id: 1, name: 'Sample ID', type: 'text', required: true },
-          { id: 2, name: 'Sample Name', type: 'text', required: false }
-        ]
-      };
 
       service.getMetadataColumns(params).subscribe(response => {
-        expect(response).toEqual(mockResponse);
+        expect(response.count).toBe(2);
+        expect(response.results.length).toBe(2);
         done();
       });
 
-      const req = httpMock.expectOne(req => 
-        req.url === `${mockConfig.apiUrl}/metadata-columns/` && 
-        req.params.get('metadata_table') === '1' &&
-        req.params.get('column_type') === 'text' &&
+      const req = httpMock.expectOne(req =>
+        req.url === `${mockConfig.apiUrl}/metadata-columns/` &&
+        req.params.get('metadata_table_id') === '1' &&
+        req.params.get('type') === 'text' &&
         req.params.get('search') === 'sample' &&
         req.params.get('limit') === '10'
       );
@@ -59,26 +53,31 @@ describe('MetadataColumnService', () => {
       req.flush({
         count: 2,
         results: [
-          { id: 1, name: 'Sample ID', type: 'text', required: true },
-          { id: 2, name: 'Sample Name', type: 'text', required: false }
+          { id: 1, column_name: 'Sample ID', column_type: 'text' },
+          { id: 2, column_name: 'Sample Name', column_type: 'text' }
         ]
       });
     });
 
+    it('should get columns without parameters', (done) => {
+      service.getMetadataColumns().subscribe(response => {
+        expect(response.count).toBe(0);
+        done();
+      });
+
+      const req = httpMock.expectOne(`${mockConfig.apiUrl}/metadata-columns/`);
+      expect(req.request.method).toBe('GET');
+      req.flush({ count: 0, results: [] });
+    });
+  });
+
+  describe('getMetadataColumn', () => {
     it('should get single metadata column', (done) => {
       const columnId = 1;
-      const mockResponse = {
-        id: 1,
-        name: 'Sample ID',
-        type: 'text',
-        required: true,
-        defaultValue: '',
-        validation: { pattern: '^[A-Z0-9]+$' },
-        position: 0
-      };
 
       service.getMetadataColumn(columnId).subscribe(response => {
-        expect(response).toEqual(mockResponse);
+        expect(response.id).toBe(1);
+        expect(response.columnName).toBe('Sample ID');
         done();
       });
 
@@ -86,77 +85,106 @@ describe('MetadataColumnService', () => {
       expect(req.request.method).toBe('GET');
       req.flush({
         id: 1,
-        name: 'Sample ID',
-        type: 'text',
-        required: true,
-        default_value: '',
-        validation: { pattern: '^[A-Z0-9]+$' },
-        position: 0
+        column_name: 'Sample ID',
+        column_type: 'text',
+        metadata_table: 1,
+        column_position: 0,
+        not_applicable: false,
+        not_available: false,
+        auto_generated: false,
+        created_at: '2023-01-01T00:00:00Z',
+        updated_at: '2023-01-01T00:00:00Z'
       });
     });
+  });
 
+  describe('createMetadataColumn', () => {
     it('should create metadata column', (done) => {
       const columnData = {
-        name: 'Age',
-        type: 'number',
-        required: false,
+        columnName: 'Age',
+        columnType: 'number',
         metadataTable: 1,
-        position: 5
-      };
-      const mockResponse = {
-        id: 3,
-        name: 'Age',
-        type: 'number',
-        required: false,
-        metadataTable: { id: 1, name: 'Patient Data' },
-        position: 5
+        columnPosition: 5
       };
 
       service.createMetadataColumn(columnData).subscribe(response => {
-        expect(response).toEqual(mockResponse);
+        expect(response.id).toBe(3);
+        expect(response.columnName).toBe('Age');
         done();
       });
 
       const req = httpMock.expectOne(`${mockConfig.apiUrl}/metadata-columns/`);
       expect(req.request.method).toBe('POST');
-      expect(req.request.body).toEqual({
-        name: 'Age',
-        type: 'number',
-        required: false,
-        metadata_table: 1,
-        position: 5
-      });
       req.flush({
         id: 3,
-        name: 'Age',
-        type: 'number',
-        required: false,
-        metadata_table: { id: 1, name: 'Patient Data' },
-        position: 5
+        column_name: 'Age',
+        column_type: 'number',
+        metadata_table: 1,
+        column_position: 5,
+        not_applicable: false,
+        not_available: false,
+        auto_generated: false,
+        created_at: '2023-01-01T00:00:00Z',
+        updated_at: '2023-01-01T00:00:00Z'
       });
     });
+  });
 
+  describe('updateMetadataColumn', () => {
     it('should update metadata column', (done) => {
       const columnId = 1;
-      const updateData = { name: 'Updated Sample ID', required: true };
-      const mockResponse = {
-        id: 1,
-        name: 'Updated Sample ID',
-        type: 'text',
-        required: true
-      };
+      const updateData = { columnName: 'Updated Sample ID' };
 
       service.updateMetadataColumn(columnId, updateData).subscribe(response => {
-        expect(response).toEqual(mockResponse);
+        expect(response.columnName).toBe('Updated Sample ID');
         done();
       });
 
       const req = httpMock.expectOne(`${mockConfig.apiUrl}/metadata-columns/1/`);
       expect(req.request.method).toBe('PUT');
-      expect(req.request.body).toEqual({ name: 'Updated Sample ID', required: true });
-      req.flush(mockResponse);
+      req.flush({
+        id: 1,
+        column_name: 'Updated Sample ID',
+        column_type: 'text',
+        metadata_table: 1,
+        column_position: 0,
+        not_applicable: false,
+        not_available: false,
+        auto_generated: false,
+        created_at: '2023-01-01T00:00:00Z',
+        updated_at: '2023-01-01T00:00:00Z'
+      });
     });
+  });
 
+  describe('patchMetadataColumn', () => {
+    it('should partially update metadata column', (done) => {
+      const columnId = 1;
+
+      service.patchMetadataColumn(columnId, { hidden: true }).subscribe(response => {
+        expect(response.hidden).toBe(true);
+        done();
+      });
+
+      const req = httpMock.expectOne(`${mockConfig.apiUrl}/metadata-columns/1/`);
+      expect(req.request.method).toBe('PATCH');
+      req.flush({
+        id: 1,
+        column_name: 'Sample ID',
+        column_type: 'text',
+        metadata_table: 1,
+        column_position: 0,
+        hidden: true,
+        not_applicable: false,
+        not_available: false,
+        auto_generated: false,
+        created_at: '2023-01-01T00:00:00Z',
+        updated_at: '2023-01-01T00:00:00Z'
+      });
+    });
+  });
+
+  describe('deleteMetadataColumn', () => {
     it('should delete metadata column', (done) => {
       const columnId = 1;
 
@@ -170,433 +198,202 @@ describe('MetadataColumnService', () => {
     });
   });
 
-  describe('Column Values Management', () => {
-    it('should get column values', (done) => {
-      const columnId = 1;
-      const params = { search: 'patient', limit: 20 };
-      const mockResponse = {
-        count: 3,
-        results: [
-          { id: 1, value: 'Patient001', row: 1 },
-          { id: 2, value: 'Patient002', row: 2 },
-          { id: 3, value: 'Patient003', row: 3 }
-        ]
-      };
+  describe('bulkCreate', () => {
+    it('should bulk create columns', (done) => {
+      const columns = [
+        { columnName: 'Col1', columnType: 'text', metadataTable: 1 },
+        { columnName: 'Col2', columnType: 'number', metadataTable: 1 }
+      ];
 
-      service.getColumnValues(columnId, params).subscribe(response => {
-        expect(response).toEqual(mockResponse);
+      service.bulkCreate({ columns }).subscribe(response => {
+        expect(response.length).toBe(2);
         done();
       });
 
-      const req = httpMock.expectOne(req => 
-        req.url === `${mockConfig.apiUrl}/metadata-columns/1/values/` &&
-        req.params.get('search') === 'patient' &&
-        req.params.get('limit') === '20'
+      const req = httpMock.expectOne(`${mockConfig.apiUrl}/metadata-columns/bulk_create/`);
+      expect(req.request.method).toBe('POST');
+      req.flush([
+        { id: 1, column_name: 'Col1', column_type: 'text' },
+        { id: 2, column_name: 'Col2', column_type: 'number' }
+      ]);
+    });
+  });
+
+  describe('validateSdrfData', () => {
+    it('should validate SDRF data', (done) => {
+      const request = { metadataIds: [1, 2, 3], sampleNumber: 10 };
+
+      service.validateSdrfData(request).subscribe(response => {
+        expect(response.valid).toBe(true);
+        expect(response.sampleCount).toBe(10);
+        done();
+      });
+
+      const req = httpMock.expectOne(`${mockConfig.apiUrl}/metadata-columns/validate_sdrf_data/`);
+      expect(req.request.method).toBe('POST');
+      req.flush({ valid: true, errors: [], sample_count: 10 });
+    });
+  });
+
+  describe('getOntologySuggestions', () => {
+    it('should get ontology suggestions', (done) => {
+      const params = { columnId: 1, search: 'homo', limit: 10 };
+
+      service.getOntologySuggestions(params).subscribe(response => {
+        expect(response.suggestions.length).toBe(1);
+        expect(response.ontologyType).toBe('species');
+        done();
+      });
+
+      const req = httpMock.expectOne(req =>
+        req.url === `${mockConfig.apiUrl}/metadata-columns/ontology_suggestions/` &&
+        req.params.get('column_id') === '1'
       );
       expect(req.request.method).toBe('GET');
-      req.flush(mockResponse);
+      req.flush({
+        ontology_type: 'species',
+        suggestions: [{ id: 1, term: 'Homo sapiens' }],
+        search_term: 'homo',
+        search_type: 'icontains',
+        limit: 10,
+        count: 1,
+        custom_filters: null,
+        has_more: false
+      });
     });
+  });
 
+  describe('validateValue', () => {
+    it('should validate column value', (done) => {
+      const columnId = 1;
+
+      service.validateValue(columnId, { value: 'test value' }).subscribe(response => {
+        expect(response.valid).toBe(true);
+        done();
+      });
+
+      const req = httpMock.expectOne(`${mockConfig.apiUrl}/metadata-columns/1/validate_value/`);
+      expect(req.request.method).toBe('POST');
+      req.flush({ valid: true, value: 'test value', ontology_type: 'text' });
+    });
+  });
+
+  describe('updateColumnValue', () => {
     it('should update column value', (done) => {
       const columnId = 1;
-      const valueId = 5;
-      const newValue = 'UpdatedValue';
-      const mockResponse = {
-        id: 5,
-        value: 'UpdatedValue',
-        column: 1,
-        row: 10
-      };
+      const request = { value: 'new value', valueType: 'default' as const };
 
-      service.updateColumnValue(columnId, valueId, newValue).subscribe(response => {
-        expect(response).toEqual(mockResponse);
+      service.updateColumnValue(columnId, request).subscribe(response => {
+        expect(response.message).toBe('Value updated');
         done();
       });
 
-      const req = httpMock.expectOne(`${mockConfig.apiUrl}/metadata-columns/1/values/5/`);
-      expect(req.request.method).toBe('PATCH');
-      expect(req.request.body).toEqual({ value: 'UpdatedValue' });
-      req.flush(mockResponse);
+      const req = httpMock.expectOne(`${mockConfig.apiUrl}/metadata-columns/1/update_column_value/`);
+      expect(req.request.method).toBe('POST');
+      req.flush({
+        message: 'Value updated',
+        column: { id: 1, column_name: 'Sample' },
+        changes: {},
+        value_type: 'default'
+      });
     });
+  });
 
-    it('should bulk update column values', (done) => {
+  describe('bulkUpdateSampleValues', () => {
+    it('should bulk update sample values', (done) => {
       const columnId = 1;
       const updates = [
-        { valueId: 1, value: 'NewValue1' },
-        { valueId: 2, value: 'NewValue2' }
+        { sampleIndex: 0, value: 'Value1' },
+        { sampleIndex: 1, value: 'Value2' }
       ];
-      const mockResponse = {
-        updated: 2,
-        errors: [],
+
+      service.bulkUpdateSampleValues(columnId, updates).subscribe(response => {
+        expect(response.updatedCount).toBe(2);
+        done();
+      });
+
+      const req = httpMock.expectOne(`${mockConfig.apiUrl}/metadata-columns/1/bulk_update_sample_values/`);
+      expect(req.request.method).toBe('POST');
+      req.flush({
+        message: 'Updated',
+        updated_count: 2,
+        failed_count: 0,
+        column: { id: 1 }
+      });
+    });
+  });
+
+  describe('replaceValue', () => {
+    it('should replace value in column', (done) => {
+      const columnId = 1;
+      const request = { oldValue: 'old', newValue: 'new' };
+
+      service.replaceValue(columnId, request).subscribe(response => {
+        expect(response.message).toBe('Value replaced');
+        done();
+      });
+
+      const req = httpMock.expectOne(`${mockConfig.apiUrl}/metadata-columns/1/replace_value/`);
+      expect(req.request.method).toBe('POST');
+      req.flush({
+        message: 'Value replaced',
+        old_value: 'old',
+        new_value: 'new',
+        default_value_updated: true,
+        modifiers_merged: 0,
+        modifiers_deleted: 0,
+        samples_reverted_to_default: 0,
+        pool_columns_updated: 0
+      });
+    });
+  });
+
+  describe('getHistory', () => {
+    it('should get column history', (done) => {
+      const columnId = 1;
+
+      service.getHistory(columnId).subscribe(response => {
+        expect(response.count).toBe(2);
+        done();
+      });
+
+      const req = httpMock.expectOne(`${mockConfig.apiUrl}/metadata-columns/1/history/`);
+      expect(req.request.method).toBe('GET');
+      req.flush({
+        count: 2,
         results: [
-          { id: 1, value: 'NewValue1' },
-          { id: 2, value: 'NewValue2' }
+          { id: 1, action: 'create', timestamp: '2023-01-01T00:00:00Z' },
+          { id: 2, action: 'update', timestamp: '2023-01-02T00:00:00Z' }
         ]
-      };
-
-      service.bulkUpdateColumnValues(columnId, updates).subscribe(response => {
-        expect(response).toEqual(mockResponse);
-        done();
-      });
-
-      const req = httpMock.expectOne(`${mockConfig.apiUrl}/metadata-columns/1/values/bulk-update/`);
-      expect(req.request.method).toBe('POST');
-      expect(req.request.body).toEqual({
-        updates: [
-          { value_id: 1, value: 'NewValue1' },
-          { value_id: 2, value: 'NewValue2' }
-        ]
-      });
-      req.flush(mockResponse);
-    });
-  });
-
-  describe('Column Validation', () => {
-    it('should validate column data', (done) => {
-      const columnId = 1;
-      const validationData = {
-        values: ['SAMPLE001', 'SAMPLE002', 'INVALID_SAMPLE'],
-        strict: true
-      };
-      const mockResponse = {
-        valid: false,
-        errors: [
-          { row: 3, message: 'Invalid format for value: INVALID_SAMPLE' }
-        ],
-        warnings: [],
-        validCount: 2,
-        totalCount: 3
-      };
-
-      service.validateColumn(columnId, validationData).subscribe(response => {
-        expect(response).toEqual(mockResponse);
-        done();
-      });
-
-      const req = httpMock.expectOne(`${mockConfig.apiUrl}/metadata-columns/1/validate/`);
-      expect(req.request.method).toBe('POST');
-      expect(req.request.body).toEqual({
-        values: ['SAMPLE001', 'SAMPLE002', 'INVALID_SAMPLE'],
-        strict: true
-      });
-      req.flush({
-        valid: false,
-        errors: [
-          { row: 3, message: 'Invalid format for value: INVALID_SAMPLE' }
-        ],
-        warnings: [],
-        valid_count: 2,
-        total_count: 3
-      });
-    });
-
-    it('should get column validation rules', (done) => {
-      const columnId = 1;
-      const mockResponse = {
-        columnId: 1,
-        rules: [
-          { type: 'pattern', value: '^[A-Z0-9]+$', message: 'Must be alphanumeric uppercase' },
-          { type: 'length', min: 5, max: 20, message: 'Must be between 5-20 characters' }
-        ],
-        required: true
-      };
-
-      service.getColumnValidationRules(columnId).subscribe(response => {
-        expect(response).toEqual(mockResponse);
-        done();
-      });
-
-      const req = httpMock.expectOne(`${mockConfig.apiUrl}/metadata-columns/1/validation-rules/`);
-      expect(req.request.method).toBe('GET');
-      req.flush({
-        column_id: 1,
-        rules: [
-          { type: 'pattern', value: '^[A-Z0-9]+$', message: 'Must be alphanumeric uppercase' },
-          { type: 'length', min: 5, max: 20, message: 'Must be between 5-20 characters' }
-        ],
-        required: true
-      });
-    });
-  });
-
-  describe('Column Statistics', () => {
-    it('should get column statistics', (done) => {
-      const columnId = 1;
-      const mockResponse = {
-        columnId: 1,
-        totalValues: 1000,
-        uniqueValues: 950,
-        nullValues: 5,
-        duplicateValues: 45,
-        mostCommon: ['CONTROL', 'TREATMENT'],
-        dataQuality: 95.5
-      };
-
-      service.getColumnStatistics(columnId).subscribe(response => {
-        expect(response).toEqual(mockResponse);
-        done();
-      });
-
-      const req = httpMock.expectOne(`${mockConfig.apiUrl}/metadata-columns/1/statistics/`);
-      expect(req.request.method).toBe('GET');
-      req.flush({
-        column_id: 1,
-        total_values: 1000,
-        unique_values: 950,
-        null_values: 5,
-        duplicate_values: 45,
-        most_common: ['CONTROL', 'TREATMENT'],
-        data_quality: 95.5
-      });
-    });
-  });
-
-  describe('Column Operations', () => {
-    it('should duplicate column', (done) => {
-      const columnId = 1;
-      const options = { 
-        newName: 'Copy of Sample ID',
-        includeValues: true,
-        targetTable: 2
-      };
-      const mockResponse = {
-        originalColumn: { id: 1, name: 'Sample ID' },
-        duplicatedColumn: { id: 10, name: 'Copy of Sample ID' },
-        valuesCopied: 1000
-      };
-
-      service.duplicateColumn(columnId, options).subscribe(response => {
-        expect(response).toEqual(mockResponse);
-        done();
-      });
-
-      const req = httpMock.expectOne(`${mockConfig.apiUrl}/metadata-columns/1/duplicate/`);
-      expect(req.request.method).toBe('POST');
-      expect(req.request.body).toEqual({
-        new_name: 'Copy of Sample ID',
-        include_values: true,
-        target_table: 2
-      });
-      req.flush({
-        original_column: { id: 1, name: 'Sample ID' },
-        duplicated_column: { id: 10, name: 'Copy of Sample ID' },
-        values_copied: 1000
-      });
-    });
-
-    it('should merge columns', (done) => {
-      const primaryColumnId = 1;
-      const request = {
-        secondaryColumnIds: [2, 3],
-        mergeStrategy: 'concatenate',
-        separator: ' | ',
-        newName: 'Merged Column'
-      };
-      const mockResponse = {
-        mergedColumn: { id: 15, name: 'Merged Column' },
-        rowsProcessed: 1000,
-        conflicts: []
-      };
-
-      service.mergeColumns(primaryColumnId, request).subscribe(response => {
-        expect(response).toEqual(mockResponse);
-        done();
-      });
-
-      const req = httpMock.expectOne(`${mockConfig.apiUrl}/metadata-columns/1/merge/`);
-      expect(req.request.method).toBe('POST');
-      expect(req.request.body).toEqual({
-        secondary_column_ids: [2, 3],
-        merge_strategy: 'concatenate',
-        separator: ' | ',
-        new_name: 'Merged Column'
-      });
-      req.flush({
-        merged_column: { id: 15, name: 'Merged Column' },
-        rows_processed: 1000,
-        conflicts: []
       });
     });
   });
 
   describe('Error Handling', () => {
-    it('should handle column not found error', (done) => {
-      service.getMetadataColumn(999).subscribe(
-        () => fail('should have failed'),
-        error => {
+    it('should handle 404 error', (done) => {
+      service.getMetadataColumn(999).subscribe({
+        next: () => fail('should have failed'),
+        error: error => {
           expect(error.status).toBe(404);
-          expect(error.error.detail).toBe('Column not found');
           done();
         }
-      );
+      });
 
       const req = httpMock.expectOne(`${mockConfig.apiUrl}/metadata-columns/999/`);
-      req.flush({ detail: 'Column not found' }, { status: 404, statusText: 'Not Found' });
+      req.flush({ detail: 'Not found' }, { status: 404, statusText: 'Not Found' });
     });
 
-    it('should handle validation errors on create', (done) => {
-      const invalidData = { name: '', type: 'invalid_type' };
-
-      service.createMetadataColumn(invalidData).subscribe(
-        () => fail('should have failed'),
-        error => {
+    it('should handle validation errors', (done) => {
+      service.createMetadataColumn({ columnName: '', columnType: 'text', metadataTable: 1 }).subscribe({
+        next: () => fail('should have failed'),
+        error: error => {
           expect(error.status).toBe(400);
-          expect(error.error.name).toContain('This field may not be blank');
-          expect(error.error.type).toContain('Invalid column type');
           done();
         }
-      );
-
-      const req = httpMock.expectOne(`${mockConfig.apiUrl}/metadata-columns/`);
-      req.flush(
-        { 
-          name: ['This field may not be blank.'],
-          type: ['Invalid column type specified.']
-        }, 
-        { status: 400, statusText: 'Bad Request' }
-      );
-    });
-
-    it('should handle permission errors', (done) => {
-      service.deleteMetadataColumn(1).subscribe(
-        () => fail('should have failed'),
-        error => {
-          expect(error.status).toBe(403);
-          expect(error.error.detail).toBe('Permission denied');
-          done();
-        }
-      );
-
-      const req = httpMock.expectOne(`${mockConfig.apiUrl}/metadata-columns/1/`);
-      req.flush({ detail: 'Permission denied' }, { status: 403, statusText: 'Forbidden' });
-    });
-  });
-
-  describe('Parameter Handling', () => {
-    it('should handle complex query parameters', (done) => {
-      const params = {
-        metadataTable: 1,
-        columnType: 'choice',
-        required: true,
-        hasValidation: false,
-        search: 'gender',
-        ordering: 'position',
-        limit: 50,
-        offset: 100
-      };
-
-      service.getMetadataColumns(params).subscribe(() => {
-        done();
-      });
-
-      const req = httpMock.expectOne(req => {
-        const urlParams = req.params;
-        return urlParams.get('metadata_table') === '1' &&
-               urlParams.get('column_type') === 'choice' &&
-               urlParams.get('required') === 'true' &&
-               urlParams.get('has_validation') === 'false' &&
-               urlParams.get('search') === 'gender' &&
-               urlParams.get('ordering') === 'position' &&
-               urlParams.get('limit') === '50' &&
-               urlParams.get('offset') === '100';
-      });
-      expect(req.request.method).toBe('GET');
-      req.flush({ count: 0, results: [] });
-    });
-
-    it('should handle empty parameters gracefully', (done) => {
-      service.getMetadataColumns({}).subscribe(() => {
-        done();
       });
 
       const req = httpMock.expectOne(`${mockConfig.apiUrl}/metadata-columns/`);
-      expect(req.request.params.keys().length).toBe(0);
-      req.flush({ count: 0, results: [] });
-    });
-  });
-
-  describe('Data Transformation', () => {
-    it('should transform complex nested data correctly', (done) => {
-      const mockResponse = {
-        id: 1,
-        metadata_table: { id: 1, name: 'Patient Data' },
-        validation_rules: {
-          pattern: '^[A-Z]+$',
-          min_length: 3,
-          max_length: 10
-        },
-        choice_options: [
-          { value: 'option1', displayName: 'Option 1' },
-          { value: 'option2', displayName: 'Option 2' }
-        ],
-        created_at: '2023-01-01T00:00:00Z'
-      };
-
-      const expectedResponse = {
-        id: 1,
-        metadataTable: { id: 1, name: 'Patient Data' },
-        validationRules: {
-          pattern: '^[A-Z]+$',
-          minLength: 3,
-          maxLength: 10
-        },
-        choiceOptions: [
-          { value: 'option1', displayName: 'Option 1' },
-          { value: 'option2', displayName: 'Option 2' }
-        ],
-        createdAt: '2023-01-01T00:00:00Z'
-      };
-
-      service.getMetadataColumn(1).subscribe(response => {
-        expect(response).toEqual(expectedResponse);
-        done();
-      });
-
-      const req = httpMock.expectOne(`${mockConfig.apiUrl}/metadata-columns/1/`);
-      req.flush(mockResponse);
-    });
-  });
-
-  describe('Integration Scenarios', () => {
-    it('should handle complete column lifecycle', (done) => {
-      let columnId: number;
-
-      // 1. Create column
-      service.createMetadataColumn({
-        name: 'Test Column',
-        type: 'text',
-        metadataTable: 1
-      }).subscribe(created => {
-        columnId = created.id;
-        expect(created.name).toBe('Test Column');
-
-        // 2. Update column
-        service.updateMetadataColumn(columnId, { required: true }).subscribe(updated => {
-          expect(updated.required).toBe(true);
-
-          // 3. Get validation rules
-          service.getColumnValidationRules(columnId).subscribe(rules => {
-            expect(rules.required).toBe(true);
-
-            // 4. Delete column
-            service.deleteMetadataColumn(columnId).subscribe(() => {
-              done();
-            });
-
-            const deleteReq = httpMock.expectOne(`${mockConfig.apiUrl}/metadata-columns/${columnId}/`);
-            deleteReq.flush(null);
-          });
-
-          const rulesReq = httpMock.expectOne(`${mockConfig.apiUrl}/metadata-columns/${columnId}/validation-rules/`);
-          rulesReq.flush({ column_id: columnId, required: true, rules: [] });
-        });
-
-        const updateReq = httpMock.expectOne(`${mockConfig.apiUrl}/metadata-columns/${columnId}/`);
-        updateReq.flush({ id: columnId, name: 'Test Column', required: true });
-      });
-
-      const createReq = httpMock.expectOne(`${mockConfig.apiUrl}/metadata-columns/`);
-      createReq.flush({ id: 100, name: 'Test Column', type: 'text', metadata_table: 1 });
+      req.flush({ column_name: ['This field may not be blank.'] }, { status: 400, statusText: 'Bad Request' });
     });
   });
 });

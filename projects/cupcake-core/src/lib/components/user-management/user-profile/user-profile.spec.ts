@@ -1,20 +1,27 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { ReactiveFormsModule } from '@angular/forms';
+import { CUPCAKE_CORE_CONFIG } from '../../../services/auth';
+import { UserProfileComponent } from './user-profile';
 
-import { UserProfile } from './user-profile';
-
-describe('UserProfile', () => {
-  let component: UserProfile;
-  let fixture: ComponentFixture<UserProfile>;
+describe('UserProfileComponent', () => {
+  let component: UserProfileComponent;
+  let fixture: ComponentFixture<UserProfileComponent>;
+  const mockConfig = {
+    apiUrl: 'https://api.test.com',
+    siteName: 'Test Site'
+  };
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [UserProfile]
-    })
-    .compileComponents();
+      imports: [UserProfileComponent, HttpClientTestingModule, ReactiveFormsModule],
+      providers: [
+        { provide: CUPCAKE_CORE_CONFIG, useValue: mockConfig }
+      ]
+    }).compileComponents();
 
-    fixture = TestBed.createComponent(UserProfile);
+    fixture = TestBed.createComponent(UserProfileComponent);
     component = fixture.componentInstance;
-    fixture.detectChanges();
   });
 
   it('should create', () => {

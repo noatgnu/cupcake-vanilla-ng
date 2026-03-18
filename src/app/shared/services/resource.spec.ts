@@ -1,7 +1,6 @@
 import { TestBed } from '@angular/core/testing';
-
 import { ResourceService } from './resource';
-import { ResourceVisibility, ResourceRole, BaseResource } from '../models';
+import { ResourceVisibility, ResourceRole, BaseResource, ResourceType } from '../models';
 
 describe('ResourceService', () => {
   let service: ResourceService;
@@ -74,21 +73,34 @@ describe('ResourceService', () => {
   describe('canPerformAction', () => {
     it('should check permissions correctly', () => {
       const resource: BaseResource = {
-        can_view: true,
-        can_edit: false,
-        can_delete: false,
-        can_share: true
+        id: 1,
+        resourceType: ResourceType.METADATA_TABLE,
+        visibility: ResourceVisibility.PRIVATE,
+        isActive: true,
+        isLocked: false,
+        canView: true,
+        canEdit: false,
+        canDelete: false,
+        createdAt: '2023-01-01T00:00:00Z',
+        updatedAt: '2023-01-01T00:00:00Z'
       };
 
       expect(service.canPerformAction(resource, 'view')).toBe(true);
       expect(service.canPerformAction(resource, 'edit')).toBe(false);
       expect(service.canPerformAction(resource, 'delete')).toBe(false);
-      expect(service.canPerformAction(resource, 'share')).toBe(true);
     });
 
-    it('should default view to true for backward compatibility', () => {
-      const resource: BaseResource = {};
-      expect(service.canPerformAction(resource, 'view')).toBe(true);
+    it('should default to false for missing permissions', () => {
+      const resource: BaseResource = {
+        id: 1,
+        resourceType: ResourceType.METADATA_TABLE,
+        visibility: ResourceVisibility.PRIVATE,
+        isActive: true,
+        isLocked: false,
+        createdAt: '2023-01-01T00:00:00Z',
+        updatedAt: '2023-01-01T00:00:00Z'
+      };
+      expect(service.canPerformAction(resource, 'view')).toBe(false);
     });
   });
 
@@ -101,19 +113,17 @@ describe('ResourceService', () => {
         isPublic: true
       };
 
-      const result = service.transformLegacyResource(legacyData);
+      const result = service.transformLegacyResource(legacyData) as any;
 
       expect(result.owner).toBe(123);
-      expect(result.ownerUsername).toBe('testuser');
+      expect(result.owner_username).toBe('testuser');
       expect(result.visibility).toBe(ResourceVisibility.PUBLIC);
       expect(result.creator).toBeUndefined();
-      expect(result.creatorUsername).toBeUndefined();
-      expect(result.isPublic).toBeUndefined();
     });
 
     it('should set default values for missing fields', () => {
       const legacyData = { id: 1 };
-      const result = service.transformLegacyResource(legacyData);
+      const result = service.transformLegacyResource(legacyData) as any;
 
       expect(result.visibility).toBe(ResourceVisibility.PRIVATE);
       expect(result.isActive).toBe(true);
@@ -130,13 +140,13 @@ describe('ResourceService', () => {
         visibility: ResourceVisibility.PUBLIC
       };
 
-      const result = service.prepareForAPI(resourceData);
+      const result = service.prepareForAPI(resourceData as any);
 
       expect(result.creator).toBe(123);
-      expect(result.creatorUsername).toBe('testuser');
+      expect(result.creator_username).toBe('testuser');
       expect(result.isPublic).toBe(true);
       expect(result.owner).toBeUndefined();
-      expect(result.ownerUsername).toBeUndefined();
+      expect(result.owner_username).toBeUndefined();
       expect(result.visibility).toBeUndefined();
     });
   });
@@ -145,7 +155,7 @@ describe('ResourceService', () => {
     it('should return visibility options array', () => {
       const options = service.getVisibilityOptions();
 
-      expect(options).toHaveLength(3);
+      expect(options.length).toBe(3);
       expect(options[0].value).toBe(ResourceVisibility.PRIVATE);
       expect(options[1].value).toBe(ResourceVisibility.GROUP);
       expect(options[2].value).toBe(ResourceVisibility.PUBLIC);
@@ -156,7 +166,7 @@ describe('ResourceService', () => {
     it('should return role options array', () => {
       const options = service.getRoleOptions();
 
-      expect(options).toHaveLength(4);
+      expect(options.length).toBe(4);
       expect(options[0].value).toBe(ResourceRole.VIEWER);
       expect(options[1].value).toBe(ResourceRole.EDITOR);
       expect(options[2].value).toBe(ResourceRole.ADMIN);

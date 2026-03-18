@@ -21,8 +21,10 @@ export interface MetadataColumnTemplateQueryParams {
   labGroupId?: number;
   visibility?: string;
   isActive?: boolean;
+  isSystemTemplate?: boolean;
   schemaId?: number;
   sourceSchema?: string;
+  inputType?: string;
   limit?: number;
   offset?: number;
   ordering?: string;
