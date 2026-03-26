@@ -44,7 +44,7 @@ jobs:
 
       - name: Install Wails frontend dependencies
         working-directory: ./cupcake-vanilla-wails/frontend
-        run: npm ci
+        run: npm install
 
       - name: Build setup frontend
         working-directory: ./cupcake-vanilla-wails/frontend
@@ -110,7 +110,7 @@ jobs:
 
       - name: Install Wails frontend dependencies
         working-directory: ./cupcake-vanilla-wails/frontend
-        run: npm ci
+        run: npm install
 
       - name: Build setup frontend
         working-directory: ./cupcake-vanilla-wails/frontend
@@ -177,7 +177,7 @@ jobs:
 
       - name: Install Wails frontend dependencies
         working-directory: ./cupcake-vanilla-wails/frontend
-        run: npm ci
+        run: npm install
 
       - name: Build setup frontend
         working-directory: ./cupcake-vanilla-wails/frontend
@@ -247,7 +247,7 @@ jobs:
 
       - name: Install Wails frontend dependencies
         working-directory: ./cupcake-vanilla-wails/frontend
-        run: npm ci
+        run: npm install
 
       - name: Build setup frontend
         working-directory: ./cupcake-vanilla-wails/frontend
