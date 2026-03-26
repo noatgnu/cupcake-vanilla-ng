@@ -119,7 +119,16 @@ func newDualSPAHandler(setupFS fs.FS, mainAppFS fs.FS) http.Handler {
 		isStatic := isStaticAsset(path)
 
 		if isStatic {
-			content, err := fs.ReadFile(setupFS, path)
+			var primaryFS, fallbackFS fs.FS
+			if isSetupRoute {
+				primaryFS = setupFS
+				fallbackFS = mainAppFS
+			} else {
+				primaryFS = mainAppFS
+				fallbackFS = setupFS
+			}
+
+			content, err := fs.ReadFile(primaryFS, path)
 			if err == nil {
 				w.Header().Set("Content-Type", getMimeType(path))
 				w.WriteHeader(http.StatusOK)
@@ -127,7 +136,7 @@ func newDualSPAHandler(setupFS fs.FS, mainAppFS fs.FS) http.Handler {
 				return
 			}
 
-			content, err = fs.ReadFile(mainAppFS, path)
+			content, err = fs.ReadFile(fallbackFS, path)
 			if err == nil {
 				w.Header().Set("Content-Type", getMimeType(path))
 				w.WriteHeader(http.StatusOK)
