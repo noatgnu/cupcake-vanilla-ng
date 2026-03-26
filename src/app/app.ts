@@ -3,7 +3,7 @@ import { RouterOutlet } from '@angular/router';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { CommonModule } from '@angular/common';
 import { NavbarComponent } from './shared/components/navbar/navbar';
-import { ElectronService } from '@noatgnu/cupcake-vanilla';
+import { DesktopService } from '@noatgnu/cupcake-vanilla';
 import { AsyncTaskMonitorService, AuthService, WebSocketService } from '@noatgnu/cupcake-core';
 import { SiteConfigService, ThemeService, ToastService, ToastContainerComponent, PoweredByFooterComponent } from '@noatgnu/cupcake-core';
 
@@ -26,7 +26,7 @@ export class App implements OnInit, OnDestroy {
   private themeService = inject(ThemeService);
   private asyncTaskService = inject(AsyncTaskMonitorService);
   private toastService = inject(ToastService);
-  private electronService = inject(ElectronService);
+  private desktopService = inject(DesktopService);
   private authService = inject(AuthService);
   private websocket = inject(WebSocketService);
 
@@ -69,7 +69,7 @@ export class App implements OnInit, OnDestroy {
   private async initializeApp(): Promise<void> {
     try {
       this._appInitialized.set(true);
-      this.electronService.getAppVersion().then(appVersion => {
+      this.desktopService.getAppVersion().then(appVersion => {
         console.log('App Version:', appVersion);
         this.toastService.show("Application initialized")
       })

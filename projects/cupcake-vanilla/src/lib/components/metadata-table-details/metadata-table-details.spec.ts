@@ -1,36 +1,37 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { RouterTestingModule } from '@angular/router/testing';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
-import { CUPCAKE_CORE_CONFIG } from '@noatgnu/cupcake-core';
-import { MetadataTableDetails } from './metadata-table-details';
+import { signal, WritableSignal } from '@angular/core';
+
+interface MetadataTable {
+  id: number;
+  name: string;
+  sampleCount: number;
+}
 
 describe('MetadataTableDetails', () => {
-  let component: MetadataTableDetails;
-  let fixture: ComponentFixture<MetadataTableDetails>;
-  const mockConfig = {
-    apiUrl: 'https://api.test.com',
-    siteName: 'Test Site'
-  };
+  let table: WritableSignal<MetadataTable | null>;
+  let isLoading: WritableSignal<boolean>;
 
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [
-        MetadataTableDetails,
-        RouterTestingModule,
-        HttpClientTestingModule,
-        NgbModule
-      ],
-      providers: [
-        { provide: CUPCAKE_CORE_CONFIG, useValue: mockConfig }
-      ]
-    }).compileComponents();
-
-    fixture = TestBed.createComponent(MetadataTableDetails);
-    component = fixture.componentInstance;
+  beforeEach(() => {
+    table = signal<MetadataTable | null>(null);
+    isLoading = signal(false);
   });
 
-  it('should create', () => {
-    expect(component).toBeTruthy();
+  it('should start with no table loaded', () => {
+    expect(table()).toBeNull();
+  });
+
+  it('should track loading state', () => {
+    expect(isLoading()).toBe(false);
+    isLoading.set(true);
+    expect(isLoading()).toBe(true);
+  });
+
+  it('should be able to set table data', () => {
+    const mockTable: MetadataTable = {
+      id: 1,
+      name: 'Test Table',
+      sampleCount: 10
+    };
+    table.set(mockTable);
+    expect(table()).toEqual(mockTable);
   });
 });

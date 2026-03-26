@@ -162,15 +162,57 @@
     <div class="card">
       <div class="card-header">
         <div class="d-flex justify-content-between align-items-center mb-3">
-          <h5 class="mb-0">
-            <i class="bi bi-table me-2"></i>Column Templates
-            <span class="badge bg-primary ms-2">{{ templatesData().count }}</span>
-          </h5>
-          @if (isLoading()) {
-            <div class="spinner-border spinner-border-sm text-primary" role="status">
-              <span class="visually-hidden">Loading...</span>
+          <div class="d-flex align-items-center">
+            <h5 class="mb-0">
+              <i class="bi bi-table me-2"></i>Column Templates
+              @if (viewMode() === 'flat') {
+                <span class="badge bg-primary ms-2">{{ templatesData().count }}</span>
+              } @else {
+                <span class="badge bg-primary ms-2">{{ groupedTemplatesData().count }} groups</span>
+              }
+            </h5>
+            <div class="btn-group btn-group-sm ms-3" role="group" aria-label="View mode">
+              <button
+                type="button"
+                class="btn"
+                [class]="viewMode() === 'flat' ? 'btn-primary' : 'btn-outline-primary'"
+                (click)="setViewMode('flat')"
+                title="Flat view - show all templates">
+                <i class="bi bi-list-ul"></i>
+              </button>
+              <button
+                type="button"
+                class="btn"
+                [class]="viewMode() === 'grouped' ? 'btn-primary' : 'btn-outline-primary'"
+                (click)="setViewMode('grouped')"
+                title="Grouped view - group by column name">
+                <i class="bi bi-collection"></i>
+              </button>
             </div>
-          }
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            @if (viewMode() === 'grouped' && hasGroupedTemplates()) {
+              <button
+                type="button"
+                class="btn btn-outline-secondary btn-sm"
+                (click)="expandAllGroups()"
+                title="Expand all groups">
+                <i class="bi bi-arrows-expand"></i>
+              </button>
+              <button
+                type="button"
+                class="btn btn-outline-secondary btn-sm"
+                (click)="collapseAllGroups()"
+                title="Collapse all groups">
+                <i class="bi bi-arrows-collapse"></i>
+              </button>
+            }
+            @if (isLoading() || isLoadingGrouped()) {
+              <div class="spinner-border spinner-border-sm text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+              </div>
+            }
+          </div>
         </div>
         
         <!-- Column Filter -->
@@ -205,7 +247,8 @@
         }
       </div>
       <div class="card-body p-0">
-        @if (hasTemplates()) {
+        <!-- Flat View -->
+        @if (viewMode() === 'flat' && hasTemplates()) {
             <div class="table-responsive">
               <table class="table table-hover mb-0">
                 <thead>
@@ -369,7 +412,7 @@
                 </ngb-pagination>
               </div>
             }
-          } @else {
+        } @else if (viewMode() === 'flat' && !hasTemplates()) {
             <div class="empty-state text-center py-5">
               <i class="bi bi-clipboard-list fs-1 text-muted mb-3"></i>
               <h5 class="text-muted">No Column Templates Found</h5>
@@ -384,7 +427,142 @@
                 <i class="bi bi-plus me-1"></i>Create First Template
               </button>
             </div>
+        }
+
+        <!-- Grouped View -->
+        @if (viewMode() === 'grouped' && hasGroupedTemplates()) {
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead>
+                <tr>
+                  <th style="width: 40px;"></th>
+                  <th><i class="bi bi-list me-1"></i>Column Name</th>
+                  <th><i class="bi bi-layers me-1"></i>Type</th>
+                  <th><i class="bi bi-file-earmark-text me-1"></i>Schemas</th>
+                  <th><i class="bi bi-hash me-1"></i>Variants</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (group of groupedTemplatesData().results; track getGroupKey(group)) {
+                  <tr
+                    class="group-header cursor-pointer"
+                    (click)="toggleGroup(group)"
+                    [class.table-active]="isGroupExpanded(group)">
+                    <td class="text-center">
+                      @if (isGroupLoading(group)) {
+                        <div class="spinner-border spinner-border-sm" role="status">
+                          <span class="visually-hidden">Loading...</span>
+                        </div>
+                      } @else {
+                        <i class="bi" [class.bi-chevron-down]="isGroupExpanded(group)" [class.bi-chevron-right]="!isGroupExpanded(group)"></i>
+                      }
+                    </td>
+                    <td>
+                      <strong>{{ group.columnName }}</strong>
+                    </td>
+                    <td>
+                      <span class="badge bg-secondary">{{ group.columnType }}</span>
+                    </td>
+                    <td>
+                      @for (schema of group.schemas; track schema; let i = $index) {
+                        @if (i < 3) {
+                          <span class="badge bg-info me-1">{{ schema }}</span>
+                        }
+                      }
+                      @if (group.schemas.length > 3) {
+                        <span class="badge bg-secondary">+{{ group.schemas.length - 3 }} more</span>
+                      }
+                    </td>
+                    <td>
+                      <span class="badge bg-primary">{{ group.schemaCount }}</span>
+                    </td>
+                  </tr>
+                  @if (isGroupExpanded(group)) {
+                    @for (template of getGroupTemplates(group); track template.id) {
+                      <tr class="group-child">
+                        <td></td>
+                        <td colspan="4">
+                          <div class="d-flex justify-content-between align-items-center ps-3">
+                            <div>
+                              <span class="text-muted me-2">{{ template.name }}</span>
+                              @if (template.isSystemTemplate) {
+                                <i class="bi bi-shield-check text-success me-2" title="System template"></i>
+                              }
+                              @if (template.sourceSchema) {
+                                <span class="badge bg-info me-2">{{ template.sourceSchema }}</span>
+                              }
+                              @if (template.ontologyType) {
+                                <span class="badge bg-success me-2">{{ template.ontologyType }}</span>
+                              }
+                              @switch (template.visibility) {
+                                @case ('public') {
+                                  <span class="badge bg-success">Public</span>
+                                }
+                                @case ('group') {
+                                  <span class="badge bg-warning">Lab Group</span>
+                                }
+                                @case ('private') {
+                                  <span class="badge bg-secondary">Private</span>
+                                }
+                                @case ('global') {
+                                  <span class="badge bg-primary">Global</span>
+                                }
+                              }
+                            </div>
+                            <div class="btn-group btn-group-sm" role="group">
+                              <button
+                                class="btn btn-outline-primary"
+                                (click)="editTemplate(template); $event.stopPropagation()"
+                                title="Edit template">
+                                <i class="bi bi-pencil"></i>
+                              </button>
+                              <button
+                                class="btn btn-outline-info"
+                                (click)="duplicateTemplate(template); $event.stopPropagation()"
+                                title="Duplicate template">
+                                <i class="bi bi-copy"></i>
+                              </button>
+                              <button
+                                class="btn btn-outline-danger"
+                                (click)="deleteTemplate(template); $event.stopPropagation()"
+                                title="Delete template">
+                                <i class="bi bi-trash"></i>
+                              </button>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    }
+                  }
+                }
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Grouped Pagination -->
+          @if (showGroupedPagination()) {
+            <div class="d-flex justify-content-center mt-3 p-3">
+              <ngb-pagination
+                [collectionSize]="groupedTemplatesData().count"
+                [page]="groupedCurrentPage()"
+                [pageSize]="groupedPageSize()"
+                [maxSize]="5"
+                [boundaryLinks]="true"
+                [rotate]="true"
+                (pageChange)="onGroupedPageChange($event)"
+                class="pagination-sm">
+              </ngb-pagination>
+            </div>
           }
+        } @else if (viewMode() === 'grouped' && !hasGroupedTemplates()) {
+          <div class="empty-state text-center py-5">
+            <i class="bi bi-collection fs-1 text-muted mb-3"></i>
+            <h5 class="text-muted">No Grouped Templates Found</h5>
+            <p class="text-muted">
+              Try adjusting your search criteria or switch to flat view.
+            </p>
+          </div>
+        }
       </div>
     </div>
   </div>

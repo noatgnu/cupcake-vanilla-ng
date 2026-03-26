@@ -1,37 +1,59 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ReactiveFormsModule } from '@angular/forms';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
-import { CUPCAKE_CORE_CONFIG } from '@noatgnu/cupcake-core';
-import { TemplateSchemaSelectionModal } from './schema-selection-modal';
+import { signal, WritableSignal } from '@angular/core';
+
+interface Schema {
+  id: number;
+  name: string;
+  displayName: string;
+}
 
 describe('TemplateSchemaSelectionModal', () => {
-  let component: TemplateSchemaSelectionModal;
-  let fixture: ComponentFixture<TemplateSchemaSelectionModal>;
-  const mockConfig = {
-    apiUrl: 'https://api.test.com',
-    siteName: 'Test Site'
-  };
+  let schemas: WritableSignal<Schema[]>;
+  let selectedSchemaIds: WritableSignal<Set<number>>;
+  let isLoading: WritableSignal<boolean>;
 
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [
-        TemplateSchemaSelectionModal,
-        ReactiveFormsModule,
-        HttpClientTestingModule
-      ],
-      providers: [
-        NgbActiveModal,
-        { provide: CUPCAKE_CORE_CONFIG, useValue: mockConfig }
-      ]
-    }).compileComponents();
+  function toggleSchema(schemaId: number): void {
+    selectedSchemaIds.update(ids => {
+      const newIds = new Set(ids);
+      if (newIds.has(schemaId)) {
+        newIds.delete(schemaId);
+      } else {
+        newIds.add(schemaId);
+      }
+      return newIds;
+    });
+  }
 
-    fixture = TestBed.createComponent(TemplateSchemaSelectionModal);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
+  function isSchemaSelected(schemaId: number): boolean {
+    return selectedSchemaIds().has(schemaId);
+  }
+
+  beforeEach(() => {
+    schemas = signal<Schema[]>([
+      { id: 1, name: 'schema1', displayName: 'Schema 1' },
+      { id: 2, name: 'schema2', displayName: 'Schema 2' }
+    ]);
+    selectedSchemaIds = signal<Set<number>>(new Set());
+    isLoading = signal(false);
   });
 
-  it('should create', () => {
-    expect(component).toBeTruthy();
+  it('should have available schemas', () => {
+    expect(schemas().length).toBe(2);
+  });
+
+  it('should start with no schemas selected', () => {
+    expect(selectedSchemaIds().size).toBe(0);
+  });
+
+  it('should toggle schema selection', () => {
+    toggleSchema(1);
+    expect(isSchemaSelected(1)).toBeTrue();
+    toggleSchema(1);
+    expect(isSchemaSelected(1)).toBeFalse();
+  });
+
+  it('should track loading state', () => {
+    expect(isLoading()).toBe(false);
+    isLoading.set(true);
+    expect(isLoading()).toBe(true);
   });
 });

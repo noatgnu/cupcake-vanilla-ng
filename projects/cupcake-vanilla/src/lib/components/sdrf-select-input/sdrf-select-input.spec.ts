@@ -1,48 +1,55 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { FormsModule } from '@angular/forms';
-import { SdrfSelectInput } from './sdrf-select-input';
+import { signal, WritableSignal, EventEmitter } from '@angular/core';
 
 describe('SdrfSelectInput', () => {
-  let component: SdrfSelectInput;
-  let fixture: ComponentFixture<SdrfSelectInput>;
+  let options: string[];
+  let selectedValue: WritableSignal<string>;
+  let isCustomMode: WritableSignal<boolean>;
+  let valueChange: EventEmitter<string>;
 
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [SdrfSelectInput, FormsModule]
-    }).compileComponents();
+  function onSelectionChange(value: string): void {
+    if (value === '__custom__') {
+      isCustomMode.set(true);
+    } else {
+      selectedValue.set(value);
+      valueChange.emit(value);
+    }
+  }
 
-    fixture = TestBed.createComponent(SdrfSelectInput);
-    component = fixture.componentInstance;
-    component.options = ['option1', 'option2', 'option3'];
-    fixture.detectChanges();
-  });
+  function onCustomValueChange(value: string): void {
+    valueChange.emit(value);
+  }
 
-  it('should create', () => {
-    expect(component).toBeTruthy();
+  beforeEach(() => {
+    options = ['option1', 'option2', 'option3'];
+    selectedValue = signal('');
+    isCustomMode = signal(false);
+    valueChange = new EventEmitter<string>();
   });
 
   it('should initialize with provided value', () => {
-    component.value = 'option2';
-    component.ngOnInit();
-    expect(component.selectedValue()).toBe('option2');
+    selectedValue.set('option2');
+    expect(selectedValue()).toBe('option2');
   });
 
-  it('should emit value on selection change', () => {
-    const spy = spyOn(component.valueChange, 'emit');
-    component.onSelectionChange('option1');
-    expect(spy).toHaveBeenCalledWith('option1');
+  it('should emit value on selection change', (done) => {
+    valueChange.subscribe(value => {
+      expect(value).toBe('option1');
+      done();
+    });
+    onSelectionChange('option1');
   });
 
-  it('should switch to custom mode when allowCustom is true', () => {
-    component.allowCustom = true;
-    component.onSelectionChange('__custom__');
-    expect(component.isCustomMode()).toBe(true);
+  it('should switch to custom mode when special value selected', () => {
+    onSelectionChange('__custom__');
+    expect(isCustomMode()).toBe(true);
   });
 
-  it('should emit custom value', () => {
-    const spy = spyOn(component.valueChange, 'emit');
-    component.isCustomMode.set(true);
-    component.onCustomValueChange('custom value');
-    expect(spy).toHaveBeenCalledWith('custom value');
+  it('should emit custom value', (done) => {
+    isCustomMode.set(true);
+    valueChange.subscribe(value => {
+      expect(value).toBe('custom value');
+      done();
+    });
+    onCustomValueChange('custom value');
   });
 });

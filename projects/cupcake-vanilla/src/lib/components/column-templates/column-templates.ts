@@ -7,10 +7,11 @@ import { ColumnTemplateEditModal } from './column-template-edit-modal/column-tem
 import {
   MetadataColumnTemplate,
   MetadataColumnTemplateCreateRequest,
+  GroupedColumnTemplate,
   Schema,
   PaginatedResponse
 } from '../../models';
-import { MetadataColumnTemplateService, SchemaService } from '../../services';
+import { MetadataColumnTemplateService, GroupedColumnTemplateQueryParams, SchemaService } from '../../services';
 import { ResourceVisibility } from '@noatgnu/cupcake-core';
 import { LabGroupService, LabGroup, LabGroupQueryResponse } from '@noatgnu/cupcake-core';
 
@@ -58,6 +59,9 @@ export class ColumnTemplates implements OnInit {
   sortField = signal<string>('');
   sortDirection = signal<'asc' | 'desc'>('asc');
 
+  // View mode: 'flat' shows all templates, 'grouped' shows grouped by column name/type
+  viewMode = signal<'flat' | 'grouped'>('flat');
+
   // Direct signal-based data management
   templatesData = signal<{count: number, results: MetadataColumnTemplate[]}>({ count: 0, results: [] });
   labGroupsData = signal<LabGroupQueryResponse>({ count: 0, results: [] });
@@ -66,12 +70,23 @@ export class ColumnTemplates implements OnInit {
   schemaSearchText: string = '';
   schemaTypeFilter = signal<'all' | 'builtin' | 'user'>('all');
 
+  // Grouped view data
+  groupedTemplatesData = signal<{count: number, results: GroupedColumnTemplate[]}>({ count: 0, results: [] });
+  expandedGroups = signal<Set<string>>(new Set());
+  groupTemplatesCache = signal<Map<string, MetadataColumnTemplate[]>>(new Map());
+  loadingGroups = signal<Set<string>>(new Set());
+  isLoadingGrouped = signal(false);
+  groupedCurrentPage = signal(1);
+  groupedPageSize = signal(10);
+
   // Computed values for better performance
   hasTemplates = computed(() => this.templatesData().results.length > 0);
   hasLabGroups = computed(() => this.labGroupsData().results.length > 0);
   hasSchemas = computed(() => this.schemasData().results.length > 0);
   showTemplatesPagination = computed(() => this.templatesData().count > this.pageSize());
   showLabGroupsPagination = computed(() => this.labGroupsData().count > this.labGroupsPageSize());
+  hasGroupedTemplates = computed(() => this.groupedTemplatesData().results.length > 0);
+  showGroupedPagination = computed(() => this.groupedTemplatesData().count > this.groupedPageSize());
   
   // Filtered and sorted templates
   filteredTemplates = computed(() => {
@@ -545,5 +560,131 @@ export class ColumnTemplates implements OnInit {
   private refreshTemplates() {
     // Trigger a refresh by updating the search params
     this.searchParams.update(params => ({ ...params }));
+    if (this.viewMode() === 'grouped') {
+      this.loadGroupedTemplates();
+    }
+  }
+
+  // View mode methods
+  setViewMode(mode: 'flat' | 'grouped'): void {
+    this.viewMode.set(mode);
+    if (mode === 'grouped') {
+      this.loadGroupedTemplates();
+    }
+  }
+
+  private loadGroupedTemplates(): void {
+    this.isLoadingGrouped.set(true);
+    const offset = (this.groupedCurrentPage() - 1) * this.groupedPageSize();
+
+    const params: GroupedColumnTemplateQueryParams = {
+      search: this.searchParams().search || undefined,
+      isSystemTemplate: undefined,
+      limit: this.groupedPageSize(),
+      offset: offset
+    };
+
+    this.metadataColumnTemplateService.getGroupedColumnTemplates(params).subscribe({
+      next: (response) => {
+        this.isLoadingGrouped.set(false);
+        this.groupedTemplatesData.set(response);
+      },
+      error: (error) => {
+        this.isLoadingGrouped.set(false);
+        console.error('Error loading grouped templates:', error);
+        this.groupedTemplatesData.set({ count: 0, results: [] });
+      }
+    });
+  }
+
+  onGroupedPageChange(page: number): void {
+    this.groupedCurrentPage.set(page);
+    this.loadGroupedTemplates();
+  }
+
+  getGroupKey(group: GroupedColumnTemplate): string {
+    return `${group.columnName}::${group.columnType}`;
+  }
+
+  isGroupExpanded(group: GroupedColumnTemplate): boolean {
+    return this.expandedGroups().has(this.getGroupKey(group));
+  }
+
+  isGroupLoading(group: GroupedColumnTemplate): boolean {
+    return this.loadingGroups().has(this.getGroupKey(group));
+  }
+
+  toggleGroup(group: GroupedColumnTemplate): void {
+    const key = this.getGroupKey(group);
+    const expanded = new Set(this.expandedGroups());
+
+    if (expanded.has(key)) {
+      expanded.delete(key);
+      this.expandedGroups.set(expanded);
+    } else {
+      expanded.add(key);
+      this.expandedGroups.set(expanded);
+
+      if (!this.groupTemplatesCache().has(key)) {
+        this.loadGroupTemplates(group);
+      }
+    }
+  }
+
+  private loadGroupTemplates(group: GroupedColumnTemplate): void {
+    const key = this.getGroupKey(group);
+
+    const loading = new Set(this.loadingGroups());
+    loading.add(key);
+    this.loadingGroups.set(loading);
+
+    this.metadataColumnTemplateService.getMetadataColumnTemplates({
+      search: group.columnName,
+      limit: 100
+    }).subscribe({
+      next: (response) => {
+        const templates = response.results.filter(
+          t => t.columnName === group.columnName && t.columnType === group.columnType
+        );
+
+        const cache = new Map(this.groupTemplatesCache());
+        cache.set(key, templates);
+        this.groupTemplatesCache.set(cache);
+
+        const loading = new Set(this.loadingGroups());
+        loading.delete(key);
+        this.loadingGroups.set(loading);
+      },
+      error: (error) => {
+        console.error('Error loading group templates:', error);
+        const loading = new Set(this.loadingGroups());
+        loading.delete(key);
+        this.loadingGroups.set(loading);
+      }
+    });
+  }
+
+  getGroupTemplates(group: GroupedColumnTemplate): MetadataColumnTemplate[] {
+    return this.groupTemplatesCache().get(this.getGroupKey(group)) || [];
+  }
+
+  collapseAllGroups(): void {
+    this.expandedGroups.set(new Set());
+  }
+
+  expandAllGroups(): void {
+    const groups = this.groupedTemplatesData().results;
+    const expanded = new Set<string>();
+
+    for (const group of groups) {
+      const key = this.getGroupKey(group);
+      expanded.add(key);
+
+      if (!this.groupTemplatesCache().has(key)) {
+        this.loadGroupTemplates(group);
+      }
+    }
+
+    this.expandedGroups.set(expanded);
   }
 }

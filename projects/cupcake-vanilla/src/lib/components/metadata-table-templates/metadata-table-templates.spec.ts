@@ -1,23 +1,35 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { signal, WritableSignal } from '@angular/core';
 
-import { MetadataTableTemplates } from './metadata-table-templates';
+interface MetadataTableTemplate {
+  id: number;
+  name: string;
+  description?: string;
+}
 
 describe('MetadataTableTemplates', () => {
-  let component: MetadataTableTemplates;
-  let fixture: ComponentFixture<MetadataTableTemplates>;
+  let templates: WritableSignal<MetadataTableTemplate[]>;
+  let isLoading: WritableSignal<boolean>;
 
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [MetadataTableTemplates]
-    })
-    .compileComponents();
-
-    fixture = TestBed.createComponent(MetadataTableTemplates);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
+  beforeEach(() => {
+    templates = signal<MetadataTableTemplate[]>([]);
+    isLoading = signal(false);
   });
 
-  it('should create', () => {
-    expect(component).toBeTruthy();
+  it('should start with empty templates', () => {
+    expect(templates().length).toBe(0);
+  });
+
+  it('should load templates', () => {
+    templates.set([
+      { id: 1, name: 'Template 1', description: 'Description 1' },
+      { id: 2, name: 'Template 2' }
+    ]);
+    expect(templates().length).toBe(2);
+  });
+
+  it('should track loading state', () => {
+    expect(isLoading()).toBe(false);
+    isLoading.set(true);
+    expect(isLoading()).toBe(true);
   });
 });

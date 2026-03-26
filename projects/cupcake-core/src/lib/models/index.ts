@@ -18,3 +18,4 @@ export * from './notification';
 export * from './async-task';
 export * from './worker-status';
 export * from './electron-api';
+export * from './desktop-api';

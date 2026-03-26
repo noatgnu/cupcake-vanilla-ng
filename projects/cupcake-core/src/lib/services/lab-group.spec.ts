@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { LabGroupService } from './lab-group';
 import { CUPCAKE_CORE_CONFIG } from './auth';
 
@@ -13,8 +14,9 @@ describe('LabGroupService', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule],
       providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
         LabGroupService,
         { provide: CUPCAKE_CORE_CONFIG, useValue: mockConfig }
       ]
@@ -159,17 +161,29 @@ describe('LabGroupService', () => {
 
     it('should invite user to lab group', (done) => {
       const labGroupId = 1;
-      const invitationData = { email: 'user@example.com', role: 'member' };
-      const mockResponse = { id: 1, email: 'user@example.com', status: 'pending' };
+      const invitationData = { labGroup: 1, invitedEmail: 'user@example.com', message: 'Join us' };
+      const mockResponse = {
+        id: 1,
+        labGroup: 1,
+        inviter: 1,
+        invitedEmail: 'user@example.com',
+        status: 'pending',
+        invitationToken: 'token-123',
+        expiresAt: '2023-12-31T23:59:59Z',
+        canAccept: false,
+        createdAt: '2023-01-01T00:00:00Z',
+        updatedAt: '2023-01-01T00:00:00Z'
+      };
 
       service.inviteUserToLabGroup(labGroupId, invitationData).subscribe(response => {
-        expect(response).toEqual(mockResponse);
+        expect(response.id).toBe(1);
+        expect(response.invitedEmail).toBe('user@example.com');
         done();
       });
 
       const req = httpMock.expectOne(`${mockConfig.apiUrl}/lab-groups/1/invite_user/`);
       expect(req.request.method).toBe('POST');
-      expect(req.request.body).toEqual({ email: 'user@example.com', role: 'member' });
+      expect(req.request.body).toEqual({ lab_group: 1, invited_email: 'user@example.com', message: 'Join us' });
       req.flush(mockResponse);
     });
 
@@ -210,16 +224,28 @@ describe('LabGroupService', () => {
       const params = { labGroup: 1, status: 'pending' };
       const mockResponse = {
         count: 1,
-        results: [{ id: 1, email: 'user@example.com', status: 'pending' }]
+        results: [{
+          id: 1,
+          labGroup: 1,
+          inviter: 1,
+          invitedEmail: 'user@example.com',
+          status: 'pending',
+          invitationToken: 'token-123',
+          expiresAt: '2023-12-31T23:59:59Z',
+          canAccept: true,
+          createdAt: '2023-01-01T00:00:00Z',
+          updatedAt: '2023-01-01T00:00:00Z'
+        }]
       };
 
       service.getLabGroupInvitations(params).subscribe(response => {
-        expect(response).toEqual(mockResponse);
+        expect(response.count).toBe(1);
+        expect(response.results.length).toBe(1);
         done();
       });
 
-      const req = httpMock.expectOne(req => 
-        req.url === `${mockConfig.apiUrl}/lab-group-invitations/` && 
+      const req = httpMock.expectOne(req =>
+        req.url === `${mockConfig.apiUrl}/lab-group-invitations/` &&
         req.params.get('lab_group') === '1' &&
         req.params.get('status') === 'pending'
       );
@@ -229,12 +255,36 @@ describe('LabGroupService', () => {
 
     it('should get my pending invitations', (done) => {
       const mockResponse = [
-        { id: 1, labGroup: { name: 'Lab 1' }, status: 'pending' },
-        { id: 2, labGroup: { name: 'Lab 2' }, status: 'pending' }
+        {
+          id: 1,
+          labGroup: 1,
+          labGroupName: 'Lab 1',
+          inviter: 1,
+          invitedEmail: 'me@example.com',
+          status: 'pending',
+          invitationToken: 'token-1',
+          expiresAt: '2023-12-31T23:59:59Z',
+          canAccept: true,
+          createdAt: '2023-01-01T00:00:00Z',
+          updatedAt: '2023-01-01T00:00:00Z'
+        },
+        {
+          id: 2,
+          labGroup: 2,
+          labGroupName: 'Lab 2',
+          inviter: 2,
+          invitedEmail: 'me@example.com',
+          status: 'pending',
+          invitationToken: 'token-2',
+          expiresAt: '2023-12-31T23:59:59Z',
+          canAccept: true,
+          createdAt: '2023-01-01T00:00:00Z',
+          updatedAt: '2023-01-01T00:00:00Z'
+        }
       ];
 
       service.getMyPendingInvitations().subscribe(response => {
-        expect(response).toEqual(mockResponse);
+        expect(response.length).toBe(2);
         done();
       });
 
@@ -245,13 +295,25 @@ describe('LabGroupService', () => {
 
     it('should accept lab group invitation', (done) => {
       const invitationId = 1;
-      const mockResponse = { 
-        message: 'Invitation accepted', 
-        invitation: { id: 1, status: 'accepted' } 
+      const mockResponse = {
+        message: 'Invitation accepted',
+        invitation: {
+          id: 1,
+          labGroup: 1,
+          inviter: 1,
+          invitedEmail: 'user@example.com',
+          status: 'accepted',
+          invitationToken: 'token-123',
+          expiresAt: '2023-12-31T23:59:59Z',
+          canAccept: false,
+          createdAt: '2023-01-01T00:00:00Z',
+          updatedAt: '2023-01-01T00:00:00Z'
+        }
       };
 
       service.acceptLabGroupInvitation(invitationId).subscribe(response => {
-        expect(response).toEqual(mockResponse);
+        expect(response.message).toBe('Invitation accepted');
+        expect(response.invitation.status).toBe('accepted');
         done();
       });
 
@@ -263,13 +325,25 @@ describe('LabGroupService', () => {
 
     it('should reject lab group invitation', (done) => {
       const invitationId = 1;
-      const mockResponse = { 
-        message: 'Invitation rejected', 
-        invitation: { id: 1, status: 'rejected' } 
+      const mockResponse = {
+        message: 'Invitation rejected',
+        invitation: {
+          id: 1,
+          labGroup: 1,
+          inviter: 1,
+          invitedEmail: 'user@example.com',
+          status: 'rejected',
+          invitationToken: 'token-123',
+          expiresAt: '2023-12-31T23:59:59Z',
+          canAccept: false,
+          createdAt: '2023-01-01T00:00:00Z',
+          updatedAt: '2023-01-01T00:00:00Z'
+        }
       };
 
       service.rejectLabGroupInvitation(invitationId).subscribe(response => {
-        expect(response).toEqual(mockResponse);
+        expect(response.message).toBe('Invitation rejected');
+        expect(response.invitation.status).toBe('rejected');
         done();
       });
 
@@ -297,29 +371,29 @@ describe('LabGroupService', () => {
 
   describe('Error Handling', () => {
     it('should handle HTTP errors', (done) => {
-      service.getLabGroups().subscribe(
-        () => fail('should have failed'),
-        error => {
+      service.getLabGroups().subscribe({
+        next: () => fail('should have failed'),
+        error: error => {
           expect(error.status).toBe(500);
           done();
         }
-      );
+      });
 
       const req = httpMock.expectOne(`${mockConfig.apiUrl}/lab-groups/`);
       req.flush({ error: 'Server error' }, { status: 500, statusText: 'Internal Server Error' });
     });
 
     it('should handle network errors', (done) => {
-      service.getLabGroups().subscribe(
-        () => fail('should have failed'),
-        error => {
+      service.getLabGroups().subscribe({
+        next: () => fail('should have failed'),
+        error: error => {
           expect(error.name).toBe('HttpErrorResponse');
           done();
         }
-      );
+      });
 
       const req = httpMock.expectOne(`${mockConfig.apiUrl}/lab-groups/`);
-      req.error(new ErrorEvent('Network error'));
+      req.error(new ProgressEvent('Network error'));
     });
   });
 });

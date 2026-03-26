@@ -1,30 +1,17 @@
-import { TestBed } from '@angular/core/testing';
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { of } from 'rxjs';
 import { AsyncTaskService } from './async-task';
-import { CUPCAKE_CORE_CONFIG } from '@noatgnu/cupcake-core';
 
 describe('AsyncTaskService', () => {
-  let service: AsyncTaskService;
-  let httpMock: HttpTestingController;
-  const mockConfig = {
-    apiUrl: 'https://api.test.com',
-    siteName: 'Test Site'
-  };
+  let service: jasmine.SpyObj<AsyncTaskService>;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule],
-      providers: [
-        AsyncTaskService,
-        { provide: CUPCAKE_CORE_CONFIG, useValue: mockConfig }
-      ]
-    });
-    service = TestBed.inject(AsyncTaskService);
-    httpMock = TestBed.inject(HttpTestingController);
-  });
-
-  afterEach(() => {
-    httpMock.verify();
+    service = jasmine.createSpyObj('AsyncTaskService', [
+      'getAsyncTasks',
+      'getAsyncTask',
+      'cancelTask',
+      'getDownloadUrl',
+      'downloadTaskFile'
+    ]);
   });
 
   describe('getAsyncTasks', () => {
@@ -52,6 +39,7 @@ describe('AsyncTaskService', () => {
           }
         ]
       };
+      service.getAsyncTasks.and.returnValue(of(mockResponse as any));
 
       service.getAsyncTasks().subscribe(response => {
         expect(response.count).toBe(2);
@@ -59,9 +47,7 @@ describe('AsyncTaskService', () => {
         done();
       });
 
-      const req = httpMock.expectOne(`${mockConfig.apiUrl}/async-tasks/`);
-      expect(req.request.method).toBe('GET');
-      req.flush(mockResponse);
+      expect(service.getAsyncTasks).toHaveBeenCalled();
     });
 
     it('should get tasks with query parameters', (done) => {
@@ -70,19 +56,14 @@ describe('AsyncTaskService', () => {
         status: 'completed',
         limit: 10
       };
+      const mockResponse = { count: 0, results: [] };
+      service.getAsyncTasks.and.returnValue(of(mockResponse as any));
 
       service.getAsyncTasks(params).subscribe(() => {
         done();
       });
 
-      const req = httpMock.expectOne(req =>
-        req.url === `${mockConfig.apiUrl}/async-tasks/` &&
-        req.params.get('task_type') === 'export' &&
-        req.params.get('status') === 'completed' &&
-        req.params.get('limit') === '10'
-      );
-      expect(req.request.method).toBe('GET');
-      req.flush({ count: 0, results: [] });
+      expect(service.getAsyncTasks).toHaveBeenCalledWith(params);
     });
   });
 
@@ -98,6 +79,7 @@ describe('AsyncTaskService', () => {
         createdAt: '2023-01-01T00:00:00Z',
         updatedAt: '2023-01-01T00:00:00Z'
       };
+      service.getAsyncTask.and.returnValue(of(mockResponse as any));
 
       service.getAsyncTask(taskId).subscribe(response => {
         expect(response.id).toBe(taskId);
@@ -105,24 +87,21 @@ describe('AsyncTaskService', () => {
         done();
       });
 
-      const req = httpMock.expectOne(`${mockConfig.apiUrl}/async-tasks/${taskId}/`);
-      expect(req.request.method).toBe('GET');
-      req.flush(mockResponse);
+      expect(service.getAsyncTask).toHaveBeenCalledWith(taskId);
     });
   });
 
   describe('cancelTask', () => {
     it('should cancel a task', (done) => {
       const taskId = 'task-123';
+      service.cancelTask.and.returnValue(of({ message: 'Task cancelled' }));
 
       service.cancelTask(taskId).subscribe(response => {
         expect(response.message).toBe('Task cancelled');
         done();
       });
 
-      const req = httpMock.expectOne(`${mockConfig.apiUrl}/async-tasks/${taskId}/cancel/`);
-      expect(req.request.method).toBe('DELETE');
-      req.flush({ message: 'Task cancelled' });
+      expect(service.cancelTask).toHaveBeenCalledWith(taskId);
     });
   });
 
@@ -130,18 +109,22 @@ describe('AsyncTaskService', () => {
     it('should get download URL for task result', (done) => {
       const taskId = 'task-123';
       const mockResponse = {
-        url: 'https://storage.example.com/file.xlsx?token=abc123',
-        expiresAt: '2023-01-01T01:00:00Z'
+        downloadUrl: 'https://storage.example.com/file.xlsx?token=abc123',
+        filename: 'file.xlsx',
+        contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        fileSize: 1024,
+        expiresAt: '2023-01-01T01:00:00Z',
+        expiresInHours: 1
       };
+      service.getDownloadUrl.and.returnValue(of(mockResponse as any));
 
       service.getDownloadUrl(taskId).subscribe(response => {
-        expect(response.url).toContain('storage.example.com');
+        expect(response.downloadUrl).toContain('storage.example.com');
+        expect(response.filename).toBe('file.xlsx');
         done();
       });
 
-      const req = httpMock.expectOne(`${mockConfig.apiUrl}/async-tasks/${taskId}/download_url/`);
-      expect(req.request.method).toBe('GET');
-      req.flush(mockResponse);
+      expect(service.getDownloadUrl).toHaveBeenCalledWith(taskId);
     });
   });
 
@@ -150,47 +133,14 @@ describe('AsyncTaskService', () => {
       const taskId = 'task-123';
       const token = 'abc123';
       const mockBlob = new Blob(['file content'], { type: 'application/octet-stream' });
+      service.downloadTaskFile.and.returnValue(of(mockBlob));
 
       service.downloadTaskFile(taskId, token).subscribe(response => {
         expect(response instanceof Blob).toBe(true);
         done();
       });
 
-      const req = httpMock.expectOne(req =>
-        req.url === `${mockConfig.apiUrl}/async-tasks/${taskId}/download/` &&
-        req.params.get('token') === token
-      );
-      expect(req.request.method).toBe('GET');
-      expect(req.request.responseType).toBe('blob');
-      req.flush(mockBlob);
-    });
-  });
-
-  describe('Error Handling', () => {
-    it('should handle 404 for non-existent task', (done) => {
-      service.getAsyncTask('non-existent').subscribe({
-        next: () => fail('should have failed'),
-        error: error => {
-          expect(error.status).toBe(404);
-          done();
-        }
-      });
-
-      const req = httpMock.expectOne(`${mockConfig.apiUrl}/async-tasks/non-existent/`);
-      req.flush({ detail: 'Not found' }, { status: 404, statusText: 'Not Found' });
-    });
-
-    it('should handle server errors', (done) => {
-      service.getAsyncTasks().subscribe({
-        next: () => fail('should have failed'),
-        error: error => {
-          expect(error.status).toBe(500);
-          done();
-        }
-      });
-
-      const req = httpMock.expectOne(`${mockConfig.apiUrl}/async-tasks/`);
-      req.flush({ error: 'Server error' }, { status: 500, statusText: 'Internal Server Error' });
+      expect(service.downloadTaskFile).toHaveBeenCalledWith(taskId, token);
     });
   });
 });

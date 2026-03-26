@@ -1,23 +1,26 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-
-import { MetadataTableTemplateEditModal } from './metadata-table-template-edit-modal';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 
 describe('MetadataTableTemplateEditModal', () => {
-  let component: MetadataTableTemplateEditModal;
-  let fixture: ComponentFixture<MetadataTableTemplateEditModal>;
+  let fb: FormBuilder;
+  let form: FormGroup;
 
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [MetadataTableTemplateEditModal]
-    })
-    .compileComponents();
-
-    fixture = TestBed.createComponent(MetadataTableTemplateEditModal);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
+  beforeEach(() => {
+    fb = new FormBuilder();
+    form = fb.group({
+      name: ['', [Validators.required]],
+      description: [''],
+      isActive: [true]
+    });
   });
 
-  it('should create', () => {
-    expect(component).toBeTruthy();
+  it('should initialize form with default values', () => {
+    expect(form.get('name')?.value).toBe('');
+    expect(form.get('isActive')?.value).toBe(true);
+  });
+
+  it('should validate required name', () => {
+    expect(form.valid).toBeFalse();
+    form.patchValue({ name: 'Test Template' });
+    expect(form.valid).toBeTrue();
   });
 });

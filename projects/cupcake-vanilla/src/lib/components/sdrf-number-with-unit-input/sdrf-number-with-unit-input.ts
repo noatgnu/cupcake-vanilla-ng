@@ -18,15 +18,19 @@ export class SdrfNumberWithUnitInput implements OnInit, OnChanges {
   @Input() examples: (string | number)[] = [];
   @Output() valueChange = new EventEmitter<string>();
 
-  form!: FormGroup;
+  form: FormGroup;
 
-  constructor(private fb: FormBuilder) {}
-
-  ngOnInit() {
+  constructor(private fb: FormBuilder) {
     this.form = this.fb.group({
       number: [''],
-      unit: [this.units.length > 0 ? this.units[0] : '']
+      unit: ['']
     });
+  }
+
+  ngOnInit() {
+    if (this.units.length > 0) {
+      this.form.patchValue({ unit: this.units[0] });
+    }
 
     if (this.value) {
       this.parseAndSetValue(this.value);

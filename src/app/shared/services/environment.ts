@@ -1,6 +1,7 @@
-import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
-import { ElectronService } from '@noatgnu/cupcake-vanilla';
+import { Injectable, inject } from '@angular/core';
+import { BehaviorSubject } from 'rxjs';
+import { DesktopService } from '@noatgnu/cupcake-vanilla';
+import { DesktopRuntime } from '@noatgnu/cupcake-core';
 import { environment } from '../../../environments/environment';
 
 export interface DynamicEnvironment {
@@ -10,21 +11,25 @@ export interface DynamicEnvironment {
   features: {
     asyncTasks: boolean;
   };
-  isElectron: boolean;
+  isDesktop: boolean;
+  runtime: DesktopRuntime;
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class EnvironmentService {
+  private desktopService = inject(DesktopService);
+
   private environmentSubject = new BehaviorSubject<DynamicEnvironment>({
     ...environment,
-    isElectron: false
+    isDesktop: false,
+    runtime: 'web'
   });
 
   public environment$ = this.environmentSubject.asObservable();
 
-  constructor(private electronService: ElectronService) {
+  constructor() {
     this.initializeEnvironment();
   }
 
@@ -33,30 +38,33 @@ export class EnvironmentService {
   }
 
   private async initializeEnvironment(): Promise<void> {
-    if (this.electronService.isElectron) {
+    if (this.desktopService.isDesktop) {
       try {
-        const backendPort = await this.electronService.getBackendPort();
+        const backendPort = await this.desktopService.getBackendPort();
 
-        const electronEnvironment: DynamicEnvironment = {
+        const desktopEnvironment: DynamicEnvironment = {
           production: environment.production,
           apiUrl: `http://localhost:${backendPort}/api/v1`,
           features: environment.features,
-          isElectron: true
+          isDesktop: true,
+          runtime: this.desktopService.runtime
         };
 
-        this.environmentSubject.next(electronEnvironment);
-        console.log(`Electron environment initialized with backend port: ${backendPort}`);
+        this.environmentSubject.next(desktopEnvironment);
+        console.log(`Desktop environment (${this.desktopService.runtime}) initialized with backend port: ${backendPort}`);
       } catch (error) {
-        console.error('Failed to get backend port from Electron:', error);
+        console.error('Failed to get backend port:', error);
         this.environmentSubject.next({
           ...environment,
-          isElectron: true
+          isDesktop: true,
+          runtime: this.desktopService.runtime
         });
       }
     } else {
       this.environmentSubject.next({
         ...environment,
-        isElectron: false
+        isDesktop: false,
+        runtime: 'web'
       });
     }
   }
@@ -88,8 +96,16 @@ export class EnvironmentService {
     }
   }
 
+  isDesktop(): boolean {
+    return this.currentEnvironment.isDesktop;
+  }
+
   isElectron(): boolean {
-    return this.currentEnvironment.isElectron;
+    return this.currentEnvironment.runtime === 'electron';
+  }
+
+  isWails(): boolean {
+    return this.currentEnvironment.runtime === 'wails';
   }
 
   isProduction(): boolean {

@@ -1,23 +1,38 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-
-import { ColumnTemplateEditModal } from './column-template-edit-modal';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 
 describe('ColumnTemplateEditModal', () => {
-  let component: ColumnTemplateEditModal;
-  let fixture: ComponentFixture<ColumnTemplateEditModal>;
+  let fb: FormBuilder;
+  let form: FormGroup;
 
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [ColumnTemplateEditModal]
-    })
-    .compileComponents();
-
-    fixture = TestBed.createComponent(ColumnTemplateEditModal);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
+  beforeEach(() => {
+    fb = new FormBuilder();
+    form = fb.group({
+      name: ['', [Validators.required]],
+      columnName: ['', [Validators.required]],
+      columnType: ['characteristic', [Validators.required]],
+      inputType: ['text'],
+      description: [''],
+      isActive: [true]
+    });
   });
 
-  it('should create', () => {
-    expect(component).toBeTruthy();
+  it('should initialize form with default values', () => {
+    expect(form.get('name')?.value).toBe('');
+    expect(form.get('columnType')?.value).toBe('characteristic');
+    expect(form.get('isActive')?.value).toBe(true);
+  });
+
+  it('should validate required fields', () => {
+    expect(form.valid).toBeFalse();
+    form.patchValue({
+      name: 'Test Template',
+      columnName: 'test_column'
+    });
+    expect(form.valid).toBeTrue();
+  });
+
+  it('should allow updating input type', () => {
+    form.patchValue({ inputType: 'select' });
+    expect(form.get('inputType')?.value).toBe('select');
   });
 });

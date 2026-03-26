@@ -1,11 +1,13 @@
-import { Component, Input, Output, EventEmitter, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, signal, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormsModule } from '@angular/forms';
 import { NgbActiveModal, NgbModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
-import { MetadataColumn, PaginatedResponse, MetadataColumnTemplate, ONTOLOGY_TYPE_CONFIGS, COLUMN_TYPE_CONFIGS, OntologyTypeConfig, ColumnTypeConfig, ColumnType, OntologyType, OFFICIAL_SDRF_COLUMNS, SdrfColumnConfig, getSdrfColumnsByCategory, getSdrfColumnByName } from '../../../models';
+import { MetadataColumn, PaginatedResponse, MetadataColumnTemplate, ONTOLOGY_TYPE_CONFIGS, COLUMN_TYPE_CONFIGS, OntologyTypeConfig, ColumnTypeConfig, ColumnType, OntologyType, Schema } from '../../../models';
 import { MetadataValueEditModal, MetadataValueEditConfig } from '../../metadata-value-edit-modal/metadata-value-edit-modal';
 import { MetadataColumnTemplateService, MetadataColumnTemplateQueryParams } from '../../../services/metadata-column-template';
+import { SchemaService } from '../../../services/schema';
 import { SdrfSyntaxService } from '../../../services/sdrf-syntax';
+import { OfficialColumnCacheService } from '../../../services/official-column-cache';
 
 @Component({
   selector: 'ccv-column-edit-modal',
@@ -45,13 +47,13 @@ export class ColumnEditModal implements OnInit {
   totalTemplatePages = 0;
   Math = Math;
 
-  // Official SDRF column configurations from library
-  officialSdrfColumns: SdrfColumnConfig[] = OFFICIAL_SDRF_COLUMNS;
+  // Template filters
+  showSystemTemplatesOnly = false;
+  selectedSchemaFilter = '';
+  availableSchemas: Schema[] = [];
 
-  // Column selection mode
-  showOfficialColumns = false;
-  selectedOfficialColumn: SdrfColumnConfig | null = null;
-  availableOfficialColumns: SdrfColumnConfig[] = [];
+  // Validation
+  validationError = signal<string | null>(null);
 
   // Template swapping for existing columns
   showTemplateSwap = false;
@@ -62,7 +64,9 @@ export class ColumnEditModal implements OnInit {
     private activeModal: NgbActiveModal,
     private modalService: NgbModal,
     private metadataColumnTemplateService: MetadataColumnTemplateService,
-    private sdrfSyntaxService: SdrfSyntaxService
+    private schemaService: SchemaService,
+    private sdrfSyntaxService: SdrfSyntaxService,
+    private officialColumnCache: OfficialColumnCacheService
   ) {
     this.editForm = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(1)]],
@@ -80,7 +84,6 @@ export class ColumnEditModal implements OnInit {
   }
 
   ngOnInit() {
-    // Always disable name and type fields since they're managed through templates
     this.editForm.get('name')?.disable();
     this.editForm.get('type')?.disable();
 
@@ -90,6 +93,7 @@ export class ColumnEditModal implements OnInit {
 
     if (!this.isEdit) {
       this.loadColumnTemplates();
+      this.loadAvailableSchemas();
     }
   }
 
@@ -178,9 +182,11 @@ export class ColumnEditModal implements OnInit {
   }
 
   onSubmit() {
-    // For new columns, require either template or official column selection
-    if (!this.isEdit && !this.selectedTemplate && !this.selectedOfficialColumn) {
-      alert('Please select from official SDRF columns or choose an existing template before proceeding.');
+    this.validationError.set(null);
+
+    // For new columns, require template selection
+    if (!this.isEdit && !this.selectedTemplate) {
+      this.validationError.set('Please select a template before proceeding.');
       return;
     }
 
@@ -291,11 +297,15 @@ export class ColumnEditModal implements OnInit {
         config.columnId = this.column.id;
       }
       config.templateId = this.selectedTemplate?.id || this.column?.template || this.templateId || undefined;
+    } else if (this.isEdit && this.column?.customOntologyFilters) {
+      config.customOntologyFilters = this.column.customOntologyFilters;
     } else {
       const columnName = this.editForm.get('name')?.value;
       if (columnName) {
         const ontologyConfig = this.getOntologyConfigForColumn(columnName);
-        config.customOntologyFilters = ontologyConfig.customFilters;
+        if (ontologyConfig.customFilters) {
+          config.customOntologyFilters = ontologyConfig.customFilters;
+        }
       }
     }
 
@@ -320,13 +330,24 @@ export class ColumnEditModal implements OnInit {
 
   // Template selection methods
   private loadColumnTemplates(): void {
+    // Don't load if search filter is between 1-2 characters
+    if (this.templateFilter && this.templateFilter.length > 0 && this.templateFilter.length < 3) {
+      this.templates = [];
+      this.totalTemplates = 0;
+      this.totalTemplatePages = 0;
+      this.isLoadingTemplates = false;
+      return;
+    }
+
     this.isLoadingTemplates = true;
     const offset = (this.currentTemplatePage - 1) * this.templatePageSize;
     const params: MetadataColumnTemplateQueryParams = {
       limit: this.templatePageSize,
       offset: offset,
       isActive: true,
-      search: this.templateFilter || undefined
+      search: this.templateFilter || undefined,
+      isSystemTemplate: this.showSystemTemplatesOnly ? true : undefined,
+      sourceSchema: this.selectedSchemaFilter || undefined
     };
 
     this.metadataColumnTemplateService.getMetadataColumnTemplates(params).subscribe({
@@ -341,6 +362,29 @@ export class ColumnEditModal implements OnInit {
         this.isLoadingTemplates = false;
       }
     });
+  }
+
+  private loadAvailableSchemas(): void {
+    this.schemaService.getAvailableSchemas().subscribe({
+      next: (schemas: Schema[]) => {
+        this.availableSchemas = schemas;
+      },
+      error: (error: any) => {
+        console.error('Error loading schemas:', error);
+      }
+    });
+  }
+
+  toggleSystemTemplatesFilter(systemOnly: boolean): void {
+    this.showSystemTemplatesOnly = systemOnly;
+    this.currentTemplatePage = 1;
+    this.loadColumnTemplates();
+  }
+
+  onSchemaFilterChange(schema: string): void {
+    this.selectedSchemaFilter = schema;
+    this.currentTemplatePage = 1;
+    this.loadColumnTemplates();
   }
 
   onTemplateFilterChange(): void {
@@ -428,168 +472,6 @@ export class ColumnEditModal implements OnInit {
     return ontology ? ontology.label : ontologyType;
   }
 
-  // Official column selection methods
-  toggleOfficialColumns(): void {
-    this.showOfficialColumns = !this.showOfficialColumns;
-    if (this.showOfficialColumns) {
-      this.filterOfficialColumns();
-    }
-  }
-
-  selectOfficialColumn(column: SdrfColumnConfig): void {
-    this.selectedOfficialColumn = column;
-
-    // Enable controls to update values, then disable again
-    this.editForm.get('name')?.enable();
-    this.editForm.get('type')?.enable();
-
-    const ontologyConfig = this.getOntologyConfigForColumn(column.name);
-    const ontologyTypeIndex = ontologyConfig.index;
-
-    this.editForm.patchValue({
-      name: column.name,
-      type: column.type,
-      value: '',
-      ontologyType: ontologyTypeIndex.toString(),
-      enableTypeahead: ontologyTypeIndex > 0,
-      mandatory: this.isColumnMandatory(column.name),
-      hidden: false,
-      readonly: false,
-      notApplicable: false
-    });
-
-    // Disable controls again
-    this.editForm.get('name')?.disable();
-    this.editForm.get('type')?.disable();
-
-    // Mark form as touched
-    Object.keys(this.editForm.controls).forEach(key => {
-      this.editForm.get(key)?.markAsTouched();
-    });
-
-    this.showOfficialColumns = false;
-  }
-
-  private filterOfficialColumns(): void {
-    // Filter out columns that already have templates with the same name
-    this.availableOfficialColumns = this.officialSdrfColumns.filter(officialCol => {
-      return !this.templates.some(template =>
-        template.columnName.toLowerCase() === officialCol.name.toLowerCase()
-      );
-    });
-  }
-
-  private getOntologyConfigForColumn(columnName: string): { index: number; ontologyType: string; customFilters?: any } {
-    const lowerName = columnName.toLowerCase();
-    const MSTermType = {
-      INSTRUMENT: 'instrument',
-      MASS_ANALYZER_TYPE: 'mass analyzer type',
-      CLEAVAGE_AGENT: 'cleavage agent',
-      SAMPLE_ATTRIBUTE: 'sample attribute',
-      ANCESTRAL_CATEGORY: 'ancestral category',
-      SEX: 'sex',
-      DEVELOPMENTAL_STAGE: 'developmental stage'
-    };
-
-    let ontologyType = '';
-    let customFilters: any = undefined;
-
-    switch (lowerName) {
-      case 'characteristics[organism]':
-        ontologyType = 'species';
-        break;
-      case 'characteristics[disease]':
-        ontologyType = 'human_disease';
-        break;
-      case 'characteristics[organism part]':
-        ontologyType = 'tissue';
-        break;
-      case 'characteristics[cell type]':
-        ontologyType = 'cell_ontology';
-        break;
-      case 'comment[instrument]':
-        ontologyType = 'ms_unique_vocabularies';
-        customFilters = { ms_unique_vocabularies: { term_type: MSTermType.INSTRUMENT } };
-        break;
-      case 'comment[modification parameters]':
-        ontologyType = 'unimod';
-        break;
-      case 'comment[ms2 analyzer type]':
-        ontologyType = 'ms_unique_vocabularies';
-        customFilters = { ms_unique_vocabularies: { term_type: MSTermType.MASS_ANALYZER_TYPE } };
-        break;
-      case 'comment[cleavage agent details]':
-        ontologyType = 'ms_unique_vocabularies';
-        customFilters = { ms_unique_vocabularies: { term_type: MSTermType.CLEAVAGE_AGENT } };
-        break;
-      case 'characteristics[ancestry category]':
-        ontologyType = 'ms_unique_vocabularies';
-        customFilters = { ms_unique_vocabularies: { term_type: MSTermType.ANCESTRAL_CATEGORY } };
-        break;
-      case 'characteristics[sex]':
-        ontologyType = 'ms_unique_vocabularies';
-        customFilters = { ms_unique_vocabularies: { term_type: MSTermType.SEX } };
-        break;
-      case 'characteristics[developmental stage]':
-        ontologyType = 'ms_unique_vocabularies';
-        customFilters = { ms_unique_vocabularies: { term_type: MSTermType.DEVELOPMENTAL_STAGE } };
-        break;
-      case 'comment[label]':
-        ontologyType = 'ms_unique_vocabularies';
-        customFilters = { ms_unique_vocabularies: { term_type: MSTermType.SAMPLE_ATTRIBUTE } };
-        break;
-    }
-
-    if (!ontologyType) {
-      return { index: 0, ontologyType: '', customFilters: undefined };
-    }
-
-    // Find the matching ontology type config with the correct custom filters
-    const index = this.ontologyTypes.findIndex(config => {
-      if (config.value !== ontologyType) return false;
-      if (!customFilters) return !config.customFilters || Object.keys(config.customFilters).length === 0;
-
-      // Match custom filters
-      if (!config.customFilters) return false;
-      const configFilterKey = Object.keys(config.customFilters)[0];
-      const customFilterKey = Object.keys(customFilters)[0];
-      if (configFilterKey !== customFilterKey) return false;
-
-      const configTermType = config.customFilters[configFilterKey]?.['term_type'];
-      const customTermType = customFilters[customFilterKey]?.['term_type'];
-      return configTermType === customTermType;
-    });
-
-    return {
-      index: index >= 0 ? index : 0,
-      ontologyType,
-      customFilters
-    };
-  }
-
-  private isColumnMandatory(columnName: string): boolean {
-    const lowerName = columnName.toLowerCase();
-
-    switch (lowerName) {
-      case 'source name':
-      case 'characteristics[organism]':
-      case 'characteristics[disease]':
-      case 'characteristics[organism part]':
-      case 'characteristics[cell type]':
-      case 'assay name':
-      case 'comment[fraction identifier]':
-      case 'comment[label]':
-      case 'comment[data file]':
-      case 'comment[instrument]':
-      case 'comment[technical replicate]':
-      case 'characteristics[biological replicate]':
-        return true;
-      default:
-        return false;
-    }
-  }
-
-
   // Template swapping methods
   showTemplateSwapOptions(): void {
     if (!this.isEdit) return;
@@ -639,13 +521,8 @@ export class ColumnEditModal implements OnInit {
   }
 
   createCustomTemplate(): void {
-    // This would open a new modal to create a custom template
-    // For now, we'll just enable manual editing
     this.editForm.get('name')?.enable();
     this.showCreateCustomTemplate = false;
-
-    // Show info message
-    alert('Custom template creation would open a new dialog. For now, you can manually edit the column name.');
   }
 
   cancelTemplateSwap(): void {
@@ -667,7 +544,6 @@ export class ColumnEditModal implements OnInit {
   private getCorrectedColumnType(columnName: string, columnType: string): string {
     const syntaxType = this.sdrfSyntaxService.detectSpecialSyntax(columnName, columnType);
     if (syntaxType) {
-      // Return a specific type based on SDRF syntax detection
       switch (syntaxType) {
         case 'age':
           return 'characteristics[age]';
@@ -682,5 +558,37 @@ export class ColumnEditModal implements OnInit {
       }
     }
     return columnType;
+  }
+
+  private getOntologyConfigForColumn(columnName: string): { index: number; ontologyType: string; customFilters?: any } {
+    const template = this.officialColumnCache.getColumn(columnName);
+    if (!template || !template.ontologyType) {
+      return { index: 0, ontologyType: '', customFilters: undefined };
+    }
+
+    const ontologyType = template.ontologyType;
+    const customFilters = template.customOntologyFilters;
+
+    const index = this.ontologyTypes.findIndex(config => {
+      if (config.value !== ontologyType) return false;
+      if (!customFilters || Object.keys(customFilters).length === 0) {
+        return !config.customFilters || Object.keys(config.customFilters).length === 0;
+      }
+
+      if (!config.customFilters) return false;
+      const configFilterKey = Object.keys(config.customFilters)[0];
+      const customFilterKey = Object.keys(customFilters)[0];
+      if (configFilterKey !== customFilterKey) return false;
+
+      const configTermType = config.customFilters[configFilterKey]?.['term_type'];
+      const customTermType = customFilters[customFilterKey]?.['term_type'] || customFilters[customFilterKey]?.['termType'];
+      return configTermType === customTermType;
+    });
+
+    return {
+      index: index >= 0 ? index : 0,
+      ontologyType,
+      customFilters
+    };
   }
 }

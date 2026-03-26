@@ -1,23 +1,32 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-
-import { SdrfSpikedCompoundInput } from './sdrf-spiked-compound-input';
+import { FormBuilder, FormGroup } from '@angular/forms';
 
 describe('SdrfSpikedCompoundInput', () => {
-  let component: SdrfSpikedCompoundInput;
-  let fixture: ComponentFixture<SdrfSpikedCompoundInput>;
+  let fb: FormBuilder;
+  let form: FormGroup;
 
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [SdrfSpikedCompoundInput]
-    })
-    .compileComponents();
-
-    fixture = TestBed.createComponent(SdrfSpikedCompoundInput);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
+  beforeEach(() => {
+    fb = new FormBuilder();
+    form = fb.group({
+      compound: [''],
+      concentration: [''],
+      unit: ['']
+    });
   });
 
-  it('should create', () => {
-    expect(component).toBeTruthy();
+  it('should initialize form with empty values', () => {
+    expect(form.get('compound')?.value).toBe('');
+    expect(form.get('concentration')?.value).toBe('');
+    expect(form.get('unit')?.value).toBe('');
+  });
+
+  it('should update compound', () => {
+    form.patchValue({ compound: 'BSA' });
+    expect(form.get('compound')?.value).toBe('BSA');
+  });
+
+  it('should update concentration and unit', () => {
+    form.patchValue({ concentration: '1', unit: 'ug/ml' });
+    expect(form.get('concentration')?.value).toBe('1');
+    expect(form.get('unit')?.value).toBe('ug/ml');
   });
 });

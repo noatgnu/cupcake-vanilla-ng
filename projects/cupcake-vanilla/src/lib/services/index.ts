@@ -20,3 +20,4 @@ export * from './chunked-import';
 export * from './sdrf-syntax';
 export * from './websocket';
 export * from './electron';
+export * from './desktop';

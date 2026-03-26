@@ -1,8 +1,8 @@
 import { TestBed } from '@angular/core/testing';
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { AuthService, CUPCAKE_CORE_CONFIG } from './auth';
 import { Router } from '@angular/router';
-import { effect } from '@angular/core';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -14,10 +14,11 @@ describe('AuthService', () => {
 
   beforeEach(() => {
     const spy = jasmine.createSpyObj('Router', ['navigate']);
-    
+
     TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule],
       providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
         AuthService,
         { provide: CUPCAKE_CORE_CONFIG, useValue: mockConfig },
         { provide: Router, useValue: spy }
@@ -75,7 +76,7 @@ describe('AuthService', () => {
       service['_isAuthenticated'].set(true);
 
       service.logout().subscribe();
-      
+
       const req = httpMock.expectOne(`${mockConfig.apiUrl}/auth/logout/`);
       req.flush({});
 
@@ -89,7 +90,7 @@ describe('AuthService', () => {
   describe('Signals', () => {
     it('should reflect current user via signal', () => {
       const mockUser = { id: 1, username: 'testuser', email: 'test@example.com' } as any;
-      
+
       service['_currentUser'].set(mockUser);
       expect(service.currentUser()).toEqual(mockUser);
     });

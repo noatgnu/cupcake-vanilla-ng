@@ -116,3 +116,12 @@ export interface MetadataColumnTemplateShareCreateRequest {
   sharedWith: number;
   canEdit?: boolean;
 }
+
+export interface GroupedColumnTemplate {
+  columnName: string;
+  columnType: string;
+  schemaCount: number;
+  schemas: string[];
+  templateIds: number[];
+  sampleTemplate?: MetadataColumnTemplate;
+}

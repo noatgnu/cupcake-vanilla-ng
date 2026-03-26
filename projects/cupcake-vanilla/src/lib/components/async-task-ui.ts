@@ -20,7 +20,7 @@ import {
   AsyncExportService,
   AsyncImportService,
   AsyncValidationService,
-  ElectronService
+  DesktopService
 } from '../services';
 import { ValidationResultsModal, ValidationResults } from './validation-results-modal/validation-results-modal';
 
@@ -44,7 +44,7 @@ export class AsyncTaskUIService implements OnDestroy {
   private toastService = inject(ToastService);
   private asyncTaskMonitor = inject(AsyncTaskMonitorService);
   private modalService = inject(NgbModal);
-  private electronService = inject(ElectronService);
+  private desktopService = inject(DesktopService);
 
   public tasks = this.asyncTaskMonitor.tasks;
   public activeTasks = this.asyncTaskMonitor.activeTasks;
@@ -183,20 +183,21 @@ export class AsyncTaskUIService implements OnDestroy {
   downloadTaskResult(taskId: string): void {
     this.libraryAsyncTaskService.getDownloadUrl(taskId).subscribe({
       next: (response) => {
-        console.log('Download task result - checking Electron service:', {
-          isElectron: this.electronService.isElectron,
+        console.log('Download task result - checking Desktop service:', {
+          isDesktop: this.desktopService.isDesktop,
+          runtime: this.desktopService.runtime,
           downloadUrl: response.downloadUrl
         });
 
-        if (this.electronService.isElectron) {
-          console.log('Using Electron download for:', response.downloadUrl);
-          this.electronService.downloadFile(response.downloadUrl)
+        if (this.desktopService.isDesktop) {
+          console.log('Using desktop download for:', response.downloadUrl);
+          this.desktopService.downloadFile(response.downloadUrl)
             .then((filePath: string) => {
-              console.log('Electron download successful:', filePath);
+              console.log('Desktop download successful:', filePath);
               this.toastService.success(`File downloaded to: ${filePath}`);
             })
             .catch((error: any) => {
-              console.error('Error downloading file with Electron:', error);
+              console.error('Error downloading file:', error);
               this.toastService.error('Failed to download file');
             });
         } else {

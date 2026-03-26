@@ -1,110 +1,85 @@
-import { Injectable } from '@angular/core';
-import { Observable, NEVER } from 'rxjs';
-import { ElectronAPI } from '@noatgnu/cupcake-core';
+import { Injectable, inject } from '@angular/core';
+import { Observable } from 'rxjs';
+import { DesktopService } from './desktop';
 
-interface WindowWithElectron extends Window {
-  electronAPI?: ElectronAPI;
-}
-
+/**
+ * @deprecated Use DesktopService instead. ElectronService is kept for backwards compatibility.
+ */
 @Injectable({
   providedIn: 'root'
 })
 export class ElectronService {
-  private electronAPI: ElectronAPI | null = null;
-
-  constructor() {
-    this.electronAPI = (window as unknown as WindowWithElectron).electronAPI || null;
-  }
+  private desktop = inject(DesktopService);
 
   get isElectron(): boolean {
-    return this.electronAPI?.isElectron ?? false;
+    return this.desktop.isElectron;
+  }
+
+  get isWails(): boolean {
+    return this.desktop.isWails;
+  }
+
+  get isDesktop(): boolean {
+    return this.desktop.isDesktop;
   }
 
   get platform(): string {
-    return this.electronAPI?.platform ?? 'web';
+    return this.desktop.platform;
   }
 
   async getAppVersion(): Promise<string> {
-    if (!this.electronAPI) throw new Error('Not running in Electron');
-    return this.electronAPI.getAppVersion();
+    return this.desktop.getAppVersion();
   }
 
   async getElectronVersion(): Promise<string> {
-    if (!this.electronAPI) throw new Error('Not running in Electron');
-    return this.electronAPI.getElectronVersion();
+    return this.desktop.getRuntimeVersion();
   }
 
   minimize(): void {
-    if (!this.electronAPI) return;
-    this.electronAPI.minimize();
+    this.desktop.minimize();
   }
 
   maximize(): void {
-    if (!this.electronAPI) return;
-    this.electronAPI.maximize();
+    this.desktop.maximize();
   }
 
   close(): void {
-    if (!this.electronAPI) return;
-    this.electronAPI.close();
+    this.desktop.close();
   }
 
   async isMaximized(): Promise<boolean> {
-    if (!this.electronAPI) return false;
-    return this.electronAPI.isMaximized();
+    return this.desktop.isMaximized();
   }
 
   async showOpenDialog(options?: any): Promise<any> {
-    if (!this.electronAPI) throw new Error('Not running in Electron');
-    return this.electronAPI.showOpenDialog(options);
+    return this.desktop.showOpenDialog(options);
   }
 
   async showSaveDialog(options?: any): Promise<any> {
-    if (!this.electronAPI) throw new Error('Not running in Electron');
-    return this.electronAPI.showSaveDialog(options);
+    return this.desktop.showSaveDialog(options);
   }
 
   async showMessageBox(options: any): Promise<any> {
-    if (!this.electronAPI) throw new Error('Not running in Electron');
-    return this.electronAPI.showMessageBox(options);
+    return this.desktop.showMessageBox(options);
   }
 
   async downloadFile(url: string, filename?: string): Promise<string> {
-    if (!this.electronAPI) throw new Error('Not running in Electron');
-    return this.electronAPI.downloadFile(url, filename);
+    return this.desktop.downloadFile(url, filename);
   }
 
   async getBackendPort(): Promise<number> {
-    if (!this.electronAPI) throw new Error('Not running in Electron');
-    return this.electronAPI.getBackendPort();
+    return this.desktop.getBackendPort();
   }
 
   async isBackendReady(): Promise<boolean> {
-    if (!this.electronAPI) return false;
-    return this.electronAPI.isBackendReady();
+    return this.desktop.isBackendReady();
   }
 
   onBackendStatusChange(): Observable<any> {
-    if (!this.electronAPI) return NEVER;
-
-    return new Observable(observer => {
-      const unsubscribe = this.electronAPI!.onBackendStatusChange((status: any) => {
-        observer.next(status);
-      });
-
-      return () => unsubscribe();
-    });
+    return this.desktop.onBackendStatusChange();
   }
 
   onWindowStateChange(): Observable<'maximized' | 'unmaximized'> {
-    if (!this.electronAPI) return NEVER;
-
-    return new Observable(observer => {
-      const unsubscribe = this.electronAPI!.onWindowStateChange((state: 'maximized' | 'unmaximized') => {
-        observer.next(state);
-      });
-
-      return () => unsubscribe();
-    });
+    return this.desktop.onWindowStateChange();
   }
 }

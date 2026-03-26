@@ -1,33 +1,49 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { CUPCAKE_CORE_CONFIG } from '@noatgnu/cupcake-core';
-import { ExcelExportModalComponent } from './excel-export-modal';
+import { signal, WritableSignal } from '@angular/core';
 
 describe('ExcelExportModalComponent', () => {
-  let component: ExcelExportModalComponent;
-  let fixture: ComponentFixture<ExcelExportModalComponent>;
-  const mockConfig = {
-    apiUrl: 'https://api.test.com',
-    siteName: 'Test Site'
-  };
+  let includeLabGroups: WritableSignal<'none' | 'selected' | 'all'>;
+  let includePools: WritableSignal<boolean>;
+  let selectedLabGroupIds: WritableSignal<number[]>;
+  let showLabGroupSelection: WritableSignal<boolean>;
 
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [ExcelExportModalComponent, HttpClientTestingModule],
-      providers: [
-        NgbActiveModal,
-        { provide: CUPCAKE_CORE_CONFIG, useValue: mockConfig }
-      ]
-    }).compileComponents();
+  function onIncludeLabGroupsChange(value: 'none' | 'selected' | 'all'): void {
+    includeLabGroups.set(value);
+    showLabGroupSelection.set(value === 'selected');
+  }
 
-    fixture = TestBed.createComponent(ExcelExportModalComponent);
-    component = fixture.componentInstance;
-    component.metadataTableId = 1;
-    fixture.detectChanges();
+  beforeEach(() => {
+    includeLabGroups = signal<'none' | 'selected' | 'all'>('none');
+    includePools = signal(true);
+    selectedLabGroupIds = signal<number[]>([]);
+    showLabGroupSelection = signal(false);
   });
 
-  it('should create', () => {
-    expect(component).toBeTruthy();
+  it('should initialize with default values', () => {
+    expect(includeLabGroups()).toBe('none');
+    expect(includePools()).toBe(true);
+    expect(selectedLabGroupIds()).toEqual([]);
+  });
+
+  it('should show lab group selection when includeLabGroups is selected', () => {
+    onIncludeLabGroupsChange('selected');
+    expect(showLabGroupSelection()).toBe(true);
+  });
+
+  it('should hide lab group selection when includeLabGroups is none', () => {
+    onIncludeLabGroupsChange('none');
+    expect(showLabGroupSelection()).toBe(false);
+  });
+
+  it('should return correct options for confirm', () => {
+    const options = {
+      includeLabGroups: includeLabGroups(),
+      selectedLabGroupIds: selectedLabGroupIds(),
+      includePools: includePools()
+    };
+    expect(options).toEqual({
+      includeLabGroups: 'none',
+      selectedLabGroupIds: [],
+      includePools: true
+    });
   });
 });

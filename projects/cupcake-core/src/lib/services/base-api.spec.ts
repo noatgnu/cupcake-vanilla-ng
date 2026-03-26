@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { BaseApiService } from './base-api';
 import { CUPCAKE_CORE_CONFIG } from './auth';
 
@@ -13,8 +14,9 @@ describe('BaseApiService', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule],
       providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
         BaseApiService,
         { provide: CUPCAKE_CORE_CONFIG, useValue: mockConfig }
       ]
@@ -164,7 +166,7 @@ describe('BaseApiService', () => {
       };
 
       const httpParams = service['buildHttpParams'](params);
-      
+
       expect(httpParams.get('page_size')).toBe('10');
       expect(httpParams.get('sort_order')).toBe('desc');
       expect(httpParams.get('is_active')).toBe('true');
@@ -179,7 +181,7 @@ describe('BaseApiService', () => {
       };
 
       const httpParams = service['buildHttpParams'](params);
-      
+
       expect(httpParams.get('valid_param')).toBe('test');
       expect(httpParams.get('null_param')).toBeNull();
       expect(httpParams.get('undefined_param')).toBeNull();

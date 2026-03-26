@@ -1,37 +1,34 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ReactiveFormsModule } from '@angular/forms';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
-import { CUPCAKE_CORE_CONFIG } from '@noatgnu/cupcake-core';
-import { TableCreationModalComponent } from './table-creation-modal';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 
 describe('TableCreationModalComponent', () => {
-  let component: TableCreationModalComponent;
-  let fixture: ComponentFixture<TableCreationModalComponent>;
-  const mockConfig = {
-    apiUrl: 'https://api.test.com',
-    siteName: 'Test Site'
-  };
+  let fb: FormBuilder;
+  let form: FormGroup;
 
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [
-        TableCreationModalComponent,
-        ReactiveFormsModule,
-        HttpClientTestingModule
-      ],
-      providers: [
-        NgbActiveModal,
-        { provide: CUPCAKE_CORE_CONFIG, useValue: mockConfig }
-      ]
-    }).compileComponents();
-
-    fixture = TestBed.createComponent(TableCreationModalComponent);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
+  beforeEach(() => {
+    fb = new FormBuilder();
+    form = fb.group({
+      tableName: ['', [Validators.required]],
+      sampleCount: [1, [Validators.required, Validators.min(1)]],
+      description: ['']
+    });
   });
 
-  it('should create', () => {
-    expect(component).toBeTruthy();
+  it('should initialize form with default values', () => {
+    expect(form.get('tableName')?.value).toBe('');
+    expect(form.get('sampleCount')?.value).toBe(1);
+  });
+
+  it('should validate required table name', () => {
+    expect(form.valid).toBeFalse();
+    form.patchValue({ tableName: 'New Table' });
+    expect(form.valid).toBeTrue();
+  });
+
+  it('should validate minimum sample count', () => {
+    form.patchValue({ tableName: 'Test' });
+    expect(form.valid).toBeTrue();
+
+    form.patchValue({ sampleCount: 0 });
+    expect(form.valid).toBeFalse();
   });
 });

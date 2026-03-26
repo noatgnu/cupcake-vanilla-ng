@@ -17,30 +17,29 @@ export class SdrfSpikedCompoundInput implements OnInit {
   private fb = inject(FormBuilder);
   private sdrfSyntax = inject(SdrfSyntaxService);
 
-  spikedForm!: FormGroup;
-  
-  // Predefined options
+  spikedForm: FormGroup;
+
   compoundTypes = ['protein', 'peptide', 'mixture', 'other'];
 
-  ngOnInit() {
+  constructor() {
     this.spikedForm = this.fb.group({
-      CT: ['', Validators.required], // Compound type - MANDATORY
-      QY: ['', Validators.required], // Quantity - MANDATORY
-      SP: [''], // Species - Optional
-      PS: [''], // Peptide sequence - For peptides
-      AC: [''], // Uniprot Accession - For proteins
-      CN: [''], // Compound name - Optional
-      CV: [''], // Compound vendor - Optional
-      CS: [''], // Compound specification URI - Optional
-      CF: [''] // Compound formula - Optional
+      CT: ['', Validators.required],
+      QY: ['', Validators.required],
+      SP: [''],
+      PS: [''],
+      AC: [''],
+      CN: [''],
+      CV: [''],
+      CS: [''],
+      CF: ['']
     });
+  }
 
-    // Parse initial value
+  ngOnInit() {
     if (this.value) {
       this.parseAndSetValue(this.value);
     }
 
-    // Subscribe to form changes
     this.spikedForm.valueChanges.subscribe(() => {
       this.updateValue();
     });

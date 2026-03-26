@@ -28,21 +28,21 @@ export class SdrfCleavageInput implements OnInit {
   private metadataColumnService = inject(MetadataColumnService);
   private metadataColumnTemplateService = inject(MetadataColumnTemplateService);
 
-  cleavageForm!: FormGroup;
+  cleavageForm: FormGroup;
+
+  constructor() {
+    this.cleavageForm = this.fb.group({
+      NT: ['', Validators.required],
+      AC: [''],
+      CS: ['']
+    });
+  }
 
   ngOnInit() {
-    this.cleavageForm = this.fb.group({
-      NT: ['', Validators.required], // Name of Term - will use ontology typeahead from parent
-      AC: [''], // Accession
-      CS: [''] // Cleavage Site pattern
-    });
-
-    // Parse initial value
     if (this.value) {
       this.parseAndSetValue(this.value);
     }
 
-    // Subscribe to form changes
     this.cleavageForm.valueChanges.subscribe(() => {
       this.updateValue();
     });

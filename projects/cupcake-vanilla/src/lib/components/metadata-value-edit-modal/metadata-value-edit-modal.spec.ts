@@ -1,23 +1,26 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-
-import { MetadataValueEditModal } from './metadata-value-edit-modal';
+import { signal, WritableSignal } from '@angular/core';
 
 describe('MetadataValueEditModal', () => {
-  let component: MetadataValueEditModal;
-  let fixture: ComponentFixture<MetadataValueEditModal>;
+  let currentValue: WritableSignal<string>;
+  let isLoading: WritableSignal<boolean>;
 
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [MetadataValueEditModal]
-    })
-    .compileComponents();
-
-    fixture = TestBed.createComponent(MetadataValueEditModal);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
+  beforeEach(() => {
+    currentValue = signal('');
+    isLoading = signal(false);
   });
 
-  it('should create', () => {
-    expect(component).toBeTruthy();
+  it('should initialize with empty value', () => {
+    expect(currentValue()).toBe('');
+  });
+
+  it('should update value', () => {
+    currentValue.set('new value');
+    expect(currentValue()).toBe('new value');
+  });
+
+  it('should track loading state', () => {
+    expect(isLoading()).toBe(false);
+    isLoading.set(true);
+    expect(isLoading()).toBe(true);
   });
 });

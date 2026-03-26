@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { BaseApiService } from '@noatgnu/cupcake-core';
 
 import {
@@ -8,7 +9,8 @@ import {
   MetadataColumnTemplateUpdateRequest,
   MetadataColumn,
   OntologySuggestion,
-  PaginatedResponse
+  PaginatedResponse,
+  GroupedColumnTemplate
 } from '../models';
 
 export interface MetadataColumnTemplateQueryParams {
@@ -28,6 +30,13 @@ export interface MetadataColumnTemplateQueryParams {
   limit?: number;
   offset?: number;
   ordering?: string;
+}
+
+export interface GroupedColumnTemplateQueryParams {
+  search?: string;
+  isSystemTemplate?: boolean;
+  limit?: number;
+  offset?: number;
 }
 
 @Injectable({
@@ -116,8 +125,8 @@ export class MetadataColumnTemplateService extends BaseApiService {
   /**
    * Get ontology suggestions for this column template
    */
-  getOntologySuggestions(params?: { 
-    search?: string; 
+  getOntologySuggestions(params?: {
+    search?: string;
     templateId?: number;
     limit?: number;
     searchType?: 'icontains' | 'istartswith' | 'exact';
@@ -147,5 +156,27 @@ export class MetadataColumnTemplateService extends BaseApiService {
       customFilters: any;
       hasMore: boolean;
     }>(`${this.apiUrl}/column-templates/ontology_suggestions/`, { params: httpParams });
+  }
+
+  /**
+   * Get column templates grouped by (column_name, column_type)
+   */
+  getGroupedColumnTemplates(params?: GroupedColumnTemplateQueryParams): Observable<PaginatedResponse<GroupedColumnTemplate>> {
+    const httpParams = this.buildHttpParams(params);
+    return this.get<PaginatedResponse<GroupedColumnTemplate>>(`${this.apiUrl}/column-templates/grouped_by_column/`, { params: httpParams });
+  }
+
+  /**
+   * Get all templates for a specific column name and type
+   */
+  getTemplatesByColumnNameAndType(columnName: string, columnType: string): Observable<MetadataColumnTemplate[]> {
+    const httpParams = this.buildHttpParams({
+      column_name: columnName,
+      column_type: columnType
+    });
+    return this.get<PaginatedResponse<MetadataColumnTemplate>>(`${this.apiUrl}/column-templates/`, { params: httpParams })
+      .pipe(
+        map(response => response.results || [])
+      );
   }
 }

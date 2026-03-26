@@ -1,23 +1,30 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-
-import { SamplePoolCreateModal } from './sample-pool-create-modal';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 
 describe('SamplePoolCreateModal', () => {
-  let component: SamplePoolCreateModal;
-  let fixture: ComponentFixture<SamplePoolCreateModal>;
+  let fb: FormBuilder;
+  let form: FormGroup;
 
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [SamplePoolCreateModal]
-    })
-    .compileComponents();
-
-    fixture = TestBed.createComponent(SamplePoolCreateModal);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
+  beforeEach(() => {
+    fb = new FormBuilder();
+    form = fb.group({
+      poolName: ['', [Validators.required]],
+      description: ['']
+    });
   });
 
-  it('should create', () => {
-    expect(component).toBeTruthy();
+  it('should initialize form with empty values', () => {
+    expect(form.get('poolName')?.value).toBe('');
+    expect(form.get('description')?.value).toBe('');
+  });
+
+  it('should validate required pool name', () => {
+    expect(form.get('poolName')?.valid).toBeFalse();
+    form.get('poolName')?.setValue('Test Pool');
+    expect(form.get('poolName')?.valid).toBeTrue();
+  });
+
+  it('should be valid when required fields are filled', () => {
+    form.get('poolName')?.setValue('Test Pool');
+    expect(form.valid).toBeTrue();
   });
 });

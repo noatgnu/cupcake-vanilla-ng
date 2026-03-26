@@ -17,10 +17,10 @@ export class SdrfAgeInput implements OnInit {
   private fb = inject(FormBuilder);
   private sdrfSyntax = inject(SdrfSyntaxService);
 
-  ageForm!: FormGroup;
+  ageForm: FormGroup;
   isRange = false;
 
-  ngOnInit() {
+  constructor() {
     this.ageForm = this.fb.group({
       isRange: [false],
       years: [null, [Validators.min(0), Validators.max(200)]],
@@ -32,18 +32,17 @@ export class SdrfAgeInput implements OnInit {
       rangeEndYears: [null, [Validators.min(0), Validators.max(200)]],
       rangeEndMonths: [null, [Validators.min(0), Validators.max(11)]]
     });
+  }
 
-    // Parse initial value
+  ngOnInit() {
     if (this.value) {
       this.parseAndSetValue(this.value);
     }
 
-    // Subscribe to form changes
     this.ageForm.valueChanges.subscribe(() => {
       this.updateValue();
     });
 
-    // Subscribe to range toggle
     this.ageForm.get('isRange')?.valueChanges.subscribe((isRange) => {
       this.isRange = isRange;
       this.updateValue();

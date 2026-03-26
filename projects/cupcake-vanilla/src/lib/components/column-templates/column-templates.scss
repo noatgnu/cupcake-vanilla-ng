@@ -35,3 +35,25 @@
     opacity: 0.8;
   }
 }
+
+.group-header {
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+
+  &:hover {
+    background-color: rgba(var(--bs-primary-rgb), 0.08);
+  }
+
+  .bi-chevron-down,
+  .bi-chevron-right {
+    transition: transform 0.15s ease;
+  }
+}
+
+.group-child {
+  background-color: rgba(var(--bs-secondary-rgb), 0.05);
+
+  &:hover {
+    background-color: rgba(var(--bs-secondary-rgb), 0.1);
+  }
+}

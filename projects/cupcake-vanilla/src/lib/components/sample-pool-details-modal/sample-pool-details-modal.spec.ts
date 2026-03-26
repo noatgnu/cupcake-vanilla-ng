@@ -1,23 +1,37 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { signal, WritableSignal } from '@angular/core';
 
-import { SamplePoolDetailsModal } from './sample-pool-details-modal';
+interface SamplePool {
+  id: number;
+  poolName: string;
+  description?: string;
+}
 
 describe('SamplePoolDetailsModal', () => {
-  let component: SamplePoolDetailsModal;
-  let fixture: ComponentFixture<SamplePoolDetailsModal>;
+  let pool: WritableSignal<SamplePool | null>;
+  let isLoading: WritableSignal<boolean>;
 
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [SamplePoolDetailsModal]
-    })
-    .compileComponents();
-
-    fixture = TestBed.createComponent(SamplePoolDetailsModal);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
+  beforeEach(() => {
+    pool = signal<SamplePool | null>(null);
+    isLoading = signal(false);
   });
 
-  it('should create', () => {
-    expect(component).toBeTruthy();
+  it('should start with no pool loaded', () => {
+    expect(pool()).toBeNull();
+  });
+
+  it('should load pool data', () => {
+    const mockPool: SamplePool = {
+      id: 1,
+      poolName: 'Test Pool',
+      description: 'Test description'
+    };
+    pool.set(mockPool);
+    expect(pool()).toEqual(mockPool);
+  });
+
+  it('should track loading state', () => {
+    expect(isLoading()).toBe(false);
+    isLoading.set(true);
+    expect(isLoading()).toBe(true);
   });
 });

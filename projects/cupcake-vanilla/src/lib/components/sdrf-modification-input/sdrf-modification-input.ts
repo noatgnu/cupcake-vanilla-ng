@@ -38,13 +38,11 @@ export class SdrfModificationInput implements OnInit {
   private metadataColumnService = inject(MetadataColumnService);
   private metadataColumnTemplateService = inject(MetadataColumnTemplateService);
 
-  modificationForm!: FormGroup;
+  modificationForm: FormGroup;
 
-  // Predefined options for dropdowns
   modificationTypes = ['Fixed', 'Variable', 'Annotated'];
   positions = ['Anywhere', 'Protein N-term', 'Protein C-term', 'Any N-term', 'Any C-term'];
 
-  // Unimod specification support
   selectedUnimodData = signal<UnimodFullData | null>(null);
   availableSpecifications = signal<(UnimodSpecification & { specNumber: string })[]>([]);
   selectedSpecification = signal<string | null>(null);
@@ -52,24 +50,24 @@ export class SdrfModificationInput implements OnInit {
   showHiddenSpecifications = signal(false);
   hiddenSpecificationCount = signal(0);
 
-  ngOnInit() {
+  constructor() {
     this.modificationForm = this.fb.group({
-      NT: ['', Validators.required], // Name of Term - with typeahead
-      AC: [''], // Accession
-      CF: [''], // Chemical Formula
-      MT: [''], // Modification Type
-      PP: [''], // Position in Polypeptide
-      TA: ['', Validators.required], // Target Amino acid
-      MM: ['', [Validators.pattern(/^\d+(\.\d+)?$/)]], // Monoisotopic Mass
-      TS: [''] // Target Site regex
+      NT: ['', Validators.required],
+      AC: [''],
+      CF: [''],
+      MT: [''],
+      PP: [''],
+      TA: ['', Validators.required],
+      MM: ['', [Validators.pattern(/^\d+(\.\d+)?$/)]],
+      TS: ['']
     });
+  }
 
-    // Parse initial value
+  ngOnInit() {
     if (this.value) {
       this.parseAndSetValue(this.value);
     }
 
-    // Subscribe to form changes
     this.modificationForm.valueChanges.subscribe(() => {
       this.updateValue();
     });
