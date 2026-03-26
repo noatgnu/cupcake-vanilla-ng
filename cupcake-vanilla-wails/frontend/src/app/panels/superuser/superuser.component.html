@@ -1,0 +1,107 @@
+<div class="cupcake-container superuser-layout">
+  <div class="cupcake-card auth-card animate-slide-up">
+    <header class="auth-header">
+      <div class="icon-circle">
+        <i class="bi bi-shield-lock-fill"></i>
+      </div>
+      <h1 class="cupcake-title">Administrative Setup</h1>
+      <p class="cupcake-subtitle">Create the primary superuser account for backend access</p>
+    </header>
+
+    <main class="auth-form">
+      <div class="form-grid">
+        <div class="cupcake-form-group">
+          <label class="cupcake-label" for="username">Username</label>
+          <div class="input-wrapper">
+            <i class="bi bi-person input-icon"></i>
+            <input
+              id="username"
+              class="cupcake-input"
+              type="text"
+              [(ngModel)]="username"
+              placeholder="e.g. administrator"
+              [disabled]="creating()"
+            />
+          </div>
+        </div>
+
+        <div class="cupcake-form-group">
+          <label class="cupcake-label" for="email">Email Address</label>
+          <div class="input-wrapper">
+            <i class="bi bi-envelope input-icon"></i>
+            <input
+              id="email"
+              class="cupcake-input"
+              type="email"
+              [(ngModel)]="email"
+              placeholder="admin@cupcake.io"
+              [disabled]="creating()"
+            />
+          </div>
+        </div>
+
+        <div class="cupcake-form-group">
+          <label class="cupcake-label" for="password">Password</label>
+          <div class="input-wrapper">
+            <i class="bi bi-key input-icon"></i>
+            <input
+              id="password"
+              class="cupcake-input"
+              type="password"
+              [(ngModel)]="password"
+              placeholder="At least 8 characters"
+              [disabled]="creating()"
+            />
+          </div>
+        </div>
+
+        <div class="cupcake-form-group">
+          <label class="cupcake-label" for="confirmPassword">Confirm Password</label>
+          <div class="input-wrapper">
+            <i class="bi bi-shield-check input-icon"></i>
+            <input
+              id="confirmPassword"
+              class="cupcake-input"
+              type="password"
+              [(ngModel)]="confirmPassword"
+              placeholder="Repeat your password"
+              [disabled]="creating()"
+            />
+          </div>
+        </div>
+      </div>
+
+      @if (error()) {
+        <div class="banner error-banner animate-fade-in">
+          <i class="bi bi-exclamation-circle banner-icon"></i>
+          <span class="banner-text">{{ error() }}</span>
+        </div>
+      }
+
+      @if (success()) {
+        <div class="banner success-banner animate-fade-in">
+          <i class="bi bi-check-circle-fill banner-icon"></i>
+          <span class="banner-text">Administrator account provisioned successfully.</span>
+        </div>
+      }
+    </main>
+
+    <footer class="auth-footer">
+      <button class="cupcake-btn outline" (click)="skip()" [disabled]="creating()">
+        Skip for now
+      </button>
+      <button
+        class="cupcake-btn primary"
+        (click)="create()"
+        [disabled]="!isValid() || creating()"
+      >
+        @if (creating()) {
+          <span class="spinner-tiny"></span>
+          Provisioning
+        } @else {
+          Create Account
+        }
+      </button>
+    </footer>
+  </div>
+</div>

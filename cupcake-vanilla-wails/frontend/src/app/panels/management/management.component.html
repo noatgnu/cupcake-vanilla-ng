@@ -1,0 +1,117 @@
+<div class="cupcake-container management-layout">
+  <header class="panel-header">
+    <h1 class="cupcake-title">System Management</h1>
+    <p class="cupcake-subtitle">Orchestrate backend services and monitor data integrity</p>
+  </header>
+
+  <main class="panel-main">
+    <div class="dashboard-grid">
+      <aside class="stats-sidebar">
+        <h2 class="section-title">Data Warehouse</h2>
+        <div class="stats-cards">
+          <div class="cupcake-card stat-card">
+            <span class="stat-icon"><i class="bi bi-bar-chart"></i></span>
+            <div class="stat-body">
+              <span class="stat-value">{{ schemaCount() }}</span>
+              <span class="stat-label">SDRF Schemas</span>
+            </div>
+          </div>
+
+          <div class="cupcake-card stat-card">
+            <span class="stat-icon"><i class="bi bi-card-checklist"></i></span>
+            <div class="stat-body">
+              <span class="stat-value">{{ columnTemplateCount() }}</span>
+              <span class="stat-label">Column Templates</span>
+            </div>
+          </div>
+
+          <div class="cupcake-card stat-card primary">
+            <span class="stat-icon"><i class="bi bi-dna"></i></span>
+            <div class="stat-body">
+              <span class="stat-value">{{ ontologyTotal() }}</span>
+              <span class="stat-label">Ontology Terms</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="cupcake-card ontology-box">
+          <h3 class="box-title">Ontology Breakdown</h3>
+          <div class="ontology-grid">
+            @for (item of ontologyBreakdown(); track item.name) {
+              <div class="ontology-pill">
+                <span class="pill-name">{{ item.name }}</span>
+                <span class="pill-divider"></span>
+                <span class="pill-count">{{ item.count | number }}</span>
+              </div>
+            }
+          </div>
+        </div>
+      </aside>
+
+      <div class="actions-column">
+        <section class="commands-section">
+          <h2 class="section-title">Operations</h2>
+          <div class="command-grid">
+            @for (cmd of commands(); track cmd.name) {
+              <div class="cupcake-card command-card" [class.running]="cmd.running">
+                <div class="command-icon-wrapper"><i [class]="cmd.icon"></i></div>
+                <div class="command-content">
+                  <div class="command-main">
+                    <span class="command-name">{{ cmd.displayName }}</span>
+                    @if (cmd.count !== null) {
+                      <span class="badge-success">{{ cmd.count | number }} items</span>
+                    }
+                  </div>
+                  <p class="command-desc">{{ cmd.description }}</p>
+                </div>
+                <button
+                  class="cupcake-btn action-btn"
+                  [class.secondary]="!cmd.running"
+                  [disabled]="cmd.running"
+                  (click)="runCommand(cmd.name)"
+                >
+                  @if (cmd.running) {
+                    <span class="spinner-tiny"></span>
+                    Working
+                  } @else {
+                    Execute
+                  }
+                </button>
+              </div>
+            }
+          </div>
+        </section>
+
+        <section class="cupcake-card terminal-section">
+          <div class="terminal-header">
+            <span class="terminal-title">Command Output</span>
+            <div class="terminal-controls">
+              <button class="btn-clear" (click)="outputLines.set([])">Clear</button>
+            </div>
+          </div>
+          <div class="terminal-viewport" #terminalViewport>
+            @if (outputLines().length === 0) {
+              <div class="terminal-placeholder">Awaiting command execution...</div>
+            }
+            @for (line of outputLines(); track $index) {
+              <div class="terminal-line" [class]="line.type">
+                <span class="line-caret">></span>
+                <span class="line-text">{{ line.text }}</span>
+              </div>
+            }
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <footer class="panel-footer cupcake-card">
+    <div class="footer-status">
+      <span class="dot pulse-ready"></span>
+      <span>Backend Connected on Port 8000</span>
+    </div>
+    <button class="cupcake-btn outline" (click)="refreshStats()">
+      Refresh Statistics
+    </button>
+  </footer>
+</div>

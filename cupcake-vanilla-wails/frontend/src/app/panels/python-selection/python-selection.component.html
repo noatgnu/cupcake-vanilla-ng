@@ -1,0 +1,89 @@
+<div class="cupcake-container py-selection-layout">
+  <header class="panel-header">
+    <h1 class="cupcake-title">Python Setup</h1>
+    <p class="cupcake-subtitle">Choose a Python interpreter for the backend services</p>
+  </header>
+
+  <main class="panel-main">
+    @if (loading()) {
+      <div class="cupcake-card loading-state">
+        <div class="spinner-large"></div>
+        <p>Scanning system for Python installations...</p>
+      </div>
+    } @else {
+      <section class="selection-section">
+        <h2 class="section-title">Detected Installations</h2>
+        <div class="candidates-grid">
+          @for (candidate of candidates(); track candidate.path) {
+            <div
+              class="candidate-card"
+              [class.active]="selectedPath() === candidate.path"
+              (click)="selectCandidate(candidate)"
+            >
+              <div class="card-status">
+                <span class="status-dot"></span>
+              </div>
+              <div class="card-body">
+                <span class="version-label">Python {{ candidate.version }}</span>
+                <code class="path-label">{{ candidate.path }}</code>
+              </div>
+              @if (selectedPath() === candidate.path) {
+                <div class="selection-badge">
+                  <i class="bi bi-check-circle-fill"></i>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </section>
+
+      <section class="cupcake-card custom-section">
+        <h2 class="section-title">Manual Path</h2>
+        <div class="input-group-custom">
+          <input
+            type="text"
+            class="cupcake-input"
+            [(ngModel)]="customPath"
+            placeholder="e.g. /usr/bin/python3 or C:\Python311\python.exe"
+            (input)="onCustomPathChange()"
+          />
+          <div class="input-actions">
+            <button class="btn-icon" (click)="browseForPython()" title="Browse files">
+              <i class="bi bi-folder2-open"></i>
+            </button>
+            <button class="btn-verify" [disabled]="!customPath" (click)="verifyCustomPath()">
+              Verify
+            </button>
+          </div>
+        </div>
+
+        @if (validationResult()) {
+          <div class="validation-banner" [class.valid]="validationResult()?.valid" [class.invalid]="!validationResult()?.valid">
+            <span class="banner-icon">
+              {{ validationResult()?.valid ? '✓' : '⚠' }}
+            </span>
+            <span class="banner-text">{{ validationResult()?.message }}</span>
+          </div>
+        }
+      </section>
+    }
+  </main>
+
+  <footer class="panel-footer cupcake-card">
+    <div class="footer-options">
+      <label class="cupcake-checkbox">
+        <input type="checkbox" [(ngModel)]="createNewVenv" />
+        <span class="checkbox-label">Initialize isolated virtual environment (.venv)</span>
+      </label>
+    </div>
+    <div class="footer-actions">
+      <button
+        class="cupcake-btn primary btn-proceed"
+        [disabled]="!canProceed()"
+        (click)="proceed()"
+      >
+        Continue to Setup
+      </button>
+    </div>
+  </footer>
+</div>

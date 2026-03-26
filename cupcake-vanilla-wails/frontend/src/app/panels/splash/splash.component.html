@@ -1,0 +1,45 @@
+<div class="cupcake-container splash-layout">
+  <header class="splash-header">
+    <div class="logo-wrapper">
+      <img src="assets/cupcake_logo.png" alt="Cupcake Vanilla" class="logo" />
+    </div>
+    <h1 class="cupcake-title">Cupcake Vanilla</h1>
+    <p class="cupcake-subtitle">Version {{ version }}</p>
+  </header>
+
+  <main class="splash-main">
+    <section class="cupcake-card status-section">
+      <h2 class="section-title">Initializing Services</h2>
+      <div class="service-grid">
+        @for (service of services(); track service.name) {
+          <div class="service-card" [class]="service.status">
+            <div class="service-status-indicator">
+              @switch (service.status) {
+                @case ('pending') { <i class="bi bi-circle pending-icon"></i> }
+                @case ('starting') { <div class="spinner-tiny"></div> }
+                @case ('ready') { <i class="bi bi-check-circle-fill ready-icon"></i> }
+                @case ('error') { <i class="bi bi-x-circle-fill error-icon"></i> }
+              }
+            </div>
+            <div class="service-info">
+              <span class="service-label">{{ service.displayName }}</span>
+              <span class="service-desc text-truncate">{{ service.message }}</span>
+            </div>
+          </div>
+        }
+      </div>
+    </section>
+
+    <section class="cupcake-card log-section">
+      <h2 class="section-title">System Logs</h2>
+      <div class="log-viewport" #logContainer>
+        @for (log of recentLogs(); track $index) {
+          <div class="log-line" [class]="log.type">
+            <span class="log-timestamp">{{ currentTime | date:'HH:mm:ss' }}</span>
+            <span class="log-text">{{ log.message }}</span>
+          </div>
+        }
+      </div>
+    </section>
+  </main>
+</div>

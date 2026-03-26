@@ -87,6 +87,13 @@
           "options": {
             "polyfills": [],
             "tsConfig": "tsconfig.spec.json",
+            "inlineStyleLanguage": "scss",
+            "stylePreprocessorOptions": {
+              "includePaths": [
+                "node_modules",
+                "../../projects"
+              ]
+            },
             "assets": [
               {
                 "glob": "**/*",

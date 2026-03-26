@@ -8,19 +8,8 @@ import { SuperuserComponent } from './panels/superuser/superuser.component';
   selector: 'app-root',
   standalone: true,
   imports: [CommonModule, RouterOutlet, SuperuserComponent],
-  template: `
-    <router-outlet></router-outlet>
-
-    @if (showSuperuserModal()) {
-      <app-superuser />
-    }
-  `,
-  styles: [`
-    :host {
-      display: block;
-      height: 100vh;
-    }
-  `]
+  templateUrl: './app.component.html',
+  styleUrl: './app.component.scss'
 })
 export class AppComponent {
   private readonly wails = inject(WailsService);
