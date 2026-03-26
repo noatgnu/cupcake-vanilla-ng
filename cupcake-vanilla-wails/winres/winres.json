@@ -1,0 +1,44 @@
+{
+  "RT_GROUP_ICON": {
+    "APP": {
+      "0000": "icon.ico"
+    }
+  },
+  "RT_MANIFEST": {
+    "#1": {
+      "0409": {
+        "identity": {
+          "name": "Cupcake Vanilla",
+          "version": "0.0.1.0"
+        },
+        "description": "Metadata management for mass spectrometry",
+        "minimum-os": "win7",
+        "execution-level": "asInvoker",
+        "dpi-awareness": "system",
+        "ui-access": false
+      }
+    }
+  },
+  "RT_VERSION": {
+    "#1": {
+      "0000": {
+        "fixed": {
+          "file_version": "0.0.1.0",
+          "product_version": "0.0.1.0"
+        },
+        "info": {
+          "0409": {
+            "CompanyName": "Cupcake Vanilla",
+            "FileDescription": "Metadata management for mass spectrometry",
+            "FileVersion": "0.0.1",
+            "InternalName": "cupcake-vanilla",
+            "LegalCopyright": "Copyright 2024-2026",
+            "OriginalFilename": "cupcake-vanilla.exe",
+            "ProductName": "Cupcake Vanilla",
+            "ProductVersion": "0.0.1"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,66 @@
+# Binaries
+cupcake-vanilla
+cupcake-vanilla-wails
+test-binary
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Build output
+build/bin/
+*.syso
+
+# Test output
+test_results.log
+test-results/
+playwright-report/
+*.test
+
+# Frontend dependencies and build
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+frontend/test-results/
+frontend/playwright-report/
+
+# Main app build output
+mainapp/dist/
+
+# Auto-generated Wails bindings
+frontend/bindings/
+
+# IDE and editor
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Task runner
+.task/
+
+# Logs
+*.log
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Coverage
+coverage/
+*.lcov
+
+# Temporary files
+*.tmp
+*.temp
