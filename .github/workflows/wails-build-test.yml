@@ -42,29 +42,13 @@ jobs:
       - name: Build cupcake-core library
         run: npx ng build @noatgnu/cupcake-core
 
-      - name: Install Wails frontend dependencies
-        working-directory: ./cupcake-vanilla-wails/frontend
-        run: npm install
-
-      - name: Build setup frontend
-        working-directory: ./cupcake-vanilla-wails/frontend
-        run: npm run build
-
-      - name: Build main Angular app
-        run: npx ng build --configuration=wails || npx ng build --configuration=production
-
-      - name: Copy main app to embed directory
+      - name: Build with build.sh
+        working-directory: ./cupcake-vanilla-wails
         run: |
-          mkdir -p cupcake-vanilla-wails/mainapp/dist/browser
-          if [ -d "dist/cupcake-vanilla-ng/browser" ]; then
-            cp -r dist/cupcake-vanilla-ng/browser/* cupcake-vanilla-wails/mainapp/dist/browser/
-          elif [ -d "dist/browser" ]; then
-            cp -r dist/browser/* cupcake-vanilla-wails/mainapp/dist/browser/
-          else
-            echo "<html><body>Placeholder</body></html>" > cupcake-vanilla-wails/mainapp/dist/browser/index.html
-          fi
+          chmod +x build.sh
+          ./build.sh release linux amd64
 
-      - name: Run Go tests
+      - name: Run Go tests with coverage
         working-directory: ./cupcake-vanilla-wails
         run: go test -v -race -coverprofile=coverage.out ./...
 
@@ -94,9 +78,6 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install Wails
-        run: go install github.com/wailsapp/wails/v3/cmd/wails3@latest
-
       - name: Install Linux dependencies
         run: |
           sudo apt-get update
@@ -108,37 +89,11 @@ jobs:
       - name: Build cupcake-core library
         run: npx ng build @noatgnu/cupcake-core
 
-      - name: Install Wails frontend dependencies
-        working-directory: ./cupcake-vanilla-wails/frontend
-        run: npm install
-
-      - name: Build setup frontend
-        working-directory: ./cupcake-vanilla-wails/frontend
-        run: npm run build
-
-      - name: Build main Angular app
-        run: npx ng build --configuration=wails || npx ng build --configuration=production
-
-      - name: Copy main app to embed directory
-        run: |
-          mkdir -p cupcake-vanilla-wails/mainapp/dist/browser
-          if [ -d "dist/cupcake-vanilla-ng/browser" ]; then
-            cp -r dist/cupcake-vanilla-ng/browser/* cupcake-vanilla-wails/mainapp/dist/browser/
-          elif [ -d "dist/browser" ]; then
-            cp -r dist/browser/* cupcake-vanilla-wails/mainapp/dist/browser/
-          fi
-
-      - name: Generate Wails bindings
+      - name: Build release
         working-directory: ./cupcake-vanilla-wails
         run: |
-          export PATH="$HOME/go/bin:$PATH"
-          wails3 generate bindings
-
-      - name: Build Wails app
-        working-directory: ./cupcake-vanilla-wails
-        run: |
-          mkdir -p build/bin/linux-amd64
-          go build -ldflags="-s -w" -o build/bin/linux-amd64/cupcake-vanilla .
+          chmod +x build.sh
+          ./build.sh release linux amd64
 
       - name: Upload Linux artifact
         uses: actions/upload-artifact@v4
@@ -175,19 +130,23 @@ jobs:
       - name: Build cupcake-core library
         run: npx ng build @noatgnu/cupcake-core
 
-      - name: Install Wails frontend dependencies
+      - name: Generate bindings
+        working-directory: ./cupcake-vanilla-wails
+        run: wails3 generate bindings
+
+      - name: Install frontend dependencies
         working-directory: ./cupcake-vanilla-wails/frontend
         run: npm install
 
-      - name: Build setup frontend
+      - name: Build frontend
         working-directory: ./cupcake-vanilla-wails/frontend
         run: npm run build
 
-      - name: Build main Angular app
+      - name: Build main app
         run: npx ng build --configuration=wails || npx ng build --configuration=production
         continue-on-error: true
 
-      - name: Copy main app to embed directory
+      - name: Copy main app
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path cupcake-vanilla-wails/mainapp/dist/browser
@@ -199,16 +158,12 @@ jobs:
             "<html><body>Placeholder</body></html>" | Out-File -FilePath cupcake-vanilla-wails/mainapp/dist/browser/index.html
           }
 
-      - name: Generate Wails bindings
+      - name: Build Windows binary
         working-directory: ./cupcake-vanilla-wails
-        run: wails3 generate bindings
-
-      - name: Build Wails app
-        working-directory: ./cupcake-vanilla-wails
+        shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path build/bin/windows-amd64
           go build -ldflags="-s -w -H windowsgui" -o build/bin/windows-amd64/cupcake-vanilla.exe .
-        shell: pwsh
 
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
@@ -236,55 +191,21 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install Wails
-        run: go install github.com/wailsapp/wails/v3/cmd/wails3@latest
-
       - name: Install root dependencies
         run: npm ci
 
       - name: Build cupcake-core library
         run: npx ng build @noatgnu/cupcake-core
 
-      - name: Install Wails frontend dependencies
-        working-directory: ./cupcake-vanilla-wails/frontend
-        run: npm install
-
-      - name: Build setup frontend
-        working-directory: ./cupcake-vanilla-wails/frontend
-        run: npm run build
-
-      - name: Build main Angular app
-        run: npx ng build --configuration=wails || npx ng build --configuration=production
-        continue-on-error: true
-
-      - name: Copy main app to embed directory
-        run: |
-          mkdir -p cupcake-vanilla-wails/mainapp/dist/browser
-          if [ -d "dist/cupcake-vanilla-ng/browser" ]; then
-            cp -r dist/cupcake-vanilla-ng/browser/* cupcake-vanilla-wails/mainapp/dist/browser/
-          elif [ -d "dist/browser" ]; then
-            cp -r dist/browser/* cupcake-vanilla-wails/mainapp/dist/browser/
-          else
-            echo "<html><body>Placeholder</body></html>" > cupcake-vanilla-wails/mainapp/dist/browser/index.html
-          fi
-
-      - name: Generate Wails bindings
+      - name: Build release
         working-directory: ./cupcake-vanilla-wails
         run: |
-          export PATH="$HOME/go/bin:$PATH"
-          wails3 generate bindings
+          chmod +x build.sh
+          ./build.sh release darwin arm64
 
-      - name: Build Wails app (arm64)
+      - name: Build amd64 variant
         working-directory: ./cupcake-vanilla-wails
-        run: |
-          mkdir -p build/bin/darwin-arm64
-          CGO_ENABLED=1 GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w" -o build/bin/darwin-arm64/cupcake-vanilla .
-
-      - name: Build Wails app (amd64)
-        working-directory: ./cupcake-vanilla-wails
-        run: |
-          mkdir -p build/bin/darwin-amd64
-          CGO_ENABLED=1 GOOS=darwin GOARCH=amd64 go build -ldflags="-s -w" -o build/bin/darwin-amd64/cupcake-vanilla .
+        run: ./build.sh release darwin amd64
         continue-on-error: true
 
       - name: Upload macOS arm64 artifact
