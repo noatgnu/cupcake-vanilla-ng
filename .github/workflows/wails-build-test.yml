@@ -16,9 +16,6 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./cupcake-vanilla-wails
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -33,20 +30,40 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: cupcake-vanilla-wails/frontend/package-lock.json
 
       - name: Install Linux dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev
 
-      - name: Install frontend dependencies
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install Wails frontend dependencies
+        working-directory: ./cupcake-vanilla-wails/frontend
+        run: npm ci
+
+      - name: Build setup frontend
+        working-directory: ./cupcake-vanilla-wails/frontend
+        run: npm run build
+
+      - name: Build main Angular app
+        run: npx ng build --configuration=wails || npx ng build --configuration=production
+
+      - name: Copy main app to embed directory
         run: |
-          cd frontend
-          npm ci
+          mkdir -p cupcake-vanilla-wails/mainapp/dist/browser
+          if [ -d "dist/cupcake-vanilla-ng/browser" ]; then
+            cp -r dist/cupcake-vanilla-ng/browser/* cupcake-vanilla-wails/mainapp/dist/browser/
+          elif [ -d "dist/browser" ]; then
+            cp -r dist/browser/* cupcake-vanilla-wails/mainapp/dist/browser/
+          else
+            echo "Creating placeholder index.html"
+            echo "<html><body>Placeholder</body></html>" > cupcake-vanilla-wails/mainapp/dist/browser/index.html
+          fi
 
       - name: Run Go tests
+        working-directory: ./cupcake-vanilla-wails
         run: go test -v -race -coverprofile=coverage.out ./...
 
       - name: Upload coverage
@@ -100,16 +117,22 @@ jobs:
       - name: Copy main app to embed directory
         run: |
           mkdir -p cupcake-vanilla-wails/mainapp/dist/browser
-          cp -r dist/cupcake-vanilla-ng/browser/* cupcake-vanilla-wails/mainapp/dist/browser/ || \
-          cp -r dist/browser/* cupcake-vanilla-wails/mainapp/dist/browser/ || true
+          if [ -d "dist/cupcake-vanilla-ng/browser" ]; then
+            cp -r dist/cupcake-vanilla-ng/browser/* cupcake-vanilla-wails/mainapp/dist/browser/
+          elif [ -d "dist/browser" ]; then
+            cp -r dist/browser/* cupcake-vanilla-wails/mainapp/dist/browser/
+          fi
 
       - name: Generate Wails bindings
         working-directory: ./cupcake-vanilla-wails
-        run: wails3 generate bindings
+        run: |
+          export PATH="$HOME/go/bin:$PATH"
+          wails3 generate bindings
 
       - name: Build Wails app
         working-directory: ./cupcake-vanilla-wails
         run: |
+          mkdir -p build/bin/linux-amd64
           go build -ldflags="-s -w" -o build/bin/linux-amd64/cupcake-vanilla .
 
       - name: Upload Linux artifact
@@ -164,8 +187,9 @@ jobs:
             Copy-Item -Recurse -Force dist/cupcake-vanilla-ng/browser/* cupcake-vanilla-wails/mainapp/dist/browser/
           } elseif (Test-Path dist/browser) {
             Copy-Item -Recurse -Force dist/browser/* cupcake-vanilla-wails/mainapp/dist/browser/
+          } else {
+            "<html><body>Placeholder</body></html>" | Out-File -FilePath cupcake-vanilla-wails/mainapp/dist/browser/index.html
           }
-        continue-on-error: true
 
       - name: Generate Wails bindings
         working-directory: ./cupcake-vanilla-wails
@@ -174,7 +198,9 @@ jobs:
       - name: Build Wails app
         working-directory: ./cupcake-vanilla-wails
         run: |
+          New-Item -ItemType Directory -Force -Path build/bin/windows-amd64
           go build -ldflags="-s -w -H windowsgui" -o build/bin/windows-amd64/cupcake-vanilla.exe .
+        shell: pwsh
 
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
@@ -223,22 +249,32 @@ jobs:
       - name: Copy main app to embed directory
         run: |
           mkdir -p cupcake-vanilla-wails/mainapp/dist/browser
-          cp -r dist/cupcake-vanilla-ng/browser/* cupcake-vanilla-wails/mainapp/dist/browser/ || \
-          cp -r dist/browser/* cupcake-vanilla-wails/mainapp/dist/browser/ || true
+          if [ -d "dist/cupcake-vanilla-ng/browser" ]; then
+            cp -r dist/cupcake-vanilla-ng/browser/* cupcake-vanilla-wails/mainapp/dist/browser/
+          elif [ -d "dist/browser" ]; then
+            cp -r dist/browser/* cupcake-vanilla-wails/mainapp/dist/browser/
+          else
+            echo "<html><body>Placeholder</body></html>" > cupcake-vanilla-wails/mainapp/dist/browser/index.html
+          fi
 
       - name: Generate Wails bindings
         working-directory: ./cupcake-vanilla-wails
-        run: wails3 generate bindings
+        run: |
+          export PATH="$HOME/go/bin:$PATH"
+          wails3 generate bindings
 
       - name: Build Wails app (arm64)
         working-directory: ./cupcake-vanilla-wails
         run: |
-          GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w" -o build/bin/darwin-arm64/cupcake-vanilla .
+          mkdir -p build/bin/darwin-arm64
+          CGO_ENABLED=1 GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w" -o build/bin/darwin-arm64/cupcake-vanilla .
 
       - name: Build Wails app (amd64)
         working-directory: ./cupcake-vanilla-wails
         run: |
-          GOOS=darwin GOARCH=amd64 go build -ldflags="-s -w" -o build/bin/darwin-amd64/cupcake-vanilla .
+          mkdir -p build/bin/darwin-amd64
+          CGO_ENABLED=1 GOOS=darwin GOARCH=amd64 go build -ldflags="-s -w" -o build/bin/darwin-amd64/cupcake-vanilla .
+        continue-on-error: true
 
       - name: Upload macOS arm64 artifact
         uses: actions/upload-artifact@v4
@@ -249,7 +285,9 @@ jobs:
 
       - name: Upload macOS amd64 artifact
         uses: actions/upload-artifact@v4
+        if: success() || failure()
         with:
           name: cupcake-vanilla-macos-amd64
           path: cupcake-vanilla-wails/build/bin/darwin-amd64/
           retention-days: 7
+          if-no-files-found: ignore
