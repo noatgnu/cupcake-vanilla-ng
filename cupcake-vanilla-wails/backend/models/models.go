@@ -104,3 +104,17 @@ type OntologyCounts struct {
 	Cell   int `json:"cell"`
 	Total  int `json:"total"`
 }
+
+type SyncSchemasOptions struct {
+	Force bool `json:"force"`
+}
+
+type LoadColumnTemplatesOptions struct {
+	Clear bool `json:"clear"`
+}
+
+type LoadOntologiesOptions struct {
+	NoLimit bool     `json:"noLimit"`
+	Limit   int      `json:"limit"`
+	Types   []string `json:"types"`
+}

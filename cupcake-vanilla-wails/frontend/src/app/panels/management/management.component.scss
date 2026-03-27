@@ -163,18 +163,161 @@
 
 .command-card {
   display: flex;
-  align-items: center;
-  gap: 1.25rem;
-  padding: 1rem 1.25rem !important;
+  flex-direction: column;
+  gap: 0;
+  padding: 0 !important;
   margin-bottom: 0 !important;
   background: rgba(255, 255, 255, 0.02) !important;
   border: 1px solid rgba(255, 255, 255, 0.05) !important;
   transition: all 0.3s;
+  overflow: hidden;
 }
 
 .command-card.running {
   border-color: var(--cupcake-primary) !important;
   background: rgba(76, 175, 80, 0.05) !important;
+}
+
+.command-card.expanded {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.command-header {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 1rem 1.25rem;
+}
+
+.command-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-options {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  color: #666;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.btn-options:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #aaa;
+}
+
+.btn-options.active {
+  background: rgba(var(--cupcake-primary-rgb), 0.1);
+  border-color: var(--cupcake-primary);
+  color: var(--cupcake-primary);
+}
+
+.command-options {
+  padding: 1rem 1.25rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.option-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.option-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+
+  input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--cupcake-primary);
+  }
+}
+
+.option-label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #ccc;
+}
+
+.option-desc {
+  font-size: 0.6875rem;
+  color: #666;
+  margin-left: 1.5rem;
+}
+
+.option-number {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.option-input {
+  width: 100px;
+  padding: 0.375rem 0.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  color: #fff;
+  font-size: 0.8125rem;
+
+  &:focus {
+    outline: none;
+    border-color: var(--cupcake-primary);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+.option-select {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.type-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.type-chip {
+  padding: 0.25rem 0.625rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  color: #888;
+  font-size: 0.6875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ccc;
+  }
+
+  &.selected {
+    background: rgba(var(--cupcake-primary-rgb), 0.15);
+    border-color: var(--cupcake-primary);
+    color: var(--cupcake-primary);
+  }
 }
 
 .command-icon-wrapper {

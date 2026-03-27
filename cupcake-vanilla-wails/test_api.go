@@ -6,6 +6,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/noatgnu/cupcake-vanilla-wails/backend/models"
 )
 
 type TestAPI struct {
@@ -990,9 +992,14 @@ func (t *TestAPI) handleSyncSchemas(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var options models.SyncSchemasOptions
+	if r.Body != nil {
+		json.NewDecoder(r.Body).Decode(&options)
+	}
+
 	go func() {
 		log.Println("[TestAPI] Starting sync schemas...")
-		if err := t.app.RunSyncSchemas(); err != nil {
+		if err := t.app.RunSyncSchemas(options); err != nil {
 			log.Printf("[TestAPI] Sync schemas error: %v", err)
 		} else {
 			log.Println("[TestAPI] Sync schemas completed")
@@ -1009,9 +1016,14 @@ func (t *TestAPI) handleLoadColumnTemplates(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	var options models.LoadColumnTemplatesOptions
+	if r.Body != nil {
+		json.NewDecoder(r.Body).Decode(&options)
+	}
+
 	go func() {
 		log.Println("[TestAPI] Starting load column templates...")
-		if err := t.app.RunLoadColumnTemplates(); err != nil {
+		if err := t.app.RunLoadColumnTemplates(options); err != nil {
 			log.Printf("[TestAPI] Load column templates error: %v", err)
 		} else {
 			log.Println("[TestAPI] Load column templates completed")
@@ -1028,9 +1040,14 @@ func (t *TestAPI) handleLoadOntologies(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var options models.LoadOntologiesOptions
+	if r.Body != nil {
+		json.NewDecoder(r.Body).Decode(&options)
+	}
+
 	go func() {
 		log.Println("[TestAPI] Starting load ontologies...")
-		if err := t.app.RunLoadOntologies(); err != nil {
+		if err := t.app.RunLoadOntologies(options); err != nil {
 			log.Printf("[TestAPI] Load ontologies error: %v", err)
 		} else {
 			log.Println("[TestAPI] Load ontologies completed")

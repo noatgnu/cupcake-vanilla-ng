@@ -1,6 +1,16 @@
 import { Component, OnInit, OnDestroy, signal, computed, inject, ViewChild, ElementRef, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { WailsService } from '../../core/services/wails.service';
+import { FormsModule } from '@angular/forms';
+import { WailsService, SyncSchemasOptions, LoadColumnTemplatesOptions, LoadOntologiesOptions } from '../../core/services/wails.service';
+
+interface CommandOption {
+  key: string;
+  label: string;
+  type: 'boolean' | 'number' | 'select';
+  value: boolean | number | string[];
+  description: string;
+  choices?: { value: string; label: string }[];
+}
 
 interface CommandStatus {
   name: string;
@@ -10,12 +20,14 @@ interface CommandStatus {
   success: boolean | null;
   count: number | null;
   icon: string;
+  expanded: boolean;
+  options: CommandOption[];
 }
 
 @Component({
   selector: 'app-management',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './management.component.html',
   styleUrl: './management.component.scss'
 })
@@ -35,6 +47,13 @@ export class ManagementComponent implements OnInit, OnDestroy {
     });
   }
 
+  ontologyTypes = [
+    { value: 'psims', label: 'PSIMS' },
+    { value: 'cell', label: 'Cell Ontology' },
+    { value: 'mondo', label: 'MONDO Disease' },
+    { value: 'uberon', label: 'UBERON Anatomy' }
+  ];
+
   commands = signal<CommandStatus[]>([
     {
       name: 'sync-schemas',
@@ -43,7 +62,11 @@ export class ManagementComponent implements OnInit, OnDestroy {
       running: false,
       success: null,
       count: null,
-      icon: 'bi bi-arrow-repeat'
+      icon: 'bi bi-arrow-repeat',
+      expanded: false,
+      options: [
+        { key: 'force', label: 'Force Re-download', type: 'boolean', value: false, description: 'Force re-download of schema files (schemas update by default)' }
+      ]
     },
     {
       name: 'load-column-templates',
@@ -52,7 +75,11 @@ export class ManagementComponent implements OnInit, OnDestroy {
       running: false,
       success: null,
       count: null,
-      icon: 'bi bi-file-earmark-text'
+      icon: 'bi bi-file-earmark-text',
+      expanded: false,
+      options: [
+        { key: 'clear', label: 'Clear Existing', type: 'boolean', value: true, description: 'Remove existing templates before importing (prevents duplicates)' }
+      ]
     },
     {
       name: 'load-ontologies',
@@ -61,7 +88,13 @@ export class ManagementComponent implements OnInit, OnDestroy {
       running: false,
       success: null,
       count: null,
-      icon: 'bi bi-diagram-3'
+      icon: 'bi bi-diagram-3',
+      expanded: false,
+      options: [
+        { key: 'noLimit', label: 'Load All Terms', type: 'boolean', value: true, description: 'Load all ontology terms without limit' },
+        { key: 'limit', label: 'Term Limit', type: 'number', value: 1000, description: 'Maximum number of terms to load (when not loading all)' },
+        { key: 'types', label: 'Ontology Types', type: 'select', value: [], description: 'Specific ontology types to load (empty = all)' }
+      ]
     }
   ]);
 
@@ -115,15 +148,63 @@ export class ManagementComponent implements OnInit, OnDestroy {
     );
   }
 
+  toggleExpanded(name: string): void {
+    this.commands.update(cmds =>
+      cmds.map(cmd => cmd.name === name ? { ...cmd, expanded: !cmd.expanded } : cmd)
+    );
+  }
+
+  getOptionValue(cmdName: string, optionKey: string): boolean | number | string[] {
+    const cmd = this.commands().find(c => c.name === cmdName);
+    const option = cmd?.options.find(o => o.key === optionKey);
+    return option?.value ?? false;
+  }
+
+  setOptionValue(cmdName: string, optionKey: string, value: boolean | number | string[]): void {
+    this.commands.update(cmds =>
+      cmds.map(cmd => {
+        if (cmd.name !== cmdName) return cmd;
+        return {
+          ...cmd,
+          options: cmd.options.map(opt =>
+            opt.key === optionKey ? { ...opt, value } : opt
+          )
+        };
+      })
+    );
+  }
+
+  toggleOntologyType(type: string): void {
+    const currentTypes = this.getOptionValue('load-ontologies', 'types') as string[];
+    const newTypes = currentTypes.includes(type)
+      ? currentTypes.filter(t => t !== type)
+      : [...currentTypes, type];
+    this.setOptionValue('load-ontologies', 'types', newTypes);
+  }
+
+  isOntologyTypeSelected(type: string): boolean {
+    const types = this.getOptionValue('load-ontologies', 'types') as string[];
+    return types.includes(type);
+  }
+
   async runCommand(name: string): Promise<void> {
     this.setCommandStatus(name, true);
     this.addOutput(`Initiating ${name} process...`, 'info');
 
+    const cmd = this.commands().find(c => c.name === name);
+    const options = cmd?.options.reduce((acc, opt) => ({ ...acc, [opt.key]: opt.value }), {}) ?? {};
+
     try {
       switch (name) {
-        case 'sync-schemas': await this.wails.runSyncSchemas(); break;
-        case 'load-column-templates': await this.wails.runLoadColumnTemplates(); break;
-        case 'load-ontologies': await this.wails.runLoadOntologies(); break;
+        case 'sync-schemas':
+          await this.wails.runSyncSchemas(options as SyncSchemasOptions);
+          break;
+        case 'load-column-templates':
+          await this.wails.runLoadColumnTemplates(options as LoadColumnTemplatesOptions);
+          break;
+        case 'load-ontologies':
+          await this.wails.runLoadOntologies(options as LoadOntologiesOptions);
+          break;
       }
 
       this.setCommandStatus(name, false, true);

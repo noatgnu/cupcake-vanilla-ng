@@ -11,15 +11,15 @@ test.describe('Cupcake Vanilla Wails Integration', () => {
   });
 
   test('single service status update', async ({ page }) => {
-    await page.goto('/splash');
+    await page.goto('/#/splash');
     await page.waitForTimeout(2000);
     await waitForEventListeners(page);
 
     const listeners = await getRegisteredListeners(page);
     expect(listeners['backend:status']).toBeGreaterThan(0);
 
-    const dbService = page.locator('.service-item', {
-      has: page.locator('.service-name', { hasText: 'Database' })
+    const dbService = page.locator('.service-card', {
+      has: page.locator('.service-label', { hasText: 'Database' })
     });
     await expect(dbService).toHaveClass(/pending/);
 
@@ -33,17 +33,17 @@ test.describe('Cupcake Vanilla Wails Integration', () => {
   });
 
   test('splash page loads with pending services', async ({ page }) => {
-    await page.goto('/splash');
+    await page.goto('/#/splash');
     await page.waitForTimeout(2000);
 
     await expect(page.locator('h1')).toContainText('Cupcake Vanilla');
 
-    const pendingServices = page.locator('.service-item.pending');
+    const pendingServices = page.locator('.service-card.pending');
     await expect(pendingServices).toHaveCount(9, { timeout: 10000 });
   });
 
   test('multiple services update sequentially', async ({ page }) => {
-    await page.goto('/splash');
+    await page.goto('/#/splash');
     await page.waitForTimeout(2000);
     await waitForEventListeners(page);
 
@@ -58,12 +58,12 @@ test.describe('Cupcake Vanilla Wails Integration', () => {
       await page.waitForTimeout(200);
     }
 
-    const readyServices = page.locator('.service-item.ready');
+    const readyServices = page.locator('.service-card.ready');
     await expect(readyServices).toHaveCount(3, { timeout: 10000 });
   });
 
   test('log events appear in activity log', async ({ page }) => {
-    await page.goto('/splash');
+    await page.goto('/#/splash');
     await page.waitForTimeout(2000);
     await waitForEventListeners(page);
 
@@ -74,30 +74,30 @@ test.describe('Cupcake Vanilla Wails Integration', () => {
 
     await page.waitForTimeout(500);
 
-    const logPanel = page.locator('.log-panel');
+    const logPanel = page.locator('.log-viewport');
     await expect(logPanel).toContainText('Test log message from E2E', { timeout: 10000 });
   });
 
   test('navigation routes work', async ({ page }) => {
-    await page.goto('/python-selection');
-    await page.waitForTimeout(2000);
-    await expect(page.locator('app-python-selection')).toBeVisible({ timeout: 10000 });
+    await page.goto('/#/python-selection');
+    await page.waitForLoadState('networkidle');
+    await expect(page.locator('text=Python Setup')).toBeVisible({ timeout: 10000 });
 
-    await page.goto('/management');
-    await page.waitForTimeout(2000);
-    await expect(page.locator('app-management')).toBeVisible({ timeout: 10000 });
+    await page.goto('/#/management');
+    await page.waitForLoadState('networkidle');
+    await expect(page.locator('text=System Management')).toBeVisible({ timeout: 10000 });
 
-    await page.goto('/debug');
-    await page.waitForTimeout(2000);
-    await expect(page.locator('app-debug')).toBeVisible({ timeout: 10000 });
+    await page.goto('/#/debug');
+    await page.waitForLoadState('networkidle');
+    await expect(page.locator('text=System Console')).toBeVisible({ timeout: 10000 });
 
-    await page.goto('/backend-download');
-    await page.waitForTimeout(2000);
-    await expect(page.locator('app-downloader')).toBeVisible({ timeout: 10000 });
+    await page.goto('/#/backend-download');
+    await page.waitForLoadState('networkidle');
+    await expect(page.locator('text=Backend Source')).toBeVisible({ timeout: 10000 });
   });
 
   test('full initialization flow', async ({ page }) => {
-    await page.goto('/splash');
+    await page.goto('/#/splash');
     await page.waitForTimeout(2000);
     await waitForEventListeners(page);
 
@@ -122,12 +122,12 @@ test.describe('Cupcake Vanilla Wails Integration', () => {
       await page.waitForTimeout(150);
     }
 
-    const readyServices = page.locator('.service-item.ready');
+    const readyServices = page.locator('.service-card.ready');
     await expect(readyServices).toHaveCount(9, { timeout: 15000 });
   });
 
   test('WailsService detects mock mode', async ({ page }) => {
-    await page.goto('/splash');
+    await page.goto('/#/splash');
     await page.waitForTimeout(2000);
 
     const listeners = await getRegisteredListeners(page);

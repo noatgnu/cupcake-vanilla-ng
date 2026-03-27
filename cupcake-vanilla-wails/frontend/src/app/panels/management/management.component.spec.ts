@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ManagementComponent } from './management.component';
-import { WailsService, CommandOutput } from '../../core/services/wails.service';
+import { WailsService, CommandOutput, SyncSchemasOptions, LoadColumnTemplatesOptions, LoadOntologiesOptions } from '../../core/services/wails.service';
 import { signal, WritableSignal } from '@angular/core';
 
 describe('ManagementComponent', () => {
@@ -142,19 +142,19 @@ describe('ManagementComponent', () => {
       fixture.detectChanges();
     });
 
-    it('should run sync-schemas command', async () => {
+    it('should run sync-schemas command with options', async () => {
       await component.runCommand('sync-schemas');
-      expect(mockWailsService.runSyncSchemas).toHaveBeenCalled();
+      expect(mockWailsService.runSyncSchemas).toHaveBeenCalledWith(jasmine.objectContaining({ force: false }));
     });
 
-    it('should run load-column-templates command', async () => {
+    it('should run load-column-templates command with options', async () => {
       await component.runCommand('load-column-templates');
-      expect(mockWailsService.runLoadColumnTemplates).toHaveBeenCalled();
+      expect(mockWailsService.runLoadColumnTemplates).toHaveBeenCalledWith(jasmine.objectContaining({ clear: true }));
     });
 
-    it('should run load-ontologies command', async () => {
+    it('should run load-ontologies command with options', async () => {
       await component.runCommand('load-ontologies');
-      expect(mockWailsService.runLoadOntologies).toHaveBeenCalled();
+      expect(mockWailsService.runLoadOntologies).toHaveBeenCalledWith(jasmine.objectContaining({ noLimit: true }));
     });
 
     it('should set command to running', async () => {

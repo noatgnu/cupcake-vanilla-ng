@@ -688,12 +688,18 @@ func (a *App) CreateSuperuser(username, email, password string) error {
 	return a.userManager.CreateSuperuser(backendDir, a.venvPath, username, email, password)
 }
 
-func (a *App) RunSyncSchemas() error {
+func (a *App) RunSyncSchemas(options models.SyncSchemasOptions) error {
 	if a.backendManager == nil {
 		return fmt.Errorf("backend manager not initialized")
 	}
 	backendDir := a.getBackendPath()
-	return a.backendManager.RunManagementCommand(backendDir, a.venvPath, "sync_schemas", nil, func(output string, isError bool) {
+
+	var args []string
+	if options.Force {
+		args = append(args, "--force")
+	}
+
+	return a.backendManager.RunManagementCommand(backendDir, a.venvPath, "sync_schemas", args, func(output string, isError bool) {
 		msgType := "info"
 		if isError {
 			msgType = "error"
@@ -706,12 +712,18 @@ func (a *App) RunSyncSchemas() error {
 	})
 }
 
-func (a *App) RunLoadColumnTemplates() error {
+func (a *App) RunLoadColumnTemplates(options models.LoadColumnTemplatesOptions) error {
 	if a.backendManager == nil {
 		return fmt.Errorf("backend manager not initialized")
 	}
 	backendDir := a.getBackendPath()
-	return a.backendManager.RunManagementCommand(backendDir, a.venvPath, "load_column_templates", nil, func(output string, isError bool) {
+
+	var args []string
+	if options.Clear {
+		args = append(args, "--clear")
+	}
+
+	return a.backendManager.RunManagementCommand(backendDir, a.venvPath, "load_column_templates", args, func(output string, isError bool) {
 		msgType := "info"
 		if isError {
 			msgType = "error"
@@ -724,12 +736,24 @@ func (a *App) RunLoadColumnTemplates() error {
 	})
 }
 
-func (a *App) RunLoadOntologies() error {
+func (a *App) RunLoadOntologies(options models.LoadOntologiesOptions) error {
 	if a.backendManager == nil {
 		return fmt.Errorf("backend manager not initialized")
 	}
 	backendDir := a.getBackendPath()
-	return a.backendManager.RunManagementCommand(backendDir, a.venvPath, "load_ontologies", []string{"--no-limit"}, func(output string, isError bool) {
+
+	var args []string
+	if options.NoLimit {
+		args = append(args, "--no-limit")
+	} else if options.Limit > 0 {
+		args = append(args, fmt.Sprintf("--limit=%d", options.Limit))
+	}
+
+	for _, t := range options.Types {
+		args = append(args, fmt.Sprintf("--type=%s", t))
+	}
+
+	return a.backendManager.RunManagementCommand(backendDir, a.venvPath, "load_ontologies", args, func(output string, isError bool) {
 		msgType := "info"
 		if isError {
 			msgType = "error"

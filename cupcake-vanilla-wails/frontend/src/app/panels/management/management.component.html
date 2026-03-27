@@ -53,30 +53,95 @@
           <h2 class="section-title">Operations</h2>
           <div class="command-grid">
             @for (cmd of commands(); track cmd.name) {
-              <div class="cupcake-card command-card" [class.running]="cmd.running">
-                <div class="command-icon-wrapper"><i [class]="cmd.icon"></i></div>
-                <div class="command-content">
-                  <div class="command-main">
-                    <span class="command-name">{{ cmd.displayName }}</span>
-                    @if (cmd.count !== null) {
-                      <span class="badge-success">{{ cmd.count | number }} items</span>
+              <div class="cupcake-card command-card" [class.running]="cmd.running" [class.expanded]="cmd.expanded">
+                <div class="command-header">
+                  <div class="command-icon-wrapper"><i [class]="cmd.icon"></i></div>
+                  <div class="command-content">
+                    <div class="command-main">
+                      <span class="command-name">{{ cmd.displayName }}</span>
+                      @if (cmd.count !== null) {
+                        <span class="badge-success">{{ cmd.count | number }} items</span>
+                      }
+                    </div>
+                    <p class="command-desc">{{ cmd.description }}</p>
+                  </div>
+                  <div class="command-actions">
+                    <button
+                      class="btn-options"
+                      (click)="toggleExpanded(cmd.name)"
+                      [class.active]="cmd.expanded"
+                      title="Configure options"
+                    >
+                      <i class="bi bi-gear"></i>
+                    </button>
+                    <button
+                      class="cupcake-btn action-btn"
+                      [class.secondary]="!cmd.running"
+                      [disabled]="cmd.running"
+                      (click)="runCommand(cmd.name)"
+                    >
+                      @if (cmd.running) {
+                        <span class="spinner-tiny"></span>
+                        Working
+                      } @else {
+                        Execute
+                      }
+                    </button>
+                  </div>
+                </div>
+
+                @if (cmd.expanded && cmd.options.length > 0) {
+                  <div class="command-options">
+                    @for (opt of cmd.options; track opt.key) {
+                      <div class="option-row">
+                        @switch (opt.type) {
+                          @case ('boolean') {
+                            <label class="option-checkbox">
+                              <input
+                                type="checkbox"
+                                [checked]="getOptionValue(cmd.name, opt.key)"
+                                (change)="setOptionValue(cmd.name, opt.key, $any($event.target).checked)"
+                              />
+                              <span class="option-label">{{ opt.label }}</span>
+                            </label>
+                          }
+                          @case ('number') {
+                            <div class="option-number">
+                              <label class="option-label">{{ opt.label }}</label>
+                              <input
+                                type="number"
+                                class="option-input"
+                                [value]="getOptionValue(cmd.name, opt.key)"
+                                [disabled]="cmd.name === 'load-ontologies' && getOptionValue('load-ontologies', 'noLimit')"
+                                (change)="setOptionValue(cmd.name, opt.key, +$any($event.target).value)"
+                                min="1"
+                                max="100000"
+                              />
+                            </div>
+                          }
+                          @case ('select') {
+                            <div class="option-select">
+                              <label class="option-label">{{ opt.label }}</label>
+                              <div class="type-chips">
+                                @for (type of ontologyTypes; track type.value) {
+                                  <button
+                                    type="button"
+                                    class="type-chip"
+                                    [class.selected]="isOntologyTypeSelected(type.value)"
+                                    (click)="toggleOntologyType(type.value)"
+                                  >
+                                    {{ type.label }}
+                                  </button>
+                                }
+                              </div>
+                            </div>
+                          }
+                        }
+                        <span class="option-desc">{{ opt.description }}</span>
+                      </div>
                     }
                   </div>
-                  <p class="command-desc">{{ cmd.description }}</p>
-                </div>
-                <button
-                  class="cupcake-btn action-btn"
-                  [class.secondary]="!cmd.running"
-                  [disabled]="cmd.running"
-                  (click)="runCommand(cmd.name)"
-                >
-                  @if (cmd.running) {
-                    <span class="spinner-tiny"></span>
-                    Working
-                  } @else {
-                    Execute
-                  }
-                </button>
+                }
               </div>
             }
           </div>

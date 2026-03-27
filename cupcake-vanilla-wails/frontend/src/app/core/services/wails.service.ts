@@ -58,6 +58,20 @@ export interface CommandOutput {
   type: string;
 }
 
+export interface SyncSchemasOptions {
+  force?: boolean;
+}
+
+export interface LoadColumnTemplatesOptions {
+  clear?: boolean;
+}
+
+export interface LoadOntologiesOptions {
+  noLimit?: boolean;
+  limit?: number;
+  types?: string[];
+}
+
 type EventCallback = (event: { name: string; data: unknown }) => void;
 
 const PLAYWRIGHT_MOCK_NAMESPACE = '__playwrightWailsMock__';
@@ -263,19 +277,23 @@ export class WailsService {
     return App.CreateSuperuser(username, email, password);
   }
 
-  async runSyncSchemas(): Promise<void> {
+  async runSyncSchemas(options: SyncSchemasOptions = {}): Promise<void> {
     if (!this.isWails) return;
-    return App.RunSyncSchemas();
+    return App.RunSyncSchemas({ force: options.force ?? false });
   }
 
-  async runLoadColumnTemplates(): Promise<void> {
+  async runLoadColumnTemplates(options: LoadColumnTemplatesOptions = {}): Promise<void> {
     if (!this.isWails) return;
-    return App.RunLoadColumnTemplates();
+    return App.RunLoadColumnTemplates({ clear: options.clear ?? false });
   }
 
-  async runLoadOntologies(): Promise<void> {
+  async runLoadOntologies(options: LoadOntologiesOptions = {}): Promise<void> {
     if (!this.isWails) return;
-    return App.RunLoadOntologies();
+    return App.RunLoadOntologies({
+      noLimit: options.noLimit ?? true,
+      limit: options.limit ?? 0,
+      types: options.types ?? []
+    });
   }
 
   async getAvailableReleases(): Promise<ReleaseInfo[]> {
