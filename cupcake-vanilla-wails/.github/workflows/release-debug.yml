@@ -1,0 +1,174 @@
+name: Release (Debug)
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag/version for the debug release (e.g., v1.0.0-debug)'
+        required: true
+        type: string
+
+defaults:
+  run:
+    working-directory: cupcake-vanilla-wails
+
+permissions:
+  contents: write
+
+jobs:
+  build-debug:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux
+            arch: amd64
+            artifact_name: cupcake-vanilla
+            asset_name: cupcake-vanilla-linux-amd64-debug
+          - os: windows-latest
+            platform: windows
+            arch: amd64
+            artifact_name: cupcake-vanilla.exe
+            asset_name: cupcake-vanilla-windows-amd64-debug.exe
+          - os: macos-13
+            platform: darwin
+            arch: amd64
+            artifact_name: cupcake-vanilla
+            asset_name: cupcake-vanilla-darwin-amd64-debug
+          - os: macos-latest
+            platform: darwin
+            arch: arm64
+            artifact_name: cupcake-vanilla
+            asset_name: cupcake-vanilla-darwin-arm64-debug
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+          cache-dependency-path: cupcake-vanilla-wails/go.sum
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: cupcake-vanilla-wails/frontend/package-lock.json
+
+      - name: Install Wails CLI
+        run: go install github.com/wailsapp/wails/v3/cmd/wails3@latest
+
+      - name: Install Linux dependencies
+        if: matrix.platform == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Generate bindings
+        shell: bash
+        run: |
+          export PATH="$HOME/go/bin:$PATH"
+          wails3 generate bindings -ts -d frontend/bindings
+
+      - name: Build frontend
+        run: |
+          cd frontend
+          npm run build
+
+      - name: Build main app
+        shell: bash
+        run: |
+          cd ..
+          npm ci
+          npx ng build --configuration=wails || npx ng build --configuration=production
+          mkdir -p cupcake-vanilla-wails/mainapp/dist/browser
+          cp -r dist/cupcake-vanilla-ng/browser/* cupcake-vanilla-wails/mainapp/dist/browser/
+
+      - name: Build debug (Linux/macOS)
+        if: matrix.platform != 'windows'
+        shell: bash
+        run: |
+          export PATH="$HOME/go/bin:$PATH"
+          mkdir -p build/bin/${{ matrix.platform }}-${{ matrix.arch }}-debug
+          GOOS=${{ matrix.platform }} GOARCH=${{ matrix.arch }} CGO_ENABLED=1 go build \
+            -tags devtools \
+            -o build/bin/${{ matrix.platform }}-${{ matrix.arch }}-debug/${{ matrix.artifact_name }}
+
+      - name: Build debug (Windows)
+        if: matrix.platform == 'windows'
+        shell: bash
+        run: |
+          export PATH="$HOME/go/bin:$PATH"
+          mkdir -p build/bin/${{ matrix.platform }}-${{ matrix.arch }}-debug
+          GOOS=${{ matrix.platform }} GOARCH=${{ matrix.arch }} CGO_ENABLED=1 go build \
+            -tags devtools \
+            -ldflags="-H windowsgui" \
+            -o build/bin/${{ matrix.platform }}-${{ matrix.arch }}-debug/${{ matrix.artifact_name }}
+
+      - name: Create archive (Linux/macOS)
+        if: matrix.platform != 'windows'
+        run: |
+          cd build/bin/${{ matrix.platform }}-${{ matrix.arch }}-debug
+          tar -czvf ../../../${{ matrix.asset_name }}.tar.gz ${{ matrix.artifact_name }}
+
+      - name: Create archive (Windows)
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: |
+          cd build/bin/${{ matrix.platform }}-${{ matrix.arch }}-debug
+          Compress-Archive -Path ${{ matrix.artifact_name }} -DestinationPath ../../../${{ matrix.asset_name }}.zip
+
+      - name: Upload release artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset_name }}
+          path: |
+            cupcake-vanilla-wails/${{ matrix.asset_name }}.tar.gz
+            cupcake-vanilla-wails/${{ matrix.asset_name }}.zip
+          retention-days: 1
+
+  create-debug-release:
+    needs: build-debug
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: List artifacts
+        run: |
+          cd ..
+          find artifacts -type f
+
+      - name: Create Debug Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.tag }}
+          name: Cupcake Vanilla ${{ inputs.tag }} (Debug)
+          draft: false
+          prerelease: true
+          body: |
+            ## Debug Build
+
+            This is a **debug build** with the following features enabled:
+            - Wails devtools (right-click to inspect)
+            - Debug symbols preserved
+            - Larger binary size
+
+            **For production use, please download the standard release instead.**
+          files: |
+            artifacts/**/*.tar.gz
+            artifacts/**/*.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

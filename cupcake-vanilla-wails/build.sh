@@ -25,11 +25,13 @@ log_error() {
 BUILD_MODE="${1:-release}"
 PLATFORM="${2:-$(go env GOOS)}"
 ARCH="${3:-$(go env GOARCH)}"
+DEBUG_BUILD="${DEBUG_BUILD:-false}"
 
 log_info "Building Cupcake Vanilla Wails..."
 log_info "Mode: $BUILD_MODE"
 log_info "Platform: $PLATFORM"
 log_info "Architecture: $ARCH"
+log_info "Debug: $DEBUG_BUILD"
 
 check_wails() {
     export PATH="$HOME/go/bin:$PATH"
@@ -107,6 +109,12 @@ build_backend() {
 build_app() {
     local output_name="cupcake-vanilla"
     local output_dir="build/bin/${PLATFORM}-${ARCH}"
+    local build_type="release"
+
+    if [ "$DEBUG_BUILD" = "true" ]; then
+        output_dir="build/bin/${PLATFORM}-${ARCH}-debug"
+        build_type="debug"
+    fi
 
     mkdir -p "$output_dir"
 
@@ -114,12 +122,24 @@ build_app() {
         output_name="${output_name}.exe"
     fi
 
-    log_info "Building application for ${PLATFORM}/${ARCH}..."
+    log_info "Building application for ${PLATFORM}/${ARCH} (${build_type})..."
 
     if [ "$BUILD_MODE" = "dev" ]; then
         wails3 dev
     else
-        local ldflags="-s -w"
+        local ldflags=""
+        local build_tags=""
+
+        if [ "$DEBUG_BUILD" = "true" ]; then
+            ldflags=""
+            build_tags="devtools"
+            log_info "Debug build: devtools enabled, symbols preserved"
+        else
+            ldflags="-s -w"
+            build_tags=""
+            log_info "Release build: devtools disabled, symbols stripped"
+        fi
+
         if [ "$PLATFORM" = "windows" ]; then
             ldflags="${ldflags} -H windowsgui"
         fi
@@ -152,13 +172,19 @@ build_app() {
             export CC="$cc"
         fi
 
-        GOOS="$PLATFORM" GOARCH="$ARCH" CGO_ENABLED=$cgo_enabled go build \
-            -tags devtools \
-            -ldflags="$ldflags" \
-            -o "${output_dir}/${output_name}" 2>&1 || {
-                log_warn "Build failed for ${PLATFORM}/${ARCH}. Skipping..."
-                return 0
-            }
+        local build_cmd="GOOS=$PLATFORM GOARCH=$ARCH CGO_ENABLED=$cgo_enabled go build"
+        if [ -n "$build_tags" ]; then
+            build_cmd="$build_cmd -tags $build_tags"
+        fi
+        if [ -n "$ldflags" ]; then
+            build_cmd="$build_cmd -ldflags=\"$ldflags\""
+        fi
+        build_cmd="$build_cmd -o ${output_dir}/${output_name}"
+
+        eval "$build_cmd" 2>&1 || {
+            log_warn "Build failed for ${PLATFORM}/${ARCH}. Skipping..."
+            return 0
+        }
     fi
 
     log_info "Build complete! Output: ${output_dir}/${output_name}"
@@ -197,6 +223,7 @@ clean() {
     rm -rf frontend/dist
     rm -rf frontend/src/wailsjs
     rm -rf mainapp/dist/browser
+    rm -f test_results.log
     mkdir -p mainapp/dist/browser
     echo "<html><body>Placeholder - run ./build.sh mainapp</body></html>" > mainapp/dist/browser/index.html
 }
@@ -342,14 +369,20 @@ build_all_platforms() {
     log_info "Step $step: Run E2E tests"
     PLATFORM="linux" ARCH="amd64" run_e2e_tests
 
+    local suffix=""
+    if [ "$DEBUG_BUILD" = "true" ]; then
+        suffix="-debug"
+    fi
+
     log_info "All platform builds completed successfully!"
+    log_info "Build type: $([ "$DEBUG_BUILD" = "true" ] && echo "DEBUG (devtools enabled)" || echo "RELEASE (devtools disabled)")"
     log_info "Binaries:"
-    log_info "  - build/bin/linux-amd64/cupcake-vanilla"
-    log_info "  - build/bin/linux-arm64/cupcake-vanilla"
-    log_info "  - build/bin/windows-amd64/cupcake-vanilla.exe"
-    log_info "  - build/bin/windows-arm64/cupcake-vanilla.exe"
-    log_info "  - build/bin/darwin-amd64/cupcake-vanilla"
-    log_info "  - build/bin/darwin-arm64/cupcake-vanilla"
+    log_info "  - build/bin/linux-amd64${suffix}/cupcake-vanilla"
+    log_info "  - build/bin/linux-arm64${suffix}/cupcake-vanilla"
+    log_info "  - build/bin/windows-amd64${suffix}/cupcake-vanilla.exe"
+    log_info "  - build/bin/windows-arm64${suffix}/cupcake-vanilla.exe"
+    log_info "  - build/bin/darwin-amd64${suffix}/cupcake-vanilla"
+    log_info "  - build/bin/darwin-arm64${suffix}/cupcake-vanilla"
 }
 
 case "$BUILD_MODE" in
@@ -359,6 +392,17 @@ case "$BUILD_MODE" in
         build_app
         ;;
     "release")
+        DEBUG_BUILD="false"
+        check_wails
+        generate_bindings
+        generate_windows_resources
+        build_frontend
+        build_mainapp
+        build_backend
+        build_app
+        ;;
+    "debug")
+        DEBUG_BUILD="true"
         check_wails
         generate_bindings
         generate_windows_resources
@@ -380,6 +424,11 @@ case "$BUILD_MODE" in
         full_build_and_test
         ;;
     "all-platforms")
+        DEBUG_BUILD="false"
+        build_all_platforms
+        ;;
+    "all-platforms-debug")
+        DEBUG_BUILD="true"
         build_all_platforms
         ;;
     "clean")
@@ -396,26 +445,31 @@ case "$BUILD_MODE" in
         build_mainapp
         ;;
     *)
-        echo "Usage: $0 [dev|release|test|e2e|integration|all|all-platforms|clean|bindings|frontend|mainapp] [platform] [arch]"
+        echo "Usage: $0 [dev|release|debug|test|e2e|integration|all|all-platforms|all-platforms-debug|clean|bindings|frontend|mainapp] [platform] [arch]"
         echo ""
         echo "Commands:"
-        echo "  dev           - Run in development mode with hot reload"
-        echo "  release       - Build production release for specified platform"
-        echo "  test          - Run Go unit tests only"
-        echo "  e2e           - Run E2E tests with mock Wails (no binary needed)"
-        echo "  integration   - Run full integration tests (requires built binary)"
-        echo "  all           - Full build + all tests for specified platform"
-        echo "  all-platforms - Build for Linux + Windows with tests"
-        echo "  clean         - Remove build artifacts"
-        echo "  bindings      - Generate TypeScript bindings only"
-        echo "  frontend      - Build setup frontend only"
-        echo "  mainapp       - Build main cupcake-vanilla-ng app only"
+        echo "  dev                 - Run in development mode with hot reload"
+        echo "  release             - Build production release (no devtools, symbols stripped)"
+        echo "  debug               - Build debug version (devtools enabled, symbols preserved)"
+        echo "  test                - Run Go unit tests only"
+        echo "  e2e                 - Run E2E tests with mock Wails (no binary needed)"
+        echo "  integration         - Run full integration tests (requires built binary)"
+        echo "  all                 - Full build + all tests for specified platform"
+        echo "  all-platforms       - Build release for Linux + Windows with tests"
+        echo "  all-platforms-debug - Build debug for Linux + Windows with tests"
+        echo "  clean               - Remove build artifacts"
+        echo "  bindings            - Generate TypeScript bindings only"
+        echo "  frontend            - Build setup frontend only"
+        echo "  mainapp             - Build main cupcake-vanilla-ng app only"
+        echo ""
+        echo "Environment variables:"
+        echo "  DEBUG_BUILD=true    - Force debug build (devtools enabled)"
         echo ""
         echo "Examples:"
-        echo "  $0 all-platforms         # Build Linux + Windows + tests"
-        echo "  $0 all windows amd64     # Full build and test for Windows"
-        echo "  $0 all linux amd64       # Full build and test for Linux"
-        echo "  $0 release windows amd64 # Build without tests"
+        echo "  $0 all-platforms         # Build release for Linux + Windows + tests"
+        echo "  $0 all-platforms-debug   # Build debug for Linux + Windows + tests"
+        echo "  $0 debug linux amd64     # Debug build for Linux"
+        echo "  $0 release windows amd64 # Release build for Windows"
         echo "  $0 dev                   # Development mode"
         exit 1
         ;;
