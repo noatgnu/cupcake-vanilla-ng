@@ -48,16 +48,9 @@ jobs:
           chmod +x build.sh
           ./build.sh release linux amd64
 
-      - name: Run Go tests with coverage
+      - name: Run Go tests
         working-directory: ./cupcake-vanilla-wails
-        run: go test -v -coverprofile=coverage.out ./...
-
-      - name: Upload coverage
-        uses: codecov/codecov-action@v4
-        with:
-          files: ./cupcake-vanilla-wails/coverage.out
-          flags: wails
-        continue-on-error: true
+        run: go test -v ./...
 
   build-linux:
     name: Build Linux
