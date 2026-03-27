@@ -85,6 +85,7 @@ jobs:
         run: |
           cd ..
           npm ci
+          npx ng build @noatgnu/cupcake-core
           npx ng build --configuration=wails || npx ng build --configuration=production
           mkdir -p cupcake-vanilla-wails/mainapp/dist/browser
           cp -r dist/cupcake-vanilla-ng/browser/* cupcake-vanilla-wails/mainapp/dist/browser/
