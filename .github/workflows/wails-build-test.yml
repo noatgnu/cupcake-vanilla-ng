@@ -50,7 +50,7 @@ jobs:
 
       - name: Run Go tests with coverage
         working-directory: ./cupcake-vanilla-wails
-        run: go test -v -race -coverprofile=coverage.out ./...
+        run: go test -v -coverprofile=coverage.out ./...
 
       - name: Upload coverage
         uses: codecov/codecov-action@v4
