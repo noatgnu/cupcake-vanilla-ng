@@ -895,6 +895,39 @@ func (a *App) CloseDebugWindow() {
 	}
 }
 
+func (a *App) OpenBackendSetupPanel() {
+	log.Println("[App] Opening backend setup panel window...")
+
+	window := a.wailsApp.Window.New()
+	window.SetTitle("Backend Setup")
+	window.SetSize(600, 500)
+	window.SetMinSize(500, 400)
+	window.SetURL("/setup/#/backend-setup")
+	window.Show()
+}
+
+func (a *App) OpenUserDataFolder() {
+	log.Println("[App] Opening user data folder...")
+	openFolder(a.userDataPath)
+}
+
+func (a *App) OpenLogFile() {
+	log.Println("[App] Opening log file...")
+	if a.logFilePath != "" {
+		openFile(a.logFilePath)
+	}
+}
+
+func (a *App) ShowAboutDialog() {
+	log.Println("[App] Showing about dialog...")
+	if a.wailsApp != nil {
+		a.wailsApp.Dialog.Info().
+			SetTitle("About Cupcake Vanilla").
+			SetMessage("Cupcake Vanilla\n\nVersion: " + a.GetAppVersion() + "\n\nMetadata management for mass spectrometry").
+			Show()
+	}
+}
+
 func (a *App) GetDownloadProgress() models.DownloadProgress {
 	if a.downloader == nil {
 		return models.DownloadProgress{}

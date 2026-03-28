@@ -222,6 +222,36 @@ func cleanOldLogs(logDir string, maxFiles int) {
 	}
 }
 
+func createApplicationMenu(app *App) *application.Menu {
+	menu := application.NewMenu()
+
+	managementMenu := menu.AddSubmenu("Management")
+	managementMenu.Add("Database Setup").OnClick(func(ctx *application.Context) {
+		app.OpenManagementPanel()
+	})
+	managementMenu.Add("Backend Setup").OnClick(func(ctx *application.Context) {
+		app.OpenBackendSetupPanel()
+	})
+	managementMenu.AddSeparator()
+	managementMenu.Add("Open User Data Folder").OnClick(func(ctx *application.Context) {
+		app.OpenUserDataFolder()
+	})
+	managementMenu.Add("Open Log File").OnClick(func(ctx *application.Context) {
+		app.OpenLogFile()
+	})
+	managementMenu.AddSeparator()
+	managementMenu.Add("Debug Panel").OnClick(func(ctx *application.Context) {
+		app.OpenDebugPanel()
+	})
+
+	helpMenu := menu.AddSubmenu("Help")
+	helpMenu.Add("About Cupcake Vanilla").OnClick(func(ctx *application.Context) {
+		app.ShowAboutDialog()
+	})
+
+	return menu
+}
+
 func main() {
 	userConfigDir, err := os.UserConfigDir()
 	if err != nil {
@@ -269,6 +299,9 @@ func main() {
 	})
 
 	app.SetApplication(wailsApp)
+
+	appMenu := createApplicationMenu(app)
+	wailsApp.Menu.SetApplicationMenu(appMenu)
 
 	testAPI := NewTestAPI(app)
 	testAPI.Start(9999)
