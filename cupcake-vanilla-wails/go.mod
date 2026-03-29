@@ -4,6 +4,7 @@ go 1.25
 
 require (
 	github.com/go-git/go-git/v5 v5.17.0
+	github.com/gorilla/websocket v1.5.3
 	github.com/wailsapp/wails/v3 v3.0.0-alpha.74
 	gorm.io/driver/sqlite v1.5.5
 	gorm.io/gorm v1.25.7
