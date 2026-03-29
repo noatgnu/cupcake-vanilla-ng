@@ -979,6 +979,74 @@ func (a *App) RunLoadSubcellularLocation(options models.LoadSubcellularLocationO
 	})
 }
 
+func (a *App) RunLoadAllOntologies(options models.LoadOntologiesOptions) error {
+	if a.backendManager == nil {
+		return fmt.Errorf("backend manager not initialized")
+	}
+	backendDir := a.getBackendPath()
+
+	outputCallback := func(output string, isError bool) {
+		msgType := "info"
+		if isError {
+			msgType = "error"
+		}
+		a.wailsApp.Event.Emit("command:output", map[string]interface{}{
+			"command": "load-ontologies",
+			"output":  output,
+			"type":    msgType,
+		})
+	}
+
+	var args []string
+	if options.NoLimit {
+		args = append(args, "--no-limit")
+	} else if options.Limit > 0 {
+		args = append(args, fmt.Sprintf("--limit=%d", options.Limit))
+	}
+
+	for _, t := range options.Types {
+		args = append(args, fmt.Sprintf("--type=%s", t))
+	}
+
+	outputCallback("Loading OBO ontologies (MONDO, UBERON, NCBI, ChEBI, PSIMS, Cell)...", false)
+	if err := a.backendManager.RunManagementCommand(backendDir, a.venvPath, "load_ontologies", args, outputCallback); err != nil {
+		return fmt.Errorf("load_ontologies failed: %w", err)
+	}
+
+	outputCallback("Loading UniProt species...", false)
+	if err := a.backendManager.RunManagementCommand(backendDir, a.venvPath, "load_species", nil, outputCallback); err != nil {
+		return fmt.Errorf("load_species failed: %w", err)
+	}
+
+	outputCallback("Loading UniProt tissue...", false)
+	if err := a.backendManager.RunManagementCommand(backendDir, a.venvPath, "load_tissue", nil, outputCallback); err != nil {
+		return fmt.Errorf("load_tissue failed: %w", err)
+	}
+
+	outputCallback("Loading UniProt human disease...", false)
+	if err := a.backendManager.RunManagementCommand(backendDir, a.venvPath, "load_human_disease", nil, outputCallback); err != nil {
+		return fmt.Errorf("load_human_disease failed: %w", err)
+	}
+
+	outputCallback("Loading UniProt subcellular location...", false)
+	if err := a.backendManager.RunManagementCommand(backendDir, a.venvPath, "load_subcellular_location", nil, outputCallback); err != nil {
+		return fmt.Errorf("load_subcellular_location failed: %w", err)
+	}
+
+	outputCallback("Loading MS controlled vocabulary...", false)
+	if err := a.backendManager.RunManagementCommand(backendDir, a.venvPath, "load_ms_term", nil, outputCallback); err != nil {
+		return fmt.Errorf("load_ms_term failed: %w", err)
+	}
+
+	outputCallback("Loading Unimod modifications...", false)
+	if err := a.backendManager.RunManagementCommand(backendDir, a.venvPath, "load_ms_mod", nil, outputCallback); err != nil {
+		return fmt.Errorf("load_ms_mod failed: %w", err)
+	}
+
+	outputCallback("All ontologies loaded successfully!", false)
+	return nil
+}
+
 func (a *App) GetAvailableReleases() ([]models.ReleaseInfo, error) {
 	downloader := services.NewBackendDownloader(nil)
 	return downloader.GetAvailableReleases()

@@ -337,6 +337,15 @@ export class WailsService {
     });
   }
 
+  async runLoadAllOntologies(options: LoadOntologiesOptions = {}): Promise<void> {
+    if (!this.isWails) return;
+    return App.RunLoadAllOntologies({
+      noLimit: options.noLimit ?? true,
+      limit: options.limit ?? 0,
+      types: options.types ?? []
+    });
+  }
+
   async getAvailableReleases(): Promise<ReleaseInfo[]> {
     if (!this.isWails) return [];
     const result = await App.GetAvailableReleases();

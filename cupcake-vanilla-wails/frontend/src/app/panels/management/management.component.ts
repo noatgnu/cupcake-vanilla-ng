@@ -92,7 +92,7 @@ export class ManagementComponent implements OnInit, OnDestroy {
     {
       name: 'load-ontologies',
       displayName: 'Ontology Initialization',
-      description: 'Import biological and chemical ontology terminologies',
+      description: 'Import all ontology terminologies (OBO, UniProt, Unimod)',
       running: false,
       success: null,
       count: null,
@@ -280,7 +280,7 @@ export class ManagementComponent implements OnInit, OnDestroy {
           await this.wails.runLoadColumnTemplates(options as LoadColumnTemplatesOptions);
           break;
         case 'load-ontologies':
-          await this.wails.runLoadOntologies(options as LoadOntologiesOptions);
+          await this.wails.runLoadAllOntologies(options as LoadOntologiesOptions);
           break;
         case 'backup-database':
           await this.wails.createDatabaseBackup();
