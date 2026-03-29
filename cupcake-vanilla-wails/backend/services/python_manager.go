@@ -179,6 +179,7 @@ func (p *PythonManager) VerifyPython(pythonPath string) models.ValidationResult 
 	} else {
 		cmd = exec.Command(pythonPath, "--version")
 	}
+	hideWindow(cmd)
 
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -241,6 +242,7 @@ func (p *PythonManager) CreateVirtualEnvironment(basePythonPath string) (string,
 	} else {
 		cmd = exec.Command(basePythonPath, "-m", "venv", venvDir)
 	}
+	hideWindow(cmd)
 
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -300,6 +302,7 @@ func (p *PythonManager) InstallDependencies(pythonPath, requirementsPath string)
 	p.log("Installing Python dependencies...", "info")
 
 	cmd := exec.Command(pythonPath, "-m", "pip", "install", "--progress-bar", "off", "-r", requirementsPath)
+	hideWindow(cmd)
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
@@ -367,6 +370,7 @@ func (p *PythonManager) InstallDependencies(pythonPath, requirementsPath string)
 
 func (p *PythonManager) GetPipList(pythonPath string) ([]string, error) {
 	cmd := exec.Command(pythonPath, "-m", "pip", "list", "--format=freeze")
+	hideWindow(cmd)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return nil, err

@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ManagementComponent } from './management.component';
-import { WailsService, CommandOutput, SyncSchemasOptions, LoadColumnTemplatesOptions, LoadOntologiesOptions } from '../../core/services/wails.service';
+import { WailsService, CommandOutput, SyncSchemasOptions, LoadColumnTemplatesOptions, LoadOntologiesOptions, BackupInfo } from '../../core/services/wails.service';
 import { signal, WritableSignal } from '@angular/core';
 
 describe('ManagementComponent', () => {
@@ -17,6 +17,11 @@ describe('ManagementComponent', () => {
     total: 1000
   };
 
+  const mockBackups: BackupInfo[] = [
+    { name: 'default-db-2024-01-01.sqlite3.gz', path: '/backups/default-db-2024-01-01.sqlite3.gz', size: 1024000, createdAt: '2024-01-01T12:00:00Z', type: 'database' },
+    { name: 'media-2024-01-01.tar.gz', path: '/backups/media-2024-01-01.tar.gz', size: 2048000, createdAt: '2024-01-01T12:00:00Z', type: 'media' }
+  ];
+
   beforeEach(async () => {
     commandOutputSignal = signal<CommandOutput | null>(null);
 
@@ -27,7 +32,14 @@ describe('ManagementComponent', () => {
       'runSyncSchemas',
       'runLoadColumnTemplates',
       'runLoadOntologies',
-      'logToFile'
+      'logToFile',
+      'listBackups',
+      'createDatabaseBackup',
+      'createMediaBackup',
+      'restoreDatabase',
+      'restoreMedia',
+      'deleteBackup',
+      'openBackupFolder'
     ], {
       commandOutput: commandOutputSignal.asReadonly(),
       isWails: false
@@ -39,6 +51,13 @@ describe('ManagementComponent', () => {
     mockWailsService.runSyncSchemas.and.resolveTo();
     mockWailsService.runLoadColumnTemplates.and.resolveTo();
     mockWailsService.runLoadOntologies.and.resolveTo();
+    mockWailsService.listBackups.and.resolveTo(mockBackups);
+    mockWailsService.createDatabaseBackup.and.resolveTo();
+    mockWailsService.createMediaBackup.and.resolveTo();
+    mockWailsService.restoreDatabase.and.resolveTo();
+    mockWailsService.restoreMedia.and.resolveTo();
+    mockWailsService.deleteBackup.and.resolveTo();
+    mockWailsService.openBackupFolder.and.resolveTo();
 
     await TestBed.configureTestingModule({
       imports: [ManagementComponent],
@@ -55,8 +74,8 @@ describe('ManagementComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should have three commands', () => {
-    expect(component.commands().length).toBe(3);
+  it('should have seven commands', () => {
+    expect(component.commands().length).toBe(7);
   });
 
   it('should have sync-schemas command', () => {
@@ -73,6 +92,30 @@ describe('ManagementComponent', () => {
   it('should have load-ontologies command', () => {
     const cmd = component.commands().find(c => c.name === 'load-ontologies');
     expect(cmd).toBeTruthy();
+  });
+
+  it('should have backup-database command', () => {
+    const cmd = component.commands().find(c => c.name === 'backup-database');
+    expect(cmd).toBeTruthy();
+    expect(cmd?.displayName).toBe('Database Backup');
+  });
+
+  it('should have backup-media command', () => {
+    const cmd = component.commands().find(c => c.name === 'backup-media');
+    expect(cmd).toBeTruthy();
+    expect(cmd?.displayName).toBe('Media Backup');
+  });
+
+  it('should have restore-database command', () => {
+    const cmd = component.commands().find(c => c.name === 'restore-database');
+    expect(cmd).toBeTruthy();
+    expect(cmd?.displayName).toBe('Restore Database');
+  });
+
+  it('should have restore-media command', () => {
+    const cmd = component.commands().find(c => c.name === 'restore-media');
+    expect(cmd).toBeTruthy();
+    expect(cmd?.displayName).toBe('Restore Media');
   });
 
   it('should start with empty output lines', () => {
@@ -213,6 +256,89 @@ describe('ManagementComponent', () => {
       const lines = component.outputLines();
       const errorLine = lines.find(l => l.text === 'Error message');
       expect(errorLine?.type).toBe('error');
+    });
+  });
+
+  describe('backup functionality', () => {
+    beforeEach(async () => {
+      fixture.detectChanges();
+      await component.ngOnInit();
+    });
+
+    it('should load backups on init', async () => {
+      expect(mockWailsService.listBackups).toHaveBeenCalled();
+      expect(component.backups().length).toBe(2);
+    });
+
+    it('should run backup-database command', async () => {
+      await component.runCommand('backup-database');
+      expect(mockWailsService.createDatabaseBackup).toHaveBeenCalled();
+    });
+
+    it('should run backup-media command', async () => {
+      await component.runCommand('backup-media');
+      expect(mockWailsService.createMediaBackup).toHaveBeenCalled();
+    });
+
+    it('should run restore-database command', async () => {
+      await component.runCommand('restore-database');
+      expect(mockWailsService.restoreDatabase).toHaveBeenCalled();
+    });
+
+    it('should run restore-media command', async () => {
+      await component.runCommand('restore-media');
+      expect(mockWailsService.restoreMedia).toHaveBeenCalled();
+    });
+
+    it('should delete backup', async () => {
+      const backup = mockBackups[0];
+      await component.deleteBackup(backup);
+      expect(mockWailsService.deleteBackup).toHaveBeenCalledWith(backup.path);
+    });
+
+    it('should open backup folder', async () => {
+      await component.openBackupFolder();
+      expect(mockWailsService.openBackupFolder).toHaveBeenCalled();
+    });
+
+    it('should format bytes correctly', () => {
+      expect(component.formatBytes(0)).toBe('0 B');
+      expect(component.formatBytes(1024)).toBe('1 KB');
+      expect(component.formatBytes(1048576)).toBe('1 MB');
+      expect(component.formatBytes(1073741824)).toBe('1 GB');
+    });
+
+    it('should update backup counts in commands', async () => {
+      const dbBackupCmd = component.commands().find(c => c.name === 'backup-database');
+      const mediaBackupCmd = component.commands().find(c => c.name === 'backup-media');
+      expect(dbBackupCmd?.count).toBe(1);
+      expect(mediaBackupCmd?.count).toBe(1);
+    });
+
+    it('should handle backup command error', async () => {
+      mockWailsService.createDatabaseBackup.and.rejectWith(new Error('Backup failed'));
+      await component.runCommand('backup-database');
+      const lines = component.outputLines();
+      expect(lines.some(l => l.type === 'error')).toBeTrue();
+    });
+
+    it('should handle delete backup error', async () => {
+      mockWailsService.deleteBackup.and.rejectWith(new Error('Delete failed'));
+      await component.deleteBackup(mockBackups[0]);
+      const lines = component.outputLines();
+      expect(lines.some(l => l.type === 'error' && l.text.includes('Failed to delete'))).toBeTrue();
+    });
+
+    it('should refresh stats after backup command', async () => {
+      mockWailsService.listBackups.calls.reset();
+      await component.runCommand('backup-database');
+      expect(mockWailsService.listBackups).toHaveBeenCalled();
+    });
+
+    it('should refresh stats after delete backup', async () => {
+      mockWailsService.listBackups.calls.reset();
+      await component.deleteBackup(mockBackups[0]);
+      expect(mockWailsService.listBackups).toHaveBeenCalled();
     });
   });
 });

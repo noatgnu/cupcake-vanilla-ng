@@ -480,7 +480,7 @@ func (b *BackendDownloader) CleanBackend(backendPath string) error {
 
 	for _, entry := range entries {
 		name := entry.Name()
-		if strings.HasPrefix(name, "db.") || name == "media" {
+		if strings.HasPrefix(name, "db.") || name == "media" || name == "backups" || name == ".env" {
 			continue
 		}
 		os.RemoveAll(filepath.Join(backendPath, name))

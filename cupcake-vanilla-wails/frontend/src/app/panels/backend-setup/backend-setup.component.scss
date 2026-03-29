@@ -1,332 +1,184 @@
 :host {
   display: block;
   height: 100vh;
-  background: var(--cupcake-bg-gradient, linear-gradient(135deg, #1a1a2e 0%, #16213e 100%));
+  background: var(--cupcake-bg);
 }
 
 .setup-layout {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
-  max-width: 1000px !important;
-  padding: 3rem 2rem;
+  height: 100%;
+  padding: 0.5rem;
 }
 
-.panel-header {
-  animation: fadeInDown 0.6s ease-out;
-  text-align: center;
+.setup-header {
+  padding: 0.25rem 0.5rem;
+  border-bottom: 1px solid var(--cupcake-border);
 }
 
-.cupcake-title {
-  font-size: 2rem;
-  font-weight: 800;
-  margin: 0;
-  color: #fff;
-  letter-spacing: -0.5px;
-}
-
-.cupcake-subtitle {
+.title {
+  font-size: 0.75rem;
+  font-weight: 600;
   color: var(--cupcake-text-muted);
-  font-size: 0.9375rem;
-  margin-top: 0.5rem;
+  margin: 0;
 }
 
-.panel-main {
+.setup-main {
   flex: 1;
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
   min-height: 0;
 }
 
-.setup-grid {
-  display: grid;
-  grid-template-columns: 280px 1fr;
-  gap: 3rem;
-  height: 100%;
-}
-
-.progress-sidebar {
+.phase-list {
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  gap: 0.25rem;
 }
 
-.phase-stepper {
+.phase-item {
   display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  position: relative;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.375rem;
+  font-size: 0.625rem;
+  color: var(--cupcake-text-faint);
+  border-radius: 2px;
 }
 
-.step-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 1.25rem;
-  position: relative;
-  transition: all 0.3s;
+.phase-item.active {
+  color: var(--cupcake-text);
+  background: var(--cupcake-border);
 }
 
-.step-marker {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.05);
-  border: 2px solid rgba(255, 255, 255, 0.1);
+.phase-item.completed {
+  color: var(--cupcake-success);
+}
+
+.phase-marker {
+  width: 16px;
+  height: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.8125rem;
-  font-weight: 700;
-  color: #555;
-  z-index: 2;
-  transition: all 0.3s;
-}
-
-.step-item.active .step-marker {
-  background: var(--cupcake-primary);
-  border-color: var(--cupcake-primary);
-  color: #fff;
-  box-shadow: 0 0 15px rgba(76, 175, 80, 0.4);
-}
-
-.step-item.completed .step-marker {
-  background: #2e7d32;
-  border-color: #2e7d32;
-  color: #fff;
-}
-
-.step-connector {
-  position: absolute;
-  left: 15px;
-  top: 36px;
-  width: 2px;
-  height: calc(1.5rem + 8px);
-  background: rgba(255, 255, 255, 0.05);
-  z-index: 1;
-}
-
-.step-item.completed .step-connector {
-  background: #2e7d32;
-}
-
-.step-content {
-  display: flex;
-  flex-direction: column;
-  gap: 0.125rem;
-}
-
-.step-name {
-  font-size: 0.9375rem;
+  font-size: 0.5625rem;
   font-weight: 600;
-  color: #666;
-  transition: color 0.3s;
+  border-radius: 50%;
+  background: var(--cupcake-border);
 }
 
-.step-desc {
-  font-size: 0.75rem;
-  color: #444;
-  transition: color 0.3s;
+.phase-item.active .phase-marker {
+  background: var(--cupcake-primary);
+  color: var(--cupcake-text);
 }
 
-.step-item.active .step-name {
-  color: #fff;
+.phase-item.completed .phase-marker {
+  background: var(--cupcake-primary-dark);
+  color: var(--cupcake-text);
 }
 
-.step-item.active .step-desc {
-  color: var(--cupcake-text-muted);
+.spinner {
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  border-top-color: var(--cupcake-text);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
 }
 
-.step-item.completed .step-name {
-  color: #aaa;
+.phase-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.phase-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--cupcake-bg-secondary);
+  border-radius: 3px;
 }
 
 .phase-display {
-  background: rgba(255, 255, 255, 0.02) !important;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 3rem !important;
-}
-
-.phase-inner {
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 0.5rem;
   text-align: center;
-  gap: 1.5rem;
-  width: 100%;
 }
 
-.illustration {
-  font-size: 4rem;
-  filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.1));
+.phase-icon {
+  font-size: 1.25rem;
+  color: var(--cupcake-text-faint);
 }
 
-.phase-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  margin: 0;
-  color: #fff;
+.phase-icon.success {
+  color: var(--cupcake-success);
 }
 
-.phase-text {
-  font-size: 1rem;
-  color: var(--cupcake-text-muted);
-  margin: 0;
-}
-
-.spinner-large {
-  width: 64px;
-  height: 64px;
-  border: 4px solid rgba(255, 255, 255, 0.05);
+.spinner-lg {
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--cupcake-border-light);
   border-top-color: var(--cupcake-primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
 
-.spinner-tiny {
-  width: 14px;
-  height: 14px;
-  border: 2px solid rgba(255, 255, 255, 0.2);
-  border-top-color: #fff;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+.phase-msg {
+  font-size: 0.6875rem;
+  color: var(--cupcake-text-dim);
 }
 
-.phase-progress-container {
-  width: 100%;
-  max-width: 400px;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.cupcake-progress-bar {
-  height: 10px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 5px;
+.progress-bar {
+  width: 180px;
+  height: 4px;
+  background: var(--cupcake-border);
+  border-radius: 2px;
   overflow: hidden;
 }
 
 .progress-fill {
   height: 100%;
   background: var(--cupcake-primary);
-  box-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
-  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: width 0.2s;
 }
 
-.progress-meta {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #555;
+.progress-text {
+  font-size: 0.5625rem;
+  color: var(--cupcake-text-faint);
 }
 
-.success-ring {
-  width: 80px;
-  height: 80px;
-  background: var(--cupcake-primary);
-  color: #fff;
-  border-radius: 50%;
+.error-bar {
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: 2.5rem;
-  box-shadow: 0 0 40px rgba(76, 175, 80, 0.4);
-  animation: scaleUp 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  gap: 0.375rem;
+  padding: 0.375rem 0.5rem;
+  background: rgba(var(--cupcake-danger-rgb), 0.08);
+  border-top: 1px solid rgba(var(--cupcake-danger-rgb), 0.2);
+  font-size: 0.625rem;
+  color: var(--cupcake-danger);
 }
 
-.error-banner {
-  display: flex;
-  align-items: center;
-  gap: 1.5rem;
-  padding: 1.5rem 2rem;
-  background: rgba(244, 67, 54, 0.1);
-  border: 1px solid rgba(244, 67, 54, 0.2);
-  border-radius: 12px;
-  animation: slideUp 0.4s ease-out;
-}
-
-.banner-icon {
-  font-size: 1.75rem;
-  color: #f44336;
-}
-
-.banner-body {
+.error-msg {
   flex: 1;
-  display: flex;
-  flex-direction: column;
+  color: rgba(var(--cupcake-danger-rgb), 0.8);
 }
 
-.banner-label {
-  font-weight: 700;
-  font-size: 0.875rem;
-  color: #f44336;
-  text-transform: uppercase;
-}
-
-.banner-msg {
-  font-size: 0.875rem;
-  color: #e57373;
-}
-
-.cupcake-btn.danger {
-  background: #f44336;
-  color: #fff;
+.btn-retry {
+  background: rgba(var(--cupcake-danger-rgb), 0.15);
   border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 8px;
-  font-weight: 700;
+  color: var(--cupcake-text);
+  padding: 0.1875rem 0.5rem;
+  border-radius: 2px;
+  font-size: 0.5625rem;
   cursor: pointer;
 }
 
 @keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes fadeInDown {
-  from {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes scaleUp {
-  from {
-    opacity: 0;
-    transform: scale(0.5);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-.animate-fade-in {
-  animation: fadeIn 0.5s ease-out;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  to { transform: rotate(360deg); }
 }

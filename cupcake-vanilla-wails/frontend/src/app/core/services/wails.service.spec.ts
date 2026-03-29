@@ -5,6 +5,7 @@ describe('WailsService', () => {
   let service: WailsService;
 
   beforeEach(() => {
+    delete (window as any)._wails;
     TestBed.configureTestingModule({});
     service = TestBed.inject(WailsService);
   });
@@ -16,14 +17,18 @@ describe('WailsService', () => {
   describe('isWails detection', () => {
     it('should detect Wails environment when window._wails exists', () => {
       (window as any)._wails = { invoke: () => {} };
-      const testService = new WailsService();
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({});
+      const testService = TestBed.inject(WailsService);
       expect(testService.isWails).toBe(true);
       delete (window as any)._wails;
     });
 
     it('should not detect Wails when window._wails does not exist', () => {
       delete (window as any)._wails;
-      const testService = new WailsService();
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({});
+      const testService = TestBed.inject(WailsService);
       expect(testService.isWails).toBe(false);
     });
   });
@@ -116,6 +121,9 @@ describe('WailsService', () => {
   describe('fallback behavior when not in Wails', () => {
     beforeEach(() => {
       delete (window as any)._wails;
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({});
+      service = TestBed.inject(WailsService);
     });
 
     it('getAppVersion should return default version', async () => {
@@ -177,6 +185,58 @@ describe('WailsService', () => {
     it('getOntologyCounts should return empty object', async () => {
       const counts = await service.getOntologyCounts();
       expect(counts).toEqual({});
+    });
+
+    it('listBackups should return empty array', async () => {
+      const backups = await service.listBackups();
+      expect(backups).toEqual([]);
+    });
+
+    it('createDatabaseBackup should return without error', async () => {
+      await expectAsync(service.createDatabaseBackup()).toBeResolved();
+    });
+
+    it('createMediaBackup should return without error', async () => {
+      await expectAsync(service.createMediaBackup()).toBeResolved();
+    });
+
+    it('createFullBackup should return without error', async () => {
+      await expectAsync(service.createFullBackup()).toBeResolved();
+    });
+
+    it('restoreDatabase should return without error', async () => {
+      await expectAsync(service.restoreDatabase()).toBeResolved();
+    });
+
+    it('restoreMedia should return without error', async () => {
+      await expectAsync(service.restoreMedia()).toBeResolved();
+    });
+
+    it('deleteBackup should return without error', async () => {
+      await expectAsync(service.deleteBackup('/path/to/backup')).toBeResolved();
+    });
+
+    it('openBackupFolder should return without error', async () => {
+      await expectAsync(service.openBackupFolder()).toBeResolved();
+    });
+
+    it('checkForBackendUpdates should return null', async () => {
+      const result = await service.checkForBackendUpdates();
+      expect(result).toBeNull();
+    });
+
+    it('updateBackend should return null', async () => {
+      const result = await service.updateBackend('v1.0.0', true);
+      expect(result).toBeNull();
+    });
+
+    it('getCurrentBackendVersion should return unknown', async () => {
+      const version = await service.getCurrentBackendVersion();
+      expect(version).toBe('unknown');
+    });
+
+    it('rollbackBackend should return without error', async () => {
+      await expectAsync(service.rollbackBackend()).toBeResolved();
     });
   });
 });

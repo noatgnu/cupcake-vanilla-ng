@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, signal, computed, inject, ViewChild, ElementRef, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { WailsService, SyncSchemasOptions, LoadColumnTemplatesOptions, LoadOntologiesOptions } from '../../core/services/wails.service';
+import { WailsService, SyncSchemasOptions, LoadColumnTemplatesOptions, LoadOntologiesOptions, BackupInfo } from '../../core/services/wails.service';
 
 interface CommandOption {
   key: string;
@@ -95,8 +95,54 @@ export class ManagementComponent implements OnInit, OnDestroy {
         { key: 'limit', label: 'Term Limit', type: 'number', value: 1000, description: 'Maximum number of terms to load (when not loading all)' },
         { key: 'types', label: 'Ontology Types', type: 'select', value: [], description: 'Specific ontology types to load (empty = all)' }
       ]
+    },
+    {
+      name: 'backup-database',
+      displayName: 'Database Backup',
+      description: 'Create a backup of the SQLite database',
+      running: false,
+      success: null,
+      count: null,
+      icon: 'bi bi-database-down',
+      expanded: false,
+      options: []
+    },
+    {
+      name: 'backup-media',
+      displayName: 'Media Backup',
+      description: 'Create a backup of uploaded media files',
+      running: false,
+      success: null,
+      count: null,
+      icon: 'bi bi-file-earmark-zip',
+      expanded: false,
+      options: []
+    },
+    {
+      name: 'restore-database',
+      displayName: 'Restore Database',
+      description: 'Restore the database from the latest backup',
+      running: false,
+      success: null,
+      count: null,
+      icon: 'bi bi-database-up',
+      expanded: false,
+      options: []
+    },
+    {
+      name: 'restore-media',
+      displayName: 'Restore Media',
+      description: 'Restore media files from the latest backup',
+      running: false,
+      success: null,
+      count: null,
+      icon: 'bi bi-file-earmark-arrow-up',
+      expanded: false,
+      options: []
     }
   ]);
+
+  backups = signal<BackupInfo[]>([]);
 
   schemaCount = signal(0);
   columnTemplateCount = signal(0);
@@ -124,19 +170,28 @@ export class ManagementComponent implements OnInit, OnDestroy {
 
   async refreshStats(): Promise<void> {
     try {
-      const [schemas, templates, ontologies] = await Promise.all([
+      const [schemas, templates, ontologies, backupList] = await Promise.all([
         this.wails.getSchemaCount(),
         this.wails.getColumnTemplateCount(),
-        this.wails.getOntologyCounts()
+        this.wails.getOntologyCounts(),
+        this.wails.listBackups()
       ]);
 
       this.schemaCount.set(schemas);
       this.columnTemplateCount.set(templates);
       this.ontologyCounts.set(ontologies);
+      this.backups.set(backupList);
 
       this.updateCommandCount('sync-schemas', schemas);
       this.updateCommandCount('load-column-templates', templates);
       this.updateCommandCount('load-ontologies', ontologies['total'] || 0);
+
+      const dbBackups = backupList.filter(b => b.type === 'database').length;
+      const mediaBackups = backupList.filter(b => b.type === 'media').length;
+      this.updateCommandCount('backup-database', dbBackups);
+      this.updateCommandCount('backup-media', mediaBackups);
+      this.updateCommandCount('restore-database', dbBackups);
+      this.updateCommandCount('restore-media', mediaBackups);
     } catch (error) {
       this.wails.logToFile(`Stat refresh failure: ${error}`);
     }
@@ -205,6 +260,18 @@ export class ManagementComponent implements OnInit, OnDestroy {
         case 'load-ontologies':
           await this.wails.runLoadOntologies(options as LoadOntologiesOptions);
           break;
+        case 'backup-database':
+          await this.wails.createDatabaseBackup();
+          break;
+        case 'backup-media':
+          await this.wails.createMediaBackup();
+          break;
+        case 'restore-database':
+          await this.wails.restoreDatabase();
+          break;
+        case 'restore-media':
+          await this.wails.restoreMedia();
+          break;
       }
 
       this.setCommandStatus(name, false, true);
@@ -214,6 +281,29 @@ export class ManagementComponent implements OnInit, OnDestroy {
       this.setCommandStatus(name, false, false);
       this.addOutput(`Process failed: ${error}`, 'error');
     }
+  }
+
+  async deleteBackup(backup: BackupInfo): Promise<void> {
+    this.addOutput(`Deleting backup: ${backup.name}...`, 'info');
+    try {
+      await this.wails.deleteBackup(backup.path);
+      this.addOutput(`Backup deleted: ${backup.name}`, 'success');
+      await this.refreshStats();
+    } catch (error) {
+      this.addOutput(`Failed to delete backup: ${error}`, 'error');
+    }
+  }
+
+  async openBackupFolder(): Promise<void> {
+    await this.wails.openBackupFolder();
+  }
+
+  formatBytes(bytes: number): string {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   }
 
   private setCommandStatus(name: string, running: boolean, success: boolean | null = null): void {

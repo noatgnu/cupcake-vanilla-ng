@@ -75,6 +75,14 @@ func (t *TestAPI) Start(port int) {
 	mux.HandleFunc("/test/ui/management/command-status", t.handleUIManagementGetCommandStatus)
 	mux.HandleFunc("/test/ui/management/wait-for-command", t.handleUIManagementWaitForCommand)
 
+	mux.HandleFunc("/test/backup/create-database", t.handleBackupCreateDatabase)
+	mux.HandleFunc("/test/backup/create-media", t.handleBackupCreateMedia)
+	mux.HandleFunc("/test/backup/create-full", t.handleBackupCreateFull)
+	mux.HandleFunc("/test/backup/restore-database", t.handleBackupRestoreDatabase)
+	mux.HandleFunc("/test/backup/restore-media", t.handleBackupRestoreMedia)
+	mux.HandleFunc("/test/backup/list", t.handleBackupList)
+	mux.HandleFunc("/test/backup/delete", t.handleBackupDelete)
+
 	addr := fmt.Sprintf("127.0.0.1:%d", port)
 	log.Printf("[TestAPI] Starting test API server on %s", addr)
 
@@ -1294,5 +1302,189 @@ func (t *TestAPI) handleUIManagementWaitForCommand(w http.ResponseWriter, r *htt
 		"started": true,
 		"command": req.Command,
 		"timeout": req.Timeout,
+	})
+}
+
+func (t *TestAPI) handleBackupCreateDatabase(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	log.Println("[TestAPI] Creating database backup...")
+	err := t.app.CreateDatabaseBackup()
+
+	w.Header().Set("Content-Type", "application/json")
+	if err != nil {
+		log.Printf("[TestAPI] Database backup error: %v", err)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"success": false,
+			"message": err.Error(),
+		})
+		return
+	}
+
+	log.Println("[TestAPI] Database backup completed")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"success": true,
+		"message": "Database backup created",
+	})
+}
+
+func (t *TestAPI) handleBackupCreateMedia(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	log.Println("[TestAPI] Creating media backup...")
+	err := t.app.CreateMediaBackup()
+
+	w.Header().Set("Content-Type", "application/json")
+	if err != nil {
+		log.Printf("[TestAPI] Media backup error: %v", err)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"success": false,
+			"message": err.Error(),
+		})
+		return
+	}
+
+	log.Println("[TestAPI] Media backup completed")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"success": true,
+		"message": "Media backup created",
+	})
+}
+
+func (t *TestAPI) handleBackupCreateFull(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	log.Println("[TestAPI] Creating full backup...")
+	err := t.app.CreateFullBackup()
+
+	w.Header().Set("Content-Type", "application/json")
+	if err != nil {
+		log.Printf("[TestAPI] Full backup error: %v", err)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"success": false,
+			"message": err.Error(),
+		})
+		return
+	}
+
+	log.Println("[TestAPI] Full backup completed")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"success": true,
+		"message": "Full backup created",
+	})
+}
+
+func (t *TestAPI) handleBackupRestoreDatabase(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	log.Println("[TestAPI] Restoring database...")
+	err := t.app.RestoreDatabase()
+
+	w.Header().Set("Content-Type", "application/json")
+	if err != nil {
+		log.Printf("[TestAPI] Database restore error: %v", err)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"success": false,
+			"message": err.Error(),
+		})
+		return
+	}
+
+	log.Println("[TestAPI] Database restored")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"success": true,
+		"message": "Database restored",
+	})
+}
+
+func (t *TestAPI) handleBackupRestoreMedia(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	log.Println("[TestAPI] Restoring media...")
+	err := t.app.RestoreMedia()
+
+	w.Header().Set("Content-Type", "application/json")
+	if err != nil {
+		log.Printf("[TestAPI] Media restore error: %v", err)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"success": false,
+			"message": err.Error(),
+		})
+		return
+	}
+
+	log.Println("[TestAPI] Media restored")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"success": true,
+		"message": "Media restored",
+	})
+}
+
+func (t *TestAPI) handleBackupList(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	backups, err := t.app.ListBackups()
+	if err != nil {
+		log.Printf("[TestAPI] List backups error: %v", err)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"backups": []interface{}{},
+			"error":   err.Error(),
+		})
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"backups": backups,
+		"count":   len(backups),
+	})
+}
+
+func (t *TestAPI) handleBackupDelete(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req struct {
+		Path string `json:"path"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	log.Printf("[TestAPI] Deleting backup: %s", req.Path)
+	err := t.app.DeleteBackup(req.Path)
+
+	w.Header().Set("Content-Type", "application/json")
+	if err != nil {
+		log.Printf("[TestAPI] Delete backup error: %v", err)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"success": false,
+			"message": err.Error(),
+		})
+		return
+	}
+
+	log.Println("[TestAPI] Backup deleted")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"success": true,
+		"message": "Backup deleted",
 	})
 }

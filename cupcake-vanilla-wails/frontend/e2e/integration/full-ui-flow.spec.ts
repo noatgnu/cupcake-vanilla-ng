@@ -406,4 +406,76 @@ test.describe('Full UI Integration: Complete User Flow', () => {
 
     console.log('Distribution info:', JSON.stringify(info, null, 2));
   });
+
+  test('step 13: open management panel', async () => {
+    console.log('Opening management panel...');
+    await callTestAPI('/test/ui/open-management', 'POST');
+
+    const windowOpen = await waitForWindowOpen('management', 10000);
+    expect(windowOpen).toBe(true);
+    console.log('Management panel opened');
+
+    await new Promise(resolve => setTimeout(resolve, 2000));
+  });
+
+  test('step 14: create database backup', async () => {
+    console.log('Creating database backup...');
+    const result = await callTestAPI('/test/backup/create-database', 'POST') as { success: boolean; message?: string };
+
+    expect(result.success).toBe(true);
+    console.log('Database backup created');
+
+    await new Promise(resolve => setTimeout(resolve, 2000));
+  });
+
+  test('step 15: create media backup', async () => {
+    console.log('Creating media backup...');
+    const result = await callTestAPI('/test/backup/create-media', 'POST') as { success: boolean; message?: string };
+
+    expect(result.success).toBe(true);
+    console.log('Media backup created');
+
+    await new Promise(resolve => setTimeout(resolve, 2000));
+  });
+
+  test('step 16: list backups', async () => {
+    console.log('Listing backups...');
+    const backups = await callTestAPI('/test/backup/list') as { backups: Array<{ name: string; type: string; size: number }> };
+
+    expect(backups.backups.length).toBeGreaterThan(0);
+
+    const dbBackups = backups.backups.filter(b => b.type === 'database');
+    const mediaBackups = backups.backups.filter(b => b.type === 'media');
+
+    console.log(`Found ${dbBackups.length} database backups and ${mediaBackups.length} media backups`);
+    expect(dbBackups.length).toBeGreaterThanOrEqual(1);
+    expect(mediaBackups.length).toBeGreaterThanOrEqual(1);
+  });
+
+  test('step 17: restore database from backup', async () => {
+    console.log('Restoring database from backup...');
+    const result = await callTestAPI('/test/backup/restore-database', 'POST') as { success: boolean; message?: string };
+
+    expect(result.success).toBe(true);
+    console.log('Database restored');
+
+    await new Promise(resolve => setTimeout(resolve, 2000));
+  });
+
+  test('step 18: restore media from backup', async () => {
+    console.log('Restoring media from backup...');
+    const result = await callTestAPI('/test/backup/restore-media', 'POST') as { success: boolean; message?: string };
+
+    expect(result.success).toBe(true);
+    console.log('Media restored');
+
+    await new Promise(resolve => setTimeout(resolve, 2000));
+  });
+
+  test('step 19: verify backend still works after restore', async () => {
+    console.log('Verifying backend still works after restore...');
+    const ready = await waitForBackendReady(30000);
+    expect(ready).toBe(true);
+    console.log('Backend verified working after restore');
+  });
 });

@@ -72,6 +72,32 @@ export interface LoadOntologiesOptions {
   types?: string[];
 }
 
+export interface BackupInfo {
+  name: string;
+  path: string;
+  size: number;
+  createdAt: string;
+  type: string;
+}
+
+export interface UpdateInfo {
+  updateAvailable: boolean;
+  currentVersion: string;
+  latestVersion: string;
+  latestName: string;
+  publishedAt: string;
+  hasPortable: boolean;
+  message: string;
+}
+
+export interface UpdateResult {
+  success: boolean;
+  message: string;
+  previousVersion: string;
+  newVersion: string;
+  backupCreated: boolean;
+}
+
 type EventCallback = (event: { name: string; data: unknown }) => void;
 
 const PLAYWRIGHT_MOCK_NAMESPACE = '__playwrightWailsMock__';
@@ -277,6 +303,21 @@ export class WailsService {
     return App.CreateSuperuser(username, email, password);
   }
 
+  async listUsers(): Promise<string[]> {
+    if (!this.isWails) return [];
+    return App.ListUsers();
+  }
+
+  async resetPassword(username: string, newPassword: string): Promise<void> {
+    if (!this.isWails) return;
+    return App.ResetPassword(username, newPassword);
+  }
+
+  closePasswordResetWindow(): void {
+    if (!this.isWails) return;
+    App.ClosePasswordResetWindow();
+  }
+
   async runSyncSchemas(options: SyncSchemasOptions = {}): Promise<void> {
     if (!this.isWails) return;
     return App.RunSyncSchemas({ force: options.force ?? false });
@@ -397,5 +438,66 @@ export class WailsService {
   resetDownloadProgress(): void {
     this._downloadProgress.set(null);
     this._downloadComplete.set(null);
+  }
+
+  async createDatabaseBackup(): Promise<void> {
+    if (!this.isWails) return;
+    return App.CreateDatabaseBackup();
+  }
+
+  async createMediaBackup(): Promise<void> {
+    if (!this.isWails) return;
+    return App.CreateMediaBackup();
+  }
+
+  async createFullBackup(): Promise<void> {
+    if (!this.isWails) return;
+    return App.CreateFullBackup();
+  }
+
+  async restoreDatabase(): Promise<void> {
+    if (!this.isWails) return;
+    return App.RestoreDatabase();
+  }
+
+  async restoreMedia(): Promise<void> {
+    if (!this.isWails) return;
+    return App.RestoreMedia();
+  }
+
+  async listBackups(): Promise<BackupInfo[]> {
+    if (!this.isWails) return [];
+    const result = await App.ListBackups();
+    return result as unknown as BackupInfo[];
+  }
+
+  async deleteBackup(backupPath: string): Promise<void> {
+    if (!this.isWails) return;
+    return App.DeleteBackup(backupPath);
+  }
+
+  async openBackupFolder(): Promise<void> {
+    if (!this.isWails) return;
+    return App.OpenBackupFolder();
+  }
+
+  async checkForBackendUpdates(): Promise<UpdateInfo | null> {
+    if (!this.isWails) return null;
+    return App.CheckForBackendUpdates();
+  }
+
+  async updateBackend(version: string, createBackup: boolean): Promise<UpdateResult | null> {
+    if (!this.isWails) return null;
+    return App.UpdateBackend(version, createBackup);
+  }
+
+  async getCurrentBackendVersion(): Promise<string> {
+    if (!this.isWails) return 'unknown';
+    return App.GetCurrentBackendVersion();
+  }
+
+  async rollbackBackend(): Promise<void> {
+    if (!this.isWails) return;
+    return App.RollbackBackend();
   }
 }

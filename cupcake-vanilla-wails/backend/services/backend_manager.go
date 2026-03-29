@@ -59,9 +59,31 @@ func (b *BackendManager) RunMigrations(backendDir, pythonPath string) error {
 	b.log("Running Django migrations...", "info")
 
 	managePy := filepath.Join(backendDir, "manage.py")
-	cmd := exec.Command(pythonPath, managePy, "migrate", "--no-input")
+
+	var cmd *exec.Cmd
+	if runtime.GOOS == "windows" {
+		wrapperScript := `
+import sys
+import multiprocessing
+
+_original_get_context = multiprocessing.get_context
+def _patched_get_context(method=None):
+    if method == 'fork':
+        return _original_get_context('spawn')
+    return _original_get_context(method)
+multiprocessing.get_context = _patched_get_context
+
+import runpy
+sys.argv = ['manage.py', 'migrate', '--no-input']
+runpy.run_path('manage.py', run_name='__main__')
+`
+		cmd = exec.Command(pythonPath, "-c", wrapperScript)
+	} else {
+		cmd = exec.Command(pythonPath, managePy, "migrate", "--no-input")
+	}
 	cmd.Dir = backendDir
 	cmd.Env = b.getBackendEnv(backendDir)
+	hideWindow(cmd)
 
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -77,9 +99,31 @@ func (b *BackendManager) CollectStaticFiles(backendDir, pythonPath string) error
 	b.log("Collecting static files...", "info")
 
 	managePy := filepath.Join(backendDir, "manage.py")
-	cmd := exec.Command(pythonPath, managePy, "collectstatic", "--no-input")
+
+	var cmd *exec.Cmd
+	if runtime.GOOS == "windows" {
+		wrapperScript := `
+import sys
+import multiprocessing
+
+_original_get_context = multiprocessing.get_context
+def _patched_get_context(method=None):
+    if method == 'fork':
+        return _original_get_context('spawn')
+    return _original_get_context(method)
+multiprocessing.get_context = _patched_get_context
+
+import runpy
+sys.argv = ['manage.py', 'collectstatic', '--no-input']
+runpy.run_path('manage.py', run_name='__main__')
+`
+		cmd = exec.Command(pythonPath, "-c", wrapperScript)
+	} else {
+		cmd = exec.Command(pythonPath, managePy, "collectstatic", "--no-input")
+	}
 	cmd.Dir = backendDir
 	cmd.Env = b.getBackendEnv(backendDir)
+	hideWindow(cmd)
 
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -113,15 +157,48 @@ func (b *BackendManager) StartDjangoServer(backendDir, pythonPath string) error 
 
 	var cmd *exec.Cmd
 	if b.isDev {
-		cmd = exec.Command(pythonPath, managePy, "runserver", fmt.Sprintf("0.0.0.0:%d", availablePort))
+		if runtime.GOOS == "windows" {
+			wrapperScript := fmt.Sprintf(`
+import sys
+import multiprocessing
+
+_original_get_context = multiprocessing.get_context
+def _patched_get_context(method=None):
+    if method == 'fork':
+        return _original_get_context('spawn')
+    return _original_get_context(method)
+multiprocessing.get_context = _patched_get_context
+
+import runpy
+sys.argv = ['manage.py', 'runserver', '0.0.0.0:%d']
+runpy.run_path('manage.py', run_name='__main__')
+`, availablePort)
+			cmd = exec.Command(pythonPath, "-c", wrapperScript)
+		} else {
+			cmd = exec.Command(pythonPath, managePy, "runserver", fmt.Sprintf("0.0.0.0:%d", availablePort))
+		}
 	} else {
 		if runtime.GOOS == "windows" {
-			cmd = exec.Command(pythonPath, "-m", "waitress",
-				"--host=0.0.0.0",
-				fmt.Sprintf("--port=%d", availablePort),
-				"--threads=4",
-				"cupcake_vanilla.wsgi:application",
-			)
+			wrapperScript := fmt.Sprintf(`
+import sys
+import multiprocessing
+
+_original_get_context = multiprocessing.get_context
+def _patched_get_context(method=None):
+    if method == 'fork':
+        return _original_get_context('spawn')
+    return _original_get_context(method)
+multiprocessing.get_context = _patched_get_context
+
+import uvicorn
+uvicorn.run(
+    'cupcake_vanilla.asgi_wails:application',
+    host='0.0.0.0',
+    port=%d,
+    workers=1,
+)
+`, availablePort)
+			cmd = exec.Command(pythonPath, "-c", wrapperScript)
 		} else {
 			cmd = exec.Command(pythonPath, "-m", "gunicorn",
 				"--bind", fmt.Sprintf("0.0.0.0:%d", availablePort),
@@ -135,6 +212,7 @@ func (b *BackendManager) StartDjangoServer(backendDir, pythonPath string) error 
 
 	cmd.Dir = backendDir
 	cmd.Env = b.getBackendEnv(backendDir)
+	hideWindow(cmd)
 
 	stdout, _ := cmd.StdoutPipe()
 	stderr, _ := cmd.StderrPipe()
@@ -168,14 +246,17 @@ func (b *BackendManager) StartDjangoServer(backendDir, pythonPath string) error 
 		b.gunicornProcess = nil
 	}()
 
-	time.Sleep(2 * time.Second)
-
-	if !b.IsDjangoRunning() {
-		return fmt.Errorf("Django server failed to start")
+	maxRetries := 10
+	for i := 0; i < maxRetries; i++ {
+		time.Sleep(time.Second)
+		if b.IsDjangoRunning() {
+			b.log(fmt.Sprintf("Django server started on port %d", availablePort), "success")
+			return nil
+		}
+		b.log(fmt.Sprintf("Waiting for Django server to start (attempt %d/%d)...", i+1, maxRetries), "info")
 	}
 
-	b.log(fmt.Sprintf("Django server started on port %d", availablePort), "success")
-	return nil
+	return fmt.Errorf("Django server failed to start after %d attempts", maxRetries)
 }
 
 func (b *BackendManager) StartRQWorker(backendDir, pythonPath string) error {
@@ -187,9 +268,31 @@ func (b *BackendManager) StartRQWorker(backendDir, pythonPath string) error {
 	}
 
 	managePy := filepath.Join(backendDir, "manage.py")
-	cmd := exec.Command(pythonPath, managePy, "rqworker", "default", "high", "low")
+
+	var cmd *exec.Cmd
+	if runtime.GOOS == "windows" {
+		wrapperScript := `
+import sys
+import multiprocessing
+
+_original_get_context = multiprocessing.get_context
+def _patched_get_context(method=None):
+    if method == 'fork':
+        return _original_get_context('spawn')
+    return _original_get_context(method)
+multiprocessing.get_context = _patched_get_context
+
+import runpy
+sys.argv = ['manage.py', 'rqworker', 'default', 'high', 'low']
+runpy.run_path('manage.py', run_name='__main__')
+`
+		cmd = exec.Command(pythonPath, "-c", wrapperScript)
+	} else {
+		cmd = exec.Command(pythonPath, managePy, "rqworker", "default", "high", "low")
+	}
 	cmd.Dir = backendDir
 	cmd.Env = b.getBackendEnv(backendDir)
+	hideWindow(cmd)
 
 	stdout, _ := cmd.StdoutPipe()
 	stderr, _ := cmd.StderrPipe()
@@ -345,10 +448,42 @@ func (b *BackendManager) RunManagementCommand(backendDir, pythonPath, command st
 	b.log(fmt.Sprintf("Running management command: %s", command), "info")
 
 	managePy := filepath.Join(backendDir, "manage.py")
-	cmdArgs := append([]string{managePy, command}, args...)
-	cmd := exec.Command(pythonPath, cmdArgs...)
+
+	var cmd *exec.Cmd
+	if runtime.GOOS == "windows" {
+		allArgs := append([]string{command}, args...)
+		argsStr := "["
+		for i, arg := range allArgs {
+			if i > 0 {
+				argsStr += ", "
+			}
+			argsStr += fmt.Sprintf("'%s'", strings.ReplaceAll(arg, "'", "\\'"))
+		}
+		argsStr += "]"
+
+		wrapperScript := fmt.Sprintf(`
+import sys
+import multiprocessing
+
+_original_get_context = multiprocessing.get_context
+def _patched_get_context(method=None):
+    if method == 'fork':
+        return _original_get_context('spawn')
+    return _original_get_context(method)
+multiprocessing.get_context = _patched_get_context
+
+import runpy
+sys.argv = ['manage.py'] + %s
+runpy.run_path('manage.py', run_name='__main__')
+`, argsStr)
+		cmd = exec.Command(pythonPath, "-c", wrapperScript)
+	} else {
+		cmdArgs := append([]string{managePy, command}, args...)
+		cmd = exec.Command(pythonPath, cmdArgs...)
+	}
 	cmd.Dir = backendDir
 	cmd.Env = b.getBackendEnv(backendDir)
+	hideWindow(cmd)
 
 	stdout, _ := cmd.StdoutPipe()
 	stderr, _ := cmd.StderrPipe()
@@ -357,27 +492,38 @@ func (b *BackendManager) RunManagementCommand(backendDir, pythonPath, command st
 		return fmt.Errorf("failed to start command: %w", err)
 	}
 
-	go func() {
-		scanner := bufio.NewScanner(stdout)
-		for scanner.Scan() {
-			line := scanner.Text()
-			b.log(line, "info")
-			if outputCallback != nil {
-				outputCallback(line, false)
+	readOutput := func(reader *bufio.Reader, isError bool) {
+		var lineBuffer strings.Builder
+		for {
+			char, err := reader.ReadByte()
+			if err != nil {
+				if lineBuffer.Len() > 0 {
+					line := lineBuffer.String()
+					b.log(line, map[bool]string{true: "error", false: "info"}[isError])
+					if outputCallback != nil {
+						outputCallback(line, isError)
+					}
+				}
+				break
 			}
-		}
-	}()
 
-	go func() {
-		scanner := bufio.NewScanner(stderr)
-		for scanner.Scan() {
-			line := scanner.Text()
-			b.log(line, "error")
-			if outputCallback != nil {
-				outputCallback(line, true)
+			if char == '\n' || char == '\r' {
+				if lineBuffer.Len() > 0 {
+					line := lineBuffer.String()
+					b.log(line, map[bool]string{true: "error", false: "info"}[isError])
+					if outputCallback != nil {
+						outputCallback(line, isError)
+					}
+					lineBuffer.Reset()
+				}
+			} else {
+				lineBuffer.WriteByte(char)
 			}
 		}
-	}()
+	}
+
+	go readOutput(bufio.NewReader(stdout), false)
+	go readOutput(bufio.NewReader(stderr), true)
 
 	if err := cmd.Wait(); err != nil {
 		return fmt.Errorf("command failed: %w", err)
@@ -395,10 +541,16 @@ func (b *BackendManager) KillOrphanedProcesses() {
 	}
 
 	if runtime.GOOS == "windows" {
-		exec.Command("taskkill", "/F", "/IM", "waitress.exe").Run()
+		cmd := exec.Command("taskkill", "/F", "/IM", "python.exe")
+		hideWindow(cmd)
+		cmd.Run()
 	} else {
-		exec.Command("pkill", "-f", "gunicorn.*catapult").Run()
-		exec.Command("pkill", "-f", "rqworker").Run()
+		cmd1 := exec.Command("pkill", "-f", "gunicorn.*catapult")
+		hideWindow(cmd1)
+		cmd1.Run()
+		cmd2 := exec.Command("pkill", "-f", "rqworker")
+		hideWindow(cmd2)
+		cmd2.Run()
 	}
 }
 
@@ -417,20 +569,68 @@ func (b *BackendManager) GetOntologyCounts(backendDir, pythonPath string) (map[s
 
 	managePy := filepath.Join(backendDir, "manage.py")
 	script := `
-from ccv.models import PSIMSOntology, CellOntology, MondoDisease, UberonAnatomy
+from ccv.models import (
+    PSIMSOntology, CellOntology, MondoDisease, UberonAnatomy,
+    Species, Unimod, Tissue, MSUniqueVocabularies,
+    HumanDisease, SubcellularLocation, NCBITaxonomy, ChEBICompound
+)
 psims_count = PSIMSOntology.objects.count()
 cell_count = CellOntology.objects.count()
 mondo_count = MondoDisease.objects.count()
 uberon_count = UberonAnatomy.objects.count()
+species_count = Species.objects.count()
+unimod_count = Unimod.objects.count()
+tissue_count = Tissue.objects.count()
+ms_vocab_count = MSUniqueVocabularies.objects.count()
+human_disease_count = HumanDisease.objects.count()
+subcellular_count = SubcellularLocation.objects.count()
+ncbi_count = NCBITaxonomy.objects.count()
+chebi_count = ChEBICompound.objects.count()
+total = (psims_count + cell_count + mondo_count + uberon_count +
+         species_count + unimod_count + tissue_count + ms_vocab_count +
+         human_disease_count + subcellular_count + ncbi_count + chebi_count)
 print(f'psims:{psims_count}')
 print(f'cell:{cell_count}')
 print(f'mondo:{mondo_count}')
 print(f'uberon:{uberon_count}')
-print(f'total:{psims_count + cell_count + mondo_count + uberon_count}')
+print(f'species:{species_count}')
+print(f'unimod:{unimod_count}')
+print(f'tissue:{tissue_count}')
+print(f'msVocab:{ms_vocab_count}')
+print(f'humanDisease:{human_disease_count}')
+print(f'subcellularLoc:{subcellular_count}')
+print(f'ncbi:{ncbi_count}')
+print(f'chebi:{chebi_count}')
+print(f'total:{total}')
 `
-	cmd := exec.Command(pythonPath, managePy, "shell", "--no-startup", "-c", script)
+
+	var cmd *exec.Cmd
+	if runtime.GOOS == "windows" {
+		escapedScript := strings.ReplaceAll(script, "'", "\\'")
+		escapedScript = strings.ReplaceAll(escapedScript, "\n", "\\n")
+
+		wrapperScript := fmt.Sprintf(`
+import sys
+import multiprocessing
+
+_original_get_context = multiprocessing.get_context
+def _patched_get_context(method=None):
+    if method == 'fork':
+        return _original_get_context('spawn')
+    return _original_get_context(method)
+multiprocessing.get_context = _patched_get_context
+
+import runpy
+sys.argv = ['manage.py', 'shell', '--no-startup', '-c', '''%s''']
+runpy.run_path('manage.py', run_name='__main__')
+`, escapedScript)
+		cmd = exec.Command(pythonPath, "-c", wrapperScript)
+	} else {
+		cmd = exec.Command(pythonPath, managePy, "shell", "--no-startup", "-c", script)
+	}
 	cmd.Dir = backendDir
 	cmd.Env = b.getBackendEnv(backendDir)
+	hideWindow(cmd)
 
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -439,7 +639,10 @@ print(f'total:{psims_count + cell_count + mondo_count + uberon_count}')
 	}
 
 	validOntologies := map[string]bool{
-		"psims": true, "cell": true, "mondo": true, "uberon": true, "total": true,
+		"psims": true, "cell": true, "mondo": true, "uberon": true,
+		"species": true, "unimod": true, "tissue": true, "msVocab": true,
+		"humanDisease": true, "subcellularLoc": true, "ncbi": true, "chebi": true,
+		"total": true,
 	}
 
 	lines := strings.Split(strings.TrimSpace(string(output)), "\n")
@@ -459,9 +662,35 @@ print(f'total:{psims_count + cell_count + mondo_count + uberon_count}')
 
 func (b *BackendManager) runDjangoShellCommand(backendDir, pythonPath, script string) (int, error) {
 	managePy := filepath.Join(backendDir, "manage.py")
-	cmd := exec.Command(pythonPath, managePy, "shell", "--no-startup", "-c", script)
+
+	var cmd *exec.Cmd
+	if runtime.GOOS == "windows" {
+		escapedScript := strings.ReplaceAll(script, "\\", "\\\\")
+		escapedScript = strings.ReplaceAll(escapedScript, "'", "\\'")
+		escapedScript = strings.ReplaceAll(escapedScript, "\n", "\\n")
+
+		wrapperScript := fmt.Sprintf(`
+import sys
+import multiprocessing
+
+_original_get_context = multiprocessing.get_context
+def _patched_get_context(method=None):
+    if method == 'fork':
+        return _original_get_context('spawn')
+    return _original_get_context(method)
+multiprocessing.get_context = _patched_get_context
+
+import runpy
+sys.argv = ['manage.py', 'shell', '--no-startup', '-c', '%s']
+runpy.run_path('manage.py', run_name='__main__')
+`, escapedScript)
+		cmd = exec.Command(pythonPath, "-c", wrapperScript)
+	} else {
+		cmd = exec.Command(pythonPath, managePy, "shell", "--no-startup", "-c", script)
+	}
 	cmd.Dir = backendDir
 	cmd.Env = b.getBackendEnv(backendDir)
+	hideWindow(cmd)
 
 	b.log(fmt.Sprintf("Running Django shell: python=%s, manage.py=%s", pythonPath, managePy), "info")
 

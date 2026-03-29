@@ -82,6 +82,7 @@ func newDualSPAHandler(setupFS fs.FS, mainAppFS fs.FS) http.Handler {
 		"/debug":               true,
 		"/downloader":          true,
 		"/superuser-creation":  true,
+		"/password-reset":      true,
 	}
 
 	isStaticAsset := func(path string) bool {
@@ -232,6 +233,9 @@ func createApplicationMenu(app *App) *application.Menu {
 	managementMenu.Add("Backend Setup").OnClick(func(ctx *application.Context) {
 		app.OpenBackendSetupPanel()
 	})
+	managementMenu.Add("Reset Password").OnClick(func(ctx *application.Context) {
+		app.OpenPasswordResetPanel()
+	})
 	managementMenu.AddSeparator()
 	managementMenu.Add("Open User Data Folder").OnClick(func(ctx *application.Context) {
 		app.OpenUserDataFolder()
@@ -301,6 +305,7 @@ func main() {
 	app.SetApplication(wailsApp)
 
 	appMenu := createApplicationMenu(app)
+	app.SetAppMenu(appMenu)
 	wailsApp.Menu.SetApplicationMenu(appMenu)
 
 	testAPI := NewTestAPI(app)

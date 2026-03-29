@@ -1,123 +1,85 @@
-<div class="cupcake-container setup-layout">
-  <header class="panel-header">
-    <h1 class="cupcake-title">System Provisioning</h1>
-    <p class="cupcake-subtitle">Finalizing environment configuration for Cupcake Vanilla</p>
+<div class="setup-layout">
+  <header class="setup-header">
+    <h1 class="title">System Provisioning</h1>
   </header>
 
-  <main class="panel-main">
-    <div class="setup-grid">
-      <aside class="progress-sidebar">
-        <div class="phase-stepper">
-          @for (phase of phases; track phase.id; let i = $index) {
-            <div
-              class="step-item"
-              [class.active]="currentPhase() === phase.id"
-              [class.completed]="isPhaseCompleted(phase.id)"
-            >
-              <div class="step-marker">
-                @if (isPhaseCompleted(phase.id)) {
-                  <i class="bi bi-check-lg"></i>
-                } @else if (currentPhase() === phase.id) {
-                  <div class="spinner-tiny"></div>
-                } @else {
-                  {{ i + 1 }}
-                }
-              </div>
-              <div class="step-content">
-                <span class="step-name">{{ phase.name }}</span>
-                <span class="step-desc">{{ phase.description }}</span>
-              </div>
-              @if (i < phases.length - 1) {
-                <div class="step-connector"></div>
-              }
-            </div>
-          }
+  <main class="setup-main">
+    <aside class="phase-list">
+      @for (phase of phases; track phase.id; let i = $index) {
+        <div class="phase-item" [class.active]="currentPhase() === phase.id" [class.completed]="isPhaseCompleted(phase.id)">
+          <span class="phase-marker">
+            @if (isPhaseCompleted(phase.id)) {
+              <i class="bi bi-check-lg"></i>
+            } @else if (currentPhase() === phase.id) {
+              <div class="spinner"></div>
+            } @else {
+              {{ i + 1 }}
+            }
+          </span>
+          <span class="phase-name">{{ phase.name }}</span>
         </div>
-      </aside>
+      }
+    </aside>
 
-      <section class="phase-display cupcake-card">
-        @switch (currentPhase()) {
-          @case ('check') {
-            <div class="phase-inner animate-fade-in">
-              <div class="spinner-large"></div>
-              <h3 class="phase-title">Requirements Check</h3>
-              <p class="phase-text">Validating system architecture and permissions...</p>
-            </div>
-          }
-          @case ('download-backend') {
-            <div class="phase-inner animate-fade-in">
-              <div class="illustration"><i class="bi bi-box-seam"></i></div>
-              <h3 class="phase-title">Backend Distribution</h3>
-              <p class="phase-text">Fetching core application binaries...</p>
-              @if (downloadProgress()) {
-                <div class="phase-progress-container">
-                  <div class="cupcake-progress-bar">
-                    <div class="progress-fill" [style.width.%]="downloadProgress()?.percentage || 0"></div>
-                  </div>
-                  <div class="progress-meta">
-                    <span>{{ downloadProgress()?.percentage }}%</span>
-                    <span>{{ formatSpeed(downloadProgress()?.speed || 0) }}</span>
-                  </div>
-                </div>
-              }
-            </div>
-          }
-          @case ('python-select') {
-            <div class="phase-inner animate-fade-in">
-              <div class="illustration"><i class="bi bi-cpu"></i></div>
-              <h3 class="phase-title">Environment Linking</h3>
-              <p class="phase-text">Configuring Python runtime hooks...</p>
-            </div>
-          }
-          @case ('download-valkey') {
-            <div class="phase-inner animate-fade-in">
-              <div class="illustration"><i class="bi bi-lightning-charge"></i></div>
-              <h3 class="phase-title">Core Services</h3>
-              <p class="phase-text">Downloading high-performance cache server...</p>
-              @if (downloadProgress()) {
-                <div class="phase-progress-container">
-                  <div class="cupcake-progress-bar">
-                    <div class="progress-fill" [style.width.%]="downloadProgress()?.percentage || 0"></div>
-                  </div>
-                  <div class="progress-meta">
-                    <span>{{ downloadProgress()?.percentage }}%</span>
-                    <span>{{ formatSpeed(downloadProgress()?.speed || 0) }}</span>
-                  </div>
-                </div>
-              }
-            </div>
-          }
-          @case ('services') {
-            <div class="phase-inner animate-fade-in">
-              <div class="spinner-large"></div>
-              <h3 class="phase-title">Bootstrapping</h3>
-              <p class="phase-text">{{ statusMessage() }}</p>
-            </div>
-          }
-          @case ('complete') {
-            <div class="phase-inner animate-fade-in">
-              <div class="success-ring">
-                <i class="bi bi-stars"></i>
-              </div>
-              <h3 class="phase-title">Ready for Launch</h3>
-              <p class="phase-text">The environment has been successfully provisioned.</p>
-            </div>
-          }
+    <section class="phase-content">
+      @switch (currentPhase()) {
+        @case ('check') {
+          <div class="phase-display">
+            <div class="spinner-lg"></div>
+            <span class="phase-msg">Validating system...</span>
+          </div>
         }
-      </section>
-    </div>
+        @case ('download-backend') {
+          <div class="phase-display">
+            <i class="bi bi-box-seam phase-icon"></i>
+            <span class="phase-msg">Fetching backend...</span>
+            @if (downloadProgress()) {
+              <div class="progress-bar">
+                <div class="progress-fill" [style.width.%]="downloadProgress()?.percentage || 0"></div>
+              </div>
+              <span class="progress-text">{{ downloadProgress()?.percentage }}% · {{ formatSpeed(downloadProgress()?.speed || 0) }}</span>
+            }
+          </div>
+        }
+        @case ('python-select') {
+          <div class="phase-display">
+            <i class="bi bi-cpu phase-icon"></i>
+            <span class="phase-msg">Configuring Python...</span>
+          </div>
+        }
+        @case ('download-valkey') {
+          <div class="phase-display">
+            <i class="bi bi-lightning-charge phase-icon"></i>
+            <span class="phase-msg">Downloading cache server...</span>
+            @if (downloadProgress()) {
+              <div class="progress-bar">
+                <div class="progress-fill" [style.width.%]="downloadProgress()?.percentage || 0"></div>
+              </div>
+              <span class="progress-text">{{ downloadProgress()?.percentage }}% · {{ formatSpeed(downloadProgress()?.speed || 0) }}</span>
+            }
+          </div>
+        }
+        @case ('services') {
+          <div class="phase-display">
+            <div class="spinner-lg"></div>
+            <span class="phase-msg">{{ statusMessage() }}</span>
+          </div>
+        }
+        @case ('complete') {
+          <div class="phase-display">
+            <i class="bi bi-check-circle-fill phase-icon success"></i>
+            <span class="phase-msg">Ready</span>
+          </div>
+        }
+      }
+    </section>
   </main>
 
   @if (error()) {
-    <footer class="error-banner">
-      <i class="bi bi-exclamation-triangle-fill banner-icon"></i>
-      <div class="banner-body">
-        <span class="banner-label">Provisioning Error</span>
-        <span class="banner-msg">{{ error() }}</span>
-      </div>
-      <button class="cupcake-btn danger" (click)="retry()">
-        Retry Stage
-      </button>
+    <footer class="error-bar">
+      <i class="bi bi-exclamation-triangle"></i>
+      <span class="error-msg">{{ error() }}</span>
+      <button class="btn-retry" (click)="retry()">Retry</button>
     </footer>
   }
 </div>

@@ -1,182 +1,108 @@
-<div class="cupcake-container management-layout">
+<div class="management-layout">
   <header class="panel-header">
-    <h1 class="cupcake-title">System Management</h1>
-    <p class="cupcake-subtitle">Orchestrate backend services and monitor data integrity</p>
+    <h1 class="title">System Management</h1>
+    <div class="spacer"></div>
+    <span class="status-dot"></span>
+    <span class="status-text">Port 8000</span>
+    <button class="btn-sm" (click)="refreshStats()">Refresh</button>
   </header>
 
   <main class="panel-main">
-    <div class="dashboard-grid">
-      <aside class="stats-sidebar">
-        <h2 class="section-title">Data Warehouse</h2>
-        <div class="stats-cards">
-          <div class="cupcake-card stat-card">
-            <span class="stat-icon"><i class="bi bi-bar-chart"></i></span>
-            <div class="stat-body">
-              <span class="stat-value">{{ schemaCount() }}</span>
-              <span class="stat-label">SDRF Schemas</span>
-            </div>
-          </div>
+    <aside class="stats-col">
+      <div class="stat-row">
+        <i class="bi bi-bar-chart"></i>
+        <span class="stat-val">{{ schemaCount() }}</span>
+        <span class="stat-lbl">Schemas</span>
+      </div>
+      <div class="stat-row">
+        <i class="bi bi-card-checklist"></i>
+        <span class="stat-val">{{ columnTemplateCount() }}</span>
+        <span class="stat-lbl">Templates</span>
+      </div>
+      <div class="stat-row primary">
+        <i class="bi bi-dna"></i>
+        <span class="stat-val">{{ ontologyTotal() }}</span>
+        <span class="stat-lbl">Ontologies</span>
+      </div>
+      <div class="ontology-list">
+        @for (item of ontologyBreakdown(); track item.name) {
+          <span class="ont-item">{{ item.name }}: {{ item.count | number }}</span>
+        }
+      </div>
+    </aside>
 
-          <div class="cupcake-card stat-card">
-            <span class="stat-icon"><i class="bi bi-card-checklist"></i></span>
-            <div class="stat-body">
-              <span class="stat-value">{{ columnTemplateCount() }}</span>
-              <span class="stat-label">Column Templates</span>
-            </div>
-          </div>
-
-          <div class="cupcake-card stat-card primary">
-            <span class="stat-icon"><i class="bi bi-dna"></i></span>
-            <div class="stat-body">
-              <span class="stat-value">{{ ontologyTotal() }}</span>
-              <span class="stat-label">Ontology Terms</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="cupcake-card ontology-box">
-          <h3 class="box-title">Ontology Breakdown</h3>
-          <div class="ontology-grid">
-            @for (item of ontologyBreakdown(); track item.name) {
-              <div class="ontology-pill">
-                <span class="pill-name">{{ item.name }}</span>
-                <span class="pill-divider"></span>
-                <span class="pill-count">{{ item.count | number }}</span>
+    <div class="commands-col">
+      <div class="command-list">
+        @for (cmd of commands(); track cmd.name) {
+          <div class="command-row" [class.running]="cmd.running" [class.expanded]="cmd.expanded">
+            <div class="command-main">
+              <i [class]="cmd.icon" class="cmd-icon"></i>
+              <div class="cmd-info">
+                <span class="cmd-name">{{ cmd.displayName }}</span>
+                @if (cmd.count !== null) {
+                  <span class="cmd-badge">{{ cmd.count | number }}</span>
+                }
               </div>
-            }
-          </div>
-        </div>
-      </aside>
-
-      <div class="actions-column">
-        <section class="commands-section">
-          <h2 class="section-title">Operations</h2>
-          <div class="command-grid">
-            @for (cmd of commands(); track cmd.name) {
-              <div class="cupcake-card command-card" [class.running]="cmd.running" [class.expanded]="cmd.expanded">
-                <div class="command-header">
-                  <div class="command-icon-wrapper"><i [class]="cmd.icon"></i></div>
-                  <div class="command-content">
-                    <div class="command-main">
-                      <span class="command-name">{{ cmd.displayName }}</span>
-                      @if (cmd.count !== null) {
-                        <span class="badge-success">{{ cmd.count | number }} items</span>
-                      }
-                    </div>
-                    <p class="command-desc">{{ cmd.description }}</p>
-                  </div>
-                  <div class="command-actions">
-                    <button
-                      class="btn-options"
-                      (click)="toggleExpanded(cmd.name)"
-                      [class.active]="cmd.expanded"
-                      title="Configure options"
-                    >
-                      <i class="bi bi-gear"></i>
-                    </button>
-                    <button
-                      class="cupcake-btn action-btn"
-                      [class.secondary]="!cmd.running"
-                      [disabled]="cmd.running"
-                      (click)="runCommand(cmd.name)"
-                    >
-                      @if (cmd.running) {
-                        <span class="spinner-tiny"></span>
-                        Working
-                      } @else {
-                        Execute
-                      }
-                    </button>
-                  </div>
-                </div>
-
-                @if (cmd.expanded && cmd.options.length > 0) {
-                  <div class="command-options">
-                    @for (opt of cmd.options; track opt.key) {
-                      <div class="option-row">
-                        @switch (opt.type) {
-                          @case ('boolean') {
-                            <label class="option-checkbox">
-                              <input
-                                type="checkbox"
-                                [checked]="getOptionValue(cmd.name, opt.key)"
-                                (change)="setOptionValue(cmd.name, opt.key, $any($event.target).checked)"
-                              />
-                              <span class="option-label">{{ opt.label }}</span>
-                            </label>
-                          }
-                          @case ('number') {
-                            <div class="option-number">
-                              <label class="option-label">{{ opt.label }}</label>
-                              <input
-                                type="number"
-                                class="option-input"
-                                [value]="getOptionValue(cmd.name, opt.key)"
-                                [disabled]="cmd.name === 'load-ontologies' && getOptionValue('load-ontologies', 'noLimit')"
-                                (change)="setOptionValue(cmd.name, opt.key, +$any($event.target).value)"
-                                min="1"
-                                max="100000"
-                              />
-                            </div>
-                          }
-                          @case ('select') {
-                            <div class="option-select">
-                              <label class="option-label">{{ opt.label }}</label>
-                              <div class="type-chips">
-                                @for (type of ontologyTypes; track type.value) {
-                                  <button
-                                    type="button"
-                                    class="type-chip"
-                                    [class.selected]="isOntologyTypeSelected(type.value)"
-                                    (click)="toggleOntologyType(type.value)"
-                                  >
-                                    {{ type.label }}
-                                  </button>
-                                }
-                              </div>
-                            </div>
-                          }
+              <button class="btn-opt" (click)="toggleExpanded(cmd.name)" [class.active]="cmd.expanded">
+                <i class="bi bi-gear"></i>
+              </button>
+              <button class="btn-exec" [disabled]="cmd.running" (click)="runCommand(cmd.name)">
+                @if (cmd.running) {
+                  <span class="spinner"></span>
+                } @else {
+                  Run
+                }
+              </button>
+            </div>
+            @if (cmd.expanded && cmd.options.length > 0) {
+              <div class="command-opts">
+                @for (opt of cmd.options; track opt.key) {
+                  @switch (opt.type) {
+                    @case ('boolean') {
+                      <label class="opt-check">
+                        <input type="checkbox" [checked]="getOptionValue(cmd.name, opt.key)" (change)="setOptionValue(cmd.name, opt.key, $any($event.target).checked)" />
+                        {{ opt.label }}
+                      </label>
+                    }
+                    @case ('number') {
+                      <label class="opt-num">
+                        {{ opt.label }}
+                        <input type="number" [value]="getOptionValue(cmd.name, opt.key)" [disabled]="cmd.name === 'load-ontologies' && getOptionValue('load-ontologies', 'noLimit')" (change)="setOptionValue(cmd.name, opt.key, +$any($event.target).value)" min="1" max="100000" />
+                      </label>
+                    }
+                    @case ('select') {
+                      <div class="opt-chips">
+                        <span class="opt-lbl">{{ opt.label }}</span>
+                        @for (type of ontologyTypes; track type.value) {
+                          <button class="chip" [class.selected]="isOntologyTypeSelected(type.value)" (click)="toggleOntologyType(type.value)">{{ type.label }}</button>
                         }
-                        <span class="option-desc">{{ opt.description }}</span>
                       </div>
                     }
-                  </div>
+                  }
                 }
               </div>
             }
           </div>
-        </section>
+        }
+      </div>
 
-        <section class="cupcake-card terminal-section">
-          <div class="terminal-header">
-            <span class="terminal-title">Command Output</span>
-            <div class="terminal-controls">
-              <button class="btn-clear" (click)="outputLines.set([])">Clear</button>
+      <div class="terminal">
+        <div class="term-header">
+          <span class="term-title">Output</span>
+          <button class="btn-clear" (click)="outputLines.set([])">Clear</button>
+        </div>
+        <div class="term-viewport" #terminalViewport>
+          @if (outputLines().length === 0) {
+            <span class="term-empty">Awaiting command...</span>
+          }
+          @for (line of outputLines(); track $index) {
+            <div class="term-line" [class]="line.type">
+              <span class="caret">></span>
+              <span class="text">{{ line.text }}</span>
             </div>
-          </div>
-          <div class="terminal-viewport" #terminalViewport>
-            @if (outputLines().length === 0) {
-              <div class="terminal-placeholder">Awaiting command execution...</div>
-            }
-            @for (line of outputLines(); track $index) {
-              <div class="terminal-line" [class]="line.type">
-                <span class="line-caret">></span>
-                <span class="line-text">{{ line.text }}</span>
-              </div>
-            }
-          </div>
-        </section>
+          }
+        </div>
       </div>
     </div>
   </main>
-
-  <footer class="panel-footer cupcake-card">
-    <div class="footer-status">
-      <span class="dot pulse-ready"></span>
-      <span>Backend Connected on Port 8000</span>
-    </div>
-    <button class="cupcake-btn outline" (click)="refreshStats()">
-      Refresh Statistics
-    </button>
-  </footer>
 </div>

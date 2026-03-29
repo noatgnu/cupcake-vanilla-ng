@@ -1,70 +1,51 @@
-<div class="cupcake-container downloader-layout">
+<div class="downloader-layout">
   <header class="panel-header">
-    <h1 class="cupcake-title">{{ title() }}</h1>
-    <p class="cupcake-subtitle">{{ description() }}</p>
+    <h1 class="title">{{ title() }}</h1>
+    <div class="spacer"></div>
+    <button class="btn-close" (click)="close()" title="Close">
+      <i class="bi bi-x-lg"></i>
+    </button>
   </header>
 
   <main class="panel-main">
+    @if (downloadType === 'valkey' && !downloading() && !success() && !error()) {
+      <section class="valkey-section">
+        <div class="valkey-info">
+          <i class="bi bi-lightning-charge info-icon"></i>
+          <span class="info-text">Download and configure Redis/Valkey for background task processing</span>
+        </div>
+      </section>
+    }
+
     @if (downloadType === 'backend' && !downloading() && !success()) {
       <section class="mode-section">
-        <h2 class="section-title">Distribution Mode</h2>
-        <div class="mode-grid">
-          <div
-            class="mode-card"
-            [class.active]="distributionMode() === 'portable'"
-            (click)="setDistributionMode('portable')"
-          >
-            <div class="mode-icon-wrapper"><i class="bi bi-box-seam"></i></div>
-            <div class="mode-content">
-              <span class="mode-label">Portable Distribution</span>
-              <span class="mode-desc">Bundled Python environment (Highly Recommended)</span>
-            </div>
-            <div class="mode-check" *ngIf="distributionMode() === 'portable'">
-              <i class="bi bi-check-circle-fill"></i>
-            </div>
-          </div>
-
-          <div
-            class="mode-card"
-            [class.active]="distributionMode() === 'native'"
-            (click)="setDistributionMode('native')"
-          >
-            <div class="mode-icon-wrapper"><i class="bi bi-cpu"></i></div>
-            <div class="mode-content">
-              <span class="mode-label">Native Installation</span>
-              <span class="mode-desc">Use system Python and git repository</span>
-            </div>
-            <div class="mode-check" *ngIf="distributionMode() === 'native'">
-              <i class="bi bi-check-circle-fill"></i>
-            </div>
-          </div>
+        <span class="section-lbl">Mode</span>
+        <div class="mode-row" [class.active]="distributionMode() === 'portable'" (click)="setDistributionMode('portable')">
+          <i class="bi bi-box-seam"></i>
+          <span class="mode-name">Portable</span>
+          <span class="mode-desc">Bundled Python</span>
+          @if (distributionMode() === 'portable') { <i class="bi bi-check check"></i> }
+        </div>
+        <div class="mode-row" [class.active]="distributionMode() === 'native'" (click)="setDistributionMode('native')">
+          <i class="bi bi-cpu"></i>
+          <span class="mode-name">Native</span>
+          <span class="mode-desc">System Python</span>
+          @if (distributionMode() === 'native') { <i class="bi bi-check check"></i> }
         </div>
       </section>
 
       @if (distributionMode() === 'portable') {
         <section class="version-section">
-          <h2 class="section-title">Select Version</h2>
+          <span class="section-lbl">Version</span>
           @if (loadingReleases()) {
-            <div class="cupcake-card loading-state-small">
-              <div class="spinner-small"></div>
-              <span>Fetching available releases...</span>
-            </div>
+            <div class="loading-row"><span class="spinner"></span> Loading...</div>
           } @else {
-            <div class="selection-list">
-              @for (release of releases(); track release.tag) {
-                <div
-                  class="selection-item"
-                  [class.active]="selectedVersion() === release.tag"
-                  (click)="selectVersion(release.tag)"
-                >
-                  <div class="item-main">
-                    <span class="item-title">{{ release.tag }}</span>
-                    <span class="item-subtitle">{{ release.name }}</span>
-                  </div>
-                  <span class="item-meta">{{ formatDate(release.publishedAt) }}</span>
-                </div>
-              }
-            </div>
+            @for (release of releases(); track release.tag) {
+              <div class="select-row" [class.active]="selectedVersion() === release.tag" (click)="selectVersion(release.tag)">
+                <span class="row-main">{{ release.tag }}</span>
+                <span class="row-meta">{{ formatDate(release.publishedAt) }}</span>
+              </div>
+            }
           }
         </section>
       }
@@ -72,44 +53,24 @@
       @if (distributionMode() === 'native') {
         <div class="native-grid">
           <section class="branch-section">
-            <h2 class="section-title">Repository Branch</h2>
-            <div class="selection-list">
-              @for (release of releases(); track release.tag) {
-                <div
-                  class="selection-item"
-                  [class.active]="selectedBranch() === release.tag"
-                  (click)="selectBranch(release.tag)"
-                >
-                  <div class="item-main">
-                    <span class="item-title">{{ release.tag }}</span>
-                  </div>
+            <span class="section-lbl">Branch</span>
+            @for (release of releases(); track release.tag) {
+              <div class="select-row" [class.active]="selectedBranch() === release.tag" (click)="selectBranch(release.tag)">
+                <span class="row-main">{{ release.tag }}</span>
+              </div>
+            }
+          </section>
+          <section class="python-section">
+            <span class="section-lbl">Python</span>
+            @if (loadingPython()) {
+              <div class="loading-row"><span class="spinner"></span> Detecting...</div>
+            } @else {
+              @for (python of pythonCandidates(); track python.path) {
+                <div class="select-row" [class.active]="selectedPython() === python.path" (click)="selectPython(python)">
+                  <span class="row-main">Python {{ python.version }}</span>
+                  <code class="row-path">{{ python.path }}</code>
                 </div>
               }
-            </div>
-          </section>
-
-          <section class="python-section">
-            <h2 class="section-title">System Python</h2>
-            @if (loadingPython()) {
-              <div class="cupcake-card loading-state-small">
-                <div class="spinner-small"></div>
-                <span>Detecting Python...</span>
-              </div>
-            } @else {
-              <div class="selection-list">
-                @for (python of pythonCandidates(); track python.path) {
-                  <div
-                    class="selection-item"
-                    [class.active]="selectedPython() === python.path"
-                    (click)="selectPython(python)"
-                  >
-                    <div class="item-main">
-                      <span class="item-title">Python {{ python.version }}</span>
-                      <code class="item-subtitle">{{ python.path }}</code>
-                    </div>
-                  </div>
-                }
-              </div>
             }
           </section>
         </div>
@@ -117,69 +78,51 @@
     }
 
     @if (downloading()) {
-      <section class="cupcake-card progress-card">
-        <h2 class="section-title">{{ progressTitle() }}</h2>
-        <div class="progress-container">
-          <div class="progress-bar-wrapper">
-            <div class="cupcake-progress-bar">
-              <div class="progress-fill" [style.width.%]="progress()?.percentage || 0"></div>
-            </div>
-            <span class="percentage-label">{{ progress()?.percentage || 0 }}%</span>
-          </div>
-
-          <div class="progress-metrics">
-            <div class="metric">
-              <span class="metric-label">Speed</span>
-              <span class="metric-value">{{ formatSpeed(progress()?.speed || 0) }}</span>
-            </div>
-            <div class="metric">
-              <span class="metric-label">Downloaded</span>
-              <span class="metric-value">
-                {{ formatSize(progress()?.downloaded || 0) }} / {{ formatSize(progress()?.total || 0) }}
-              </span>
-            </div>
-          </div>
-
-          <div class="progress-status-text">
-            <div class="spinner-tiny"></div>
-            <span>{{ statusMessage() }}</span>
-          </div>
+      <section class="progress-section">
+        <span class="section-lbl">{{ progressTitle() }}</span>
+        <div class="progress-bar">
+          <div class="progress-fill" [style.width.%]="progress()?.percentage || 0"></div>
+        </div>
+        <div class="progress-meta">
+          <span>{{ progress()?.percentage || 0 }}%</span>
+          <span>{{ formatSpeed(progress()?.speed || 0) }}</span>
+          <span>{{ formatSize(progress()?.downloaded || 0) }}/{{ formatSize(progress()?.total || 0) }}</span>
+        </div>
+        <div class="progress-status">
+          <span class="spinner"></span>
+          <span>{{ statusMessage() }}</span>
         </div>
       </section>
     }
 
     @if (error()) {
-      <div class="banner error-banner">
-        <i class="bi bi-exclamation-triangle banner-icon"></i>
-        <div class="banner-content">
-          <span class="banner-title">Error</span>
-          <span class="banner-text">{{ error() }}</span>
-        </div>
+      <div class="error-bar">
+        <i class="bi bi-exclamation-triangle"></i>
+        <span class="error-text">{{ error() }}</span>
         <button class="btn-retry" (click)="error.set(null)">Retry</button>
       </div>
     }
 
     @if (success()) {
-      <div class="banner success-banner">
-        <div class="success-illustration"><i class="bi bi-check-lg"></i></div>
-        <h2 class="success-title">Success!</h2>
-        <p class="success-text">{{ successMessage() }}</p>
+      <div class="success-bar">
+        <i class="bi bi-check-circle-fill"></i>
+        <span>{{ successMessage() }}</span>
       </div>
     }
   </main>
 
-  <footer class="panel-footer cupcake-card" *ngIf="!downloading() && !success()">
-    <div class="footer-info" *ngIf="downloadType === 'backend' && distributionMode() === 'portable'">
-      Selected: <strong class="text-primary">{{ selectedVersion() }}</strong>
-    </div>
-    <div class="footer-actions">
-      <button
-        class="cupcake-btn primary"
-        [disabled]="!canDownload()"
-        (click)="startDownload()"
-      >
+  <footer class="panel-footer">
+    @if (!downloading() && !success()) {
+      <span class="footer-info" *ngIf="downloadType === 'backend' && distributionMode() === 'portable'">
+        {{ selectedVersion() }}
+      </span>
+      <div class="spacer"></div>
+      <button class="btn-primary" [disabled]="!canDownload()" (click)="startDownload()">
         {{ downloadButtonLabel() }}
       </button>
-    </div>
+    } @else if (success()) {
+      <div class="spacer"></div>
+      <button class="btn-primary" (click)="close()">Done</button>
+    }
   </footer>
 </div>

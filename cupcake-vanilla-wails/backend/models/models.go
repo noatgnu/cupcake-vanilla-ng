@@ -96,13 +96,19 @@ type CommandHistory struct {
 }
 
 type OntologyCounts struct {
-	Mondo  int `json:"mondo"`
-	Uberon int `json:"uberon"`
-	NCBI   int `json:"ncbi"`
-	ChEBI  int `json:"chebi"`
-	PSIMS  int `json:"psims"`
-	Cell   int `json:"cell"`
-	Total  int `json:"total"`
+	Mondo              int `json:"mondo"`
+	Uberon             int `json:"uberon"`
+	NCBI               int `json:"ncbi"`
+	ChEBI              int `json:"chebi"`
+	PSIMS              int `json:"psims"`
+	Cell               int `json:"cell"`
+	Species            int `json:"species"`
+	Unimod             int `json:"unimod"`
+	Tissue             int `json:"tissue"`
+	MSVocab            int `json:"msVocab"`
+	HumanDisease       int `json:"humanDisease"`
+	SubcellularLoc     int `json:"subcellularLoc"`
+	Total              int `json:"total"`
 }
 
 type SyncSchemasOptions struct {
@@ -117,4 +123,54 @@ type LoadOntologiesOptions struct {
 	NoLimit bool     `json:"noLimit"`
 	Limit   int      `json:"limit"`
 	Types   []string `json:"types"`
+}
+
+type LoadSpeciesOptions struct {
+	File string `json:"file,omitempty"`
+}
+
+type LoadMSModOptions struct {
+	ClearExisting bool `json:"clearExisting"`
+}
+
+type LoadTissueOptions struct {
+	File string `json:"file,omitempty"`
+}
+
+type LoadMSTermOptions struct {
+	ClearExisting bool `json:"clearExisting"`
+}
+
+type LoadHumanDiseaseOptions struct {
+	File string `json:"file,omitempty"`
+}
+
+type LoadSubcellularLocationOptions struct {
+	File string `json:"file,omitempty"`
+}
+
+type BackupInfo struct {
+	Name      string `json:"name"`
+	Path      string `json:"path"`
+	Size      int64  `json:"size"`
+	CreatedAt string `json:"createdAt"`
+	Type      string `json:"type"`
+}
+
+type UpdateInfo struct {
+	UpdateAvailable bool   `json:"updateAvailable"`
+	CurrentVersion  string `json:"currentVersion"`
+	LatestVersion   string `json:"latestVersion"`
+	LatestName      string `json:"latestName"`
+	PublishedAt     string `json:"publishedAt"`
+	HasPortable     bool   `json:"hasPortable"`
+	Message         string `json:"message"`
+}
+
+type UpdateResult struct {
+	Success         bool   `json:"success"`
+	Message         string `json:"message"`
+	PreviousVersion string `json:"previousVersion"`
+	NewVersion      string `json:"newVersion"`
+	BackupCreated   bool   `json:"backupCreated"`
 }

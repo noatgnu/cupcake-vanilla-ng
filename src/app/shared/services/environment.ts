@@ -20,6 +20,8 @@ export interface DynamicEnvironment {
 })
 export class EnvironmentService {
   private desktopService = inject(DesktopService);
+  private initialized = false;
+  private initializationPromise: Promise<void> | null = null;
 
   private environmentSubject = new BehaviorSubject<DynamicEnvironment>({
     ...environment,
@@ -29,10 +31,6 @@ export class EnvironmentService {
 
   public environment$ = this.environmentSubject.asObservable();
 
-  constructor() {
-    this.initializeEnvironment();
-  }
-
   get currentEnvironment(): DynamicEnvironment {
     return this.environmentSubject.value;
   }
@@ -40,7 +38,7 @@ export class EnvironmentService {
   private async initializeEnvironment(): Promise<void> {
     if (this.desktopService.isDesktop) {
       try {
-        const backendPort = await this.desktopService.getBackendPort();
+        const backendPort = await this.getBackendPortWithRetry(3, 500);
 
         const desktopEnvironment: DynamicEnvironment = {
           production: environment.production,
@@ -51,11 +49,12 @@ export class EnvironmentService {
         };
 
         this.environmentSubject.next(desktopEnvironment);
-        console.log(`Desktop environment (${this.desktopService.runtime}) initialized with backend port: ${backendPort}`);
+        this.desktopService.logToFile(`Desktop environment (${this.desktopService.runtime}) initialized with backend port: ${backendPort}`);
       } catch (error) {
-        console.error('Failed to get backend port:', error);
+        this.desktopService.logToFile(`Failed to get backend port: ${error}`);
         this.environmentSubject.next({
           ...environment,
+          apiUrl: 'http://localhost:8000/api/v1',
           isDesktop: true,
           runtime: this.desktopService.runtime
         });
@@ -67,10 +66,48 @@ export class EnvironmentService {
         runtime: 'web'
       });
     }
+    this.initialized = true;
+  }
+
+  private async getBackendPortWithRetry(maxRetries: number, delayMs: number): Promise<number> {
+    let lastError: Error | null = null;
+
+    for (let i = 0; i < maxRetries; i++) {
+      try {
+        const port = await Promise.race([
+          this.desktopService.getBackendPort(),
+          new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error('Timeout getting backend port')), 5000)
+          )
+        ]);
+        return port;
+      } catch (error) {
+        lastError = error as Error;
+        if (i < maxRetries - 1) {
+          await new Promise(resolve => setTimeout(resolve, delayMs));
+        }
+      }
+    }
+
+    throw lastError || new Error('Failed to get backend port after retries');
   }
 
   async refreshEnvironment(): Promise<void> {
-    await this.initializeEnvironment();
+    if (this.initializationPromise) {
+      return this.initializationPromise;
+    }
+
+    this.initializationPromise = this.initializeEnvironment();
+
+    try {
+      await this.initializationPromise;
+    } finally {
+      this.initializationPromise = null;
+    }
+  }
+
+  isInitialized(): boolean {
+    return this.initialized;
   }
 
   getApiUrl(): string {

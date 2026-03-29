@@ -6,6 +6,7 @@ import { NavbarComponent } from './shared/components/navbar/navbar';
 import { DesktopService } from '@noatgnu/cupcake-vanilla';
 import { AsyncTaskMonitorService, AuthService, WebSocketService } from '@noatgnu/cupcake-core';
 import { SiteConfigService, ThemeService, ToastService, ToastContainerComponent, PoweredByFooterComponent } from '@noatgnu/cupcake-core';
+import { firstValueFrom } from 'rxjs';
 
 import { environment } from '../environments/environment';
 
@@ -68,14 +69,35 @@ export class App implements OnInit, OnDestroy {
 
   private async initializeApp(): Promise<void> {
     try {
+      await this.validateAuthState();
+
       this._appInitialized.set(true);
       this.desktopService.getAppVersion().then(appVersion => {
-        console.log('App Version:', appVersion);
+        this.desktopService.logToFile(`App Version: ${appVersion}`);
         this.toastService.show("Application initialized")
       })
     } catch (error) {
-      console.error('Failed to initialize app:', error);
+      this.desktopService.logToFile(`Failed to initialize app: ${error}`);
       this._appInitialized.set(true);
+    }
+  }
+
+  private async validateAuthState(): Promise<void> {
+    const hasToken = localStorage.getItem('ccvAccessToken');
+    if (!hasToken) {
+      return;
+    }
+
+    try {
+      await firstValueFrom(this.authService.checkAuthStatus());
+      this.desktopService.logToFile('Auth validation successful');
+    } catch (error) {
+      this.desktopService.logToFile(`Auth validation failed, clearing stale tokens: ${error}`);
+      localStorage.removeItem('ccvAccessToken');
+      localStorage.removeItem('ccvRefreshToken');
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('authCleared'));
+      }
     }
   }
 

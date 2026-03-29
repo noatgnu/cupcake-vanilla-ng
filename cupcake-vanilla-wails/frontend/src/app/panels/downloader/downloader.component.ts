@@ -78,7 +78,14 @@ export class DownloaderComponent implements OnInit {
   constructor() {
     effect(() => {
       const progress = this.wails.downloadProgress();
-      if (progress) this.progress.set(progress);
+      if (progress) {
+        this.progress.set(progress);
+        if (progress.downloaded > 0 && progress.total > 0) {
+          this.statusMessage.set('Downloading...');
+        } else if (progress.downloaded > 0) {
+          this.statusMessage.set('Receiving data...');
+        }
+      }
     });
 
     effect(() => {
@@ -88,8 +95,10 @@ export class DownloaderComponent implements OnInit {
         if (complete.success) {
           this.success.set(true);
           this.successMessage.set(complete.message);
+          this.statusMessage.set('Complete');
         } else {
           this.error.set(complete.message);
+          this.statusMessage.set('Failed');
         }
       }
     });
@@ -176,4 +185,12 @@ export class DownloaderComponent implements OnInit {
   }
 
   formatSpeed(bytesPerSec: number): string { return this.formatSize(bytesPerSec) + '/s'; }
+
+  close(): void {
+    if (this.downloadType === 'valkey') {
+      this.wails.dismissValkeyDownload();
+    } else {
+      this.wails.dismissBackendDownload();
+    }
+  }
 }

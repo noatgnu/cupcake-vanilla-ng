@@ -18,8 +18,8 @@ test.describe('Cupcake Vanilla Wails Integration', () => {
     const listeners = await getRegisteredListeners(page);
     expect(listeners['backend:status']).toBeGreaterThan(0);
 
-    const dbService = page.locator('.service-card', {
-      has: page.locator('.service-label', { hasText: 'Database' })
+    const dbService = page.locator('.service-row', {
+      has: page.locator('.service-name', { hasText: 'Database' })
     });
     await expect(dbService).toHaveClass(/pending/);
 
@@ -36,9 +36,9 @@ test.describe('Cupcake Vanilla Wails Integration', () => {
     await page.goto('/#/splash');
     await page.waitForTimeout(2000);
 
-    await expect(page.locator('h1')).toContainText('Cupcake Vanilla');
+    await expect(page.locator('.title')).toContainText('Cupcake Vanilla');
 
-    const pendingServices = page.locator('.service-card.pending');
+    const pendingServices = page.locator('.service-row.pending');
     await expect(pendingServices).toHaveCount(9, { timeout: 10000 });
   });
 
@@ -58,7 +58,7 @@ test.describe('Cupcake Vanilla Wails Integration', () => {
       await page.waitForTimeout(200);
     }
 
-    const readyServices = page.locator('.service-card.ready');
+    const readyServices = page.locator('.service-row.ready');
     await expect(readyServices).toHaveCount(3, { timeout: 10000 });
   });
 
@@ -81,19 +81,19 @@ test.describe('Cupcake Vanilla Wails Integration', () => {
   test('navigation routes work', async ({ page }) => {
     await page.goto('/#/python-selection');
     await page.waitForLoadState('networkidle');
-    await expect(page.locator('text=Python Setup')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('.title:has-text("Python Setup")')).toBeVisible({ timeout: 10000 });
 
     await page.goto('/#/management');
     await page.waitForLoadState('networkidle');
-    await expect(page.locator('text=System Management')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('.title:has-text("System Management")')).toBeVisible({ timeout: 10000 });
 
     await page.goto('/#/debug');
     await page.waitForLoadState('networkidle');
-    await expect(page.locator('text=System Console')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('.title:has-text("Console")')).toBeVisible({ timeout: 10000 });
 
     await page.goto('/#/backend-download');
     await page.waitForLoadState('networkidle');
-    await expect(page.locator('text=Backend Source')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('.title:has-text("Backend Source")')).toBeVisible({ timeout: 10000 });
   });
 
   test('full initialization flow', async ({ page }) => {
@@ -122,7 +122,7 @@ test.describe('Cupcake Vanilla Wails Integration', () => {
       await page.waitForTimeout(150);
     }
 
-    const readyServices = page.locator('.service-card.ready');
+    const readyServices = page.locator('.service-row.ready');
     await expect(readyServices).toHaveCount(9, { timeout: 15000 });
   });
 

@@ -339,3 +339,207 @@ func TestNativeBackendSetup(t *testing.T) {
 	log.Printf("Django port: %d", backendManager.GetBackendPort())
 	log.Printf("Redis port: %d", redisManager.GetRedisPort())
 }
+
+func TestBackupAndRestore(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping backup/restore integration test in short mode")
+	}
+
+	testDataPath := filepath.Join(os.TempDir(), fmt.Sprintf("cupcake-vanilla-backup-test-%d", os.Getpid()))
+	defer os.RemoveAll(testDataPath)
+
+	if err := os.MkdirAll(testDataPath, 0755); err != nil {
+		t.Fatalf("Failed to create test data path: %v", err)
+	}
+
+	pythonManager := services.NewPythonManager(testDataPath)
+	candidates := pythonManager.DetectPythonCandidates()
+
+	if len(candidates) == 0 {
+		t.Skip("No Python found on system")
+	}
+
+	var pythonPath string
+	for _, c := range candidates {
+		if c.Version >= "3.12" {
+			pythonPath = c.Path
+			break
+		}
+	}
+	if pythonPath == "" {
+		t.Skip("No Python 3.12+ found on system")
+	}
+
+	backendPath := filepath.Join(testDataPath, "backend")
+	downloader := services.NewBackendDownloader(nil)
+
+	log.Println("Cloning backend repository for backup test...")
+	if err := downloader.DownloadSource(backendPath, ""); err != nil {
+		t.Fatalf("Failed to clone: %v", err)
+	}
+
+	log.Println("Creating virtual environment...")
+	venvPython, err := pythonManager.CreateVirtualEnvironment(pythonPath)
+	if err != nil {
+		if strings.Contains(err.Error(), "ensurepip") || strings.Contains(err.Error(), "venv") {
+			t.Skipf("Venv module not available: %v", err)
+		}
+		t.Fatalf("Failed to create venv: %v", err)
+	}
+
+	log.Println("Installing dependencies...")
+	requirementsPath := filepath.Join(backendPath, "requirements.txt")
+	if err := pythonManager.InstallDependencies(venvPython, requirementsPath); err != nil {
+		t.Logf("Warning: Dependency installation failed: %v", err)
+		t.Skip("Skipping backup test - dependencies not installed")
+	}
+
+	redisManager := services.NewRedisManager(services.RedisManagerOptions{
+		UserDataPath: testDataPath,
+		IsDev:        true,
+	})
+	backendManager := services.NewBackendManager(testDataPath, true, redisManager)
+	backupManager := services.NewBackupManager(testDataPath, backendManager)
+
+	var logMessages []string
+	backupManager.SetLogCallback(func(message string, msgType string) {
+		logMessages = append(logMessages, fmt.Sprintf("[%s] %s", msgType, message))
+	})
+
+	log.Println("Running migrations before backup test...")
+	if err := backendManager.RunMigrations(backendPath, venvPython); err != nil {
+		t.Logf("Warning: Migrations failed: %v", err)
+		t.Skip("Skipping backup test - migrations failed")
+	}
+
+	t.Run("ListBackupsEmpty", func(t *testing.T) {
+		backups, err := backupManager.ListBackups()
+		if err != nil {
+			t.Fatalf("ListBackups failed: %v", err)
+		}
+		log.Printf("Initial backup count: %d", len(backups))
+	})
+
+	t.Run("CreateDatabaseBackup", func(t *testing.T) {
+		outputMessages := []string{}
+		err := backupManager.CreateDatabaseBackup(backendPath, venvPython, func(output string, isError bool) {
+			outputMessages = append(outputMessages, output)
+			log.Printf("[dbbackup] %s", output)
+		})
+		if err != nil {
+			t.Fatalf("CreateDatabaseBackup failed: %v", err)
+		}
+
+		backups, err := backupManager.ListBackups()
+		if err != nil {
+			t.Fatalf("ListBackups failed: %v", err)
+		}
+
+		dbBackupFound := false
+		for _, b := range backups {
+			if b.Type == "database" {
+				dbBackupFound = true
+				log.Printf("Database backup created: %s (size: %d bytes)", b.Name, b.Size)
+				break
+			}
+		}
+
+		if !dbBackupFound {
+			t.Error("Database backup not found after CreateDatabaseBackup")
+		}
+	})
+
+	t.Run("CreateMediaBackup", func(t *testing.T) {
+		mediaDir := filepath.Join(backendPath, "media")
+		if err := os.MkdirAll(mediaDir, 0755); err != nil {
+			t.Fatalf("Failed to create media directory: %v", err)
+		}
+
+		testFile := filepath.Join(mediaDir, "test_file.txt")
+		if err := os.WriteFile(testFile, []byte("test media content"), 0644); err != nil {
+			t.Fatalf("Failed to create test media file: %v", err)
+		}
+
+		outputMessages := []string{}
+		err := backupManager.CreateMediaBackup(backendPath, venvPython, func(output string, isError bool) {
+			outputMessages = append(outputMessages, output)
+			log.Printf("[mediabackup] %s", output)
+		})
+		if err != nil {
+			t.Fatalf("CreateMediaBackup failed: %v", err)
+		}
+
+		backups, err := backupManager.ListBackups()
+		if err != nil {
+			t.Fatalf("ListBackups failed: %v", err)
+		}
+
+		mediaBackupFound := false
+		for _, b := range backups {
+			if b.Type == "media" {
+				mediaBackupFound = true
+				log.Printf("Media backup created: %s (size: %d bytes)", b.Name, b.Size)
+				break
+			}
+		}
+
+		if !mediaBackupFound {
+			t.Error("Media backup not found after CreateMediaBackup")
+		}
+	})
+
+	t.Run("RestoreDatabase", func(t *testing.T) {
+		outputMessages := []string{}
+		err := backupManager.RestoreDatabase(backendPath, venvPython, func(output string, isError bool) {
+			outputMessages = append(outputMessages, output)
+			log.Printf("[dbrestore] %s", output)
+		})
+		if err != nil {
+			t.Fatalf("RestoreDatabase failed: %v", err)
+		}
+		log.Println("Database restored successfully")
+	})
+
+	t.Run("RestoreMedia", func(t *testing.T) {
+		outputMessages := []string{}
+		err := backupManager.RestoreMedia(backendPath, venvPython, func(output string, isError bool) {
+			outputMessages = append(outputMessages, output)
+			log.Printf("[mediarestore] %s", output)
+		})
+		if err != nil {
+			t.Fatalf("RestoreMedia failed: %v", err)
+		}
+		log.Println("Media restored successfully")
+	})
+
+	t.Run("DeleteBackup", func(t *testing.T) {
+		backups, err := backupManager.ListBackups()
+		if err != nil {
+			t.Fatalf("ListBackups failed: %v", err)
+		}
+
+		if len(backups) == 0 {
+			t.Skip("No backups to delete")
+		}
+
+		backupToDelete := backups[0]
+		err = backupManager.DeleteBackup(backupToDelete.Path)
+		if err != nil {
+			t.Fatalf("DeleteBackup failed: %v", err)
+		}
+
+		backupsAfter, err := backupManager.ListBackups()
+		if err != nil {
+			t.Fatalf("ListBackups failed: %v", err)
+		}
+
+		if len(backupsAfter) != len(backups)-1 {
+			t.Errorf("Expected %d backups after deletion, got %d", len(backups)-1, len(backupsAfter))
+		}
+
+		log.Printf("Deleted backup: %s", backupToDelete.Name)
+	})
+
+	log.Println("\n=== Backup and Restore Test Complete ===")
+	log.Printf("Log messages captured: %d", len(logMessages))
+}

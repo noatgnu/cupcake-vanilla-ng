@@ -40,6 +40,10 @@ export const routes: Routes = [
     loadComponent: () => import('./panels/superuser/superuser.component').then(m => m.SuperuserComponent)
   },
   {
+    path: 'password-reset',
+    loadComponent: () => import('./panels/password-reset/password-reset').then(m => m.PasswordResetComponent)
+  },
+  {
     path: '',
     redirectTo: '/splash',
     pathMatch: 'full'

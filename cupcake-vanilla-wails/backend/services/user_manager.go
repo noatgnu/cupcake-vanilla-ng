@@ -5,6 +5,7 @@ import (
 	"log"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 )
@@ -26,12 +27,8 @@ func NewUserManager(backendManager *BackendManager, userDataPath string, isDev b
 func (u *UserManager) GetUserCount(backendDir, pythonPath string) (int, error) {
 	log.Printf("[UserManager] GetUserCount: backendDir=%s, pythonPath=%s", backendDir, pythonPath)
 
-	managePy := filepath.Join(backendDir, "manage.py")
 	script := "from django.contrib.auth import get_user_model; User = get_user_model(); print(User.objects.count())"
-
-	cmd := exec.Command(pythonPath, managePy, "shell", "-c", script)
-	cmd.Dir = backendDir
-	cmd.Env = u.getBackendEnv(backendDir)
+	cmd := u.createShellCommand(pythonPath, backendDir, script)
 
 	output, err := cmd.CombinedOutput()
 	log.Printf("[UserManager] GetUserCount output: %s", string(output))
@@ -62,9 +59,6 @@ func (u *UserManager) CreateSuperuser(backendDir, pythonPath, username, email, p
 	log.Printf("[UserManager] Backend dir: %s", backendDir)
 	log.Printf("[UserManager] Python path: %s", pythonPath)
 
-	managePy := filepath.Join(backendDir, "manage.py")
-	log.Printf("[UserManager] manage.py path: %s", managePy)
-
 	script := fmt.Sprintf(`
 from django.contrib.auth import get_user_model
 User = get_user_model()
@@ -75,11 +69,9 @@ else:
     print('EXISTS')
 `, username, username, email, password)
 
-	cmd := exec.Command(pythonPath, managePy, "shell", "-c", script)
-	cmd.Dir = backendDir
-	cmd.Env = u.getBackendEnv(backendDir)
+	cmd := u.createShellCommand(pythonPath, backendDir, script)
 
-	log.Printf("[UserManager] Executing command: %s %s shell -c ...", pythonPath, managePy)
+	log.Printf("[UserManager] Executing command with Windows compatibility wrapper")
 
 	output, err := cmd.CombinedOutput()
 	log.Printf("[UserManager] Command output: %s", string(output))
@@ -103,16 +95,13 @@ else:
 }
 
 func (u *UserManager) CheckUserExists(backendDir, pythonPath, username string) (bool, error) {
-	managePy := filepath.Join(backendDir, "manage.py")
 	script := fmt.Sprintf(`
 from django.contrib.auth import get_user_model
 User = get_user_model()
 print('EXISTS' if User.objects.filter(username='%s').exists() else 'NOT_EXISTS')
 `, username)
 
-	cmd := exec.Command(pythonPath, managePy, "shell", "-c", script)
-	cmd.Dir = backendDir
-	cmd.Env = u.getBackendEnv(backendDir)
+	cmd := u.createShellCommand(pythonPath, backendDir, script)
 
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -123,7 +112,6 @@ print('EXISTS' if User.objects.filter(username='%s').exists() else 'NOT_EXISTS')
 }
 
 func (u *UserManager) ChangePassword(backendDir, pythonPath, username, newPassword string) error {
-	managePy := filepath.Join(backendDir, "manage.py")
 	script := fmt.Sprintf(`
 from django.contrib.auth import get_user_model
 User = get_user_model()
@@ -133,9 +121,7 @@ user.save()
 print('SUCCESS')
 `, username, newPassword)
 
-	cmd := exec.Command(pythonPath, managePy, "shell", "-c", script)
-	cmd.Dir = backendDir
-	cmd.Env = u.getBackendEnv(backendDir)
+	cmd := u.createShellCommand(pythonPath, backendDir, script)
 
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -147,7 +133,6 @@ print('SUCCESS')
 }
 
 func (u *UserManager) ListUsers(backendDir, pythonPath string) ([]string, error) {
-	managePy := filepath.Join(backendDir, "manage.py")
 	script := `
 from django.contrib.auth import get_user_model
 User = get_user_model()
@@ -155,9 +140,7 @@ for user in User.objects.all():
     print(user.username)
 `
 
-	cmd := exec.Command(pythonPath, managePy, "shell", "-c", script)
-	cmd.Dir = backendDir
-	cmd.Env = u.getBackendEnv(backendDir)
+	cmd := u.createShellCommand(pythonPath, backendDir, script)
 
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -181,4 +164,41 @@ func (u *UserManager) getBackendEnv(backendDir string) []string {
 		return u.backendManager.getBackendEnv(backendDir)
 	}
 	return nil
+}
+
+func (u *UserManager) createShellCommand(pythonPath, backendDir, script string) *exec.Cmd {
+	managePy := filepath.Join(backendDir, "manage.py")
+
+	if runtime.GOOS == "windows" {
+		escapedScript := strings.ReplaceAll(script, "\\", "\\\\")
+		escapedScript = strings.ReplaceAll(escapedScript, "'", "\\'")
+		escapedScript = strings.ReplaceAll(escapedScript, "\n", "\\n")
+
+		wrapperScript := fmt.Sprintf(`
+import sys
+import multiprocessing
+
+_original_get_context = multiprocessing.get_context
+def _patched_get_context(method=None):
+    if method == 'fork':
+        return _original_get_context('spawn')
+    return _original_get_context(method)
+multiprocessing.get_context = _patched_get_context
+
+import runpy
+sys.argv = ['manage.py', 'shell', '-c', '''%s''']
+runpy.run_path('manage.py', run_name='__main__')
+`, escapedScript)
+		cmd := exec.Command(pythonPath, "-c", wrapperScript)
+		cmd.Dir = backendDir
+		cmd.Env = u.getBackendEnv(backendDir)
+		hideWindow(cmd)
+		return cmd
+	}
+
+	cmd := exec.Command(pythonPath, managePy, "shell", "-c", script)
+	cmd.Dir = backendDir
+	cmd.Env = u.getBackendEnv(backendDir)
+	hideWindow(cmd)
+	return cmd
 }

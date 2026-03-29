@@ -25,11 +25,15 @@ type App struct {
 	managementWindow       *application.WebviewWindow
 	debugWindow            *application.WebviewWindow
 	superuserWindow        *application.WebviewWindow
+	passwordResetWindow    *application.WebviewWindow
+	appMenu                *application.Menu
 	db                     *services.DatabaseService
 	pythonManager          *services.PythonManager
 	backendManager         *services.BackendManager
 	redisManager           *services.RedisManager
 	userManager            *services.UserManager
+	backupManager          *services.BackupManager
+	backendUpdater         *services.BackendUpdater
 	downloader             *services.DownloadManager
 	processTracker         *services.ProcessTracker
 	logHandler             *services.LogHandler
@@ -141,6 +145,26 @@ func (a *App) InitializeBackend() {
 	})
 
 	a.userManager = services.NewUserManager(a.backendManager, a.userDataPath, a.isDev)
+
+	a.backupManager = services.NewBackupManager(a.userDataPath, a.backendManager)
+	a.backupManager.SetLogCallback(func(message string, msgType string) {
+		a.sendBackendLog(fmt.Sprintf("backup: %s", message), msgType)
+	})
+
+	backendDownloaderForUpdater := services.NewBackendDownloader(func(progress models.DownloadProgress) {
+		if a.wailsApp != nil {
+			a.wailsApp.Event.Emit("download:progress", progress)
+		}
+	})
+	a.backendUpdater = services.NewBackendUpdater(a.userDataPath, backendDownloaderForUpdater, a.backendManager, a.backupManager)
+	a.backendUpdater.SetLogCallback(func(message string, level string) {
+		a.sendBackendLog(fmt.Sprintf("updater: %s", message), level)
+	})
+	a.backendUpdater.SetProgressCallback(func(progress models.DownloadProgress) {
+		if a.wailsApp != nil {
+			a.wailsApp.Event.Emit("download:progress", progress)
+		}
+	})
 
 	close(a.initialized)
 	log.Println("[App.InitializeBackend] Core managers initialized")
@@ -294,6 +318,10 @@ func (a *App) startBackendServices(createNewVenv bool, pythonPath string) {
 	a.transitionToMainWindow()
 }
 
+func (a *App) SetAppMenu(menu *application.Menu) {
+	a.appMenu = menu
+}
+
 func (a *App) transitionToMainWindow() {
 	log.Println("[App.transitionToMainWindow] Transitioning to main application...")
 
@@ -302,6 +330,31 @@ func (a *App) transitionToMainWindow() {
 	a.mainWindow.SetSize(1200, 800)
 	a.mainWindow.SetMinSize(800, 600)
 	a.mainWindow.SetURL("/")
+
+	if a.appMenu != nil {
+		a.mainWindow.SetMenu(a.appMenu)
+	}
+
+	a.mainWindow.OnWindowEvent(events.Common.WindowClosing, func(e *application.WindowEvent) {
+		e.Cancel()
+
+		dialog := a.wailsApp.Dialog.Question().
+			SetTitle("Confirm Exit").
+			SetMessage("Are you sure you want to close Cupcake Vanilla?\n\nThis will stop all backend services.")
+
+		yesButton := dialog.AddButton("Yes, Exit")
+		yesButton.OnClick(func() {
+			log.Println("[App] User confirmed exit")
+			a.Shutdown()
+			a.wailsApp.Quit()
+		})
+
+		cancelButton := dialog.AddButton("Cancel")
+		dialog.SetDefaultButton(cancelButton)
+		dialog.SetCancelButton(cancelButton)
+
+		dialog.Show()
+	})
 
 	a.mainWindow.Show()
 
@@ -688,6 +741,22 @@ func (a *App) CreateSuperuser(username, email, password string) error {
 	return a.userManager.CreateSuperuser(backendDir, a.venvPath, username, email, password)
 }
 
+func (a *App) ResetPassword(username, newPassword string) error {
+	if a.userManager == nil {
+		return fmt.Errorf("user manager not initialized")
+	}
+	backendDir := a.getBackendPath()
+	return a.userManager.ChangePassword(backendDir, a.venvPath, username, newPassword)
+}
+
+func (a *App) ListUsers() ([]string, error) {
+	if a.userManager == nil {
+		return nil, fmt.Errorf("user manager not initialized")
+	}
+	backendDir := a.getBackendPath()
+	return a.userManager.ListUsers(backendDir, a.venvPath)
+}
+
 func (a *App) RunSyncSchemas(options models.SyncSchemasOptions) error {
 	if a.backendManager == nil {
 		return fmt.Errorf("backend manager not initialized")
@@ -760,6 +829,150 @@ func (a *App) RunLoadOntologies(options models.LoadOntologiesOptions) error {
 		}
 		a.wailsApp.Event.Emit("command:output", map[string]interface{}{
 			"command": "load-ontologies",
+			"output":  output,
+			"type":    msgType,
+		})
+	})
+}
+
+func (a *App) RunLoadSpecies(options models.LoadSpeciesOptions) error {
+	if a.backendManager == nil {
+		return fmt.Errorf("backend manager not initialized")
+	}
+	backendDir := a.getBackendPath()
+
+	var args []string
+	if options.File != "" {
+		args = append(args, options.File)
+	}
+
+	return a.backendManager.RunManagementCommand(backendDir, a.venvPath, "load_species", args, func(output string, isError bool) {
+		msgType := "info"
+		if isError {
+			msgType = "error"
+		}
+		a.wailsApp.Event.Emit("command:output", map[string]interface{}{
+			"command": "load-species",
+			"output":  output,
+			"type":    msgType,
+		})
+	})
+}
+
+func (a *App) RunLoadMSMod(options models.LoadMSModOptions) error {
+	if a.backendManager == nil {
+		return fmt.Errorf("backend manager not initialized")
+	}
+	backendDir := a.getBackendPath()
+
+	var args []string
+	if options.ClearExisting {
+		args = append(args, "--clear-existing")
+	}
+
+	return a.backendManager.RunManagementCommand(backendDir, a.venvPath, "load_ms_mod", args, func(output string, isError bool) {
+		msgType := "info"
+		if isError {
+			msgType = "error"
+		}
+		a.wailsApp.Event.Emit("command:output", map[string]interface{}{
+			"command": "load-ms-mod",
+			"output":  output,
+			"type":    msgType,
+		})
+	})
+}
+
+func (a *App) RunLoadTissue(options models.LoadTissueOptions) error {
+	if a.backendManager == nil {
+		return fmt.Errorf("backend manager not initialized")
+	}
+	backendDir := a.getBackendPath()
+
+	var args []string
+	if options.File != "" {
+		args = append(args, options.File)
+	}
+
+	return a.backendManager.RunManagementCommand(backendDir, a.venvPath, "load_tissue", args, func(output string, isError bool) {
+		msgType := "info"
+		if isError {
+			msgType = "error"
+		}
+		a.wailsApp.Event.Emit("command:output", map[string]interface{}{
+			"command": "load-tissue",
+			"output":  output,
+			"type":    msgType,
+		})
+	})
+}
+
+func (a *App) RunLoadMSTerm(options models.LoadMSTermOptions) error {
+	if a.backendManager == nil {
+		return fmt.Errorf("backend manager not initialized")
+	}
+	backendDir := a.getBackendPath()
+
+	var args []string
+	if options.ClearExisting {
+		args = append(args, "--clear-existing")
+	}
+
+	return a.backendManager.RunManagementCommand(backendDir, a.venvPath, "load_ms_term", args, func(output string, isError bool) {
+		msgType := "info"
+		if isError {
+			msgType = "error"
+		}
+		a.wailsApp.Event.Emit("command:output", map[string]interface{}{
+			"command": "load-ms-term",
+			"output":  output,
+			"type":    msgType,
+		})
+	})
+}
+
+func (a *App) RunLoadHumanDisease(options models.LoadHumanDiseaseOptions) error {
+	if a.backendManager == nil {
+		return fmt.Errorf("backend manager not initialized")
+	}
+	backendDir := a.getBackendPath()
+
+	var args []string
+	if options.File != "" {
+		args = append(args, options.File)
+	}
+
+	return a.backendManager.RunManagementCommand(backendDir, a.venvPath, "load_human_disease", args, func(output string, isError bool) {
+		msgType := "info"
+		if isError {
+			msgType = "error"
+		}
+		a.wailsApp.Event.Emit("command:output", map[string]interface{}{
+			"command": "load-human-disease",
+			"output":  output,
+			"type":    msgType,
+		})
+	})
+}
+
+func (a *App) RunLoadSubcellularLocation(options models.LoadSubcellularLocationOptions) error {
+	if a.backendManager == nil {
+		return fmt.Errorf("backend manager not initialized")
+	}
+	backendDir := a.getBackendPath()
+
+	var args []string
+	if options.File != "" {
+		args = append(args, options.File)
+	}
+
+	return a.backendManager.RunManagementCommand(backendDir, a.venvPath, "load_subcellular_location", args, func(output string, isError bool) {
+		msgType := "info"
+		if isError {
+			msgType = "error"
+		}
+		a.wailsApp.Event.Emit("command:output", map[string]interface{}{
+			"command": "load-subcellular-location",
 			"output":  output,
 			"type":    msgType,
 		})
@@ -928,6 +1141,34 @@ func (a *App) ShowAboutDialog() {
 	}
 }
 
+func (a *App) OpenPasswordResetPanel() {
+	log.Println("[App] Opening password reset panel window...")
+
+	if a.passwordResetWindow != nil {
+		a.passwordResetWindow.Focus()
+		return
+	}
+
+	a.passwordResetWindow = a.wailsApp.Window.New()
+	a.passwordResetWindow.SetTitle("Reset Password")
+	a.passwordResetWindow.SetSize(450, 350)
+	a.passwordResetWindow.SetMinSize(400, 300)
+	a.passwordResetWindow.SetURL("/setup/#/password-reset")
+
+	a.passwordResetWindow.OnWindowEvent(events.Common.WindowClosing, func(e *application.WindowEvent) {
+		a.passwordResetWindow = nil
+	})
+
+	a.passwordResetWindow.Show()
+}
+
+func (a *App) ClosePasswordResetWindow() {
+	if a.passwordResetWindow != nil {
+		a.passwordResetWindow.Close()
+		a.passwordResetWindow = nil
+	}
+}
+
 func (a *App) GetDownloadProgress() models.DownloadProgress {
 	if a.downloader == nil {
 		return models.DownloadProgress{}
@@ -940,4 +1181,211 @@ func (a *App) IsDownloading() bool {
 		return false
 	}
 	return a.downloader.IsDownloading()
+}
+
+func (a *App) CreateDatabaseBackup() error {
+	if a.backupManager == nil {
+		return fmt.Errorf("backup manager not initialized")
+	}
+	backendDir := a.getBackendPath()
+
+	return a.backupManager.CreateDatabaseBackup(backendDir, a.venvPath, func(output string, isError bool) {
+		msgType := "info"
+		if isError {
+			msgType = "error"
+		}
+		a.wailsApp.Event.Emit("command:output", map[string]interface{}{
+			"command": "dbbackup",
+			"output":  output,
+			"type":    msgType,
+		})
+	})
+}
+
+func (a *App) CreateMediaBackup() error {
+	if a.backupManager == nil {
+		return fmt.Errorf("backup manager not initialized")
+	}
+	backendDir := a.getBackendPath()
+
+	return a.backupManager.CreateMediaBackup(backendDir, a.venvPath, func(output string, isError bool) {
+		msgType := "info"
+		if isError {
+			msgType = "error"
+		}
+		a.wailsApp.Event.Emit("command:output", map[string]interface{}{
+			"command": "mediabackup",
+			"output":  output,
+			"type":    msgType,
+		})
+	})
+}
+
+func (a *App) CreateFullBackup() error {
+	if a.backupManager == nil {
+		return fmt.Errorf("backup manager not initialized")
+	}
+	backendDir := a.getBackendPath()
+
+	outputCallback := func(output string, isError bool) {
+		msgType := "info"
+		if isError {
+			msgType = "error"
+		}
+		a.wailsApp.Event.Emit("command:output", map[string]interface{}{
+			"command": "backup",
+			"output":  output,
+			"type":    msgType,
+		})
+	}
+
+	if err := a.backupManager.CreateDatabaseBackup(backendDir, a.venvPath, outputCallback); err != nil {
+		return err
+	}
+
+	return a.backupManager.CreateMediaBackup(backendDir, a.venvPath, outputCallback)
+}
+
+func (a *App) RestoreDatabase() error {
+	if a.backupManager == nil {
+		return fmt.Errorf("backup manager not initialized")
+	}
+	backendDir := a.getBackendPath()
+
+	return a.backupManager.RestoreDatabase(backendDir, a.venvPath, func(output string, isError bool) {
+		msgType := "info"
+		if isError {
+			msgType = "error"
+		}
+		a.wailsApp.Event.Emit("command:output", map[string]interface{}{
+			"command": "dbrestore",
+			"output":  output,
+			"type":    msgType,
+		})
+	})
+}
+
+func (a *App) RestoreMedia() error {
+	if a.backupManager == nil {
+		return fmt.Errorf("backup manager not initialized")
+	}
+	backendDir := a.getBackendPath()
+
+	return a.backupManager.RestoreMedia(backendDir, a.venvPath, func(output string, isError bool) {
+		msgType := "info"
+		if isError {
+			msgType = "error"
+		}
+		a.wailsApp.Event.Emit("command:output", map[string]interface{}{
+			"command": "mediarestore",
+			"output":  output,
+			"type":    msgType,
+		})
+	})
+}
+
+func (a *App) ListBackups() ([]models.BackupInfo, error) {
+	if a.backupManager == nil {
+		return nil, fmt.Errorf("backup manager not initialized")
+	}
+
+	backups, err := a.backupManager.ListBackups()
+	if err != nil {
+		return nil, err
+	}
+
+	var result []models.BackupInfo
+	for _, b := range backups {
+		result = append(result, models.BackupInfo{
+			Name:      b.Name,
+			Path:      b.Path,
+			Size:      b.Size,
+			CreatedAt: b.CreatedAt,
+			Type:      b.Type,
+		})
+	}
+
+	return result, nil
+}
+
+func (a *App) DeleteBackup(backupPath string) error {
+	if a.backupManager == nil {
+		return fmt.Errorf("backup manager not initialized")
+	}
+
+	return a.backupManager.DeleteBackup(backupPath)
+}
+
+func (a *App) OpenBackupFolder() {
+	if a.backupManager != nil {
+		openFolder(a.backupManager.GetBackupDir())
+	}
+}
+
+func (a *App) CheckForBackendUpdates() (*models.UpdateInfo, error) {
+	if a.backendUpdater == nil {
+		return nil, fmt.Errorf("backend updater not initialized")
+	}
+
+	return a.backendUpdater.CheckForUpdates()
+}
+
+func (a *App) UpdateBackend(version string, createBackup bool) (*models.UpdateResult, error) {
+	if a.backendUpdater == nil {
+		return nil, fmt.Errorf("backend updater not initialized")
+	}
+
+	a.sendBackendLog(fmt.Sprintf("Starting backend update to version %s...", version), "info")
+
+	opts := services.UpdateOptions{
+		Version:      version,
+		CreateBackup: createBackup,
+	}
+
+	result, err := a.backendUpdater.Update(opts)
+	if err != nil {
+		a.sendBackendLog(fmt.Sprintf("Backend update failed: %v", err), "error")
+		return result, err
+	}
+
+	if result.Success {
+		a.sendBackendLog("Backend update completed successfully", "success")
+		if a.wailsApp != nil {
+			a.wailsApp.Event.Emit("backend:updated", map[string]interface{}{
+				"previousVersion": result.PreviousVersion,
+				"newVersion":      result.NewVersion,
+			})
+		}
+	}
+
+	return result, nil
+}
+
+func (a *App) GetCurrentBackendVersion() string {
+	if a.backendUpdater == nil {
+		return "unknown"
+	}
+
+	info, err := a.backendUpdater.CheckForUpdates()
+	if err != nil {
+		return "unknown"
+	}
+
+	return info.CurrentVersion
+}
+
+func (a *App) RollbackBackend() error {
+	if a.backendUpdater == nil {
+		return fmt.Errorf("backend updater not initialized")
+	}
+
+	a.sendBackendLog("Starting backend rollback...", "info")
+
+	if err := a.backendUpdater.Rollback(""); err != nil {
+		a.sendBackendLog(fmt.Sprintf("Rollback failed: %v", err), "error")
+		return err
+	}
+
+	a.sendBackendLog("Rollback completed successfully", "success")
+	return nil
 }

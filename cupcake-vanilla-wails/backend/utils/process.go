@@ -30,10 +30,12 @@ func KillProcess(pid int) error {
 func KillProcessByName(name string) error {
 	if runtime.GOOS == "windows" {
 		cmd := exec.Command("taskkill", "/F", "/IM", name)
+		HideWindow(cmd)
 		return cmd.Run()
 	}
 
 	cmd := exec.Command("pkill", "-f", name)
+	HideWindow(cmd)
 	return cmd.Run()
 }
 
@@ -45,6 +47,7 @@ func GetProcessIDByPort(port int) (int, error) {
 	} else {
 		cmd = exec.Command("lsof", "-ti", ":"+strconv.Itoa(port))
 	}
+	HideWindow(cmd)
 
 	output, err := cmd.Output()
 	if err != nil {
@@ -85,6 +88,7 @@ func GetChildProcesses(pid int) ([]int, error) {
 	} else {
 		cmd = exec.Command("pgrep", "-P", strconv.Itoa(pid))
 	}
+	HideWindow(cmd)
 
 	output, err := cmd.Output()
 	if err != nil {

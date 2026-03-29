@@ -41,6 +41,16 @@
                 "glob": "**/*",
                 "input": "src/assets",
                 "output": "/assets"
+              },
+              {
+                "glob": "*.woff",
+                "input": "node_modules/bootstrap-icons/font/fonts",
+                "output": "/fonts"
+              },
+              {
+                "glob": "*.woff2",
+                "input": "node_modules/bootstrap-icons/font/fonts",
+                "output": "/fonts"
               }
             ],
             "styles": ["src/styles.scss"],

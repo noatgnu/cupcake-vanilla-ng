@@ -131,6 +131,7 @@ func (r *RedisManager) StartRedis() error {
 
 	cmd := exec.Command(serverPath, args...)
 	cmd.Dir = r.redisDir
+	hideWindow(cmd)
 
 	stdout, _ := cmd.StdoutPipe()
 	stderr, _ := cmd.StderrPipe()
@@ -225,9 +226,12 @@ func (r *RedisManager) GetRedisURL() string {
 
 func (r *RedisManager) KillOrphanedRedisProcesses() {
 	if runtime.GOOS == "windows" {
-		exec.Command("taskkill", "/F", "/IM", "redis-server.exe").Run()
+		cmd := exec.Command("taskkill", "/F", "/IM", "redis-server.exe")
+		hideWindow(cmd)
+		cmd.Run()
 	} else {
 		cmd := exec.Command("pkill", "-f", "valkey-server|redis-server")
+		hideWindow(cmd)
 		cmd.Run()
 	}
 }
@@ -248,6 +252,7 @@ func (r *RedisManager) GetPID() int {
 	}
 
 	cmd := exec.Command("lsof", "-ti", fmt.Sprintf(":%d", r.redisPort))
+	hideWindow(cmd)
 	output, err := cmd.Output()
 	if err != nil {
 		return 0
