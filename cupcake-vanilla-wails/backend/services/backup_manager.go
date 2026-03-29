@@ -71,7 +71,7 @@ func (b *BackupManager) CreateDatabaseBackup(backendDir, pythonPath string, outp
 		return fmt.Errorf("failed to create backup directory: %w", err)
 	}
 
-	args := []string{"--clean", "--output-path", b.backupDir}
+	args := []string{"--noinput", "--clean"}
 	err := b.backendManager.RunManagementCommand(backendDir, pythonPath, "dbbackup", args, outputCallback)
 	if err != nil {
 		b.log(fmt.Sprintf("Database backup failed: %v", err), "error")
@@ -90,7 +90,7 @@ func (b *BackupManager) CreateMediaBackup(backendDir, pythonPath string, outputC
 		return fmt.Errorf("failed to create backup directory: %w", err)
 	}
 
-	args := []string{"--clean", "--output-path", b.backupDir}
+	args := []string{"--noinput", "--clean"}
 	err := b.backendManager.RunManagementCommand(backendDir, pythonPath, "mediabackup", args, outputCallback)
 	if err != nil {
 		b.log(fmt.Sprintf("Media backup failed: %v", err), "error")
@@ -111,7 +111,12 @@ func (b *BackupManager) RestoreDatabase(backendDir, pythonPath string, outputCal
 	}
 
 	b.log(fmt.Sprintf("Restoring from: %s", latestBackup), "info")
-	args := []string{"--noinput", "--uncompress", "--input-filename", latestBackup}
+	var args []string
+	if strings.HasSuffix(latestBackup, ".gz") {
+		args = []string{"--noinput", "--uncompress", "--input-filename", latestBackup}
+	} else {
+		args = []string{"--noinput", "--input-filename", latestBackup}
+	}
 	err = b.backendManager.RunManagementCommand(backendDir, pythonPath, "dbrestore", args, outputCallback)
 	if err != nil {
 		b.log(fmt.Sprintf("Database restore failed: %v", err), "error")
@@ -132,7 +137,12 @@ func (b *BackupManager) RestoreMedia(backendDir, pythonPath string, outputCallba
 	}
 
 	b.log(fmt.Sprintf("Restoring from: %s", latestBackup), "info")
-	args := []string{"--noinput", "--uncompress", "--input-filename", latestBackup}
+	var args []string
+	if strings.HasSuffix(latestBackup, ".gz") {
+		args = []string{"--noinput", "--uncompress", "--input-filename", latestBackup}
+	} else {
+		args = []string{"--noinput", "--input-filename", latestBackup}
+	}
 	err = b.backendManager.RunManagementCommand(backendDir, pythonPath, "mediarestore", args, outputCallback)
 	if err != nil {
 		b.log(fmt.Sprintf("Media restore failed: %v", err), "error")
@@ -182,9 +192,9 @@ func (b *BackupManager) ListBackups() ([]BackupInfo, error) {
 		backupType := "unknown"
 		name := entry.Name()
 
-		if strings.Contains(name, "default-db") || strings.HasSuffix(name, ".psql") || strings.HasSuffix(name, ".psql.gz") || strings.HasSuffix(name, ".sqlite3") || strings.HasSuffix(name, ".sqlite3.gz") || strings.HasSuffix(name, ".dump") || strings.HasSuffix(name, ".dump.gz") {
+		if strings.HasPrefix(name, "default-") || strings.HasSuffix(name, ".psql") || strings.HasSuffix(name, ".psql.gz") || strings.HasSuffix(name, ".sqlite3") || strings.HasSuffix(name, ".sqlite3.gz") || strings.HasSuffix(name, ".dump") || strings.HasSuffix(name, ".dump.gz") {
 			backupType = "database"
-		} else if strings.Contains(name, "media") || strings.HasSuffix(name, ".tar") || strings.HasSuffix(name, ".tar.gz") {
+		} else if strings.HasPrefix(name, "media-") || strings.HasSuffix(name, ".tar") || strings.HasSuffix(name, ".tar.gz") {
 			backupType = "media"
 		}
 

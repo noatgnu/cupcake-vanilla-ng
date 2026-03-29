@@ -140,12 +140,12 @@ func TestListBackupsWithFiles(t *testing.T) {
 	backendManager := NewBackendManager(testDataPath, true, redisManager)
 	backupManager := NewBackupManager(testDataPath, backendManager)
 
-	dbBackupFile := filepath.Join(backupManager.backupDir, "default-db-2024-01-01.sqlite3.gz")
+	dbBackupFile := filepath.Join(backupManager.backupDir, "default-2024-01-01-120000.sqlite3")
 	if err := os.WriteFile(dbBackupFile, []byte("test db backup"), 0644); err != nil {
 		t.Fatalf("Failed to create test db backup file: %v", err)
 	}
 
-	mediaBackupFile := filepath.Join(backupManager.backupDir, "media-2024-01-01.tar.gz")
+	mediaBackupFile := filepath.Join(backupManager.backupDir, "media-2024-01-01-120000.tar")
 	if err := os.WriteFile(mediaBackupFile, []byte("test media backup"), 0644); err != nil {
 		t.Fatalf("Failed to create test media backup file: %v", err)
 	}
@@ -167,13 +167,13 @@ func TestListBackupsWithFiles(t *testing.T) {
 	dbFound := false
 	mediaFound := false
 	for _, b := range backups {
-		if b.Name == "default-db-2024-01-01.sqlite3.gz" {
+		if b.Name == "default-2024-01-01-120000.sqlite3" {
 			dbFound = true
 			if b.Type != "database" {
 				t.Errorf("Expected database type for db backup, got %s", b.Type)
 			}
 		}
-		if b.Name == "media-2024-01-01.tar.gz" {
+		if b.Name == "media-2024-01-01-120000.tar" {
 			mediaFound = true
 			if b.Type != "media" {
 				t.Errorf("Expected media type for media backup, got %s", b.Type)
