@@ -51,7 +51,15 @@ export class ManagementComponent implements OnInit, OnDestroy {
     { value: 'psims', label: 'PSIMS' },
     { value: 'cell', label: 'Cell Ontology' },
     { value: 'mondo', label: 'MONDO Disease' },
-    { value: 'uberon', label: 'UBERON Anatomy' }
+    { value: 'uberon', label: 'UBERON Anatomy' },
+    { value: 'species', label: 'Species' },
+    { value: 'unimod', label: 'Unimod' },
+    { value: 'tissue', label: 'Tissue' },
+    { value: 'msVocab', label: 'MS Vocabularies' },
+    { value: 'humanDisease', label: 'Human Disease' },
+    { value: 'subcellularLoc', label: 'Subcellular Location' },
+    { value: 'ncbi', label: 'NCBI Taxonomy' },
+    { value: 'chebi', label: 'ChEBI Compound' }
   ];
 
   commands = signal<CommandStatus[]>([
@@ -152,10 +160,24 @@ export class ManagementComponent implements OnInit, OnDestroy {
 
   ontologyBreakdown = computed(() => {
     const counts = this.ontologyCounts();
-    return ['mondo', 'uberon', 'ncbi', 'chebi', 'psims', 'cell']
-      .map(name => ({
-        name: name.toUpperCase(),
-        count: counts[name] || 0
+    const labels: Record<string, string> = {
+      psims: 'PSIMS',
+      cell: 'Cell',
+      mondo: 'MONDO',
+      uberon: 'UBERON',
+      species: 'Species',
+      unimod: 'Unimod',
+      tissue: 'Tissue',
+      msVocab: 'MS Vocab',
+      humanDisease: 'Human Disease',
+      subcellularLoc: 'Subcellular',
+      ncbi: 'NCBI',
+      chebi: 'ChEBI'
+    };
+    return Object.keys(labels)
+      .map(key => ({
+        name: labels[key],
+        count: counts[key] || 0
       }))
       .filter(item => item.count > 0);
   });
