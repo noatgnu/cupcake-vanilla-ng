@@ -401,6 +401,7 @@ func (b *BackendManager) getBackendEnv(backendDir string) []string {
 	secretKey := "development-secret-key-change-in-production"
 	dbPath := filepath.Join(backendDir, "db.sqlite3")
 	mediaPath := filepath.Join(backendDir, "media")
+	backupPath := filepath.Join(backendDir, "backups")
 
 	debugValue := "false"
 	if b.isDev {
@@ -419,6 +420,7 @@ func (b *BackendManager) getBackendEnv(backendDir string) []string {
 		"REDIS_PORT":                    fmt.Sprintf("%d", b.redisManager.GetRedisPort()),
 		"WAILS_APP_DATA":                backendDir,
 		"MEDIA_ROOT":                    mediaPath,
+		"DBBACKUP_STORAGE_LOCATION":     backupPath,
 		"ENABLE_CUPCAKE_MACARON":        "true",
 		"ENABLE_CUPCAKE_MINT_CHOCOLATE": "true",
 		"ENABLE_CUPCAKE_RED_VELVET":     "true",

@@ -66,7 +66,13 @@ func (b *BackupManager) GetBackupDir() string {
 func (b *BackupManager) CreateDatabaseBackup(backendDir, pythonPath string, outputCallback func(string, bool)) error {
 	b.log("Creating database backup using Django dbbackup...", "info")
 
-	err := b.backendManager.RunManagementCommand(backendDir, pythonPath, "dbbackup", []string{"--clean"}, outputCallback)
+	if err := os.MkdirAll(b.backupDir, 0755); err != nil {
+		b.log(fmt.Sprintf("Failed to create backup directory: %v", err), "error")
+		return fmt.Errorf("failed to create backup directory: %w", err)
+	}
+
+	args := []string{"--clean", "--output-path", b.backupDir}
+	err := b.backendManager.RunManagementCommand(backendDir, pythonPath, "dbbackup", args, outputCallback)
 	if err != nil {
 		b.log(fmt.Sprintf("Database backup failed: %v", err), "error")
 		return fmt.Errorf("database backup failed: %w", err)
@@ -79,7 +85,13 @@ func (b *BackupManager) CreateDatabaseBackup(backendDir, pythonPath string, outp
 func (b *BackupManager) CreateMediaBackup(backendDir, pythonPath string, outputCallback func(string, bool)) error {
 	b.log("Creating media backup using Django mediabackup...", "info")
 
-	err := b.backendManager.RunManagementCommand(backendDir, pythonPath, "mediabackup", []string{"--clean"}, outputCallback)
+	if err := os.MkdirAll(b.backupDir, 0755); err != nil {
+		b.log(fmt.Sprintf("Failed to create backup directory: %v", err), "error")
+		return fmt.Errorf("failed to create backup directory: %w", err)
+	}
+
+	args := []string{"--clean", "--output-path", b.backupDir}
+	err := b.backendManager.RunManagementCommand(backendDir, pythonPath, "mediabackup", args, outputCallback)
 	if err != nil {
 		b.log(fmt.Sprintf("Media backup failed: %v", err), "error")
 		return fmt.Errorf("media backup failed: %w", err)
@@ -92,7 +104,15 @@ func (b *BackupManager) CreateMediaBackup(backendDir, pythonPath string, outputC
 func (b *BackupManager) RestoreDatabase(backendDir, pythonPath string, outputCallback func(string, bool)) error {
 	b.log("Restoring database from latest backup...", "info")
 
-	err := b.backendManager.RunManagementCommand(backendDir, pythonPath, "dbrestore", []string{"--uncompress"}, outputCallback)
+	latestBackup, err := b.findLatestBackup("database")
+	if err != nil {
+		b.log(fmt.Sprintf("No database backup found: %v", err), "error")
+		return fmt.Errorf("no database backup found: %w", err)
+	}
+
+	b.log(fmt.Sprintf("Restoring from: %s", latestBackup), "info")
+	args := []string{"--noinput", "--uncompress", "--input-filename", latestBackup}
+	err = b.backendManager.RunManagementCommand(backendDir, pythonPath, "dbrestore", args, outputCallback)
 	if err != nil {
 		b.log(fmt.Sprintf("Database restore failed: %v", err), "error")
 		return fmt.Errorf("database restore failed: %w", err)
@@ -105,7 +125,15 @@ func (b *BackupManager) RestoreDatabase(backendDir, pythonPath string, outputCal
 func (b *BackupManager) RestoreMedia(backendDir, pythonPath string, outputCallback func(string, bool)) error {
 	b.log("Restoring media from latest backup...", "info")
 
-	err := b.backendManager.RunManagementCommand(backendDir, pythonPath, "mediarestore", []string{"--uncompress"}, outputCallback)
+	latestBackup, err := b.findLatestBackup("media")
+	if err != nil {
+		b.log(fmt.Sprintf("No media backup found: %v", err), "error")
+		return fmt.Errorf("no media backup found: %w", err)
+	}
+
+	b.log(fmt.Sprintf("Restoring from: %s", latestBackup), "info")
+	args := []string{"--noinput", "--uncompress", "--input-filename", latestBackup}
+	err = b.backendManager.RunManagementCommand(backendDir, pythonPath, "mediarestore", args, outputCallback)
 	if err != nil {
 		b.log(fmt.Sprintf("Media restore failed: %v", err), "error")
 		return fmt.Errorf("media restore failed: %w", err)
@@ -113,6 +141,21 @@ func (b *BackupManager) RestoreMedia(backendDir, pythonPath string, outputCallba
 
 	b.log("Media restored successfully", "success")
 	return nil
+}
+
+func (b *BackupManager) findLatestBackup(backupType string) (string, error) {
+	backups, err := b.ListBackups()
+	if err != nil {
+		return "", err
+	}
+
+	for _, backup := range backups {
+		if backup.Type == backupType {
+			return backup.Path, nil
+		}
+	}
+
+	return "", fmt.Errorf("no %s backup found", backupType)
 }
 
 func (b *BackupManager) ListBackups() ([]BackupInfo, error) {
