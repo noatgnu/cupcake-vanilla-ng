@@ -481,6 +481,31 @@ export class WailsService {
     return App.OpenBackupFolder();
   }
 
+  async getBackupDirectory(): Promise<string> {
+    if (!this.isWails) return '';
+    return App.GetBackupDirectory();
+  }
+
+  async getDefaultBackupDirectory(): Promise<string> {
+    if (!this.isWails) return '';
+    return App.GetDefaultBackupDirectory();
+  }
+
+  async setBackupDirectory(dir: string): Promise<void> {
+    if (!this.isWails) return;
+    return App.SetBackupDirectory(dir);
+  }
+
+  async resetBackupDirectory(): Promise<void> {
+    if (!this.isWails) return;
+    return App.ResetBackupDirectory();
+  }
+
+  async selectBackupDirectory(): Promise<string> {
+    if (!this.isWails) return '';
+    return App.SelectBackupDirectory();
+  }
+
   async checkForBackendUpdates(): Promise<UpdateInfo | null> {
     if (!this.isWails) return null;
     return App.CheckForBackendUpdates();

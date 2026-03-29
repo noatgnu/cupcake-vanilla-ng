@@ -399,7 +399,7 @@ func TestBackupAndRestore(t *testing.T) {
 		IsDev:        true,
 	})
 	backendManager := services.NewBackendManager(testDataPath, true, redisManager)
-	backupManager := services.NewBackupManager(testDataPath, backendManager)
+	backupManager := services.NewBackupManager(testDataPath, backendManager, nil)
 
 	var logMessages []string
 	backupManager.SetLogCallback(func(message string, msgType string) {

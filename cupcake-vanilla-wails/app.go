@@ -146,7 +146,7 @@ func (a *App) InitializeBackend() {
 
 	a.userManager = services.NewUserManager(a.backendManager, a.userDataPath, a.isDev)
 
-	a.backupManager = services.NewBackupManager(a.userDataPath, a.backendManager)
+	a.backupManager = services.NewBackupManager(a.userDataPath, a.backendManager, a.db)
 	a.backupManager.SetLogCallback(func(message string, msgType string) {
 		a.sendBackendLog(fmt.Sprintf("backup: %s", message), msgType)
 	})
@@ -1320,6 +1320,61 @@ func (a *App) OpenBackupFolder() {
 	if a.backupManager != nil {
 		openFolder(a.backupManager.GetBackupDir())
 	}
+}
+
+func (a *App) GetBackupDirectory() string {
+	if a.backupManager == nil {
+		return ""
+	}
+	return a.backupManager.GetBackupDir()
+}
+
+func (a *App) GetDefaultBackupDirectory() string {
+	if a.backupManager == nil {
+		return ""
+	}
+	return a.backupManager.GetDefaultBackupDir()
+}
+
+func (a *App) SetBackupDirectory(dir string) error {
+	if a.backupManager == nil {
+		return fmt.Errorf("backup manager not initialized")
+	}
+	return a.backupManager.SetBackupDir(dir)
+}
+
+func (a *App) ResetBackupDirectory() error {
+	if a.backupManager == nil {
+		return fmt.Errorf("backup manager not initialized")
+	}
+	return a.backupManager.ResetBackupDir()
+}
+
+func (a *App) SelectBackupDirectory() (string, error) {
+	if a.wailsApp == nil {
+		return "", fmt.Errorf("application not available")
+	}
+
+	selectedDir, err := a.wailsApp.Dialog.OpenFile().
+		SetTitle("Select Backup Directory").
+		CanChooseDirectories(true).
+		CanChooseFiles(false).
+		CanCreateDirectories(true).
+		PromptForSingleSelection()
+
+	if err != nil {
+		return "", err
+	}
+
+	if selectedDir == "" {
+		return "", nil
+	}
+
+	if err := a.backupManager.SetBackupDir(selectedDir); err != nil {
+		return "", err
+	}
+
+	return selectedDir, nil
 }
 
 func (a *App) CheckForBackendUpdates() (*models.UpdateInfo, error) {

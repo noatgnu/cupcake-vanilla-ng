@@ -13,7 +13,9 @@ import (
 type BackupManager struct {
 	userDataPath   string
 	backupDir      string
+	defaultDir     string
 	backendManager *BackendManager
+	db             *DatabaseService
 	logCallback    func(message string, msgType string)
 }
 
@@ -37,14 +39,25 @@ type BackupResult struct {
 	Size     int64  `json:"size"`
 }
 
-func NewBackupManager(userDataPath string, backendManager *BackendManager) *BackupManager {
-	backupDir := filepath.Join(userDataPath, "backend", "backups")
-	os.MkdirAll(backupDir, 0755)
+func NewBackupManager(userDataPath string, backendManager *BackendManager, db *DatabaseService) *BackupManager {
+	defaultDir := filepath.Join(userDataPath, "backend", "backups")
+	os.MkdirAll(defaultDir, 0755)
+
+	backupDir := defaultDir
+	if db != nil {
+		if customDir, err := db.GetConfig("backup_directory"); err == nil && customDir != "" {
+			if _, err := os.Stat(customDir); err == nil {
+				backupDir = customDir
+			}
+		}
+	}
 
 	return &BackupManager{
 		userDataPath:   userDataPath,
 		backupDir:      backupDir,
+		defaultDir:     defaultDir,
 		backendManager: backendManager,
+		db:             db,
 	}
 }
 
@@ -61,6 +74,35 @@ func (b *BackupManager) log(message, msgType string) {
 
 func (b *BackupManager) GetBackupDir() string {
 	return b.backupDir
+}
+
+func (b *BackupManager) GetDefaultBackupDir() string {
+	return b.defaultDir
+}
+
+func (b *BackupManager) SetBackupDir(dir string) error {
+	if dir == "" {
+		dir = b.defaultDir
+	}
+
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return fmt.Errorf("failed to create backup directory: %w", err)
+	}
+
+	b.backupDir = dir
+
+	if b.db != nil {
+		if err := b.db.SetConfig("backup_directory", dir); err != nil {
+			b.log(fmt.Sprintf("Failed to save backup directory setting: %v", err), "warning")
+		}
+	}
+
+	b.log(fmt.Sprintf("Backup directory set to: %s", dir), "info")
+	return nil
+}
+
+func (b *BackupManager) ResetBackupDir() error {
+	return b.SetBackupDir(b.defaultDir)
 }
 
 func (b *BackupManager) CreateDatabaseBackup(backendDir, pythonPath string, outputCallback func(string, bool)) error {

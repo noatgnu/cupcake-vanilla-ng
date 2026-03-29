@@ -19,7 +19,7 @@ func TestNewBackupManager(t *testing.T) {
 		IsDev:        true,
 	})
 	backendManager := NewBackendManager(testDataPath, true, redisManager)
-	backupManager := NewBackupManager(testDataPath, backendManager)
+	backupManager := NewBackupManager(testDataPath, backendManager, nil)
 
 	if backupManager == nil {
 		t.Fatal("NewBackupManager returned nil")
@@ -52,7 +52,7 @@ func TestBackupManagerLogCallback(t *testing.T) {
 		IsDev:        true,
 	})
 	backendManager := NewBackendManager(testDataPath, true, redisManager)
-	backupManager := NewBackupManager(testDataPath, backendManager)
+	backupManager := NewBackupManager(testDataPath, backendManager, nil)
 
 	logReceived := false
 	var receivedMessage string
@@ -90,7 +90,7 @@ func TestGetBackupDir(t *testing.T) {
 		IsDev:        true,
 	})
 	backendManager := NewBackendManager(testDataPath, true, redisManager)
-	backupManager := NewBackupManager(testDataPath, backendManager)
+	backupManager := NewBackupManager(testDataPath, backendManager, nil)
 
 	backupDir := backupManager.GetBackupDir()
 
@@ -113,7 +113,7 @@ func TestListBackupsEmptyDirectory(t *testing.T) {
 		IsDev:        true,
 	})
 	backendManager := NewBackendManager(testDataPath, true, redisManager)
-	backupManager := NewBackupManager(testDataPath, backendManager)
+	backupManager := NewBackupManager(testDataPath, backendManager, nil)
 
 	backups, err := backupManager.ListBackups()
 	if err != nil {
@@ -138,7 +138,7 @@ func TestListBackupsWithFiles(t *testing.T) {
 		IsDev:        true,
 	})
 	backendManager := NewBackendManager(testDataPath, true, redisManager)
-	backupManager := NewBackupManager(testDataPath, backendManager)
+	backupManager := NewBackupManager(testDataPath, backendManager, nil)
 
 	dbBackupFile := filepath.Join(backupManager.backupDir, "default-2024-01-01-120000.sqlite3")
 	if err := os.WriteFile(dbBackupFile, []byte("test db backup"), 0644); err != nil {
@@ -202,7 +202,7 @@ func TestDeleteBackup(t *testing.T) {
 		IsDev:        true,
 	})
 	backendManager := NewBackendManager(testDataPath, true, redisManager)
-	backupManager := NewBackupManager(testDataPath, backendManager)
+	backupManager := NewBackupManager(testDataPath, backendManager, nil)
 
 	backupFile := filepath.Join(backupManager.backupDir, "test-backup.sqlite3.gz")
 	if err := os.WriteFile(backupFile, []byte("test backup"), 0644); err != nil {
@@ -236,7 +236,7 @@ func TestDeleteBackupInvalidPath(t *testing.T) {
 		IsDev:        true,
 	})
 	backendManager := NewBackendManager(testDataPath, true, redisManager)
-	backupManager := NewBackupManager(testDataPath, backendManager)
+	backupManager := NewBackupManager(testDataPath, backendManager, nil)
 
 	err := backupManager.DeleteBackup("/etc/passwd")
 	if err == nil {
@@ -257,7 +257,7 @@ func TestDeleteBackupNonExistent(t *testing.T) {
 		IsDev:        true,
 	})
 	backendManager := NewBackendManager(testDataPath, true, redisManager)
-	backupManager := NewBackupManager(testDataPath, backendManager)
+	backupManager := NewBackupManager(testDataPath, backendManager, nil)
 
 	nonExistentFile := filepath.Join(backupManager.backupDir, "non-existent.sqlite3.gz")
 	err := backupManager.DeleteBackup(nonExistentFile)

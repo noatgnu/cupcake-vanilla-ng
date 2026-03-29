@@ -220,6 +220,29 @@ describe('WailsService', () => {
       await expectAsync(service.openBackupFolder()).toBeResolved();
     });
 
+    it('getBackupDirectory should return empty string', async () => {
+      const dir = await service.getBackupDirectory();
+      expect(dir).toBe('');
+    });
+
+    it('getDefaultBackupDirectory should return empty string', async () => {
+      const dir = await service.getDefaultBackupDirectory();
+      expect(dir).toBe('');
+    });
+
+    it('setBackupDirectory should return without error', async () => {
+      await expectAsync(service.setBackupDirectory('/path/to/backups')).toBeResolved();
+    });
+
+    it('resetBackupDirectory should return without error', async () => {
+      await expectAsync(service.resetBackupDirectory()).toBeResolved();
+    });
+
+    it('selectBackupDirectory should return empty string', async () => {
+      const dir = await service.selectBackupDirectory();
+      expect(dir).toBe('');
+    });
+
     it('checkForBackendUpdates should return null', async () => {
       const result = await service.checkForBackendUpdates();
       expect(result).toBeNull();
