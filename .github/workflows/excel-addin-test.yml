@@ -35,6 +35,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium --with-deps
+
       - name: Build cupcake-core
         run: npx ng build '@noatgnu/cupcake-core'
 
@@ -44,10 +47,16 @@ jobs:
       - name: Type check
         run: npx tsc --project projects/cupcake-excel-addin/tsconfig.spec.json --noEmit
 
+      - name: Set CHROME_BIN to Playwright Chromium
+        run: |
+          PLAYWRIGHT_CHROME=$(node -e "const {chromium} = require('playwright-core'); console.log(chromium.executablePath())")
+          echo "#!/bin/bash" > /tmp/chrome-wrapper
+          echo "exec \"$PLAYWRIGHT_CHROME\" --no-sandbox \"\$@\"" >> /tmp/chrome-wrapper
+          chmod +x /tmp/chrome-wrapper
+          echo "CHROME_BIN=/tmp/chrome-wrapper" >> $GITHUB_ENV
+
       - name: Run unit tests
-        run: npx ng test cupcake-excel-addin --browsers=ChromeHeadlessCI --watch=false --no-progress
-        env:
-          CHROME_BIN: /usr/bin/google-chrome
+        run: npx ng test cupcake-excel-addin --browsers=ChromeHeadless --watch=false --no-progress
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
