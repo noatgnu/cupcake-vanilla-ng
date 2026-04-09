@@ -1,5 +1,5 @@
 import { TestBed, fakeAsync, tick } from '@angular/core/testing';
-import { provideHttpClient } from '@angular/common/http';
+import { HttpClient, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { ConnectionService, OFFICIAL_CLOUD_URL } from './connection.service';
 import { environment } from '../../../environments/environment';
@@ -121,7 +121,7 @@ describe('ConnectionService', () => {
     };
     localStorage.setItem(environment.storageKey, JSON.stringify(config));
 
-    const newService = new ConnectionService(TestBed.inject(provideHttpClient as any));
+    const newService = new ConnectionService(TestBed.inject(HttpClient));
     expect(newService.mode()).toBe('cloud');
   });
 

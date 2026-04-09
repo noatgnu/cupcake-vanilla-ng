@@ -46,6 +46,8 @@ jobs:
 
       - name: Run unit tests
         run: npx ng test cupcake-excel-addin --browsers=ChromeHeadlessCI --watch=false --no-progress
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
 
       - name: Upload test results
         uses: actions/upload-artifact@v4

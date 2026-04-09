@@ -88,6 +88,11 @@ describe('FavoritesPanel', () => {
     httpMock = TestBed.inject(HttpTestingController);
     fixture = TestBed.createComponent(FavoritesPanel);
     component = fixture.componentInstance;
+
+    fixture.detectChanges();
+    const labGroupReq = httpMock.expectOne(req => req.url.includes('/lab-groups/mine/'));
+    labGroupReq.flush({ count: 0, results: [] });
+    tick();
   });
 
   afterEach(() => {
@@ -95,17 +100,10 @@ describe('FavoritesPanel', () => {
   });
 
   it('should create', () => {
-    fixture.detectChanges();
-    const labGroupReq = httpMock.expectOne(req => req.url.includes('/lab-groups/mine/'));
-    labGroupReq.flush({ count: 0, results: [] });
     expect(component).toBeTruthy();
   });
 
   it('should initialize with empty favorites', () => {
-    fixture.detectChanges();
-    const labGroupReq = httpMock.expectOne(req => req.url.includes('/lab-groups/mine/'));
-    labGroupReq.flush({ count: 0, results: [] });
-
     expect(component.userFavorites().length).toBe(0);
     expect(component.labGroupFavorites().length).toBe(0);
     expect(component.globalFavorites().length).toBe(0);
@@ -117,19 +115,10 @@ describe('FavoritesPanel', () => {
     fixture.detectChanges();
     tick();
 
-    const labGroupReq = httpMock.expectOne(req => req.url.includes('/lab-groups/mine/'));
-    labGroupReq.flush({ count: 1, results: [{ id: 1, name: 'Test Lab' }] });
-    tick();
-
     const userReq = httpMock.expectOne(req =>
       req.url.includes('/favourite-options/') && req.params.get('userId') === '1'
     );
     userReq.flush({ count: 1, results: [{ id: 1, name: 'characteristics[organism]', value: 'Homo sapiens' }] });
-
-    const labGroupFavReq = httpMock.expectOne(req =>
-      req.url.includes('/favourite-options/') && req.params.get('labGroupId') === '1'
-    );
-    labGroupFavReq.flush({ count: 0, results: [] });
 
     const globalReq = httpMock.expectOne(req =>
       req.url.includes('/favourite-options/') && req.params.get('isGlobal') === 'true'
@@ -141,11 +130,7 @@ describe('FavoritesPanel', () => {
     expect(component.hasFavorites).toBeTrue();
   }));
 
-  it('should switch tabs', fakeAsync(() => {
-    fixture.detectChanges();
-    const labGroupReq = httpMock.expectOne(req => req.url.includes('/lab-groups/mine/'));
-    labGroupReq.flush({ count: 0, results: [] });
-
+  it('should switch tabs', () => {
     component.setTab('labGroup');
     expect(component.activeTab()).toBe('labGroup');
 
@@ -154,13 +139,9 @@ describe('FavoritesPanel', () => {
 
     component.setTab('user');
     expect(component.activeTab()).toBe('user');
-  }));
+  });
 
   it('should insert favorite into cell', fakeAsync(() => {
-    fixture.detectChanges();
-    const labGroupReq = httpMock.expectOne(req => req.url.includes('/lab-groups/mine/'));
-    labGroupReq.flush({ count: 0, results: [] });
-
     const favorite = { id: 1, name: 'test', value: 'Test Value', isGlobal: false };
     component.insertFavorite(favorite as any);
     tick();
@@ -170,10 +151,6 @@ describe('FavoritesPanel', () => {
   }));
 
   it('should show error on insert failure', fakeAsync(() => {
-    fixture.detectChanges();
-    const labGroupReq = httpMock.expectOne(req => req.url.includes('/lab-groups/mine/'));
-    labGroupReq.flush({ count: 0, results: [] });
-
     excelServiceSpy.getSelectedRange.and.returnValue(Promise.reject('Excel error'));
 
     const favorite = { id: 1, name: 'test', value: 'Test Value', isGlobal: false };
@@ -184,10 +161,6 @@ describe('FavoritesPanel', () => {
   }));
 
   it('should get display value from favorite', () => {
-    fixture.detectChanges();
-    const labGroupReq = httpMock.expectOne(req => req.url.includes('/lab-groups/mine/'));
-    labGroupReq.flush({ count: 0, results: [] });
-
     const favoriteWithDisplay = { id: 1, name: 'test', value: 'actual', displayValue: 'Display', isGlobal: false };
     expect(component.getDisplayValue(favoriteWithDisplay as any)).toBe('Display');
 
@@ -198,10 +171,6 @@ describe('FavoritesPanel', () => {
   it('should clear favorites when column is removed', fakeAsync(() => {
     fixture.componentRef.setInput('column', mockColumn);
     fixture.detectChanges();
-    tick();
-
-    const labGroupReq = httpMock.expectOne(req => req.url.includes('/lab-groups/mine/'));
-    labGroupReq.flush({ count: 0, results: [] });
     tick();
 
     const userReq = httpMock.expectOne(req =>
