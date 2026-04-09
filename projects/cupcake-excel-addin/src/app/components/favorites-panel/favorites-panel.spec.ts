@@ -1,4 +1,5 @@
-import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideZonelessChangeDetection } from '@angular/core';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { FavoritesPanel } from './favorites-panel';
@@ -75,6 +76,7 @@ describe('FavoritesPanel', () => {
     await TestBed.configureTestingModule({
       imports: [FavoritesPanel],
       providers: [
+        provideZonelessChangeDetection(),
         provideHttpClient(),
         provideHttpClientTesting(),
         FavouriteMetadataOptionService,
@@ -92,7 +94,7 @@ describe('FavoritesPanel', () => {
     fixture.detectChanges();
     const labGroupReq = httpMock.expectOne(req => req.url.includes('/lab-groups/mine/'));
     labGroupReq.flush({ count: 0, results: [] });
-    tick();
+    await fixture.whenStable();
   });
 
   afterEach(() => {
@@ -110,10 +112,10 @@ describe('FavoritesPanel', () => {
     expect(component.hasFavorites).toBeFalse();
   });
 
-  it('should load favorites when column is provided', fakeAsync(() => {
+  it('should load favorites when column is provided', async () => {
     fixture.componentRef.setInput('column', mockColumn);
     fixture.detectChanges();
-    tick();
+    await fixture.whenStable();
 
     const userReq = httpMock.expectOne(req =>
       req.url.includes('/favourite-options/') && req.params.get('userId') === '1'
@@ -124,11 +126,11 @@ describe('FavoritesPanel', () => {
       req.url.includes('/favourite-options/') && req.params.get('isGlobal') === 'true'
     );
     globalReq.flush({ count: 0, results: [] });
-    tick();
+    await fixture.whenStable();
 
     expect(component.userFavorites().length).toBe(1);
     expect(component.hasFavorites).toBeTrue();
-  }));
+  });
 
   it('should switch tabs', () => {
     component.setTab('labGroup');
@@ -141,24 +143,24 @@ describe('FavoritesPanel', () => {
     expect(component.activeTab()).toBe('user');
   });
 
-  it('should insert favorite into cell', fakeAsync(() => {
+  it('should insert favorite into cell', async () => {
     const favorite = { id: 1, name: 'test', value: 'Test Value', isGlobal: false };
     component.insertFavorite(favorite as any);
-    tick();
+    await fixture.whenStable();
 
     expect(excelServiceSpy.updateCell).toHaveBeenCalled();
     expect(toastServiceSpy.success).toHaveBeenCalledWith('Value inserted');
-  }));
+  });
 
-  it('should show error on insert failure', fakeAsync(() => {
+  it('should show error on insert failure', async () => {
     excelServiceSpy.getSelectedRange.and.returnValue(Promise.reject('Excel error'));
 
     const favorite = { id: 1, name: 'test', value: 'Test Value', isGlobal: false };
     component.insertFavorite(favorite as any);
-    tick();
+    await fixture.whenStable();
 
     expect(toastServiceSpy.error).toHaveBeenCalledWith('Failed to insert value');
-  }));
+  });
 
   it('should get display value from favorite', () => {
     const favoriteWithDisplay = { id: 1, name: 'test', value: 'actual', displayValue: 'Display', isGlobal: false };
@@ -168,10 +170,10 @@ describe('FavoritesPanel', () => {
     expect(component.getDisplayValue(favoriteWithoutDisplay as any)).toBe('actual');
   });
 
-  it('should clear favorites when column is removed', fakeAsync(() => {
+  it('should clear favorites when column is removed', async () => {
     fixture.componentRef.setInput('column', mockColumn);
     fixture.detectChanges();
-    tick();
+    await fixture.whenStable();
 
     const userReq = httpMock.expectOne(req =>
       req.url.includes('/favourite-options/') && req.params.get('userId') === '1'
@@ -182,16 +184,16 @@ describe('FavoritesPanel', () => {
       req.url.includes('/favourite-options/') && req.params.get('isGlobal') === 'true'
     );
     globalReq.flush({ count: 0, results: [] });
-    tick();
+    await fixture.whenStable();
 
     expect(component.userFavorites().length).toBe(1);
 
     fixture.componentRef.setInput('column', null);
     fixture.detectChanges();
-    tick();
+    await fixture.whenStable();
 
     expect(component.userFavorites().length).toBe(0);
     expect(component.labGroupFavorites().length).toBe(0);
     expect(component.globalFavorites().length).toBe(0);
-  }));
+  });
 });

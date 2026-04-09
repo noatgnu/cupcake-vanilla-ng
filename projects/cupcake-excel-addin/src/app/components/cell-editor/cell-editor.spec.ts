@@ -1,4 +1,5 @@
-import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideZonelessChangeDetection } from '@angular/core';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { CellEditor } from './cell-editor';
@@ -64,6 +65,8 @@ describe('CellEditor', () => {
   });
 
   beforeEach(async () => {
+    jasmine.clock().install();
+
     excelServiceSpy = jasmine.createSpyObj('ExcelService', ['getSelectedRange', 'updateCell']);
     toastServiceSpy = jasmine.createSpyObj('ToastService', ['success', 'error', 'warning', 'info']);
 
@@ -76,6 +79,7 @@ describe('CellEditor', () => {
     await TestBed.configureTestingModule({
       imports: [CellEditor],
       providers: [
+        provideZonelessChangeDetection(),
         provideHttpClient(),
         provideHttpClientTesting(),
         SdrfSyntaxService,
@@ -89,6 +93,7 @@ describe('CellEditor', () => {
   });
 
   afterEach(() => {
+    jasmine.clock().uninstall();
     httpMock.verify();
   });
 
@@ -130,19 +135,19 @@ describe('CellEditor', () => {
     expect(component.ontologyLabel()).toBeTruthy();
   });
 
-  it('should trigger ontology search on input', fakeAsync(() => {
+  it('should trigger ontology search on input', () => {
     createComponent(mockColumn);
 
     component.onValueInput('human');
-    tick(350);
+    jasmine.clock().tick(351);
 
     const req = httpMock.expectOne(req => req.url.includes('/ontology/search/suggest/'));
     expect(req.request.params.get('q')).toBe('human');
     expect(req.request.params.get('type')).toBe('species');
     req.flush({ suggestions: [] });
-  }));
+  });
 
-  it('should select ontology suggestion with displayName only', fakeAsync(() => {
+  it('should select ontology suggestion with displayName only', async () => {
     createComponent(mockColumn);
 
     const suggestion: OntologySuggestion = {
@@ -153,13 +158,13 @@ describe('CellEditor', () => {
     };
 
     component.selectSuggestion(suggestion);
-    tick();
+    await fixture.whenStable();
 
     expect(component.editValue()).toBe('Homo sapiens');
     expect(component.showSuggestions()).toBeFalse();
-  }));
+  });
 
-  it('should format MS_UNIQUE_VOCABULARIES with NT/AC syntax', fakeAsync(() => {
+  it('should format MS_UNIQUE_VOCABULARIES with NT/AC syntax', async () => {
     createComponent(mockColumn);
 
     const suggestion: OntologySuggestion = {
@@ -174,31 +179,31 @@ describe('CellEditor', () => {
     };
 
     component.selectSuggestion(suggestion);
-    tick();
+    await fixture.whenStable();
 
     expect(component.editValue()).toBe('NT=Trypsin;AC=MS:1001251');
-  }));
+  });
 
-  it('should hide suggestions after delay', fakeAsync(() => {
+  it('should hide suggestions after delay', () => {
     createComponent(mockColumn);
     component.showSuggestions.set(true);
 
     component.hideSuggestions();
     expect(component.showSuggestions()).toBeTrue();
 
-    tick(250);
+    jasmine.clock().tick(251);
     expect(component.showSuggestions()).toBeFalse();
-  }));
+  });
 
-  it('should insert value to cell', fakeAsync(() => {
+  it('should insert value to cell', async () => {
     createComponent(mockColumn, 'Homo sapiens');
 
     component.insertToCell();
-    tick();
+    await fixture.whenStable();
 
     expect(excelServiceSpy.updateCell).toHaveBeenCalled();
     expect(toastServiceSpy.success).toHaveBeenCalledWith('Inserted into cell');
-  }));
+  });
 
   it('should emit close on cancel', () => {
     createComponent(mockColumn);
@@ -209,16 +214,16 @@ describe('CellEditor', () => {
     expect(closeSpy).toHaveBeenCalled();
   });
 
-  it('should emit saved value on save', fakeAsync(() => {
+  it('should emit saved value on save', async () => {
     createComponent(mockColumn, 'Homo sapiens');
     const savedSpy = spyOn(component.saved, 'emit');
 
     component.save();
-    tick();
+    await fixture.whenStable();
 
     expect(savedSpy).toHaveBeenCalledWith('Homo sapiens');
     expect(toastServiceSpy.success).toHaveBeenCalledWith('Value saved');
-  }));
+  });
 
   it('should handle special value change from sub-component', () => {
     createComponent(mockAgeColumn);
@@ -235,24 +240,24 @@ describe('CellEditor', () => {
     expect(label).toBe('Species');
   });
 
-  it('should handle insert error gracefully', fakeAsync(() => {
+  it('should handle insert error gracefully', async () => {
     createComponent(mockColumn);
     excelServiceSpy.getSelectedRange.and.returnValue(Promise.reject('Excel error'));
 
     component.insertToCell();
-    tick();
+    await fixture.whenStable();
 
     expect(toastServiceSpy.error).toHaveBeenCalledWith('Failed to insert into cell');
-  }));
+  });
 
-  it('should not search for short queries', fakeAsync(() => {
+  it('should not search for short queries', () => {
     createComponent(mockColumn);
 
     component.onValueInput('h');
-    tick(350);
+    jasmine.clock().tick(351);
 
     httpMock.expectNone(req => req.url.includes('/ontology/search/suggest/'));
-  }));
+  });
 
   it('should update edit value on input', () => {
     createComponent(mockColumn);

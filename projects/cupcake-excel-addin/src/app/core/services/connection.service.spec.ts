@@ -1,4 +1,5 @@
-import { TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
+import { provideZonelessChangeDetection } from '@angular/core';
 import { HttpClient, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { ConnectionService, OFFICIAL_CLOUD_URL } from './connection.service';
@@ -13,6 +14,7 @@ describe('ConnectionService', () => {
 
     TestBed.configureTestingModule({
       providers: [
+        provideZonelessChangeDetection(),
         provideHttpClient(),
         provideHttpClientTesting(),
         ConnectionService
@@ -125,61 +127,49 @@ describe('ConnectionService', () => {
     expect(newService.mode()).toBe('cloud');
   });
 
-  it('should test connection successfully', fakeAsync(() => {
+  it('should test connection successfully', async () => {
     service.setMode('local');
 
     const testPromise = service.testConnection();
 
     const req = httpMock.expectOne(`${environment.defaultLocalUrl}/auth/status/`);
     req.flush({});
-    tick();
 
-    testPromise.then(result => {
-      expect(result).toBeTrue();
-      expect(service.isConnected()).toBeTrue();
-    });
-    tick();
-  }));
+    const result = await testPromise;
+    expect(result).toBeTrue();
+    expect(service.isConnected()).toBeTrue();
+  });
 
-  it('should handle connection test failure', fakeAsync(() => {
+  it('should handle connection test failure', async () => {
     service.setMode('local');
 
     const testPromise = service.testConnection();
 
     const req = httpMock.expectOne(`${environment.defaultLocalUrl}/auth/status/`);
     req.error(new ErrorEvent('Network error'));
-    tick();
 
-    testPromise.then(result => {
-      expect(result).toBeFalse();
-      expect(service.isConnected()).toBeFalse();
-    });
-    tick();
-  }));
+    const result = await testPromise;
+    expect(result).toBeFalse();
+    expect(service.isConnected()).toBeFalse();
+  });
 
-  it('should detect local backend', fakeAsync(() => {
+  it('should detect local backend', async () => {
     const detectPromise = service.detectLocalBackend();
 
     const req = httpMock.expectOne(`${environment.defaultLocalUrl}/auth/status/`);
     req.flush({});
-    tick();
 
-    detectPromise.then(result => {
-      expect(result).toBeTrue();
-    });
-    tick();
-  }));
+    const result = await detectPromise;
+    expect(result).toBeTrue();
+  });
 
-  it('should handle local backend detection failure', fakeAsync(() => {
+  it('should handle local backend detection failure', async () => {
     const detectPromise = service.detectLocalBackend();
 
     const req = httpMock.expectOne(`${environment.defaultLocalUrl}/auth/status/`);
     req.error(new ErrorEvent('Network error'));
-    tick();
 
-    detectPromise.then(result => {
-      expect(result).toBeFalse();
-    });
-    tick();
-  }));
+    const result = await detectPromise;
+    expect(result).toBeFalse();
+  });
 });

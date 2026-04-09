@@ -1,4 +1,5 @@
-import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideZonelessChangeDetection } from '@angular/core';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { ColumnList } from './column-list';
@@ -99,6 +100,7 @@ describe('ColumnList', () => {
     await TestBed.configureTestingModule({
       imports: [ColumnList],
       providers: [
+        provideZonelessChangeDetection(),
         provideHttpClient(),
         provideHttpClientTesting(),
         MetadataTableService,
@@ -173,14 +175,14 @@ describe('ColumnList', () => {
     expect(component.viewMode()).toBe('column-editor');
   });
 
-  it('should open value helper for column', fakeAsync(() => {
+  it('should open value helper for column', async () => {
     const column = mockColumns[1];
     component.openValueHelper(column);
-    tick();
+    await fixture.whenStable();
 
     expect(component.selectedColumn()).toBe(column);
     expect(component.viewMode()).toBe('cell-editor');
-  }));
+  });
 
   it('should close column editor on save', () => {
     component.viewMode.set('column-editor');
@@ -227,7 +229,7 @@ describe('ColumnList', () => {
     expect(toastServiceSpy.warning).toHaveBeenCalledWith('Cannot delete mandatory column');
   });
 
-  it('should delete non-mandatory column', fakeAsync(() => {
+  it('should delete non-mandatory column', async () => {
     const column = mockColumns[1];
     const refreshSpy = spyOn(component.refresh, 'emit');
 
@@ -235,43 +237,43 @@ describe('ColumnList', () => {
 
     const req = httpMock.expectOne(req => req.url.includes(`/metadata-tables/${mockTable.id}/remove-column/`));
     req.flush({});
-    tick();
+    await fixture.whenStable();
 
     expect(toastServiceSpy.success).toHaveBeenCalled();
     expect(refreshSpy).toHaveBeenCalled();
-  }));
+  });
 
-  it('should handle delete error', fakeAsync(() => {
+  it('should handle delete error', async () => {
     const column = mockColumns[1];
 
     component.deleteColumn(column);
 
     const req = httpMock.expectOne(req => req.url.includes(`/metadata-tables/${mockTable.id}/remove-column/`));
     req.error(new ErrorEvent('Network error'));
-    tick();
+    await fixture.whenStable();
 
     expect(toastServiceSpy.error).toHaveBeenCalledWith('Failed to delete column');
-  }));
+  });
 
-  it('should get current cell value when opening value helper', fakeAsync(() => {
+  it('should get current cell value when opening value helper', async () => {
     excelServiceSpy.getSelectedRange.and.returnValue(Promise.resolve({
       address: 'Sheet1!B2',
       values: [['existing value']]
     }));
 
     component.openValueHelper(mockColumns[1]);
-    tick();
+    await fixture.whenStable();
 
     expect(component.currentCellValue()).toBe('existing value');
-  }));
+  });
 
-  it('should handle Excel error when opening value helper', fakeAsync(() => {
+  it('should handle Excel error when opening value helper', async () => {
     excelServiceSpy.getSelectedRange.and.returnValue(Promise.reject('Excel error'));
 
     component.openValueHelper(mockColumns[1]);
-    tick();
+    await fixture.whenStable();
 
     expect(component.currentCellValue()).toBe('');
     expect(component.viewMode()).toBe('cell-editor');
-  }));
+  });
 });

@@ -1,4 +1,5 @@
-import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideZonelessChangeDetection } from '@angular/core';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { ModificationInput } from './modification-input';
@@ -10,9 +11,12 @@ describe('ModificationInput', () => {
   let httpMock: HttpTestingController;
 
   beforeEach(async () => {
+    jasmine.clock().install();
+
     await TestBed.configureTestingModule({
       imports: [ModificationInput],
       providers: [
+        provideZonelessChangeDetection(),
         provideHttpClient(),
         provideHttpClientTesting(),
         SdrfSyntaxService,
@@ -27,6 +31,7 @@ describe('ModificationInput', () => {
   });
 
   afterEach(() => {
+    jasmine.clock().uninstall();
     httpMock.verify();
   });
 
@@ -44,15 +49,15 @@ describe('ModificationInput', () => {
     expect(component.MM()).toBe('');
   });
 
-  it('should parse modification value on init', fakeAsync(() => {
+  it('should parse modification value on init', async () => {
     fixture.componentRef.setInput('value', 'NT=Carbamidomethyl;AC=UNIMOD:4;TA=C');
     component.ngOnInit();
-    tick();
+    await fixture.whenStable();
 
     expect(component.NT()).toBe('Carbamidomethyl');
     expect(component.AC()).toBe('UNIMOD:4');
     expect(component.TA()).toBe('C');
-  }));
+  });
 
   it('should have predefined modification types', () => {
     expect(component.modificationTypes).toContain('Fixed');
@@ -66,32 +71,30 @@ describe('ModificationInput', () => {
     expect(component.positions).toContain('Protein C-term');
   });
 
-  it('should emit formatted value when NT and TA are set', fakeAsync(() => {
+  it('should emit formatted value when NT and TA are set', () => {
     const emitSpy = spyOn(component.valueChange, 'emit');
 
     component.NT.set('Carbamidomethyl');
     component.TA.set('C');
     component.onFieldChange();
-    tick();
 
     expect(emitSpy).toHaveBeenCalled();
     const emittedValue = emitSpy.calls.mostRecent().args[0];
     expect(emittedValue).toContain('NT=Carbamidomethyl');
     expect(emittedValue).toContain('TA=C');
-  }));
+  });
 
-  it('should emit empty when required fields are missing', fakeAsync(() => {
+  it('should emit empty when required fields are missing', () => {
     const emitSpy = spyOn(component.valueChange, 'emit');
 
     component.NT.set('');
     component.TA.set('');
     component.onFieldChange();
-    tick();
 
     expect(emitSpy).toHaveBeenCalledWith('');
-  }));
+  });
 
-  it('should include optional fields in output', fakeAsync(() => {
+  it('should include optional fields in output', () => {
     const emitSpy = spyOn(component.valueChange, 'emit');
 
     component.NT.set('Carbamidomethyl');
@@ -99,25 +102,24 @@ describe('ModificationInput', () => {
     component.AC.set('UNIMOD:4');
     component.MT.set('Fixed');
     component.onFieldChange();
-    tick();
 
     expect(emitSpy).toHaveBeenCalled();
     const emittedValue = emitSpy.calls.mostRecent().args[0];
     expect(emittedValue).toContain('AC=UNIMOD:4');
     expect(emittedValue).toContain('MT=Fixed');
-  }));
+  });
 
-  it('should trigger search on NT input', fakeAsync(() => {
+  it('should trigger search on NT input', () => {
     component.onNTInput('Carb');
-    tick(350);
+    jasmine.clock().tick(351);
 
     const req = httpMock.expectOne(req => req.url.includes('/ontology/search/suggest/'));
     expect(req.request.params.get('q')).toBe('Carb');
     expect(req.request.params.get('type')).toBe('unimod');
     req.flush({ suggestions: [] });
-  }));
+  });
 
-  it('should select suggestion and update fields', fakeAsync(() => {
+  it('should select suggestion and update fields', async () => {
     const suggestion: OntologySuggestion = {
       id: 'UNIMOD:4',
       value: 'Carbamidomethyl',
@@ -126,18 +128,18 @@ describe('ModificationInput', () => {
     };
 
     component.selectSuggestion(suggestion);
-    tick();
+    await fixture.whenStable();
 
     expect(component.NT()).toBe('Carbamidomethyl');
     expect(component.showSuggestions()).toBeFalse();
-  }));
+  });
 
-  it('should hide suggestions after delay', fakeAsync(() => {
+  it('should hide suggestions after delay', () => {
     component.showSuggestions.set(true);
     component.hideSuggestions();
 
     expect(component.showSuggestions()).toBeTrue();
-    tick(250);
+    jasmine.clock().tick(251);
     expect(component.showSuggestions()).toBeFalse();
-  }));
+  });
 });

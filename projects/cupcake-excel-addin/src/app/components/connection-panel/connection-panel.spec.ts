@@ -1,4 +1,5 @@
-import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideZonelessChangeDetection } from '@angular/core';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { ConnectionPanel } from './connection-panel';
@@ -20,6 +21,7 @@ describe('ConnectionPanel', () => {
     await TestBed.configureTestingModule({
       imports: [ConnectionPanel],
       providers: [
+        provideZonelessChangeDetection(),
         provideHttpClient(),
         provideHttpClientTesting(),
         ConnectionService,
@@ -52,16 +54,15 @@ describe('ConnectionPanel', () => {
     expect(component.mode()).toBe('local');
   });
 
-  it('should switch to cloud mode', fakeAsync(() => {
+  it('should switch to cloud mode', async () => {
     component.setMode('cloud');
-    tick();
 
     const req = httpMock.expectOne(req => req.url.includes('/auth/status/'));
     req.flush({});
-    tick();
+    await fixture.whenStable();
 
     expect(component.mode()).toBe('cloud');
-  }));
+  });
 
   it('should show official badge when using official cloud URL', () => {
     connectionService.setMode('cloud');
@@ -104,7 +105,7 @@ describe('ConnectionPanel', () => {
     expect(component.hasCustomLocalUrl()).toBeFalse();
   });
 
-  it('should save custom URLs', fakeAsync(() => {
+  it('should save custom URLs', async () => {
     const customCloud = 'https://custom.example.com/api/v1';
     const customLocal = 'http://192.168.1.100:8000/api/v1';
 
@@ -114,14 +115,14 @@ describe('ConnectionPanel', () => {
 
     const req = httpMock.expectOne(req => req.url.includes('/auth/status/'));
     req.flush({});
-    tick();
+    await fixture.whenStable();
 
     expect(connectionService.cloudUrl()).toBe(customCloud);
     expect(connectionService.localUrl()).toBe(customLocal);
     expect(toastServiceSpy.success).toHaveBeenCalledWith('Connection settings saved');
-  }));
+  });
 
-  it('should reset cloud URL to official', fakeAsync(() => {
+  it('should reset cloud URL to official', () => {
     connectionService.setCloudUrl('https://custom.example.com/api/v1');
     component.customCloudUrl.set('https://custom.example.com/api/v1');
 
@@ -130,9 +131,9 @@ describe('ConnectionPanel', () => {
     expect(connectionService.cloudUrl()).toBe(OFFICIAL_CLOUD_URL);
     expect(component.customCloudUrl()).toBe(OFFICIAL_CLOUD_URL);
     expect(toastServiceSpy.info).toHaveBeenCalledWith('Cloud URL reset to official');
-  }));
+  });
 
-  it('should reset local URL to default', fakeAsync(() => {
+  it('should reset local URL to default', () => {
     connectionService.setLocalUrl('http://192.168.1.100:8000/api/v1');
     component.customLocalUrl.set('http://192.168.1.100:8000/api/v1');
 
@@ -141,48 +142,48 @@ describe('ConnectionPanel', () => {
     expect(connectionService.localUrl()).toBe(environment.defaultLocalUrl);
     expect(component.customLocalUrl()).toBe(environment.defaultLocalUrl);
     expect(toastServiceSpy.info).toHaveBeenCalledWith('Local URL reset to default');
-  }));
+  });
 
-  it('should test connection and show success toast', fakeAsync(() => {
+  it('should test connection and show success toast', async () => {
     component.testConnection();
 
     const req = httpMock.expectOne(req => req.url.includes('/auth/status/'));
     req.flush({});
-    tick();
+    await fixture.whenStable();
 
     expect(toastServiceSpy.success).toHaveBeenCalledWith('Connected successfully');
-  }));
+  });
 
-  it('should test connection and show error toast on failure', fakeAsync(() => {
+  it('should test connection and show error toast on failure', async () => {
     component.testConnection();
 
     const req = httpMock.expectOne(req => req.url.includes('/auth/status/'));
     req.error(new ErrorEvent('Network error'));
-    tick();
+    await fixture.whenStable();
 
     expect(toastServiceSpy.error).toHaveBeenCalledWith('Connection failed');
-  }));
+  });
 
-  it('should detect local backend', fakeAsync(() => {
+  it('should detect local backend', async () => {
     component.detectLocal();
 
     const req = httpMock.expectOne(req => req.url.includes('/auth/status/'));
     req.flush({});
-    tick();
+    await fixture.whenStable();
 
     expect(connectionService.mode()).toBe('local');
     expect(toastServiceSpy.success).toHaveBeenCalledWith('Local backend detected');
-  }));
+  });
 
-  it('should show warning when no local backend found', fakeAsync(() => {
+  it('should show warning when no local backend found', async () => {
     component.detectLocal();
 
     const req = httpMock.expectOne(req => req.url.includes('/auth/status/'));
     req.error(new ErrorEvent('Network error'));
-    tick();
+    await fixture.whenStable();
 
     expect(toastServiceSpy.warning).toHaveBeenCalledWith('No local backend found');
-  }));
+  });
 
   it('should load current URLs when opening advanced settings', () => {
     connectionService.setCloudUrl('https://saved.example.com/api/v1');

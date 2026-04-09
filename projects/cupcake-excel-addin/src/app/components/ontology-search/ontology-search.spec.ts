@@ -1,4 +1,5 @@
-import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideZonelessChangeDetection } from '@angular/core';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { OntologySearch } from './ontology-search';
@@ -47,6 +48,8 @@ describe('OntologySearch', () => {
   });
 
   beforeEach(async () => {
+    jasmine.clock().install();
+
     excelServiceSpy = jasmine.createSpyObj('ExcelService', ['getSelectedRange', 'updateCell']);
     excelServiceSpy.getSelectedRange.and.returnValue(Promise.resolve({
       address: 'Sheet1!A2',
@@ -57,6 +60,7 @@ describe('OntologySearch', () => {
     await TestBed.configureTestingModule({
       imports: [OntologySearch],
       providers: [
+        provideZonelessChangeDetection(),
         provideHttpClient(),
         provideHttpClientTesting(),
         OntologySearchService,
@@ -71,6 +75,7 @@ describe('OntologySearch', () => {
   });
 
   afterEach(() => {
+    jasmine.clock().uninstall();
     httpMock.verify();
   });
 
@@ -92,63 +97,63 @@ describe('OntologySearch', () => {
     expect(component.ontologyTypes.some(t => t.value === OntologyType.TISSUE)).toBeTrue();
   });
 
-  it('should search on input change', fakeAsync(() => {
+  it('should search on input change', () => {
     component.onSearchInput('human');
-    tick(350);
+    jasmine.clock().tick(351);
 
     const req = httpMock.expectOne(req => req.url.includes('/ontology/search/suggest/'));
     expect(req.request.params.get('q')).toBe('human');
     req.flush({ suggestions: [] });
-  }));
+  });
 
-  it('should filter by selected type', fakeAsync(() => {
+  it('should filter by selected type', () => {
     component.selectedType.set(OntologyType.SPECIES);
     component.onSearchInput('human');
-    tick(350);
+    jasmine.clock().tick(351);
 
     const req = httpMock.expectOne(req => req.url.includes('/ontology/search/suggest/'));
     expect(req.request.params.get('type')).toBe('species');
     req.flush({ suggestions: [] });
-  }));
+  });
 
-  it('should not search for short queries', fakeAsync(() => {
+  it('should not search for short queries', () => {
     component.onSearchInput('h');
-    tick(350);
+    jasmine.clock().tick(351);
 
     httpMock.expectNone(req => req.url.includes('/ontology/search/suggest/'));
-  }));
+  });
 
-  it('should update type and re-search', fakeAsync(() => {
+  it('should update type and re-search', () => {
     component.searchQuery.set('human');
     component.onTypeChange(OntologyType.SPECIES);
-    tick(350);
+    jasmine.clock().tick(351);
 
     const req = httpMock.expectOne(req => req.url.includes('/ontology/search/suggest/'));
     expect(req.request.params.get('type')).toBe('species');
     req.flush({ suggestions: [] });
-  }));
+  });
 
-  it('should change search match type', fakeAsync(() => {
+  it('should change search match type', () => {
     component.searchQuery.set('human');
     component.onMatchChange('startswith');
-    tick(350);
+    jasmine.clock().tick(351);
 
     expect(component.searchMatch()).toBe('startswith');
     const req = httpMock.expectOne(req => req.url.includes('/ontology/search/suggest/'));
     expect(req.request.params.get('match')).toBe('startswith');
     req.flush({ suggestions: [] });
-  }));
+  });
 
-  it('should use contains match by default', fakeAsync(() => {
+  it('should use contains match by default', () => {
     component.onSearchInput('human');
-    tick(350);
+    jasmine.clock().tick(351);
 
     const req = httpMock.expectOne(req => req.url.includes('/ontology/search/suggest/'));
     expect(req.request.params.get('match')).toBe('contains');
     req.flush({ suggestions: [] });
-  }));
+  });
 
-  it('should display suggestions', fakeAsync(() => {
+  it('should display suggestions', () => {
     const mockSuggestions: OntologySuggestion[] = [
       {
         id: '9606',
@@ -159,16 +164,16 @@ describe('OntologySearch', () => {
     ];
 
     component.onSearchInput('human');
-    tick(350);
+    jasmine.clock().tick(351);
 
     const req = httpMock.expectOne(req => req.url.includes('/ontology/search/suggest/'));
     req.flush({ suggestions: mockSuggestions });
 
     expect(component.suggestions().length).toBe(1);
     expect(component.showResults()).toBeTrue();
-  }));
+  });
 
-  it('should select suggestion and emit term with displayName only', fakeAsync(() => {
+  it('should select suggestion and emit term with displayName only', async () => {
     const termSpy = spyOn(component.termSelected, 'emit');
     const suggestion: OntologySuggestion = {
       id: '9606',
@@ -178,14 +183,14 @@ describe('OntologySearch', () => {
     };
 
     component.selectSuggestion(suggestion);
-    tick();
+    await fixture.whenStable();
 
     expect(termSpy).toHaveBeenCalledWith('Homo sapiens');
     expect(component.searchQuery()).toBe('');
     expect(component.showResults()).toBeFalse();
-  }));
+  });
 
-  it('should format MS_UNIQUE_VOCABULARIES with NT/AC syntax', fakeAsync(() => {
+  it('should format MS_UNIQUE_VOCABULARIES with NT/AC syntax', async () => {
     const termSpy = spyOn(component.termSelected, 'emit');
     const suggestion: OntologySuggestion = {
       id: 'MS:1001251',
@@ -199,12 +204,12 @@ describe('OntologySearch', () => {
     };
 
     component.selectSuggestion(suggestion);
-    tick();
+    await fixture.whenStable();
 
     expect(termSpy).toHaveBeenCalledWith('NT=Trypsin;AC=MS:1001251');
-  }));
+  });
 
-  it('should insert term into cell', fakeAsync(() => {
+  it('should insert term into cell', async () => {
     const suggestion: OntologySuggestion = {
       id: '9606',
       value: 'Homo sapiens',
@@ -213,61 +218,61 @@ describe('OntologySearch', () => {
     };
 
     component.insertIntoCell(suggestion);
-    tick();
+    await fixture.whenStable();
 
     expect(excelServiceSpy.updateCell).toHaveBeenCalled();
     expect(component.searchQuery()).toBe('');
     expect(component.showResults()).toBeFalse();
-  }));
+  });
 
-  it('should hide results after delay', fakeAsync(() => {
+  it('should hide results after delay', () => {
     component.showResults.set(true);
     component.hideResults();
 
     expect(component.showResults()).toBeTrue();
-    tick(250);
+    jasmine.clock().tick(251);
     expect(component.showResults()).toBeFalse();
-  }));
+  });
 
   it('should get ontology type label', () => {
     const label = component.getOntologyTypeLabel('species');
     expect(label).toBe('Species');
   });
 
-  it('should set context when column is provided', fakeAsync(() => {
+  it('should set context when column is provided', async () => {
     fixture.componentRef.setInput('column', mockColumn);
     fixture.detectChanges();
-    tick();
+    await fixture.whenStable();
 
     expect(component.selectedType()).toBe(OntologyType.SPECIES);
     expect(component.contextLabel()).toBeTruthy();
-  }));
+  });
 
-  it('should filter by column ontology type when searching', fakeAsync(() => {
+  it('should filter by column ontology type when searching', async () => {
     fixture.componentRef.setInput('column', mockColumn);
     fixture.detectChanges();
-    tick();
+    await fixture.whenStable();
 
     component.onSearchInput('human');
-    tick(350);
+    jasmine.clock().tick(351);
 
     const req = httpMock.expectOne(req => req.url.includes('/ontology/search/suggest/'));
     expect(req.request.params.get('type')).toBe('species');
     req.flush({ suggestions: [] });
-  }));
+  });
 
-  it('should handle search error gracefully', fakeAsync(() => {
+  it('should handle search error gracefully', () => {
     component.onSearchInput('human');
-    tick(350);
+    jasmine.clock().tick(351);
 
     const req = httpMock.expectOne(req => req.url.includes('/ontology/search/suggest/'));
     req.error(new ErrorEvent('Network error'));
 
     expect(component.suggestions().length).toBe(0);
     expect(component.isSearching()).toBeFalse();
-  }));
+  });
 
-  it('should emit term on cell insert failure', fakeAsync(() => {
+  it('should emit term on cell insert failure', async () => {
     const termSpy = spyOn(component.termSelected, 'emit');
     excelServiceSpy.getSelectedRange.and.returnValue(Promise.reject('Excel error'));
 
@@ -279,8 +284,8 @@ describe('OntologySearch', () => {
     };
 
     component.insertIntoCell(suggestion);
-    tick();
+    await fixture.whenStable();
 
     expect(termSpy).toHaveBeenCalledWith('Homo sapiens');
-  }));
+  });
 });
