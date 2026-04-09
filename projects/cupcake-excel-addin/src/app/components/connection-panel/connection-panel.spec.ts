@@ -133,7 +133,7 @@ describe('ConnectionPanel', () => {
     expect(toastServiceSpy.info).toHaveBeenCalledWith('Cloud URL reset to official');
   });
 
-  it('should reset local URL to default', () => {
+  it('should reset local URL to default', async () => {
     connectionService.setLocalUrl('http://192.168.1.100:8000/api/v1');
     component.customLocalUrl.set('http://192.168.1.100:8000/api/v1');
 
@@ -142,6 +142,10 @@ describe('ConnectionPanel', () => {
     expect(connectionService.localUrl()).toBe(environment.defaultLocalUrl);
     expect(component.customLocalUrl()).toBe(environment.defaultLocalUrl);
     expect(toastServiceSpy.info).toHaveBeenCalledWith('Local URL reset to default');
+
+    const req = httpMock.expectOne(req => req.url.includes('/auth/status/'));
+    req.flush({});
+    await fixture.whenStable();
   });
 
   it('should test connection and show success toast', async () => {
@@ -165,22 +169,22 @@ describe('ConnectionPanel', () => {
   });
 
   it('should detect local backend', async () => {
-    component.detectLocal();
+    const p = component.detectLocal();
 
     const req = httpMock.expectOne(req => req.url.includes('/auth/status/'));
     req.flush({});
-    await fixture.whenStable();
+    await p;
 
     expect(connectionService.mode()).toBe('local');
     expect(toastServiceSpy.success).toHaveBeenCalledWith('Local backend detected');
   });
 
   it('should show warning when no local backend found', async () => {
-    component.detectLocal();
+    const p = component.detectLocal();
 
     const req = httpMock.expectOne(req => req.url.includes('/auth/status/'));
     req.error(new ErrorEvent('Network error'));
-    await fixture.whenStable();
+    await p;
 
     expect(toastServiceSpy.warning).toHaveBeenCalledWith('No local backend found');
   });
