@@ -10,6 +10,7 @@ import {
   OntologyType,
   MetadataColumn
 } from '@noatgnu/cupcake-vanilla';
+import { CUPCAKE_CORE_CONFIG } from '@noatgnu/cupcake-core';
 
 function createMockColumn(overrides: Partial<MetadataColumn> = {}): MetadataColumn {
   return {
@@ -64,6 +65,7 @@ describe('OntologySearch', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         OntologySearchService,
+        { provide: CUPCAKE_CORE_CONFIG, useValue: { apiUrl: 'http://localhost:8000/api/v1' } },
         { provide: ExcelService, useValue: excelServiceSpy }
       ]
     }).compileComponents();

@@ -4,6 +4,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { CleavageInput } from './cleavage-input';
 import { SdrfSyntaxService, OntologySearchService, OntologySuggestion, OntologyType } from '@noatgnu/cupcake-vanilla';
+import { CUPCAKE_CORE_CONFIG } from '@noatgnu/cupcake-core';
 
 describe('CleavageInput', () => {
   let component: CleavageInput;
@@ -20,7 +21,8 @@ describe('CleavageInput', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         SdrfSyntaxService,
-        OntologySearchService
+        OntologySearchService,
+        { provide: CUPCAKE_CORE_CONFIG, useValue: { apiUrl: 'http://localhost:8000/api/v1' } }
       ]
     }).compileComponents();
 

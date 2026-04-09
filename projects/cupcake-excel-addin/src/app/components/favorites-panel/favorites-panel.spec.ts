@@ -9,7 +9,7 @@ import {
   FavouriteMetadataOptionService,
   MetadataColumn
 } from '@noatgnu/cupcake-vanilla';
-import { AuthService, LabGroupService, User } from '@noatgnu/cupcake-core';
+import { AuthService, LabGroupService, User, CUPCAKE_CORE_CONFIG } from '@noatgnu/cupcake-core';
 
 function createMockUser(): User {
   return {
@@ -81,6 +81,7 @@ describe('FavoritesPanel', () => {
         provideHttpClientTesting(),
         FavouriteMetadataOptionService,
         LabGroupService,
+        { provide: CUPCAKE_CORE_CONFIG, useValue: { apiUrl: 'http://localhost:8000/api/v1' } },
         { provide: ExcelService, useValue: excelServiceSpy },
         { provide: ToastService, useValue: toastServiceSpy },
         { provide: AuthService, useValue: authServiceSpy }

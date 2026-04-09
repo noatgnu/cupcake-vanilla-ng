@@ -4,6 +4,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { ModificationInput } from './modification-input';
 import { SdrfSyntaxService, OntologySearchService, OntologySuggestion, OntologyType } from '@noatgnu/cupcake-vanilla';
+import { CUPCAKE_CORE_CONFIG } from '@noatgnu/cupcake-core';
 
 describe('ModificationInput', () => {
   let component: ModificationInput;
@@ -20,7 +21,8 @@ describe('ModificationInput', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         SdrfSyntaxService,
-        OntologySearchService
+        OntologySearchService,
+        { provide: CUPCAKE_CORE_CONFIG, useValue: { apiUrl: 'http://localhost:8000/api/v1' } }
       ]
     }).compileComponents();
 

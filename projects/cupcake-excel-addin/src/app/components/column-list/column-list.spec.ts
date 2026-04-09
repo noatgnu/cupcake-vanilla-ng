@@ -13,6 +13,7 @@ import {
   MetadataColumn,
   OntologyType
 } from '@noatgnu/cupcake-vanilla';
+import { CUPCAKE_CORE_CONFIG } from '@noatgnu/cupcake-core';
 
 function createMockColumn(overrides: Partial<MetadataColumn> = {}): MetadataColumn {
   return {
@@ -106,6 +107,7 @@ describe('ColumnList', () => {
         MetadataTableService,
         MetadataColumnService,
         SdrfSyntaxService,
+        { provide: CUPCAKE_CORE_CONFIG, useValue: { apiUrl: 'http://localhost:8000/api/v1' } },
         { provide: ExcelService, useValue: excelServiceSpy },
         { provide: ToastService, useValue: toastServiceSpy }
       ]
