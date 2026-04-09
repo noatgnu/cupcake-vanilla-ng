@@ -1,0 +1,67 @@
+<button
+  type="button"
+  [class]="buttonClass()"
+  [disabled]="isLoading()"
+  (click)="createLaunchCode()">
+  @if (isLoading()) {
+    <span class="spinner-border spinner-border-sm me-1"></span>
+  } @else if (showIcon()) {
+    <i class="bi bi-file-earmark-spreadsheet me-1"></i>
+  }
+  {{ buttonText() }}
+</button>
+
+@if (showModal()) {
+  <div class="modal-backdrop fade show"></div>
+  <div class="modal fade show d-block" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="bi bi-file-earmark-spreadsheet me-2"></i>
+            Open in Excel
+          </h5>
+          <button type="button" class="btn-close" (click)="closeModal()"></button>
+        </div>
+        <div class="modal-body">
+          <p>Use this code in the Excel add-in to open the table:</p>
+
+          <div class="launch-code-display">
+            <code class="launch-code">{{ launchCode()?.code }}</code>
+            <button
+              type="button"
+              class="btn btn-outline-secondary btn-sm"
+              (click)="copyCode()"
+              [title]="copySuccess() ? 'Copied!' : 'Copy to clipboard'">
+              @if (copySuccess()) {
+                <i class="bi bi-check"></i>
+              } @else {
+                <i class="bi bi-clipboard"></i>
+              }
+            </button>
+          </div>
+
+          <div class="mt-3">
+            <h6>Instructions:</h6>
+            <ol class="small text-muted mb-0">
+              <li>Open Microsoft Excel</li>
+              <li>Open the Cupcake Vanilla add-in</li>
+              <li>Click "Use Launch Code" on the login screen</li>
+              <li>Enter the code above</li>
+            </ol>
+          </div>
+
+          @if (launchCode()?.expiresIn) {
+            <div class="alert alert-warning mt-3 mb-0 py-2 small">
+              <i class="bi bi-clock me-1"></i>
+              This code expires in {{ getExpiryTime() }}
+            </div>
+          }
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeModal()">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+}

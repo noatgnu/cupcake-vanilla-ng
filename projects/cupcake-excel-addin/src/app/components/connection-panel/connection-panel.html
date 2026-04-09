@@ -1,0 +1,112 @@
+<div class="connection-panel p-2 border-bottom bg-light">
+  <div class="d-flex align-items-center gap-2 mb-2">
+    <div class="btn-group btn-group-sm flex-grow-1">
+      <button
+        type="button"
+        class="btn"
+        [class.btn-primary]="mode() === 'local'"
+        [class.btn-outline-primary]="mode() !== 'local'"
+        (click)="setMode('local')">
+        <i class="bi bi-pc-display me-1"></i>Local
+      </button>
+      <button
+        type="button"
+        class="btn"
+        [class.btn-primary]="mode() === 'cloud'"
+        [class.btn-outline-primary]="mode() !== 'cloud'"
+        (click)="setMode('cloud')">
+        <i class="bi bi-cloud me-1"></i>Cloud
+      </button>
+    </div>
+    <button class="btn btn-sm btn-outline-secondary" (click)="testConnection()" [disabled]="isChecking()">
+      @if (isChecking()) {
+        <span class="spinner-border spinner-border-sm"></span>
+      } @else {
+        <i class="bi bi-arrow-repeat"></i>
+      }
+    </button>
+  </div>
+
+  <div class="connection-status mb-2">
+    @if (isConnected()) {
+      <small class="text-success">
+        <i class="bi bi-check-circle-fill me-1"></i>Connected
+      </small>
+    } @else {
+      <small class="text-danger">
+        <i class="bi bi-x-circle-fill me-1"></i>Not connected
+      </small>
+    }
+    @if (mode() === 'cloud') {
+      @if (isOfficialCloud()) {
+        <span class="badge bg-primary ms-2" style="font-size: 0.65rem;">Official</span>
+      } @else {
+        <span class="badge bg-warning text-dark ms-2" style="font-size: 0.65rem;">Custom</span>
+      }
+    }
+  </div>
+
+  @if (mode() === 'cloud' && isOfficialCloud()) {
+    <div class="small text-muted mb-2">
+      <i class="bi bi-info-circle me-1"></i>
+      Using official cloud: ccv.proteo.info
+    </div>
+  }
+
+  <button class="btn btn-link btn-sm p-0" (click)="toggleAdvanced()">
+    <small>
+      <i class="bi" [class.bi-chevron-down]="!showAdvanced()" [class.bi-chevron-up]="showAdvanced()"></i>
+      Advanced Settings
+    </small>
+  </button>
+
+  @if (showAdvanced()) {
+    <div class="advanced-settings mt-2">
+      <div class="mb-2">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+          <label class="form-label small mb-0">Cloud URL</label>
+          @if (hasCustomCloudUrl()) {
+            <button class="btn btn-link btn-sm p-0" (click)="resetCloudUrl()">
+              <small>Reset to official</small>
+            </button>
+          }
+        </div>
+        <input
+          type="text"
+          class="form-control form-control-sm"
+          placeholder="https://ccv.proteo.info/api/v1"
+          [ngModel]="customCloudUrl()"
+          (ngModelChange)="customCloudUrl.set($event)" />
+        <small class="text-muted d-block mt-1">
+          Official: {{ officialCloudUrl }}
+        </small>
+      </div>
+
+      <div class="mb-2">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+          <label class="form-label small mb-0">Local URL</label>
+          @if (hasCustomLocalUrl()) {
+            <button class="btn btn-link btn-sm p-0" (click)="resetLocalUrl()">
+              <small>Reset to default</small>
+            </button>
+          }
+        </div>
+        <input
+          type="text"
+          class="form-control form-control-sm"
+          placeholder="http://localhost:8000/api/v1"
+          [ngModel]="customLocalUrl()"
+          (ngModelChange)="customLocalUrl.set($event)" />
+      </div>
+
+      <div class="d-flex gap-2">
+        <button class="btn btn-sm btn-primary" (click)="saveUrls()">
+          <i class="bi bi-check me-1"></i>Save
+        </button>
+        <button class="btn btn-sm btn-outline-secondary" (click)="detectLocal()">
+          <i class="bi bi-search me-1"></i>Detect Local
+        </button>
+      </div>
+    </div>
+  }
+</div>

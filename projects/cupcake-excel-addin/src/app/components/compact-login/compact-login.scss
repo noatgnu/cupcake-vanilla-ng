@@ -1,0 +1,27 @@
+.compact-login {
+  background: var(--bs-tertiary-bg);
+  border-radius: 4px;
+  color: var(--bs-body-color);
+
+  h6 {
+    color: var(--bs-body-color);
+  }
+
+  .login-mode-toggle {
+    .btn-outline-secondary {
+      font-size: 0.75rem;
+    }
+  }
+
+  .launch-code-input {
+    font-size: 1.25rem;
+    font-weight: bold;
+    letter-spacing: 0.2rem;
+    text-transform: uppercase;
+  }
+}
+
+.btn-close-sm {
+  font-size: 0.65rem;
+  padding: 0.2rem;
+}

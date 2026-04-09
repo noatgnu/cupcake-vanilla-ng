@@ -302,6 +302,119 @@
           }
         }
       }
+    },
+    "cupcake-excel-addin": {
+      "projectType": "application",
+      "schematics": {
+        "@schematics/angular:component": {
+          "style": "scss"
+        }
+      },
+      "root": "projects/cupcake-excel-addin",
+      "sourceRoot": "projects/cupcake-excel-addin/src",
+      "prefix": "app",
+      "architect": {
+        "build": {
+          "builder": "@angular/build:application",
+          "options": {
+            "outputPath": "dist/cupcake-excel-addin",
+            "index": "projects/cupcake-excel-addin/src/index.html",
+            "browser": "projects/cupcake-excel-addin/src/main.ts",
+            "polyfills": [],
+            "tsConfig": "projects/cupcake-excel-addin/tsconfig.app.json",
+            "inlineStyleLanguage": "scss",
+            "assets": [
+              {
+                "glob": "**/*",
+                "input": "projects/cupcake-excel-addin/public"
+              },
+              {
+                "glob": "**/*",
+                "input": "projects/cupcake-excel-addin/src/assets",
+                "output": "/assets"
+              },
+              {
+                "glob": "manifest.xml",
+                "input": "projects/cupcake-excel-addin",
+                "output": "/"
+              },
+              {
+                "glob": "commands.html",
+                "input": "projects/cupcake-excel-addin/src",
+                "output": "/"
+              },
+              {
+                "glob": "test-addin.html",
+                "input": "projects/cupcake-excel-addin/src",
+                "output": "/"
+              },
+              {
+                "glob": "**/*",
+                "input": "node_modules/@microsoft/office-js/dist",
+                "output": "/office-js"
+              },
+            ],
+            "styles": [
+              "node_modules/bootstrap/dist/css/bootstrap.min.css",
+              "node_modules/bootstrap-icons/font/bootstrap-icons.css",
+              "projects/cupcake-excel-addin/src/styles.scss"
+            ]
+          },
+          "configurations": {
+            "production": {
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "1MB",
+                  "maximumError": "2MB"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "4kB",
+                  "maximumError": "8kB"
+                }
+              ],
+              "outputHashing": "all",
+              "fileReplacements": [
+                {
+                  "replace": "projects/cupcake-excel-addin/src/environments/environment.ts",
+                  "with": "projects/cupcake-excel-addin/src/environments/environment.prod.ts"
+                }
+              ]
+            },
+            "development": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "serve": {
+          "builder": "@angular/build:dev-server",
+          "configurations": {
+            "production": {
+              "buildTarget": "cupcake-excel-addin:build:production"
+            },
+            "development": {
+              "buildTarget": "cupcake-excel-addin:build:development"
+            }
+          },
+          "defaultConfiguration": "development"
+        },
+        "test": {
+          "builder": "@angular/build:karma",
+          "options": {
+            "tsConfig": "projects/cupcake-excel-addin/tsconfig.spec.json",
+            "polyfills": [],
+            "styles": [
+              "node_modules/bootstrap/dist/css/bootstrap.min.css",
+              "node_modules/bootstrap-icons/font/bootstrap-icons.css",
+              "projects/cupcake-excel-addin/src/styles.scss"
+            ]
+          }
+        }
+      }
     }
   },
   "cli": {

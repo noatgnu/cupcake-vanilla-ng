@@ -1,0 +1,90 @@
+<div class="ontology-search">
+  @if (contextLabel()) {
+    <div class="small text-muted mb-2">
+      <i class="bi bi-funnel me-1"></i>
+      Filtering: {{ contextLabel() }}
+    </div>
+  }
+
+  @if (!column()) {
+    <div class="mb-2">
+      <select
+        class="form-select form-select-sm"
+        [ngModel]="selectedType()"
+        (ngModelChange)="onTypeChange($event)">
+        @for (type of ontologyTypes; track type.value) {
+          <option [value]="type.value">{{ type.label }}</option>
+        }
+      </select>
+    </div>
+  }
+
+  <div class="search-match-toggle mb-2">
+    <div class="btn-group btn-group-sm w-100" role="group">
+      <input
+        type="radio"
+        class="btn-check"
+        name="searchMatch"
+        id="matchContains"
+        [checked]="searchMatch() === 'contains'"
+        (change)="onMatchChange('contains')">
+      <label class="btn btn-outline-secondary" for="matchContains">
+        <i class="bi bi-asterisk me-1"></i>Contains
+      </label>
+      <input
+        type="radio"
+        class="btn-check"
+        name="searchMatch"
+        id="matchStartswith"
+        [checked]="searchMatch() === 'startswith'"
+        (change)="onMatchChange('startswith')">
+      <label class="btn btn-outline-secondary" for="matchStartswith">
+        <i class="bi bi-caret-right me-1"></i>Starts with
+      </label>
+    </div>
+  </div>
+
+  <div class="position-relative">
+    <div class="input-group input-group-sm">
+      <input
+        type="text"
+        class="form-control"
+        [placeholder]="contextLabel() ? 'Search ' + contextLabel() + '...' : 'Search ontology terms...'"
+        [ngModel]="searchQuery()"
+        (ngModelChange)="onSearchInput($event)"
+        (focus)="showResults.set(true)"
+        (blur)="hideResults()" />
+      @if (isSearching()) {
+        <span class="input-group-text">
+          <span class="spinner-border spinner-border-sm"></span>
+        </span>
+      }
+    </div>
+
+    @if (showResults() && suggestions().length > 0) {
+      <div class="suggestions-dropdown">
+        @for (suggestion of suggestions(); track suggestion.id) {
+          <div
+            class="suggestion-item"
+            (mousedown)="insertIntoCell(suggestion)">
+            <div class="suggestion-label">{{ suggestion.displayName }}</div>
+            <div class="suggestion-meta">
+              <small class="text-muted">{{ suggestion.id }}</small>
+              @if (suggestion.ontologyType && !column()) {
+                <span class="badge bg-secondary ms-1">{{ getOntologyTypeLabel(suggestion.ontologyType) }}</span>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+    @if (showResults() && searchQuery().length >= 2 && !isSearching() && suggestions().length === 0) {
+      <div class="suggestions-dropdown">
+        <div class="suggestion-item text-muted">
+          <small>No results found</small>
+        </div>
+      </div>
+    }
+  </div>
+</div>

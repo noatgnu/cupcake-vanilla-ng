@@ -1,0 +1,64 @@
+@if (showEditor()) {
+  <app-pool-editor
+    [table]="table()"
+    [pool]="selectedPool()"
+    [isCreating]="isCreating()"
+    (saved)="onPoolSaved()"
+    (cancel)="onEditorCancel()" />
+} @else {
+  <div class="pool-manager">
+    <div class="d-flex align-items-center mb-2">
+      <button class="btn btn-sm btn-link p-0 me-2" (click)="goBack()">
+        <i class="bi bi-arrow-left"></i>
+      </button>
+      <h6 class="mb-0 flex-grow-1">Sample Pools</h6>
+      <button class="btn btn-sm btn-primary" (click)="createPool()">
+        <i class="bi bi-plus"></i>
+      </button>
+    </div>
+
+    @if (isLoading()) {
+      <div class="text-center py-3">
+        <div class="spinner-border spinner-border-sm text-primary"></div>
+        <small class="d-block mt-1 text-muted">Loading pools...</small>
+      </div>
+    } @else {
+      <div class="pool-list">
+        @for (pool of pools(); track pool.id) {
+          <div class="pool-item p-2 border-bottom">
+            <div class="d-flex align-items-start">
+              <div class="pool-info flex-grow-1">
+                <div class="d-flex align-items-center">
+                  <span class="fw-medium small">{{ pool.poolName }}</span>
+                  @if (pool.isReference) {
+                    <span class="badge bg-info ms-1">Ref</span>
+                  }
+                </div>
+                <small class="text-muted d-block">{{ getSampleRange(pool) }}</small>
+                @if (pool.poolDescription) {
+                  <small class="text-muted d-block">{{ pool.poolDescription }}</small>
+                }
+              </div>
+              <div class="pool-actions btn-group btn-group-sm">
+                <button class="btn btn-outline-primary btn-sm" (click)="editPool(pool)" title="Edit">
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-outline-danger btn-sm" (click)="deletePool(pool)" title="Delete">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        } @empty {
+          <div class="text-center text-muted py-3">
+            <i class="bi bi-collection d-block fs-4"></i>
+            <small>No pools defined</small>
+            <button class="btn btn-sm btn-link d-block mx-auto mt-1" (click)="createPool()">
+              Create a pool
+            </button>
+          </div>
+        }
+      </div>
+    }
+  </div>
+}

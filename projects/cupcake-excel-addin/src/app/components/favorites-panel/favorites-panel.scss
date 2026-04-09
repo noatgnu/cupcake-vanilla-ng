@@ -1,0 +1,50 @@
+.favorites-panel {
+  color: var(--bs-body-color);
+
+  .favorites-header {
+    border-bottom: 1px solid var(--taskpane-border, var(--bs-border-color));
+    padding-bottom: 0.25rem;
+    color: var(--bs-body-color);
+  }
+
+  .nav-tabs {
+    font-size: 0.75rem;
+
+    .nav-link {
+      font-size: 0.75rem;
+
+      .badge {
+        font-size: 0.65rem;
+      }
+    }
+  }
+
+  .favorites-list {
+    max-height: 150px;
+    overflow-y: auto;
+  }
+
+  .favorite-item {
+    padding: 0.375rem 0.5rem;
+    border: 1px solid var(--taskpane-border, var(--bs-border-color));
+    border-radius: 0.25rem;
+    margin-bottom: 0.25rem;
+    cursor: pointer;
+    font-size: 0.8rem;
+    background: var(--bs-body-bg);
+    color: var(--bs-body-color);
+    transition: background-color 0.15s ease;
+
+    &:hover {
+      background: var(--taskpane-hover, var(--bs-tertiary-bg));
+    }
+
+    .favorite-value {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--bs-body-color);
+    }
+  }
+}

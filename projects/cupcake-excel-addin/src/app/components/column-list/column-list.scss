@@ -1,0 +1,35 @@
+.column-list {
+  padding: 0;
+  color: var(--bs-body-color);
+}
+
+.column-items {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.column-item {
+  font-size: 12px;
+  color: var(--bs-body-color);
+  border-color: var(--taskpane-border, var(--bs-border-color)) !important;
+
+  &:hover {
+    background-color: var(--taskpane-hover, var(--bs-tertiary-bg));
+  }
+}
+
+.column-badges {
+  .badge {
+    font-size: 9px;
+    padding: 2px 4px;
+  }
+}
+
+.column-actions {
+  flex-shrink: 0;
+
+  .btn {
+    padding: 2px 4px;
+    font-size: 10px;
+  }
+}

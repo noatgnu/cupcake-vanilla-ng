@@ -11,3 +11,4 @@ export * from './ontology-utils';
 export * from './ontology-config';
 export * from './sdrf-config';
 export * from './chunked-upload';
+export * from './excel-launch';

@@ -1,0 +1,106 @@
+@switch (viewMode()) {
+  @case ('column-editor') {
+    <app-column-editor
+      [table]="table()"
+      [column]="selectedColumn()"
+      [isCreating]="isCreating()"
+      (saved)="onColumnSaved()"
+      (cancel)="onEditorCancel()" />
+  }
+  @case ('cell-editor') {
+    @if (selectedColumn()) {
+      <app-cell-editor
+        [column]="selectedColumn()!"
+        [currentValue]="currentCellValue()"
+        (close)="onCellEditorClose()"
+        (saved)="onCellValueSaved($event)" />
+    }
+  }
+  @default {
+    <div class="column-list">
+      <div class="d-flex align-items-center mb-2">
+        <button class="btn btn-sm btn-link p-0 me-2" (click)="goBack()">
+          <i class="bi bi-arrow-left"></i>
+        </button>
+        <h6 class="mb-0 flex-grow-1">Columns</h6>
+        <button class="btn btn-sm btn-primary" (click)="createColumn()">
+          <i class="bi bi-plus"></i>
+        </button>
+      </div>
+
+      <div class="search-box mb-2">
+        <input
+          type="text"
+          class="form-control form-control-sm"
+          placeholder="Filter columns..."
+          [ngModel]="searchQuery()"
+          (ngModelChange)="searchQuery.set($event)">
+      </div>
+
+      @if (isLoading()) {
+        <div class="text-center py-3">
+          <div class="spinner-border spinner-border-sm text-primary"></div>
+          <small class="d-block mt-1 text-muted">Loading columns...</small>
+        </div>
+      } @else {
+        <div class="column-items">
+          @for (column of filteredColumns(); track column.id; let i = $index) {
+            <div class="column-item p-2 border-bottom">
+              <div class="d-flex align-items-start">
+                <div class="column-info flex-grow-1">
+                  <div class="d-flex align-items-center">
+                    <span class="badge bg-secondary me-1">{{ column.columnPosition }}</span>
+                    <span class="fw-medium small text-truncate">{{ column.name }}</span>
+                  </div>
+                  <small class="text-muted d-block">{{ column.type }}</small>
+                  <div class="column-badges mt-1">
+                    @if (column.mandatory) {
+                      <span class="badge bg-danger me-1">Required</span>
+                    }
+                    @if (column.hidden) {
+                      <span class="badge bg-secondary me-1">Hidden</span>
+                    }
+                    @if (column.ontologyType) {
+                      <span class="badge bg-info me-1">{{ column.ontologyType }}</span>
+                    }
+                  </div>
+                </div>
+                <div class="column-actions">
+                  <div class="btn-group btn-group-sm mb-1">
+                    <button class="btn btn-outline-secondary btn-sm" (click)="moveColumn(column, 'up')"
+                            [disabled]="i === 0" title="Move up">
+                      <i class="bi bi-chevron-up"></i>
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm" (click)="moveColumn(column, 'down')"
+                            [disabled]="i === filteredColumns().length - 1" title="Move down">
+                      <i class="bi bi-chevron-down"></i>
+                    </button>
+                  </div>
+                  <div class="btn-group btn-group-sm">
+                    @if (hasSpecialInput(column)) {
+                      <button class="btn btn-outline-info btn-sm" (click)="openValueHelper(column)" title="Value Helper">
+                        <i class="bi bi-search"></i>
+                      </button>
+                    }
+                    <button class="btn btn-outline-primary btn-sm" (click)="editColumn(column)" title="Edit">
+                      <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-outline-danger btn-sm" (click)="deleteColumn(column)"
+                            [disabled]="column.mandatory" title="Delete">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          } @empty {
+            <div class="text-center text-muted py-3">
+              <i class="bi bi-columns-gap d-block fs-4"></i>
+              <small>No columns found</small>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+}

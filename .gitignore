@@ -37,6 +37,11 @@ yarn-error.log
 testem.log
 /typings
 
+# Test results
+/integration-test-results
+junit.xml
+test-results/
+
 # System files
 .DS_Store
 Thumbs.db

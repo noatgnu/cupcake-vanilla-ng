@@ -1,0 +1,103 @@
+<div class="modification-input">
+  <div class="mb-2 position-relative">
+    <label class="form-label small mb-1">Modification Name *</label>
+    <div class="input-group input-group-sm">
+      <input
+        type="text"
+        class="form-control"
+        placeholder="Search Unimod..."
+        [ngModel]="NT()"
+        (ngModelChange)="onNTInput($event)"
+        (blur)="hideSuggestions()">
+      @if (isSearching()) {
+        <span class="input-group-text">
+          <span class="spinner-border spinner-border-sm"></span>
+        </span>
+      }
+    </div>
+    @if (showSuggestions() && suggestions().length > 0) {
+      <div class="suggestions-dropdown position-absolute w-100 bg-white border rounded shadow-sm" style="z-index: 1000; max-height: 150px; overflow-y: auto;">
+        @for (s of suggestions(); track s.id) {
+          <div
+            class="suggestion-item px-2 py-1 small"
+            style="cursor: pointer;"
+            (mousedown)="selectSuggestion(s)">
+            <div>{{ s.displayName }}</div>
+            <small class="text-muted">{{ s.id }}</small>
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  <div class="row g-1 mb-2">
+    <div class="col-6">
+      <label class="form-label small mb-1">Target AA *</label>
+      <input
+        type="text"
+        class="form-control form-control-sm"
+        placeholder="e.g., C"
+        [ngModel]="TA()"
+        (ngModelChange)="TA.set($event); onFieldChange()">
+    </div>
+    <div class="col-6">
+      <label class="form-label small mb-1">Type</label>
+      <select
+        class="form-select form-select-sm"
+        [ngModel]="MT()"
+        (ngModelChange)="MT.set($event); onFieldChange()">
+        <option value="">Select...</option>
+        @for (t of modificationTypes; track t) {
+          <option [value]="t">{{ t }}</option>
+        }
+      </select>
+    </div>
+  </div>
+
+  <div class="row g-1 mb-2">
+    <div class="col-6">
+      <label class="form-label small mb-1">Accession</label>
+      <input
+        type="text"
+        class="form-control form-control-sm"
+        placeholder="UNIMOD:4"
+        [ngModel]="AC()"
+        (ngModelChange)="AC.set($event); onFieldChange()">
+    </div>
+    <div class="col-6">
+      <label class="form-label small mb-1">Position</label>
+      <select
+        class="form-select form-select-sm"
+        [ngModel]="PP()"
+        (ngModelChange)="PP.set($event); onFieldChange()">
+        <option value="">Select...</option>
+        @for (p of positions; track p) {
+          <option [value]="p">{{ p }}</option>
+        }
+      </select>
+    </div>
+  </div>
+
+  <div class="row g-1">
+    <div class="col-6">
+      <label class="form-label small mb-1">Formula</label>
+      <input
+        type="text"
+        class="form-control form-control-sm"
+        placeholder="H3C2NO"
+        [ngModel]="CF()"
+        (ngModelChange)="CF.set($event); onFieldChange()">
+    </div>
+    <div class="col-6">
+      <label class="form-label small mb-1">Mass</label>
+      <input
+        type="text"
+        class="form-control form-control-sm"
+        placeholder="57.0215"
+        [ngModel]="MM()"
+        (ngModelChange)="MM.set($event); onFieldChange()">
+    </div>
+  </div>
+
+  <small class="text-muted d-block mt-1">Format: NT=name;TA=C;AC=...</small>
+</div>

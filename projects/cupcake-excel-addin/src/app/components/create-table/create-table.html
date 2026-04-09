@@ -1,0 +1,101 @@
+@switch (currentStep()) {
+  @case ('form') {
+    <div class="create-table">
+      <div class="d-flex align-items-center mb-3">
+        <button class="btn btn-sm btn-link p-0 me-2" (click)="onCancel()">
+          <i class="bi bi-arrow-left"></i>
+        </button>
+        <h6 class="mb-0">Create New Table</h6>
+      </div>
+
+      <div class="mb-2">
+        <label class="form-label small mb-1">Table Name</label>
+        <input
+          type="text"
+          class="form-control form-control-sm"
+          placeholder="Enter table name"
+          [ngModel]="form().name"
+          (ngModelChange)="updateForm('name', $event)">
+      </div>
+
+      <div class="mb-2">
+        <label class="form-label small mb-1">Description</label>
+        <textarea
+          class="form-control form-control-sm"
+          rows="2"
+          placeholder="Optional description"
+          [ngModel]="form().description"
+          (ngModelChange)="updateForm('description', $event)"></textarea>
+      </div>
+
+      <div class="mb-2">
+        <label class="form-label small mb-1">Sample Count</label>
+        <input
+          type="number"
+          class="form-control form-control-sm"
+          min="1"
+          [ngModel]="form().sampleCount"
+          (ngModelChange)="updateForm('sampleCount', $event)">
+      </div>
+
+      <div class="mb-2">
+        <label class="form-label small mb-1">Lab Group</label>
+        <select
+          class="form-select form-select-sm"
+          [ngModel]="form().labGroupId"
+          (ngModelChange)="updateForm('labGroupId', $event)">
+          <option [ngValue]="null">None</option>
+          @for (labGroup of labGroups(); track labGroup.id) {
+            <option [ngValue]="labGroup.id">{{ labGroup.name }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="mb-3">
+        <button class="btn btn-outline-secondary btn-sm w-100" (click)="loadFromExcel()">
+          <i class="bi bi-file-earmark-spreadsheet me-1"></i>
+          Load from Current Worksheet
+        </button>
+        @if (useExcelData()) {
+          <small class="text-success d-block mt-1">
+            <i class="bi bi-check-circle me-1"></i>
+            {{ excelHeaders().length }} columns, {{ form().sampleCount }} rows loaded
+          </small>
+        }
+      </div>
+
+      <div class="d-flex gap-2">
+        <button
+          class="btn btn-primary btn-sm flex-grow-1"
+          (click)="goToSchemaSelection()"
+          [disabled]="isCreating()">
+          <i class="bi bi-arrow-right me-1"></i>
+          Next: Select Schemas
+        </button>
+        <button class="btn btn-outline-secondary btn-sm" (click)="onCancel()">
+          Cancel
+        </button>
+      </div>
+    </div>
+  }
+
+  @case ('schema') {
+    <div class="create-table">
+      <app-schema-selector
+        (selected)="onSchemasSelected($event)"
+        (cancel)="onSchemaCancel()" />
+
+      <div class="mt-2">
+        <button
+          class="btn btn-outline-secondary btn-sm w-100"
+          (click)="skipSchemas()"
+          [disabled]="isCreating()">
+          @if (isCreating()) {
+            <span class="spinner-border spinner-border-sm me-1"></span>
+          }
+          Skip & Create Empty Table
+        </button>
+      </div>
+    </div>
+  }
+}

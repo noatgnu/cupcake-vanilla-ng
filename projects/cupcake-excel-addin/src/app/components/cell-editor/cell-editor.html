@@ -1,0 +1,101 @@
+<div class="cell-editor">
+  <div class="d-flex align-items-center mb-2">
+    <button class="btn btn-sm btn-link p-0 me-2" (click)="cancel()">
+      <i class="bi bi-arrow-left"></i>
+    </button>
+    <h6 class="mb-0 text-truncate flex-grow-1">{{ column().name }}</h6>
+  </div>
+
+  @if (hasOntology()) {
+    <div class="alert alert-info py-1 px-2 small mb-2">
+      <i class="bi bi-tag me-1"></i>
+      Ontology: {{ ontologyLabel() }}
+    </div>
+  }
+
+  @switch (syntaxType()) {
+    @case ('age') {
+      <app-age-input
+        [value]="currentValue()"
+        (valueChange)="onSpecialValueChange($event)" />
+    }
+    @case ('modification') {
+      <app-modification-input
+        [value]="currentValue()"
+        (valueChange)="onSpecialValueChange($event)" />
+    }
+    @case ('cleavage') {
+      <app-cleavage-input
+        [value]="currentValue()"
+        (valueChange)="onSpecialValueChange($event)" />
+    }
+    @default {
+      <div class="mb-2 position-relative">
+        <label class="form-label small mb-1">Value</label>
+        <div class="input-group input-group-sm">
+          <input
+            type="text"
+            class="form-control"
+            [placeholder]="hasOntology() ? 'Search ' + ontologyLabel() + '...' : 'Enter value'"
+            [ngModel]="editValue()"
+            (ngModelChange)="onValueInput($event)"
+            (blur)="hideSuggestions()">
+          @if (isSearching()) {
+            <span class="input-group-text">
+              <span class="spinner-border spinner-border-sm"></span>
+            </span>
+          }
+        </div>
+
+        @if (showSuggestions() && suggestions().length > 0) {
+          <div class="suggestions-dropdown position-absolute w-100 bg-white border rounded shadow-sm" style="z-index: 1000; max-height: 200px; overflow-y: auto;">
+            @for (suggestion of suggestions(); track suggestion.id) {
+              <div
+                class="suggestion-item px-2 py-1"
+                style="cursor: pointer;"
+                (mousedown)="selectSuggestion(suggestion)">
+                <div class="small">{{ suggestion.displayName }}</div>
+                <div class="d-flex justify-content-between">
+                  <small class="text-muted">{{ suggestion.id }}</small>
+                  @if (suggestion.ontologyType) {
+                    <span class="badge bg-secondary" style="font-size: 0.65rem;">{{ getOntologyTypeLabel(suggestion.ontologyType) }}</span>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+        @if (showSuggestions() && editValue().length >= 2 && !isSearching() && suggestions().length === 0 && hasOntology()) {
+          <div class="suggestions-dropdown position-absolute w-100 bg-white border rounded shadow-sm p-2" style="z-index: 1000;">
+            <small class="text-muted">No matching terms found</small>
+          </div>
+        }
+      </div>
+    }
+  }
+
+  @if (syntaxType() || !hasOntology()) {
+    <div class="mt-2 p-2 bg-light rounded">
+      <label class="form-label small mb-1">Preview</label>
+      <code class="d-block small text-break">{{ editValue() || '(empty)' }}</code>
+    </div>
+  }
+
+  <div class="d-flex gap-2 mt-3">
+    <button
+      class="btn btn-primary btn-sm flex-grow-1"
+      (click)="insertToCell()"
+      [disabled]="isSaving()">
+      @if (isSaving()) {
+        <span class="spinner-border spinner-border-sm me-1"></span>
+      } @else {
+        <i class="bi bi-check me-1"></i>
+      }
+      Insert to Cell
+    </button>
+    <button class="btn btn-outline-secondary btn-sm" (click)="cancel()">
+      Cancel
+    </button>
+  </div>
+</div>

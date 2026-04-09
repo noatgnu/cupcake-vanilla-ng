@@ -1,4 +1,4 @@
-import { Injectable, signal, Signal, NgZone, inject } from '@angular/core';
+import { Injectable, signal, Signal } from '@angular/core';
 import { Events } from '@wailsio/runtime';
 import * as App from '../../../../bindings/github.com/noatgnu/cupcake-vanilla-wails/app';
 
@@ -106,7 +106,6 @@ const PLAYWRIGHT_MOCK_NAMESPACE = '__playwrightWailsMock__';
   providedIn: 'root'
 })
 export class WailsService {
-  private ngZone = inject(NgZone);
   readonly isWails = typeof window !== 'undefined' && '_wails' in window;
   private readonly isMockMode = typeof window !== 'undefined' &&
     (window as any)[PLAYWRIGHT_MOCK_NAMESPACE]?.enabled === true;
@@ -162,77 +161,59 @@ export class WailsService {
   private setupEventListeners(): void {
 
     this.onEvent('backend:status', (event) => {
-      this.ngZone.run(() => {
-        const status = event.data as unknown as BackendStatus;
-        if (status) {
-          this._backendStatus.set(status);
-          const statuses = new Map(this._serviceStatuses());
-          statuses.set(status.service, status);
-          this._serviceStatuses.set(statuses);
-        }
-      });
+      const status = event.data as unknown as BackendStatus;
+      if (status) {
+        this._backendStatus.set(status);
+        const statuses = new Map(this._serviceStatuses());
+        statuses.set(status.service, status);
+        this._serviceStatuses.set(statuses);
+      }
     });
 
     this.onEvent('backend:log', (event) => {
-      this.ngZone.run(() => {
-        const log = event.data as unknown as LogMessage;
-        if (log) {
-          this._backendLog.set(log);
-          const currentLogs = this._logs();
-          this._logs.set([...currentLogs.slice(-99), log]);
-        }
-      });
+      const log = event.data as unknown as LogMessage;
+      if (log) {
+        this._backendLog.set(log);
+        const currentLogs = this._logs();
+        this._logs.set([...currentLogs.slice(-99), log]);
+      }
     });
 
     this.onEvent('download:progress', (event) => {
-      this.ngZone.run(() => {
-        const progress = event.data as unknown as DownloadProgress;
-        if (progress) {
-          this._downloadProgress.set(progress);
-        }
-      });
+      const progress = event.data as unknown as DownloadProgress;
+      if (progress) {
+        this._downloadProgress.set(progress);
+      }
     });
 
     this.onEvent('download:complete', (event) => {
-      this.ngZone.run(() => {
-        const complete = event.data as unknown as DownloadComplete;
-        if (complete) {
-          this._downloadComplete.set(complete);
-        }
-      });
+      const complete = event.data as unknown as DownloadComplete;
+      if (complete) {
+        this._downloadComplete.set(complete);
+      }
     });
 
     this.onEvent('command:output', (event) => {
-      this.ngZone.run(() => {
-        const output = event.data as unknown as CommandOutput;
-        if (output) {
-          this._commandOutput.set(output);
-        }
-      });
+      const output = event.data as unknown as CommandOutput;
+      if (output) {
+        this._commandOutput.set(output);
+      }
     });
 
     this.onEvent('show:python-selection', () => {
-      this.ngZone.run(() => {
-        this._showPythonSelection.set(true);
-      });
+      this._showPythonSelection.set(true);
     });
 
     this.onEvent('show:backend-download', () => {
-      this.ngZone.run(() => {
-        this._showBackendDownload.set(true);
-      });
+      this._showBackendDownload.set(true);
     });
 
     this.onEvent('show:valkey-download', () => {
-      this.ngZone.run(() => {
-        this._showValkeyDownload.set(true);
-      });
+      this._showValkeyDownload.set(true);
     });
 
     this.onEvent('show:superuser-creation', () => {
-      this.ngZone.run(() => {
-        this._showSuperuserCreation.set(true);
-      });
+      this._showSuperuserCreation.set(true);
     });
   }
 

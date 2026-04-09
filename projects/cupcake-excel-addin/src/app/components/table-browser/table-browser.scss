@@ -1,0 +1,20 @@
+.table-browser {
+  color: var(--bs-body-color);
+}
+
+.table-list {
+  .table-item {
+    color: var(--bs-body-color);
+    border-color: var(--taskpane-border, var(--bs-border-color)) !important;
+
+    &:hover {
+      background-color: var(--taskpane-hover, var(--bs-tertiary-bg));
+    }
+
+    .table-info {
+      .fw-medium {
+        color: var(--bs-body-color);
+      }
+    }
+  }
+}

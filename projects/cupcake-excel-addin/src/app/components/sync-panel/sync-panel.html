@@ -1,0 +1,238 @@
+@switch (currentView()) {
+  @case ('columns') {
+    <app-column-list
+      [table]="fullTable() || table()"
+      (back)="closeSubPanel()"
+      (refresh)="onColumnsRefresh()" />
+  }
+  @case ('export') {
+    <app-export-panel
+      [table]="fullTable() || table()"
+      (back)="closeSubPanel()" />
+  }
+  @case ('import') {
+    <app-import-panel
+      [table]="fullTable() || table()"
+      (back)="closeSubPanel()"
+      (imported)="onImported()" />
+  }
+  @case ('pools') {
+    <app-pool-manager
+      [table]="fullTable() || table()"
+      (back)="closeSubPanel()"
+      (refresh)="onColumnsRefresh()" />
+  }
+  @case ('autofill') {
+    <app-autofill-panel
+      [table]="fullTable() || table()"
+      (back)="closeSubPanel()"
+      (applied)="onAutofillApplied()" />
+  }
+  @default {
+    <div class="sync-panel">
+      <div class="d-flex align-items-center mb-2">
+        <button class="btn btn-sm btn-link p-0 me-2" (click)="goBack()">
+          <i class="bi bi-arrow-left"></i>
+        </button>
+        <h6 class="mb-0 text-truncate flex-grow-1">{{ table().name }}</h6>
+      </div>
+
+      <div class="table-info mb-3 p-2 bg-light rounded small">
+        <div><strong>Samples:</strong> {{ table().sampleCount }}</div>
+        <div><strong>Version:</strong> {{ table().version }}</div>
+        @if (table().labGroupName) {
+          <div><strong>Lab:</strong> {{ table().labGroupName }}</div>
+        }
+      </div>
+
+      <div class="protection-info mb-2 p-2 border rounded small">
+        <div class="d-flex align-items-center justify-content-between">
+          <div>
+            @if (isProtected()) {
+              <i class="bi bi-shield-check text-success me-1"></i>
+              <span class="text-success">Protected</span>
+            } @else {
+              <i class="bi bi-shield text-muted me-1"></i>
+              <span class="text-muted">Unprotected</span>
+            }
+          </div>
+          <button
+            class="btn btn-sm btn-link p-0"
+            (click)="toggleProtection()"
+            [title]="isProtected() ? 'Unprotect sheet' : 'Protect sheet'">
+            @if (isProtected()) {
+              <i class="bi bi-unlock"></i>
+            } @else {
+              <i class="bi bi-lock"></i>
+            }
+          </button>
+        </div>
+        <div class="form-check form-check-inline mt-1 mb-0">
+          <input
+            class="form-check-input"
+            type="checkbox"
+            id="protectOnPull"
+            [checked]="protectSheet()"
+            (change)="onProtectSheetChange($any($event.target).checked)">
+          <label class="form-check-label" for="protectOnPull">
+            Protect on pull
+          </label>
+        </div>
+      </div>
+
+      <div class="sync-actions mb-3">
+        <div class="d-grid gap-2">
+          <button
+            class="btn btn-primary btn-sm"
+            (click)="pullToExcel()"
+            [disabled]="syncStatus() === 'pulling' || syncStatus() === 'pushing' || syncStatus() === 'detecting'">
+            @if (syncStatus() === 'pulling') {
+              <span class="spinner-border spinner-border-sm me-1"></span>
+            } @else {
+              <i class="bi bi-download me-1"></i>
+            }
+            Pull to Excel
+          </button>
+
+          <button
+            class="btn btn-outline-secondary btn-sm"
+            (click)="detectChanges()"
+            [disabled]="syncStatus() === 'pulling' || syncStatus() === 'pushing' || syncStatus() === 'detecting'">
+            @if (syncStatus() === 'detecting') {
+              <span class="spinner-border spinner-border-sm me-1"></span>
+            } @else {
+              <i class="bi bi-search me-1"></i>
+            }
+            Detect Changes
+          </button>
+
+          <button
+            class="btn btn-outline-primary btn-sm"
+            (click)="pushFromExcel()"
+            [disabled]="syncStatus() === 'pulling' || syncStatus() === 'pushing' || syncStatus() === 'detecting' || table().isLocked">
+            @if (syncStatus() === 'pushing') {
+              <span class="spinner-border spinner-border-sm me-1"></span>
+            } @else {
+              <i class="bi bi-upload me-1"></i>
+            }
+            Push to Backend
+          </button>
+
+          <hr class="my-1">
+
+          <div class="btn-group btn-group-sm w-100">
+            <button class="btn btn-outline-secondary" (click)="openView('columns')" title="Columns">
+              <i class="bi bi-columns-gap"></i>
+            </button>
+            <button class="btn btn-outline-secondary" (click)="openView('pools')" title="Pools">
+              <i class="bi bi-collection"></i>
+            </button>
+            <button class="btn btn-outline-secondary" (click)="openView('autofill')" title="Autofill">
+              <i class="bi bi-magic"></i>
+            </button>
+            <button class="btn btn-outline-secondary" (click)="openView('export')" title="Export">
+              <i class="bi bi-download"></i>
+            </button>
+            <button class="btn btn-outline-secondary" (click)="openView('import')" title="Import">
+              <i class="bi bi-upload"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      @if (statusMessage()) {
+        <div
+          class="alert alert-sm py-1 px-2 small mb-2"
+          [class.alert-info]="syncStatus() === 'pulling' || syncStatus() === 'pushing' || syncStatus() === 'detecting'"
+          [class.alert-success]="syncStatus() === 'success'"
+          [class.alert-danger]="syncStatus() === 'error'">
+          @switch (syncStatus()) {
+            @case ('pulling') {
+              <i class="bi bi-hourglass-split me-1"></i>
+            }
+            @case ('pushing') {
+              <i class="bi bi-hourglass-split me-1"></i>
+            }
+            @case ('detecting') {
+              <i class="bi bi-hourglass-split me-1"></i>
+            }
+            @case ('success') {
+              <i class="bi bi-check-circle me-1"></i>
+            }
+            @case ('error') {
+              <i class="bi bi-exclamation-circle me-1"></i>
+            }
+          }
+          {{ statusMessage() }}
+        </div>
+      }
+
+      @if (showConflictWarning()) {
+        <div class="alert alert-danger py-2 px-2 mb-2 small">
+          <div class="fw-semibold mb-1">
+            <i class="bi bi-exclamation-triangle-fill me-1"></i>
+            Remote changes detected
+          </div>
+          <div class="text-muted mb-2">
+            This table was modified on the server after your last pull.
+            Pushing may overwrite those changes.
+          </div>
+          <div class="d-flex gap-1">
+            <button class="btn btn-danger btn-sm flex-fill" (click)="overrideAndPush()">
+              <i class="bi bi-upload me-1"></i>Override & Push
+            </button>
+            <button class="btn btn-outline-secondary btn-sm" (click)="cancelConflict()">
+              Cancel
+            </button>
+          </div>
+        </div>
+      }
+
+      @if (showDiffPreview() && hasChanges()) {
+        <div class="diff-preview">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <strong class="small">Changes Preview</strong>
+            <span class="badge bg-secondary">{{ changesSummary() }}</span>
+          </div>
+
+          <div class="diff-list">
+            @for (change of pendingChanges(); track $index; let i = $index) {
+              @if (i < 10) {
+                <div class="diff-item p-2 mb-1 bg-light rounded">
+                  <div class="small fw-bold">{{ change.columnName }}</div>
+                  <div class="small text-muted">Row {{ change.sampleIndex }}</div>
+                  <div class="diff-values small">
+                    <span class="text-danger text-decoration-line-through">{{ change.originalValue || '(empty)' }}</span>
+                    <i class="bi bi-arrow-right mx-1"></i>
+                    <span class="text-success">{{ change.newValue || '(empty)' }}</span>
+                  </div>
+                </div>
+              }
+            }
+            @if (pendingChanges().length > 10) {
+              <div class="small text-muted text-center">
+                ... and {{ pendingChanges().length - 10 }} more changes
+              </div>
+            }
+          </div>
+
+          <div class="d-flex gap-2 mt-2">
+            <button class="btn btn-success btn-sm flex-grow-1" (click)="confirmPush()">
+              <i class="bi bi-check me-1"></i>Push Changes
+            </button>
+            <button class="btn btn-outline-secondary btn-sm" (click)="cancelPush()">
+              Cancel
+            </button>
+          </div>
+        </div>
+      }
+
+      @if (table().isLocked) {
+        <div class="alert alert-warning py-1 px-2 small">
+          <i class="bi bi-lock-fill me-1"></i>
+          Table is locked. Push disabled.
+        </div>
+      }
+    </div>
+  }
+}

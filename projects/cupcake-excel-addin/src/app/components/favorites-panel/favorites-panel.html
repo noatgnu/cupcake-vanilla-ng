@@ -1,0 +1,71 @@
+<div class="favorites-panel">
+  @if (!column()) {
+    <div class="text-muted small">
+      <i class="bi bi-info-circle me-1"></i>
+      Select a column to see favorites
+    </div>
+  } @else {
+    <div class="favorites-header mb-2">
+      <small class="fw-bold">
+        <i class="bi bi-star me-1"></i>Favorites
+      </small>
+    </div>
+
+    @if (isLoading()) {
+      <div class="text-center py-2">
+        <span class="spinner-border spinner-border-sm"></span>
+      </div>
+    } @else if (!hasFavorites) {
+      <div class="text-muted small">
+        No favorites for this column
+      </div>
+    } @else {
+      <ul class="nav nav-tabs nav-sm mb-2">
+        @if (userFavorites().length > 0) {
+          <li class="nav-item">
+            <button
+              class="nav-link py-1 px-2"
+              [class.active]="activeTab() === 'user'"
+              (click)="setTab('user')">
+              <i class="bi bi-person me-1"></i>Mine
+              <span class="badge bg-secondary ms-1">{{ userFavorites().length }}</span>
+            </button>
+          </li>
+        }
+        @if (labGroupFavorites().length > 0) {
+          <li class="nav-item">
+            <button
+              class="nav-link py-1 px-2"
+              [class.active]="activeTab() === 'labGroup'"
+              (click)="setTab('labGroup')">
+              <i class="bi bi-people me-1"></i>Lab
+              <span class="badge bg-secondary ms-1">{{ labGroupFavorites().length }}</span>
+            </button>
+          </li>
+        }
+        @if (globalFavorites().length > 0) {
+          <li class="nav-item">
+            <button
+              class="nav-link py-1 px-2"
+              [class.active]="activeTab() === 'global'"
+              (click)="setTab('global')">
+              <i class="bi bi-globe me-1"></i>Global
+              <span class="badge bg-secondary ms-1">{{ globalFavorites().length }}</span>
+            </button>
+          </li>
+        }
+      </ul>
+
+      <div class="favorites-list">
+        @for (favorite of currentFavorites; track favorite.id) {
+          <div
+            class="favorite-item"
+            (click)="insertFavorite(favorite)"
+            [title]="favorite.value">
+            <span class="favorite-value">{{ getDisplayValue(favorite) }}</span>
+          </div>
+        }
+      </div>
+    }
+  }
+</div>

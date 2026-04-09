@@ -1,0 +1,153 @@
+<div class="validation-panel p-2">
+  <h6 class="mb-2">
+    <i class="bi bi-check2-square me-1"></i>
+    SDRF Validation
+  </h6>
+
+  @if (schemas().length > 0) {
+    <div class="mb-2">
+      <label class="form-label small mb-1">Schema</label>
+      <select
+        class="form-select form-select-sm"
+        [ngModel]="selectedSchema()"
+        (ngModelChange)="onSchemaChange($event)">
+        @for (schema of schemas(); track schema.name) {
+          <option [value]="schema.name">{{ schema.displayName }}</option>
+        }
+      </select>
+    </div>
+  }
+
+  <div class="mb-2">
+    <div class="form-check form-check-sm">
+      <input class="form-check-input" type="checkbox" id="includePools"
+             [ngModel]="includePools()"
+             (ngModelChange)="includePools.set($event)">
+      <label class="form-check-label small" for="includePools">Include Pools</label>
+    </div>
+    <div class="form-check form-check-sm">
+      <input class="form-check-input" type="checkbox" id="skipOntology"
+             [ngModel]="skipOntology()"
+             (ngModelChange)="skipOntology.set($event)">
+      <label class="form-check-label small" for="skipOntology">Skip Ontology Check</label>
+    </div>
+  </div>
+
+  @if (showUnsavedWarning()) {
+    <div class="alert alert-warning py-2 px-2 mb-2 small">
+      <div class="fw-semibold mb-1">
+        <i class="bi bi-exclamation-triangle-fill me-1"></i>
+        Unsaved changes detected
+      </div>
+      <div class="text-muted mb-2">
+        {{ changesSummary() }} must be saved before validation.
+      </div>
+      <div class="d-flex gap-1">
+        <button
+          class="btn btn-warning btn-sm flex-fill"
+          (click)="saveAndValidate()"
+          [disabled]="isSaving()">
+          @if (isSaving()) {
+            <span class="spinner-border spinner-border-sm me-1"></span>
+          } @else {
+            <i class="bi bi-cloud-upload me-1"></i>
+          }
+          Save & Validate
+        </button>
+        <button
+          class="btn btn-outline-secondary btn-sm"
+          (click)="dismissUnsavedWarning()"
+          [disabled]="isSaving()">
+          Cancel
+        </button>
+      </div>
+    </div>
+  } @else {
+    <div class="d-grid gap-2 mb-2">
+      <button
+        class="btn btn-primary btn-sm"
+        (click)="validate()"
+        [disabled]="isValidating() || isLoading() || isSaving()">
+        @if (isValidating()) {
+          <span class="spinner-border spinner-border-sm me-1"></span>
+        } @else {
+          <i class="bi bi-play-fill me-1"></i>
+        }
+        Validate
+      </button>
+      <button
+        class="btn btn-outline-secondary btn-sm"
+        (click)="clearHighlights()"
+        [disabled]="isValidating()">
+        <i class="bi bi-eraser me-1"></i>
+        Clear Highlights
+      </button>
+    </div>
+  }
+
+  @if (isValidating() && taskProgress() > 0) {
+    <div class="progress mb-2" style="height: 6px;">
+      <div class="progress-bar" [style.width.%]="taskProgress()"></div>
+    </div>
+  }
+
+  @if (statusMessage()) {
+    <div
+      class="alert py-1 px-2 small mb-2"
+      [class.alert-success]="errors().length === 0 && warnings().length === 0 && !isValidating()"
+      [class.alert-danger]="errors().length > 0"
+      [class.alert-warning]="warnings().length > 0 && errors().length === 0"
+      [class.alert-info]="isValidating()">
+      {{ statusMessage() }}
+    </div>
+  }
+
+  @if (errors().length > 0) {
+    <div class="error-list mb-2">
+      <h6 class="small text-danger mb-1">
+        <i class="bi bi-x-circle me-1"></i>Errors ({{ errors().length }})
+      </h6>
+      <div class="list-group list-group-flush small">
+        @for (error of errors(); track $index; let i = $index) {
+          @if (i < 10) {
+            <div class="list-group-item py-1 px-2" role="button" (click)="navigateToError(error)">
+              <div class="fw-medium">
+                @if (error.row > 0) { Row {{ error.row }}: }
+                {{ error.column }}
+              </div>
+              <small class="text-muted">{{ error.message }}</small>
+            </div>
+          }
+        }
+        @if (errors().length > 10) {
+          <div class="small text-muted text-center py-1">
+            ... and {{ errors().length - 10 }} more errors
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  @if (warnings().length > 0) {
+    <div class="warning-list">
+      <h6 class="small text-warning mb-1">
+        <i class="bi bi-exclamation-triangle me-1"></i>Warnings ({{ warnings().length }})
+      </h6>
+      <div class="list-group list-group-flush small">
+        @for (warning of warnings(); track $index; let i = $index) {
+          @if (i < 5) {
+            <div class="list-group-item py-1 px-2">
+              <div class="fw-medium">{{ warning.column }}</div>
+              <small class="text-muted">{{ warning.message }}</small>
+            </div>
+          }
+        }
+        @if (warnings().length > 5) {
+          <div class="small text-muted text-center py-1">
+            ... and {{ warnings().length - 5 }} more warnings
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>

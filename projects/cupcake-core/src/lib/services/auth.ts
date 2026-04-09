@@ -30,7 +30,10 @@ export interface AuthStatus {
 export class AuthService {
   private http = inject(HttpClient);
   private config = inject(CUPCAKE_CORE_CONFIG);
-  private apiUrl = this.config.apiUrl;
+
+  private get apiUrl(): string {
+    return this.config.apiUrl;
+  }
 
   private _currentUser = signal<User | null>(null);
   public currentUser = this._currentUser.asReadonly();

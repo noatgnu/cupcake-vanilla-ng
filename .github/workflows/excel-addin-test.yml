@@ -1,0 +1,85 @@
+name: Excel Add-in Tests
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'projects/cupcake-excel-addin/**'
+      - 'projects/cupcake-core/**'
+      - 'projects/cupcake-vanilla/**'
+      - '.github/workflows/excel-addin-test.yml'
+  pull_request:
+    branches: [main, master]
+    paths:
+      - 'projects/cupcake-excel-addin/**'
+      - 'projects/cupcake-core/**'
+      - 'projects/cupcake-vanilla/**'
+      - '.github/workflows/excel-addin-test.yml'
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  unit-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build cupcake-core
+        run: npx ng build '@noatgnu/cupcake-core'
+
+      - name: Build cupcake-vanilla
+        run: npx ng build '@noatgnu/cupcake-vanilla'
+
+      - name: Type check
+        run: npx tsc --project projects/cupcake-excel-addin/tsconfig.spec.json --noEmit
+
+      - name: Run unit tests
+        run: npx ng test cupcake-excel-addin --browsers=ChromeHeadless --watch=false --no-progress --code-coverage
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
+
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: excel-addin-coverage
+          path: coverage/cupcake-excel-addin/
+          retention-days: 7
+
+  build-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build cupcake-core
+        run: npx ng build '@noatgnu/cupcake-core'
+
+      - name: Build cupcake-vanilla
+        run: npx ng build '@noatgnu/cupcake-vanilla'
+
+      - name: Build excel add-in
+        run: npx ng build cupcake-excel-addin --configuration production
+
+      - name: Validate manifest
+        run: npx office-addin-manifest validate projects/cupcake-excel-addin/manifest.xml

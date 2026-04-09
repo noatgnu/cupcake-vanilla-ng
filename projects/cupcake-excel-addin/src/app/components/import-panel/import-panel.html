@@ -1,0 +1,79 @@
+<div class="import-panel">
+  <div class="d-flex align-items-center mb-3">
+    <button class="btn btn-sm btn-link p-0 me-2" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i>
+    </button>
+    <h6 class="mb-0">Import Data</h6>
+  </div>
+
+  <div class="table-info mb-3 p-2 bg-light rounded small">
+    <div class="fw-medium">{{ table().name }}</div>
+    <small class="text-muted">{{ table().sampleCount }} samples</small>
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label small mb-1">Select File</label>
+    <input
+      type="file"
+      class="form-control form-control-sm"
+      accept=".sdrf,.tsv,.xlsx,.xls"
+      (change)="onFileSelected($event)">
+    <small class="text-muted">Supported: SDRF (.sdrf.tsv, .tsv) or Excel (.xlsx, .xls)</small>
+  </div>
+
+  @if (selectedFile()) {
+    <div class="selected-file mb-2 p-2 bg-light rounded small">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <i class="bi bi-file-earmark me-1"></i>
+          {{ selectedFile()!.name }}
+        </div>
+        <button class="btn btn-sm btn-link p-0 text-danger" (click)="clearFile()">
+          <i class="bi bi-x"></i>
+        </button>
+      </div>
+      <small class="text-muted">{{ (selectedFile()!.size / 1024).toFixed(1) }} KB</small>
+    </div>
+  }
+
+  <div class="mb-3">
+    <div class="form-check form-check-sm">
+      <input class="form-check-input" type="checkbox" id="replaceExisting"
+             [ngModel]="replaceExisting()"
+             (ngModelChange)="replaceExisting.set($event)">
+      <label class="form-check-label small" for="replaceExisting">
+        Replace Existing Data
+      </label>
+    </div>
+    <small class="text-muted d-block ms-4">
+      If unchecked, imported data will be merged with existing data
+    </small>
+  </div>
+
+  <button
+    class="btn btn-primary btn-sm w-100 mb-2"
+    (click)="startImport()"
+    [disabled]="isImporting() || !selectedFile()">
+    @if (isImporting()) {
+      <span class="spinner-border spinner-border-sm me-1"></span>
+    } @else {
+      <i class="bi bi-upload me-1"></i>
+    }
+    Import
+  </button>
+
+  @if (isImporting() && importProgress() > 0) {
+    <div class="progress mb-2" style="height: 6px;">
+      <div class="progress-bar" [style.width.%]="importProgress()"></div>
+    </div>
+  }
+
+  @if (statusMessage()) {
+    <div class="alert alert-sm py-1 px-2 small"
+         [class.alert-info]="isImporting()"
+         [class.alert-success]="!isImporting() && !statusMessage().includes('failed')"
+         [class.alert-danger]="statusMessage().includes('failed')">
+      {{ statusMessage() }}
+    </div>
+  }
+</div>

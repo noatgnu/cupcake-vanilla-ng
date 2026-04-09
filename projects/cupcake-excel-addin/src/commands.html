@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cupcake Vanilla Commands</title>
+  <script src="office-js/office.js" type="text/javascript"></script>
+  <script>
+    Office.onReady(function() {
+      Office.actions.associate("syncTable", syncTable);
+      Office.actions.associate("validateTable", validateTable);
+    });
+
+    function syncTable(event) {
+      Office.context.ui.displayDialogAsync(
+        window.location.origin + '/index.html#/sync',
+        { height: 60, width: 30 },
+        function(result) {
+          if (result.status === Office.AsyncResultStatus.Succeeded) {
+            result.value.addEventHandler(Office.EventType.DialogMessageReceived, function(arg) {
+              result.value.close();
+            });
+          }
+        }
+      );
+      event.completed();
+    }
+
+    function validateTable(event) {
+      Office.context.ui.displayDialogAsync(
+        window.location.origin + '/index.html#/validate',
+        { height: 60, width: 30 },
+        function(result) {
+          if (result.status === Office.AsyncResultStatus.Succeeded) {
+            result.value.addEventHandler(Office.EventType.DialogMessageReceived, function(arg) {
+              result.value.close();
+            });
+          }
+        }
+      );
+      event.completed();
+    }
+  </script>
+</head>
+<body>
+</body>
+</html>

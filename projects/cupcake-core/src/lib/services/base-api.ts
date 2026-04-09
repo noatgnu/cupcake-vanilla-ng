@@ -12,7 +12,10 @@ export type QueryParamValue = string | number | boolean | null | undefined;
 export class BaseApiService {
   protected http = inject(HttpClient);
   private config = inject(CUPCAKE_CORE_CONFIG);
-  protected apiUrl = this.config.apiUrl;
+
+  protected get apiUrl(): string {
+    return this.config.apiUrl;
+  }
 
   // ===== SYSTEMATIC CASE TRANSFORMATION METHODS =====
 

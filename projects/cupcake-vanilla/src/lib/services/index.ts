@@ -21,3 +21,4 @@ export * from './sdrf-syntax';
 export * from './websocket';
 export * from './electron';
 export * from './desktop';
+export * from './excel-launch';

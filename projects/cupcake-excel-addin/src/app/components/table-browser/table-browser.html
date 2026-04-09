@@ -1,0 +1,86 @@
+@if (isLoadingSavedTable()) {
+  <div class="text-center py-4">
+    <div class="spinner-border spinner-border-sm text-primary"></div>
+    <small class="d-block mt-2 text-muted">Loading saved table...</small>
+  </div>
+} @else if (selectedTable()) {
+  <app-sync-panel [table]="selectedTable()!" (back)="clearSelection()" />
+} @else {
+  <div class="table-browser">
+    <div class="lab-group-filter mb-2">
+      <select
+        class="form-select form-select-sm"
+        [ngModel]="selectedLabGroupId()?.toString() || ''"
+        (ngModelChange)="onLabGroupChange($event)">
+        <option value="">All Lab Groups</option>
+        @for (labGroup of labGroups(); track labGroup.id) {
+          <option [value]="labGroup.id">{{ labGroup.name }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="search-box mb-2">
+      <div class="input-group input-group-sm">
+        <input
+          type="text"
+          class="form-control"
+          placeholder="Search tables..."
+          [ngModel]="searchQuery()"
+          (ngModelChange)="searchQuery.set($event)"
+          (keyup.enter)="searchTables()" />
+        <button class="btn btn-outline-secondary" (click)="searchTables()">
+          <i class="bi bi-search"></i>
+        </button>
+        <button class="btn btn-outline-secondary" (click)="loadTables()">
+          <i class="bi bi-arrow-clockwise"></i>
+        </button>
+      </div>
+    </div>
+
+    @if (errorMessage()) {
+      <div class="alert alert-danger alert-sm py-1 px-2 small">
+        {{ errorMessage() }}
+      </div>
+    }
+
+    @if (isLoading()) {
+      <div class="text-center py-3">
+        <div class="spinner-border spinner-border-sm text-primary"></div>
+        <small class="d-block mt-1 text-muted">Loading...</small>
+      </div>
+    } @else {
+      <div class="table-list">
+        @for (table of tables(); track table.id) {
+          <div class="table-item p-2 border-bottom" role="button" (click)="selectTable(table)">
+            <div class="d-flex justify-content-between align-items-start">
+              <div class="table-info">
+                <div class="fw-medium small">{{ table.name }}</div>
+                <small class="text-muted">
+                  {{ table.sampleCount }} samples &middot; {{ table.columnCount || 0 }} columns
+                </small>
+                @if (table.labGroupName) {
+                  <small class="d-block text-muted">
+                    <i class="bi bi-people-fill me-1"></i>{{ table.labGroupName }}
+                  </small>
+                }
+              </div>
+              <div class="table-badges">
+                @if (table.isLocked) {
+                  <span class="badge bg-warning text-dark"><i class="bi bi-lock-fill"></i></span>
+                }
+                @if (table.isPublished) {
+                  <span class="badge bg-success"><i class="bi bi-globe"></i></span>
+                }
+              </div>
+            </div>
+          </div>
+        } @empty {
+          <div class="text-center text-muted py-3">
+            <i class="bi bi-inbox d-block fs-4"></i>
+            <small>No tables found</small>
+          </div>
+        }
+      </div>
+    }
+  </div>
+}

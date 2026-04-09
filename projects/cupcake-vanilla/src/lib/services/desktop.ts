@@ -1,7 +1,11 @@
 import { Injectable, NgZone, inject } from '@angular/core';
 import { Observable, NEVER, Subject } from 'rxjs';
 import { DesktopRuntime, DesktopAPI } from '@noatgnu/cupcake-core';
-import { Call, Events } from '@wailsio/runtime';
+
+interface WailsRuntime {
+  Call: { ByName: (name: string, ...args: any[]) => Promise<any> };
+  Events: { On: (event: string, callback: (data: any) => void) => void };
+}
 
 interface WindowWithDesktop extends Window {
   electronAPI?: DesktopAPI & { isElectron: boolean };
@@ -18,15 +22,27 @@ export class DesktopService {
   private readonly _runtime: DesktopRuntime;
   private backendStatusSubject = new Subject<any>();
   private windowStateSubject = new Subject<'maximized' | 'unmaximized'>();
+  private wailsRuntime: WailsRuntime | null = null;
 
   constructor() {
     if (this.hasWails()) {
       this._runtime = 'wails';
-      this.setupWailsListeners();
+      this.loadWailsRuntime();
     } else if (this.hasElectron()) {
       this._runtime = 'electron';
     } else {
       this._runtime = 'web';
+    }
+  }
+
+  private async loadWailsRuntime(): Promise<void> {
+    if (this.wailsRuntime) return;
+    try {
+      const wails = await import('@wailsio/runtime');
+      this.wailsRuntime = { Call: wails.Call, Events: wails.Events };
+      this.setupWailsListeners();
+    } catch {
+      this.wailsRuntime = null;
     }
   }
 
@@ -64,9 +80,9 @@ export class DesktopService {
   }
 
   private setupWailsListeners(): void {
-    if (!this.hasWails()) return;
+    if (!this.hasWails() || !this.wailsRuntime) return;
 
-    Events.On('backend:status', (event: { name: string; data: unknown }) => {
+    this.wailsRuntime.Events.On('backend:status', (event: { name: string; data: unknown }) => {
       this.ngZone.run(() => {
         this.backendStatusSubject.next(event.data || event);
       });
@@ -77,8 +93,8 @@ export class DesktopService {
     if (this._runtime === 'electron' && window.electronAPI) {
       return window.electronAPI.getAppVersion();
     }
-    if (this._runtime === 'wails') {
-      return Call.ByName('main.App.GetAppVersion');
+    if (this._runtime === 'wails' && this.wailsRuntime) {
+      return this.wailsRuntime.Call.ByName('main.App.GetAppVersion');
     }
     return '0.0.0';
   }
@@ -125,8 +141,8 @@ export class DesktopService {
     if (this._runtime === 'electron' && window.electronAPI) {
       return window.electronAPI.showOpenDialog(options);
     }
-    if (this._runtime === 'wails') {
-      return Call.ByName('main.App.OpenFile', options?.title || 'Select File');
+    if (this._runtime === 'wails' && this.wailsRuntime) {
+      return this.wailsRuntime.Call.ByName('main.App.OpenFile', options?.title || 'Select File');
     }
     throw new Error('Not running in desktop environment');
   }
@@ -156,8 +172,8 @@ export class DesktopService {
     if (this._runtime === 'electron' && window.electronAPI) {
       return window.electronAPI.getBackendPort();
     }
-    if (this._runtime === 'wails') {
-      return Call.ByName('main.App.GetBackendPort');
+    if (this._runtime === 'wails' && this.wailsRuntime) {
+      return this.wailsRuntime.Call.ByName('main.App.GetBackendPort');
     }
     return 8000;
   }
@@ -166,8 +182,8 @@ export class DesktopService {
     if (this._runtime === 'electron' && window.electronAPI) {
       return window.electronAPI.isBackendReady();
     }
-    if (this._runtime === 'wails') {
-      return Call.ByName('main.App.IsBackendReady');
+    if (this._runtime === 'wails' && this.wailsRuntime) {
+      return this.wailsRuntime.Call.ByName('main.App.IsBackendReady');
     }
     return false;
   }
@@ -200,8 +216,8 @@ export class DesktopService {
   }
 
   async logToFile(message: string): Promise<void> {
-    if (this._runtime === 'wails') {
-      return Call.ByName('main.App.LogToFile', message);
+    if (this._runtime === 'wails' && this.wailsRuntime) {
+      return this.wailsRuntime.Call.ByName('main.App.LogToFile', message);
     }
   }
 }

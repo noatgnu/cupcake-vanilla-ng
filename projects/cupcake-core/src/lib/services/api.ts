@@ -41,8 +41,11 @@ import { CUPCAKE_CORE_CONFIG } from './auth';
 })
 export class ApiService {
   private config = inject(CUPCAKE_CORE_CONFIG);
-  private apiUrl = this.config.apiUrl;
   private resourceService = inject(ResourceService);
+
+  private get apiUrl(): string {
+    return this.config.apiUrl;
+  }
 
   constructor(private http: HttpClient) {}
 

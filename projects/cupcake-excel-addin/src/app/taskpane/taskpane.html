@@ -1,0 +1,120 @@
+<app-toast />
+<div class="taskpane-container">
+  @if (isAuthenticated()) {
+    <header class="taskpane-header">
+      <div class="d-flex align-items-center justify-content-between">
+        <div class="user-info">
+          <small>
+            <i class="bi bi-person-circle me-1"></i>
+            {{ displayName() }}
+          </small>
+          <button class="btn btn-link btn-sm p-0 ms-2" (click)="logout()">
+            <small>Logout</small>
+          </button>
+        </div>
+        <button class="btn btn-sm btn-outline-secondary" (click)="toggleSettings()">
+          <i class="bi bi-gear"></i>
+        </button>
+      </div>
+    </header>
+  }
+
+  @if (isAuthenticated() && showSettings()) {
+    <app-connection-panel />
+  }
+
+  <main class="taskpane-main">
+    @if (!isAuthenticated()) {
+      <app-connection-panel />
+      <app-compact-login (tableReady)="onTableReady($event)" />
+    } @else {
+      <ul class="nav nav-tabs nav-sm mb-2">
+        <li class="nav-item">
+          <button
+            class="nav-link"
+            [class.active]="activeTab() === 'tables'"
+            (click)="setTab('tables')">
+            <i class="bi bi-table me-1"></i>Tables
+          </button>
+        </li>
+        <li class="nav-item">
+          <button
+            class="nav-link"
+            [class.active]="activeTab() === 'ontology'"
+            (click)="setTab('ontology')">
+            <i class="bi bi-search me-1"></i>Ontology
+          </button>
+        </li>
+        <li class="nav-item">
+          <button
+            class="nav-link"
+            [class.active]="activeTab() === 'validate'"
+            (click)="setTab('validate')">
+            <i class="bi bi-check2-square me-1"></i>Validate
+          </button>
+        </li>
+      </ul>
+
+      <div class="tab-content">
+        @switch (activeTab()) {
+          @case ('tables') {
+            <app-table-browser />
+          }
+          @case ('ontology') {
+            @if (selectedColumn()) {
+              <div class="alert alert-info py-1 px-2 small mb-2">
+                <i class="bi bi-crosshair me-1"></i>
+                <strong>{{ selectedColumn()!.name }}</strong>
+              </div>
+            }
+
+            @if (specialSyntaxType()) {
+              <div class="special-syntax-panel mb-3">
+                <h6 class="small fw-bold mb-2">
+                  @switch (specialSyntaxType()) {
+                    @case ('age') { <i class="bi bi-calendar me-1"></i>Age Format }
+                    @case ('modification') { <i class="bi bi-gear me-1"></i>Modification Parameters }
+                    @case ('cleavage') { <i class="bi bi-scissors me-1"></i>Cleavage Agent }
+                  }
+                </h6>
+
+                @switch (specialSyntaxType()) {
+                  @case ('age') {
+                    <app-age-input
+                      [value]="specialInputValue()"
+                      (valueChange)="onSpecialInputChange($event)" />
+                  }
+                  @case ('modification') {
+                    <app-modification-input
+                      [value]="specialInputValue()"
+                      (valueChange)="onSpecialInputChange($event)" />
+                  }
+                  @case ('cleavage') {
+                    <app-cleavage-input
+                      [value]="specialInputValue()"
+                      (valueChange)="onSpecialInputChange($event)" />
+                  }
+                }
+
+                <button class="btn btn-sm btn-primary mt-2" (click)="insertSpecialValue()">
+                  <i class="bi bi-arrow-down-circle me-1"></i>Insert into Cell
+                </button>
+              </div>
+
+              <hr class="my-2">
+            }
+
+            <app-favorites-panel [column]="selectedColumn()" class="mb-3" />
+
+            <hr class="my-2">
+            <small class="text-muted d-block mb-2">Search ontology terms:</small>
+            <app-ontology-search [column]="selectedColumn()" />
+          }
+          @case ('validate') {
+            <app-validation-panel />
+          }
+        }
+      </div>
+    }
+  </main>
+</div>

@@ -91,6 +91,12 @@
     },
     {
       "path": "./projects/cupcake-vanilla/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/cupcake-excel-addin/tsconfig.app.json"
+    },
+    {
+      "path": "./projects/cupcake-excel-addin/tsconfig.spec.json"
     }
   ]
 }

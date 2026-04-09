@@ -1,0 +1,77 @@
+<div class="pool-editor">
+  <div class="d-flex align-items-center mb-3">
+    <button class="btn btn-sm btn-link p-0 me-2" (click)="onCancel()">
+      <i class="bi bi-arrow-left"></i>
+    </button>
+    <h6 class="mb-0">{{ isCreating() ? 'Add Pool' : 'Edit Pool' }}</h6>
+  </div>
+
+  <div class="mb-2">
+    <label class="form-label small mb-1">Pool Name</label>
+    <input
+      type="text"
+      class="form-control form-control-sm"
+      placeholder="e.g., Pool_1"
+      [ngModel]="form().poolName"
+      (ngModelChange)="updateForm('poolName', $event)">
+  </div>
+
+  <div class="mb-2">
+    <label class="form-label small mb-1">Description</label>
+    <textarea
+      class="form-control form-control-sm"
+      rows="2"
+      placeholder="Optional description"
+      [ngModel]="form().poolDescription"
+      (ngModelChange)="updateForm('poolDescription', $event)"></textarea>
+  </div>
+
+  <div class="mb-2">
+    <label class="form-label small mb-1">Pooled Only Samples</label>
+    <input
+      type="text"
+      class="form-control form-control-sm"
+      placeholder="e.g., 1, 2, 3"
+      [ngModel]="form().pooledOnlySamples"
+      (ngModelChange)="updateForm('pooledOnlySamples', $event)">
+    <small class="text-muted">Sample indices that exist only in this pool</small>
+  </div>
+
+  <div class="mb-2">
+    <label class="form-label small mb-1">Pooled & Independent Samples</label>
+    <input
+      type="text"
+      class="form-control form-control-sm"
+      placeholder="e.g., 4, 5"
+      [ngModel]="form().pooledAndIndependentSamples"
+      (ngModelChange)="updateForm('pooledAndIndependentSamples', $event)">
+    <small class="text-muted">Sample indices that also appear independently</small>
+  </div>
+
+  <div class="mb-3">
+    <div class="form-check form-check-sm">
+      <input
+        class="form-check-input"
+        type="checkbox"
+        id="isReference"
+        [ngModel]="form().isReference"
+        (ngModelChange)="updateForm('isReference', $event)">
+      <label class="form-check-label small" for="isReference">Reference Pool</label>
+    </div>
+  </div>
+
+  <div class="d-flex gap-2">
+    <button
+      class="btn btn-primary btn-sm flex-grow-1"
+      (click)="save()"
+      [disabled]="isSaving()">
+      @if (isSaving()) {
+        <span class="spinner-border spinner-border-sm me-1"></span>
+      }
+      {{ isCreating() ? 'Create' : 'Save' }}
+    </button>
+    <button class="btn btn-outline-secondary btn-sm" (click)="onCancel()">
+      Cancel
+    </button>
+  </div>
+</div>
