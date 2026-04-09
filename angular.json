@@ -406,6 +406,7 @@
           "builder": "@angular/build:karma",
           "options": {
             "tsConfig": "projects/cupcake-excel-addin/tsconfig.spec.json",
+            "karmaConfig": "projects/cupcake-excel-addin/karma.conf.js",
             "polyfills": [],
             "styles": [
               "node_modules/bootstrap/dist/css/bootstrap.min.css",

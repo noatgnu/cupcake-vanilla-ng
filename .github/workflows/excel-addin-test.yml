@@ -45,16 +45,14 @@ jobs:
         run: npx tsc --project projects/cupcake-excel-addin/tsconfig.spec.json --noEmit
 
       - name: Run unit tests
-        run: npx ng test cupcake-excel-addin --browsers=ChromeHeadless --watch=false --no-progress --code-coverage
-        env:
-          CHROME_BIN: /usr/bin/google-chrome
+        run: npx ng test cupcake-excel-addin --browsers=ChromeHeadlessCI --watch=false --no-progress
 
-      - name: Upload coverage
+      - name: Upload test results
         uses: actions/upload-artifact@v4
-        if: always()
+        if: failure()
         with:
-          name: excel-addin-coverage
-          path: coverage/cupcake-excel-addin/
+          name: excel-addin-test-results
+          path: test-results/
           retention-days: 7
 
   build-check:
