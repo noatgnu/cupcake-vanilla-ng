@@ -93,7 +93,7 @@ describe('FavoritesPanel', () => {
     component = fixture.componentInstance;
 
     fixture.detectChanges();
-    const labGroupReq = httpMock.expectOne(req => req.url.includes('/lab-groups/mine/'));
+    const labGroupReq = httpMock.expectOne(req => req.url.includes('/lab-groups/my_groups/'));
     labGroupReq.flush({ count: 0, results: [] });
     await fixture.whenStable();
   });
