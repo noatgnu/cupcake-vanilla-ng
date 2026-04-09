@@ -119,12 +119,12 @@ describe('FavoritesPanel', () => {
     await fixture.whenStable();
 
     const userReq = httpMock.expectOne(req =>
-      req.url.includes('/favourite-options/') && req.params.get('userId') === '1'
+      req.url.includes('/favourite-options/') && req.params.get('user_id') === '1'
     );
     userReq.flush({ count: 1, results: [{ id: 1, name: 'characteristics[organism]', value: 'Homo sapiens' }] });
 
     const globalReq = httpMock.expectOne(req =>
-      req.url.includes('/favourite-options/') && req.params.get('isGlobal') === 'true'
+      req.url.includes('/favourite-options/') && req.params.get('is_global') === 'true'
     );
     globalReq.flush({ count: 0, results: [] });
     await fixture.whenStable();
@@ -146,8 +146,7 @@ describe('FavoritesPanel', () => {
 
   it('should insert favorite into cell', async () => {
     const favorite = { id: 1, name: 'test', value: 'Test Value', isGlobal: false };
-    component.insertFavorite(favorite as any);
-    await fixture.whenStable();
+    await component.insertFavorite(favorite as any);
 
     expect(excelServiceSpy.updateCell).toHaveBeenCalled();
     expect(toastServiceSpy.success).toHaveBeenCalledWith('Value inserted');
@@ -157,8 +156,7 @@ describe('FavoritesPanel', () => {
     excelServiceSpy.getSelectedRange.and.returnValue(Promise.reject('Excel error'));
 
     const favorite = { id: 1, name: 'test', value: 'Test Value', isGlobal: false };
-    component.insertFavorite(favorite as any);
-    await fixture.whenStable();
+    await component.insertFavorite(favorite as any);
 
     expect(toastServiceSpy.error).toHaveBeenCalledWith('Failed to insert value');
   });
@@ -177,12 +175,12 @@ describe('FavoritesPanel', () => {
     await fixture.whenStable();
 
     const userReq = httpMock.expectOne(req =>
-      req.url.includes('/favourite-options/') && req.params.get('userId') === '1'
+      req.url.includes('/favourite-options/') && req.params.get('user_id') === '1'
     );
     userReq.flush({ count: 1, results: [{ id: 1, name: 'characteristics[organism]', value: 'Homo sapiens' }] });
 
     const globalReq = httpMock.expectOne(req =>
-      req.url.includes('/favourite-options/') && req.params.get('isGlobal') === 'true'
+      req.url.includes('/favourite-options/') && req.params.get('is_global') === 'true'
     );
     globalReq.flush({ count: 0, results: [] });
     await fixture.whenStable();
