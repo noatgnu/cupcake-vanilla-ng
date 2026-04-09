@@ -66,8 +66,6 @@ describe('CellEditor', () => {
   });
 
   beforeEach(async () => {
-    jasmine.clock().install();
-
     excelServiceSpy = jasmine.createSpyObj('ExcelService', ['getSelectedRange', 'updateCell']);
     toastServiceSpy = jasmine.createSpyObj('ToastService', ['success', 'error', 'warning', 'info']);
 
@@ -95,7 +93,6 @@ describe('CellEditor', () => {
   });
 
   afterEach(() => {
-    jasmine.clock().uninstall();
     httpMock.verify();
   });
 
@@ -137,11 +134,11 @@ describe('CellEditor', () => {
     expect(component.ontologyLabel()).toBeTruthy();
   });
 
-  it('should trigger ontology search on input', () => {
+  it('should trigger ontology search on input', async () => {
     createComponent(mockColumn);
 
     component.onValueInput('human');
-    jasmine.clock().tick(351);
+    await new Promise(r => setTimeout(r, 400));
 
     const req = httpMock.expectOne(req => req.url.includes('/ontology/search/suggest/'));
     expect(req.request.params.get('q')).toBe('human');
@@ -186,14 +183,14 @@ describe('CellEditor', () => {
     expect(component.editValue()).toBe('NT=Trypsin;AC=MS:1001251');
   });
 
-  it('should hide suggestions after delay', () => {
+  it('should hide suggestions after delay', async () => {
     createComponent(mockColumn);
     component.showSuggestions.set(true);
 
     component.hideSuggestions();
     expect(component.showSuggestions()).toBeTrue();
 
-    jasmine.clock().tick(251);
+    await new Promise(r => setTimeout(r, 300));
     expect(component.showSuggestions()).toBeFalse();
   });
 
@@ -252,11 +249,11 @@ describe('CellEditor', () => {
     expect(toastServiceSpy.error).toHaveBeenCalledWith('Failed to insert into cell');
   });
 
-  it('should not search for short queries', () => {
+  it('should not search for short queries', async () => {
     createComponent(mockColumn);
 
     component.onValueInput('h');
-    jasmine.clock().tick(351);
+    await new Promise(r => setTimeout(r, 400));
 
     httpMock.expectNone(req => req.url.includes('/ontology/search/suggest/'));
   });

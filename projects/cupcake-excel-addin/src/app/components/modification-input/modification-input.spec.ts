@@ -12,8 +12,6 @@ describe('ModificationInput', () => {
   let httpMock: HttpTestingController;
 
   beforeEach(async () => {
-    jasmine.clock().install();
-
     await TestBed.configureTestingModule({
       imports: [ModificationInput],
       providers: [
@@ -33,7 +31,6 @@ describe('ModificationInput', () => {
   });
 
   afterEach(() => {
-    jasmine.clock().uninstall();
     httpMock.verify();
   });
 
@@ -111,9 +108,9 @@ describe('ModificationInput', () => {
     expect(emittedValue).toContain('MT=Fixed');
   });
 
-  it('should trigger search on NT input', () => {
+  it('should trigger search on NT input', async () => {
     component.onNTInput('Carb');
-    jasmine.clock().tick(351);
+    await new Promise(r => setTimeout(r, 350));
 
     const req = httpMock.expectOne(req => req.url.includes('/ontology/search/suggest/'));
     expect(req.request.params.get('q')).toBe('Carb');
@@ -136,12 +133,12 @@ describe('ModificationInput', () => {
     expect(component.showSuggestions()).toBeFalse();
   });
 
-  it('should hide suggestions after delay', () => {
+  it('should hide suggestions after delay', async () => {
     component.showSuggestions.set(true);
     component.hideSuggestions();
 
     expect(component.showSuggestions()).toBeTrue();
-    jasmine.clock().tick(251);
+    await new Promise(r => setTimeout(r, 250));
     expect(component.showSuggestions()).toBeFalse();
   });
 });

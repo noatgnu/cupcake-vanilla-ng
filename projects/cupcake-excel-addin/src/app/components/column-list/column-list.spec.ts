@@ -186,7 +186,7 @@ describe('ColumnList', () => {
     expect(component.viewMode()).toBe('cell-editor');
   });
 
-  it('should close column editor on save', () => {
+  it('should close column editor on save', async () => {
     component.viewMode.set('column-editor');
     component.selectedColumn.set(mockColumns[0]);
 
@@ -194,6 +194,12 @@ describe('ColumnList', () => {
 
     expect(component.viewMode()).toBe('list');
     expect(component.selectedColumn()).toBeNull();
+
+    const refreshReq = httpMock.expectOne(req =>
+      req.url.includes(`/metadata-tables/${mockTable.id}/`) && req.method === 'GET'
+    );
+    refreshReq.flush({ ...mockTable, columns: mockColumns });
+    await fixture.whenStable();
   });
 
   it('should close column editor on cancel', () => {
@@ -237,7 +243,7 @@ describe('ColumnList', () => {
 
     component.deleteColumn(column);
 
-    const req = httpMock.expectOne(req => req.url.includes(`/metadata-tables/${mockTable.id}/remove-column/`));
+    const req = httpMock.expectOne(req => req.url.includes(`/metadata-tables/${mockTable.id}/remove_column/`));
     req.flush({});
     await fixture.whenStable();
 
@@ -250,7 +256,7 @@ describe('ColumnList', () => {
 
     component.deleteColumn(column);
 
-    const req = httpMock.expectOne(req => req.url.includes(`/metadata-tables/${mockTable.id}/remove-column/`));
+    const req = httpMock.expectOne(req => req.url.includes(`/metadata-tables/${mockTable.id}/remove_column/`));
     req.error(new ErrorEvent('Network error'));
     await fixture.whenStable();
 

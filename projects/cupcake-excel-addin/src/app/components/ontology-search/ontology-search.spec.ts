@@ -49,8 +49,6 @@ describe('OntologySearch', () => {
   });
 
   beforeEach(async () => {
-    jasmine.clock().install();
-
     excelServiceSpy = jasmine.createSpyObj('ExcelService', ['getSelectedRange', 'updateCell']);
     excelServiceSpy.getSelectedRange.and.returnValue(Promise.resolve({
       address: 'Sheet1!A2',
@@ -77,7 +75,6 @@ describe('OntologySearch', () => {
   });
 
   afterEach(() => {
-    jasmine.clock().uninstall();
     httpMock.verify();
   });
 
@@ -99,46 +96,46 @@ describe('OntologySearch', () => {
     expect(component.ontologyTypes.some(t => t.value === OntologyType.TISSUE)).toBeTrue();
   });
 
-  it('should search on input change', () => {
+  it('should search on input change', async () => {
     component.onSearchInput('human');
-    jasmine.clock().tick(351);
+    await new Promise(r => setTimeout(r, 400));
 
     const req = httpMock.expectOne(req => req.url.includes('/ontology/search/suggest/'));
     expect(req.request.params.get('q')).toBe('human');
     req.flush({ suggestions: [] });
   });
 
-  it('should filter by selected type', () => {
+  it('should filter by selected type', async () => {
     component.selectedType.set(OntologyType.SPECIES);
     component.onSearchInput('human');
-    jasmine.clock().tick(351);
+    await new Promise(r => setTimeout(r, 400));
 
     const req = httpMock.expectOne(req => req.url.includes('/ontology/search/suggest/'));
     expect(req.request.params.get('type')).toBe('species');
     req.flush({ suggestions: [] });
   });
 
-  it('should not search for short queries', () => {
+  it('should not search for short queries', async () => {
     component.onSearchInput('h');
-    jasmine.clock().tick(351);
+    await new Promise(r => setTimeout(r, 400));
 
     httpMock.expectNone(req => req.url.includes('/ontology/search/suggest/'));
   });
 
-  it('should update type and re-search', () => {
+  it('should update type and re-search', async () => {
     component.searchQuery.set('human');
     component.onTypeChange(OntologyType.SPECIES);
-    jasmine.clock().tick(351);
+    await new Promise(r => setTimeout(r, 400));
 
     const req = httpMock.expectOne(req => req.url.includes('/ontology/search/suggest/'));
     expect(req.request.params.get('type')).toBe('species');
     req.flush({ suggestions: [] });
   });
 
-  it('should change search match type', () => {
+  it('should change search match type', async () => {
     component.searchQuery.set('human');
     component.onMatchChange('startswith');
-    jasmine.clock().tick(351);
+    await new Promise(r => setTimeout(r, 400));
 
     expect(component.searchMatch()).toBe('startswith');
     const req = httpMock.expectOne(req => req.url.includes('/ontology/search/suggest/'));
@@ -146,16 +143,16 @@ describe('OntologySearch', () => {
     req.flush({ suggestions: [] });
   });
 
-  it('should use contains match by default', () => {
+  it('should use contains match by default', async () => {
     component.onSearchInput('human');
-    jasmine.clock().tick(351);
+    await new Promise(r => setTimeout(r, 400));
 
     const req = httpMock.expectOne(req => req.url.includes('/ontology/search/suggest/'));
     expect(req.request.params.get('match')).toBe('contains');
     req.flush({ suggestions: [] });
   });
 
-  it('should display suggestions', () => {
+  it('should display suggestions', async () => {
     const mockSuggestions: OntologySuggestion[] = [
       {
         id: '9606',
@@ -166,7 +163,7 @@ describe('OntologySearch', () => {
     ];
 
     component.onSearchInput('human');
-    jasmine.clock().tick(351);
+    await new Promise(r => setTimeout(r, 400));
 
     const req = httpMock.expectOne(req => req.url.includes('/ontology/search/suggest/'));
     req.flush({ suggestions: mockSuggestions });
@@ -227,12 +224,12 @@ describe('OntologySearch', () => {
     expect(component.showResults()).toBeFalse();
   });
 
-  it('should hide results after delay', () => {
+  it('should hide results after delay', async () => {
     component.showResults.set(true);
     component.hideResults();
 
     expect(component.showResults()).toBeTrue();
-    jasmine.clock().tick(251);
+    await new Promise(r => setTimeout(r, 300));
     expect(component.showResults()).toBeFalse();
   });
 
@@ -256,16 +253,16 @@ describe('OntologySearch', () => {
     await fixture.whenStable();
 
     component.onSearchInput('human');
-    jasmine.clock().tick(351);
+    await new Promise(r => setTimeout(r, 400));
 
     const req = httpMock.expectOne(req => req.url.includes('/ontology/search/suggest/'));
     expect(req.request.params.get('type')).toBe('species');
     req.flush({ suggestions: [] });
   });
 
-  it('should handle search error gracefully', () => {
+  it('should handle search error gracefully', async () => {
     component.onSearchInput('human');
-    jasmine.clock().tick(351);
+    await new Promise(r => setTimeout(r, 400));
 
     const req = httpMock.expectOne(req => req.url.includes('/ontology/search/suggest/'));
     req.error(new ErrorEvent('Network error'));

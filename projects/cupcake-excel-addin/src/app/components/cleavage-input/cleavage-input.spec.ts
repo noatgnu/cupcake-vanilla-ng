@@ -12,8 +12,6 @@ describe('CleavageInput', () => {
   let httpMock: HttpTestingController;
 
   beforeEach(async () => {
-    jasmine.clock().install();
-
     await TestBed.configureTestingModule({
       imports: [CleavageInput],
       providers: [
@@ -33,7 +31,6 @@ describe('CleavageInput', () => {
   });
 
   afterEach(() => {
-    jasmine.clock().uninstall();
     httpMock.verify();
   });
 
@@ -90,9 +87,9 @@ describe('CleavageInput', () => {
     expect(emittedValue).toContain('CS=(?<=[KR])(?!P)');
   });
 
-  it('should trigger search on NT input', () => {
+  it('should trigger search on NT input', async () => {
     component.onNTInput('Tryp');
-    jasmine.clock().tick(351);
+    await new Promise(r => setTimeout(r, 350));
 
     const req = httpMock.expectOne(req => req.url.includes('/ontology/search/suggest/'));
     expect(req.request.params.get('q')).toBe('Tryp');
@@ -116,18 +113,18 @@ describe('CleavageInput', () => {
     expect(component.showSuggestions()).toBeFalse();
   });
 
-  it('should hide suggestions after delay', () => {
+  it('should hide suggestions after delay', async () => {
     component.showSuggestions.set(true);
     component.hideSuggestions();
 
     expect(component.showSuggestions()).toBeTrue();
-    jasmine.clock().tick(251);
+    await new Promise(r => setTimeout(r, 250));
     expect(component.showSuggestions()).toBeFalse();
   });
 
-  it('should not search for short queries', () => {
+  it('should not search for short queries', async () => {
     component.onNTInput('T');
-    jasmine.clock().tick(351);
+    await new Promise(r => setTimeout(r, 350));
 
     httpMock.expectNone(req => req.url.includes('/ontology/search/suggest/'));
   });
