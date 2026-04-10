@@ -42,10 +42,15 @@ jobs:
         run: npx ng build '@noatgnu/cupcake-vanilla'
 
       - name: Build Excel add-in for production
-        run: npx ng build cupcake-excel-addin --configuration production --base-href /cupcake-vanilla-ng/
+        run: npx ng build cupcake-excel-addin --configuration production --base-href /cupcake-vanilla-ng/excel-addin/
 
       - name: Copy production manifest
         run: cp projects/cupcake-excel-addin/manifest.prod.xml dist/cupcake-excel-addin/browser/manifest.xml
+
+      - name: Prepare Pages structure
+        run: |
+          mkdir -p pages/excel-addin
+          cp -r dist/cupcake-excel-addin/browser/. pages/excel-addin/
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
@@ -53,7 +58,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: dist/cupcake-excel-addin/browser
+          path: pages
 
       - name: Deploy to GitHub Pages
         id: deployment
