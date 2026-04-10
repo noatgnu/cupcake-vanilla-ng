@@ -14,7 +14,7 @@
   <Description DefaultValue="Metadata management for mass spectrometry experiments in Excel"/>
   <IconUrl DefaultValue="https://localhost:3000/assets/icons/icon-32.png"/>
   <HighResolutionIconUrl DefaultValue="https://localhost:3000/assets/icons/icon-80.png"/>
-  <SupportUrl DefaultValue="https://github.com/noatgnu/cupcake-vanilla"/>
+  <SupportUrl DefaultValue="https://github.com/noatgnu/cupcake-vanilla-ng"/>
 
   <AppDomains>
     <AppDomain>https://localhost:3000</AppDomain>
@@ -117,7 +117,7 @@
         <bt:Image id="Icon.80x80" DefaultValue="https://localhost:3000/assets/icons/icon-80.png"/>
       </bt:Images>
       <bt:Urls>
-        <bt:Url id="GetStarted.LearnMoreUrl" DefaultValue="https://github.com/noatgnu/cupcake-vanilla"/>
+        <bt:Url id="GetStarted.LearnMoreUrl" DefaultValue="https://github.com/noatgnu/cupcake-vanilla-ng"/>
         <bt:Url id="Commands.Url" DefaultValue="https://localhost:3000/commands.html"/>
         <bt:Url id="Taskpane.Url" DefaultValue="https://localhost:3000/index.html"/>
       </bt:Urls>
