@@ -56,7 +56,8 @@ WORKDIR /app
 COPY ../package*.json ./
 COPY ../electron-app/package*.json ./electron-app/
 
-# Install npm dependencies
+# Install npm dependencies (skip puppeteer browser download — not needed for builds)
+ENV PUPPETEER_SKIP_DOWNLOAD=true
 RUN npm install
 RUN cd electron-app && npm install
 
