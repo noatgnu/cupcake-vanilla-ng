@@ -54,6 +54,9 @@ export class ChunkedUploadService extends BaseApiService {
     if (request.replaceExisting !== undefined) {
       formData.append('replace_existing', request.replaceExisting.toString());
     }
+    if (request.overrideSampleCount !== undefined) {
+      formData.append('override_sample_count', request.overrideSampleCount.toString());
+    }
 
     const url = uploadId
       ? `${this.apiUrl}/chunked-upload/${uploadId}/`
@@ -100,6 +103,9 @@ export class ChunkedUploadService extends BaseApiService {
     if (request?.replaceExisting !== undefined) {
       formData.append('replace_existing', request.replaceExisting.toString());
     }
+    if (request?.overrideSampleCount !== undefined) {
+      formData.append('override_sample_count', request.overrideSampleCount.toString());
+    }
 
     return this.post<ChunkedUploadCompletionResponse>(`${this.apiUrl}/chunked-upload/${uploadId}/`, formData);
   }
@@ -133,6 +139,9 @@ export class ChunkedUploadService extends BaseApiService {
         if (request.replaceExisting !== undefined) {
           formData.append('replace_existing', request.replaceExisting.toString());
         }
+        if (request.overrideSampleCount !== undefined) {
+          formData.append('override_sample_count', request.overrideSampleCount.toString());
+        }
         formData.append('sha256', hash);
 
         return this.post<ChunkedUploadCompletionResponse>(`${this.apiUrl}/chunked-upload/`, formData);
@@ -158,6 +167,7 @@ export class ChunkedUploadService extends BaseApiService {
       metadataTableId?: number;
       createPools?: boolean;
       replaceExisting?: boolean;
+      overrideSampleCount?: boolean;
       uploadSessionId?: string;
       onProgress?: (progress: number) => void;
     }
@@ -174,7 +184,8 @@ export class ChunkedUploadService extends BaseApiService {
           uploadSessionId: options?.uploadSessionId,
           metadataTableId: options?.metadataTableId,
           createPools: options?.createPools,
-          replaceExisting: options?.replaceExisting
+          replaceExisting: options?.replaceExisting,
+          overrideSampleCount: options?.overrideSampleCount
         }).subscribe({
           next: (result) => {
             subscriber.next(result);
@@ -191,7 +202,8 @@ export class ChunkedUploadService extends BaseApiService {
               sha256: calculatedHash,
               metadataTableId: options?.metadataTableId,
               createPools: options?.createPools,
-              replaceExisting: options?.replaceExisting
+              replaceExisting: options?.replaceExisting,
+              overrideSampleCount: options?.overrideSampleCount
             }).subscribe({
               next: (result) => {
                 subscriber.next(result);
@@ -218,7 +230,8 @@ export class ChunkedUploadService extends BaseApiService {
             uploadSessionId: options?.uploadSessionId,
             metadataTableId: options?.metadataTableId,
             createPools: options?.createPools,
-            replaceExisting: options?.replaceExisting
+            replaceExisting: options?.replaceExisting,
+            overrideSampleCount: options?.overrideSampleCount
           }, uploadId, offset, totalSize).subscribe({
             next: (response) => {
               uploadId = response.id;

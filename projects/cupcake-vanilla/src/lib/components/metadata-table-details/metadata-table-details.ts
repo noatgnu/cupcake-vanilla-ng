@@ -98,6 +98,7 @@ export class MetadataTableDetails implements OnInit, OnDestroy {
   }
 
   isLoading = signal(false);
+  overrideSampleCount = signal(false);
   table = signal<MetadataTable | null>(null);
   tableId = signal<number | null>(null);
   viewMode = signal<'list' | 'table'>('table');
@@ -360,11 +361,12 @@ export class MetadataTableDetails implements OnInit, OnDestroy {
       // Use chunked upload - it now triggers async import task on completion
       this.chunkedUploadService.uploadFileInChunks(
         file,
-        1024 * 1024, // 1MB chunks
+        1024 * 1024,
         {
           metadataTableId: table.id,
           createPools: true,
           replaceExisting: false,
+          overrideSampleCount: this.overrideSampleCount(),
           onProgress: (progress) => {
             console.log(`SDRF upload progress: ${Math.round(progress)}%`);
           }
@@ -429,11 +431,12 @@ export class MetadataTableDetails implements OnInit, OnDestroy {
       // Use chunked upload - it now triggers async import task on completion
       this.chunkedUploadService.uploadFileInChunks(
         file,
-        1024 * 1024, // 1MB chunks
+        1024 * 1024,
         {
           metadataTableId: table.id,
           createPools: true,
           replaceExisting: false,
+          overrideSampleCount: this.overrideSampleCount(),
           onProgress: (progress) => {
             console.log(`Excel upload progress: ${Math.round(progress)}%`);
           }

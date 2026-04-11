@@ -20,6 +20,7 @@ export interface ChunkedUploadRequest {
   metadataTableId?: number;
   createPools?: boolean;
   replaceExisting?: boolean;
+  overrideSampleCount?: boolean;
 }
 
 export interface ChunkedUploadResponse {
@@ -36,6 +37,7 @@ export interface ChunkedUploadCompletionRequest {
   metadataTableId?: number;
   createPools?: boolean;
   replaceExisting?: boolean;
+  overrideSampleCount?: boolean;
 }
 
 export interface ChunkedUploadCompletionResponse {
