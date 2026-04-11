@@ -348,11 +348,6 @@
                 "input": "projects/cupcake-excel-addin/src",
                 "output": "/"
               },
-              {
-                "glob": "**/*",
-                "input": "node_modules/@microsoft/office-js/dist",
-                "output": "/office-js"
-              },
             ],
             "styles": [
               "node_modules/bootstrap/dist/css/bootstrap.min.css",
