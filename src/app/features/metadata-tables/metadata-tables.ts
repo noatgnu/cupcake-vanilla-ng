@@ -628,4 +628,24 @@ export class MetadataTablesComponent implements OnInit, OnDestroy {
       modalRef.close();
     });
   }
+
+  /**
+   * Edit an existing metadata table
+   */
+  editTable(table: MetadataTable): void {
+    const modalRef = this.modalService.open(MetadataTableEditModal, {
+      size: 'lg',
+      backdrop: 'static',
+      keyboard: false
+    });
+
+    modalRef.componentInstance.isCreateMode = false;
+    modalRef.componentInstance.table = table;
+
+    modalRef.componentInstance.tableSaved.subscribe((updatedTable: MetadataTable) => {
+      this.toastService.success(`Table "${updatedTable.name}" updated successfully!`);
+      this.refreshTables();
+      modalRef.close();
+    });
+  }
 }
