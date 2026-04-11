@@ -122,8 +122,35 @@ export class AsyncTaskUIService implements OnDestroy {
   }
 
   monitorTask(taskId: string): void {
+    const wasAlreadyProcessed = this.processedCompletedTasks.has(taskId);
     this.initiatedTasks.add(taskId);
-    this.asyncTaskMonitor.loadSingleTask(taskId);
+
+    if (wasAlreadyProcessed) {
+      const existingTask = this.tasks().find(t => t.id === taskId);
+      if (existingTask) {
+        this.showTaskCompletionNotification(existingTask);
+        if (existingTask.status === TaskStatus.SUCCESS) {
+          if (this.isImportTask(existingTask.taskType) && existingTask.metadataTable) {
+            this.metadataTableRefreshSubject.next(existingTask.metadataTable);
+          }
+          if (this.isExportTask(existingTask.taskType)) {
+            this.exportTaskCompletedSubject.next(existingTask);
+            this.handleExportTaskCompletion(existingTask);
+          }
+          if (existingTask.taskType === TaskType.VALIDATE_TABLE && existingTask.metadataTable) {
+            this.metadataTableRefreshSubject.next(existingTask.metadataTable);
+          }
+          if (existingTask.taskType === TaskType.REORDER_TABLE_COLUMNS && existingTask.metadataTable) {
+            this.metadataTableRefreshSubject.next(existingTask.metadataTable);
+          }
+        }
+      } else {
+        this.processedCompletedTasks.delete(taskId);
+        this.asyncTaskMonitor.loadSingleTask(taskId);
+      }
+    } else {
+      this.asyncTaskMonitor.loadSingleTask(taskId);
+    }
   }
 
   queueExcelExport(request: MetadataExportRequest): Observable<AsyncTaskCreateResponse> {
