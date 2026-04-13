@@ -52,6 +52,8 @@ export const ONTOLOGY_TYPE_CONFIGS: OntologyTypeConfig[] = [
   { value: OntologyType.CHEBI, label: 'ChEbi', customFilters: undefined },
   { value: OntologyType.CELL_ONTOLOGY, label: 'Cell Ontology', customFilters: undefined },
   { value: OntologyType.PSI_MS, label: 'PSI-MS', customFilters: undefined },
+  { value: OntologyType.BTO, label: 'BTO Tissue (BRENDA)', customFilters: undefined },
+  { value: OntologyType.DOID, label: 'Disease Ontology (DOID)', customFilters: undefined },
 
   // MS Unique Vocabularies with specific term_type filters
   {

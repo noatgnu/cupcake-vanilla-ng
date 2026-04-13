@@ -11,7 +11,9 @@ export enum OntologyType {
   CHEBI = 'chebi',
   CELL_ONTOLOGY = 'cell_ontology',
   MS_UNIQUE_VOCABULARIES = 'ms_unique_vocabularies',
-  PSI_MS = 'psi_ms'
+  PSI_MS = 'psi_ms',
+  BTO = 'bto',
+  DOID = 'doid'
 }
 
 export const OntologyTypeLabels: Record<OntologyType, string> = {
@@ -27,7 +29,9 @@ export const OntologyTypeLabels: Record<OntologyType, string> = {
   [OntologyType.CHEBI]: 'ChEBI',
   [OntologyType.CELL_ONTOLOGY]: 'Cell Ontology',
   [OntologyType.MS_UNIQUE_VOCABULARIES]: 'MS Unique Vocabularies',
-  [OntologyType.PSI_MS]: 'PSI-MS Controlled Vocabulary'
+  [OntologyType.PSI_MS]: 'PSI-MS Controlled Vocabulary',
+  [OntologyType.BTO]: 'BTO Tissue',
+  [OntologyType.DOID]: 'Disease Ontology (DOID)'
 };
 
 export enum TemplatePermissionLevel {

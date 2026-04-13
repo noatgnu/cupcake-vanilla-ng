@@ -83,6 +83,22 @@ export interface CellOntology {
   crossReferences?: any;
 }
 
+export interface BTOTerm {
+  identifier: string;
+  name: string;
+  synonyms?: any;
+  definition?: string;
+  xrefs?: any;
+}
+
+export interface DiseaseOntologyTerm {
+  identifier: string;
+  name: string;
+  synonyms?: any;
+  definition?: string;
+  xrefs?: any;
+}
+
 export type SchemaLayer = 'technology' | 'sample' | 'experiment' | '';
 
 export interface Schema {
