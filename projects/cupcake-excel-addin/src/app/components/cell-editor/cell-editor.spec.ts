@@ -194,14 +194,15 @@ describe('CellEditor', () => {
     expect(component.showSuggestions()).toBeFalse();
   });
 
-  it('should insert value to cell', async () => {
+  it('should insert value to cell and close', async () => {
     createComponent(mockColumn, 'Homo sapiens');
+    const closeSpy = spyOn(component.close, 'emit');
 
-    component.insertToCell();
-    await fixture.whenStable();
+    await component.insertToCell();
 
     expect(excelServiceSpy.updateCell).toHaveBeenCalled();
     expect(toastServiceSpy.success).toHaveBeenCalledWith('Inserted into cell');
+    expect(closeSpy).toHaveBeenCalled();
   });
 
   it('should emit close on cancel', () => {

@@ -144,7 +144,7 @@ export class FavoritesPanel implements OnInit {
       const selection = await this.excelService.getSelectedRange();
       const match = selection.address.match(/([A-Z]+)(\d+)/);
       if (match) {
-        const col = match[1].charCodeAt(0) - 65;
+        const col = this.columnLetterToIndex(match[1]);
         const row = parseInt(match[2], 10) - 1;
         await this.excelService.updateCell(row, col, value);
         this.toastService.success('Value inserted');
@@ -152,5 +152,9 @@ export class FavoritesPanel implements OnInit {
     } catch {
       this.toastService.error('Failed to insert value');
     }
+  }
+
+  private columnLetterToIndex(letters: string): number {
+    return letters.split('').reduce((acc, char) => acc * 26 + char.charCodeAt(0) - 64, 0) - 1;
   }
 }

@@ -108,6 +108,20 @@ describe('ModificationInput', () => {
     expect(emittedValue).toContain('MT=Fixed');
   });
 
+  it('should emit partial value when only NT is set', () => {
+    const emitSpy = spyOn(component.valueChange, 'emit');
+
+    component.NT.set('Carbamidomethyl');
+    component.AC.set('UNIMOD:4');
+    component.onFieldChange();
+
+    expect(emitSpy).toHaveBeenCalled();
+    const emittedValue = emitSpy.calls.mostRecent().args[0];
+    expect(emittedValue).toContain('NT=Carbamidomethyl');
+    expect(emittedValue).toContain('AC=UNIMOD:4');
+    expect(emittedValue).not.toContain('TA=');
+  });
+
   it('should trigger search on NT input', async () => {
     component.onNTInput('Carb');
     await new Promise(r => setTimeout(r, 350));

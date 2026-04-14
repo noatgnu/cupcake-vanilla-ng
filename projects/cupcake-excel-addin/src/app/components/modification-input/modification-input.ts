@@ -121,26 +121,26 @@ export class ModificationInput implements OnInit {
 
   private emitValue(): void {
     const nt = this.NT();
-    const ta = this.TA();
-
-    if (nt && ta) {
-      const params: ModificationParameters = { NT: nt, TA: ta };
-      const ac = this.AC();
-      const cf = this.CF();
-      const mt = this.MT();
-      const pp = this.PP();
-      const mm = this.MM();
-
-      if (ac) params.AC = ac;
-      if (cf) params.CF = cf;
-      if (mt) params.MT = mt;
-      if (pp) params.PP = pp;
-      if (mm) params.MM = mm;
-
-      const formatted = this.sdrfSyntax.formatValue('modification', params);
-      this.valueChange.emit(formatted);
-    } else if (!nt && !ta) {
+    if (!nt) {
       this.valueChange.emit('');
+      return;
     }
+
+    const params: ModificationParameters = { NT: nt };
+    const ta = this.TA();
+    const ac = this.AC();
+    const cf = this.CF();
+    const mt = this.MT();
+    const pp = this.PP();
+    const mm = this.MM();
+
+    if (ta) params.TA = ta;
+    if (ac) params.AC = ac;
+    if (cf) params.CF = cf;
+    if (mt) params.MT = mt;
+    if (pp) params.PP = pp;
+    if (mm) params.MM = mm;
+
+    this.valueChange.emit(this.sdrfSyntax.formatValue('modification', params));
   }
 }

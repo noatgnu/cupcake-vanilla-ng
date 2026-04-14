@@ -153,10 +153,11 @@ export class CellEditor implements OnInit {
       if (selected.values.length === 1 && selected.values[0].length === 1) {
         const match = selected.address.match(/([A-Z]+)(\d+)/);
         if (match) {
-          const col = match[1].charCodeAt(0) - 65;
+          const col = this.columnLetterToIndex(match[1]);
           const row = parseInt(match[2], 10) - 1;
           await this.excelService.updateCell(row, col, this.editValue());
           this.toastService.success('Inserted into cell');
+          this.close.emit();
         }
       }
     } catch {
@@ -164,6 +165,10 @@ export class CellEditor implements OnInit {
     } finally {
       this.isSaving.set(false);
     }
+  }
+
+  private columnLetterToIndex(letters: string): number {
+    return letters.split('').reduce((acc, char) => acc * 26 + char.charCodeAt(0) - 64, 0) - 1;
   }
 
   cancel(): void {
