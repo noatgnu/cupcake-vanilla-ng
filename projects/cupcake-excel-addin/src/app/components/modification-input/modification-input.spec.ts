@@ -3,7 +3,7 @@ import { provideZonelessChangeDetection } from '@angular/core';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { ModificationInput } from './modification-input';
-import { SdrfSyntaxService, OntologySearchService, OntologySuggestion, OntologyType } from '@noatgnu/cupcake-vanilla';
+import { SdrfSyntaxService, OntologySearchService, OntologySuggestion, OntologyType, UnimodFullData } from '@noatgnu/cupcake-vanilla';
 import { CUPCAKE_CORE_CONFIG } from '@noatgnu/cupcake-core';
 
 describe('ModificationInput', () => {
@@ -46,6 +46,8 @@ describe('ModificationInput', () => {
     expect(component.PP()).toBe('');
     expect(component.TA()).toBe('');
     expect(component.MM()).toBe('');
+    expect(component.TS()).toBe('');
+    expect(component.showSpecifications()).toBeFalse();
   });
 
   it('should parse modification value on init', async () => {
@@ -145,6 +147,79 @@ describe('ModificationInput', () => {
 
     expect(component.NT()).toBe('Carbamidomethyl');
     expect(component.showSuggestions()).toBeFalse();
+  });
+
+  it('should show specifications when Unimod suggestion has specs', () => {
+    const unimodSuggestion: OntologySuggestion = {
+      id: 'UNIMOD:21',
+      value: 'Phospho',
+      displayName: 'Phospho',
+      ontologyType: OntologyType.UNIMOD,
+      fullData: {
+        accession: 'UNIMOD:21',
+        name: 'Phospho',
+        definition: 'Phosphorylation',
+        additionalData: [],
+        generalProperties: {},
+        deltaMonoMass: '79.966331',
+        deltaAvgeMass: '79.9799',
+        deltaComposition: 'H O(3) P',
+        specifications: {
+          '1': { site: 'S', position: 'Anywhere', classification: 'Post-translational', accession: '', name: '', definition: '', additionalData: [], generalProperties: {}, specifications: {}, deltaMonoMass: '', deltaAvgeMass: '', deltaComposition: '' },
+          '2': { site: 'T', position: 'Anywhere', classification: 'Post-translational', accession: '', name: '', definition: '', additionalData: [], generalProperties: {}, specifications: {}, deltaMonoMass: '', deltaAvgeMass: '', deltaComposition: '' }
+        }
+      } as UnimodFullData
+    };
+
+    component.selectSuggestion(unimodSuggestion);
+
+    expect(component.NT()).toBe('Phospho');
+    expect(component.AC()).toBe('UNIMOD:21');
+    expect(component.showSpecifications()).toBeTrue();
+    expect(component.availableSpecifications().length).toBe(2);
+  });
+
+  it('should auto-fill fields when specification selected', () => {
+    const unimodData: UnimodFullData = {
+      accession: 'UNIMOD:21',
+      name: 'Phospho',
+      definition: '',
+      additionalData: [],
+      generalProperties: {},
+      deltaMonoMass: '79.966331',
+      deltaAvgeMass: '',
+      deltaComposition: 'H O(3) P',
+      specifications: {
+        '1': { site: 'S', position: 'Anywhere', classification: 'Post-translational', accession: '', name: '', definition: '', additionalData: [], generalProperties: {}, specifications: {}, deltaMonoMass: '', deltaAvgeMass: '', deltaComposition: '' }
+      }
+    };
+    component.selectedUnimodData.set(unimodData);
+
+    component.selectSpecification('1');
+
+    expect(component.TA()).toBe('S');
+    expect(component.PP()).toBe('Anywhere');
+    expect(component.MT()).toBe('Variable');
+  });
+
+  it('should format TA to uppercase on input', () => {
+    component.onTAInput('s,t,y');
+    expect(component.TA()).toBe('S,T,Y');
+  });
+
+  it('should strip non-amino-acid characters from TA', () => {
+    component.onTAInput('S1T2Y');
+    expect(component.TA()).toBe('STY');
+  });
+
+  it('should include TS in emitted value', () => {
+    const emitSpy = spyOn(component.valueChange, 'emit');
+    component.NT.set('Phospho');
+    component.TS.set('N[^P][ST]');
+    component.onFieldChange();
+
+    const emittedValue = emitSpy.calls.mostRecent().args[0];
+    expect(emittedValue).toContain('TS=N[^P][ST]');
   });
 
   it('should hide suggestions after delay', async () => {

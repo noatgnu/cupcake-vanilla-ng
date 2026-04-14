@@ -1,6 +1,7 @@
 <div class="modification-input">
+
   <div class="mb-2 position-relative">
-    <label class="form-label small mb-1">Modification Name *</label>
+    <label class="form-label small mb-1">Name of Term * <span class="text-muted">(NT)</span></label>
     <div class="input-group input-group-sm">
       <input
         type="text"
@@ -30,18 +31,59 @@
     }
   </div>
 
+  @if (showSpecifications() && availableSpecifications().length > 0) {
+    <div class="mb-2 p-2 border rounded bg-light">
+      <div class="d-flex justify-content-between align-items-center mb-1">
+        <small class="fw-semibold text-muted">Specifications <span class="text-info">(select to auto-fill)</span></small>
+        @if (hiddenSpecificationCount() > 0) {
+          <button
+            type="button"
+            class="btn btn-link btn-sm p-0"
+            style="font-size: 0.7rem;"
+            (click)="toggleHiddenSpecifications()">
+            {{ showHiddenSpecifications() ? 'Hide' : 'Show' }} {{ hiddenSpecificationCount() }} hidden
+          </button>
+        }
+      </div>
+      <div style="max-height: 120px; overflow-y: auto;">
+        @for (spec of availableSpecifications(); track spec.specNumber) {
+          <div
+            class="spec-item d-flex align-items-center px-1 py-1 rounded mb-1 small"
+            style="cursor: pointer;"
+            [class.bg-primary]="selectedSpecification() === spec.specNumber"
+            [class.text-white]="selectedSpecification() === spec.specNumber"
+            [class.bg-white]="selectedSpecification() !== spec.specNumber"
+            (click)="selectSpecification(spec.specNumber)">
+            <div>
+              <span class="fw-semibold me-1">{{ spec.specNumber }}.</span>
+              {{ getSpecificationDisplay(spec) }}
+              @if (spec['hidden'] === '1') {
+                <span class="badge bg-warning text-dark ms-1" style="font-size: 0.6rem;">hidden</span>
+              }
+            </div>
+          </div>
+        }
+      </div>
+      @if (selectedSpecification()) {
+        <small class="text-success d-block mt-1">
+          <i class="bi bi-check-circle me-1"></i>Auto-filled from spec {{ selectedSpecification() }}
+        </small>
+      }
+    </div>
+  }
+
   <div class="row g-1 mb-2">
     <div class="col-6">
-      <label class="form-label small mb-1">Target AA *</label>
+      <label class="form-label small mb-1">Target AA * <span class="text-muted">(TA)</span></label>
       <input
         type="text"
         class="form-control form-control-sm"
-        placeholder="e.g., C"
+        placeholder="e.g., C or S,T,Y"
         [ngModel]="TA()"
-        (ngModelChange)="TA.set($event); onFieldChange()">
+        (ngModelChange)="onTAInput($event)">
     </div>
     <div class="col-6">
-      <label class="form-label small mb-1">Type</label>
+      <label class="form-label small mb-1">Type <span class="text-muted">(MT)</span></label>
       <select
         class="form-select form-select-sm"
         [ngModel]="MT()"
@@ -56,7 +98,7 @@
 
   <div class="row g-1 mb-2">
     <div class="col-6">
-      <label class="form-label small mb-1">Accession</label>
+      <label class="form-label small mb-1">Accession <span class="text-muted">(AC)</span></label>
       <input
         type="text"
         class="form-control form-control-sm"
@@ -65,7 +107,7 @@
         (ngModelChange)="AC.set($event); onFieldChange()">
     </div>
     <div class="col-6">
-      <label class="form-label small mb-1">Position</label>
+      <label class="form-label small mb-1">Position <span class="text-muted">(PP)</span></label>
       <select
         class="form-select form-select-sm"
         [ngModel]="PP()"
@@ -78,26 +120,36 @@
     </div>
   </div>
 
-  <div class="row g-1">
+  <div class="row g-1 mb-2">
     <div class="col-6">
-      <label class="form-label small mb-1">Formula</label>
+      <label class="form-label small mb-1">Formula <span class="text-muted">(CF)</span></label>
       <input
         type="text"
         class="form-control form-control-sm"
-        placeholder="H3C2NO"
+        placeholder="H(2)C(2)O"
         [ngModel]="CF()"
         (ngModelChange)="CF.set($event); onFieldChange()">
     </div>
     <div class="col-6">
-      <label class="form-label small mb-1">Mass</label>
+      <label class="form-label small mb-1">Mass <span class="text-muted">(MM)</span></label>
       <input
         type="text"
         class="form-control form-control-sm"
-        placeholder="57.0215"
+        placeholder="42.010565"
         [ngModel]="MM()"
         (ngModelChange)="MM.set($event); onFieldChange()">
     </div>
   </div>
 
-  <small class="text-muted d-block mt-1">Format: NT=name;TA=C;AC=...</small>
+  <div class="mb-2">
+    <label class="form-label small mb-1">Target Site <span class="text-muted">(TS)</span></label>
+    <input
+      type="text"
+      class="form-control form-control-sm"
+      placeholder="e.g., N[^P][ST]"
+      [ngModel]="TS()"
+      (ngModelChange)="TS.set($event); onFieldChange()">
+    <div class="form-text" style="font-size: 0.65rem;">Regex for complex site rules</div>
+  </div>
+
 </div>

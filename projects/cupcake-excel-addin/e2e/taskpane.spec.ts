@@ -30,34 +30,17 @@ test.describe('Excel Add-in Taskpane - Unauthenticated', () => {
 
     await expect(page.locator('button', { hasText: /sign in/i })).toBeVisible();
   });
-
-  test('should show settings button in header', async ({ page }) => {
-    await page.goto('/');
-    await page.waitForSelector('app-taskpane', { timeout: 15000 });
-
-    await expect(page.locator('button .bi-gear')).toBeVisible();
-  });
-
-  test('should toggle connection panel when clicking settings', async ({ page }) => {
-    await page.goto('/');
-    await page.waitForSelector('app-taskpane', { timeout: 15000 });
-
-    const settingsButton = page.locator('button:has(.bi-gear)');
-    await settingsButton.click();
-    await expect(page.locator('app-connection-panel')).toBeVisible();
-
-    await settingsButton.click();
-    await expect(page.locator('app-connection-panel')).not.toBeVisible();
-  });
 });
 
-test.describe('Connection Panel', () => {
+test.describe('Connection Panel - Unauthenticated', () => {
   test.beforeEach(async ({ page }) => {
     await setupOfficeMock(page);
     await page.goto('/');
-    await page.waitForSelector('app-taskpane', { timeout: 15000 });
-    await page.locator('button:has(.bi-gear)').click();
-    await page.waitForSelector('app-connection-panel', { timeout: 5000 });
+    await page.waitForSelector('app-connection-panel', { timeout: 15000 });
+  });
+
+  test('should show connection panel without authentication', async ({ page }) => {
+    await expect(page.locator('app-connection-panel')).toBeVisible();
   });
 
   test('should show mode buttons', async ({ page }) => {

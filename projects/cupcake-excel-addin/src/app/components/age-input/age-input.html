@@ -11,7 +11,7 @@
 
   @if (isRange()) {
     <div class="row g-1 mb-1">
-      <div class="col-12 small text-muted">Start</div>
+      <div class="col-12 small text-muted fw-semibold">Start</div>
       <div class="col-6">
         <input
           type="number"
@@ -34,7 +34,7 @@
       </div>
     </div>
     <div class="row g-1">
-      <div class="col-12 small text-muted">End</div>
+      <div class="col-12 small text-muted fw-semibold">End</div>
       <div class="col-6">
         <input
           type="number"
@@ -56,40 +56,54 @@
           (ngModelChange)="rangeEndMonths.set($event)">
       </div>
     </div>
+    <small class="text-muted d-block mt-1">Format: 25Y-35Y or 2Y6M-3Y</small>
   } @else {
-    <div class="row g-1">
-      <div class="col-4">
+    <div class="row g-1 mb-1">
+      <div class="col-3">
+        <label class="form-label small mb-0">Years</label>
         <input
           type="number"
           class="form-control form-control-sm"
-          placeholder="Years"
+          placeholder="0"
           min="0"
           max="200"
           [ngModel]="years()"
           (ngModelChange)="years.set($event)">
       </div>
-      <div class="col-4">
+      <div class="col-3">
+        <label class="form-label small mb-0">Months</label>
         <input
           type="number"
           class="form-control form-control-sm"
-          placeholder="Months"
+          placeholder="0"
           min="0"
           max="11"
           [ngModel]="months()"
           (ngModelChange)="months.set($event)">
       </div>
-      <div class="col-4">
+      <div class="col-3">
+        <label class="form-label small mb-0">Days</label>
         <input
           type="number"
           class="form-control form-control-sm"
-          placeholder="Days"
+          placeholder="0"
           min="0"
           max="31"
           [ngModel]="days()"
           (ngModelChange)="days.set($event)">
       </div>
+      <div class="col-3">
+        <label class="form-label small mb-0">Weeks</label>
+        <input
+          type="number"
+          class="form-control form-control-sm"
+          placeholder="0"
+          min="0"
+          max="520"
+          [ngModel]="weeks()"
+          (ngModelChange)="weeks.set($event)">
+      </div>
     </div>
+    <small class="text-muted d-block">Weeks overrides Y/M/D (for neonates). Format: 30Y6M or 8W</small>
   }
-
-  <small class="text-muted d-block mt-1">Format: 30Y6M or 25Y-35Y</small>
 </div>

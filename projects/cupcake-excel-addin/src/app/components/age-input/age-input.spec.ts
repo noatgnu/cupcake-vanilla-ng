@@ -34,6 +34,7 @@ describe('AgeInput', () => {
     expect(component.years()).toBeNull();
     expect(component.months()).toBeNull();
     expect(component.days()).toBeNull();
+    expect(component.weeks()).toBeNull();
   });
 
   it('should parse single age value on init', async () => {
@@ -112,5 +113,38 @@ describe('AgeInput', () => {
     fixture.detectChanges();
 
     expect(emitSpy).toHaveBeenCalled();
+  });
+
+  it('should parse weeks-only age value on init', async () => {
+    fixture.componentRef.setInput('value', '8W');
+    component.ngOnInit();
+    await fixture.whenStable();
+
+    expect(component.weeks()).toBe(8);
+    expect(component.isRange()).toBeFalse();
+  });
+
+  it('should emit weeks format when weeks is set', async () => {
+    const emitSpy = spyOn(component.valueChange, 'emit');
+
+    component.weeks.set(30);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(emitSpy).toHaveBeenCalled();
+    expect(emitSpy.calls.mostRecent().args[0]).toBe('30W');
+  });
+
+  it('should prioritize weeks over years/months/days in emission', async () => {
+    const emitSpy = spyOn(component.valueChange, 'emit');
+
+    component.years.set(1);
+    component.months.set(2);
+    component.weeks.set(52);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const emittedValue = emitSpy.calls.mostRecent().args[0];
+    expect(emittedValue).toBe('52W');
   });
 });

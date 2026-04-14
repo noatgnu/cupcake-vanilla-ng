@@ -16,8 +16,9 @@ import { ToastService } from '../core/services/toast.service';
 import { SyncService } from '../core/services/sync.service';
 import { ExcelService } from '../core/services/excel.service';
 import { ThemeService } from '../core/services/theme.service';
+import { ColumnInfo } from '../components/column-info/column-info';
 
-type TabType = 'tables' | 'ontology' | 'validate';
+type TabType = 'tables' | 'ontology' | 'validate' | 'info';
 
 @Component({
   selector: 'app-taskpane',
@@ -31,7 +32,8 @@ type TabType = 'tables' | 'ontology' | 'validate';
     AgeInput,
     ModificationInput,
     CleavageInput,
-    FavoritesPanel
+    FavoritesPanel,
+    ColumnInfo
   ],
   templateUrl: './taskpane.html',
   styleUrl: './taskpane.scss',
@@ -189,7 +191,7 @@ export class Taskpane implements OnInit, OnDestroy {
       const selection = await this.excelService.getSelectedRange();
       const match = selection.address.match(/([A-Z]+)(\d+)/);
       if (match) {
-        const col = match[1].charCodeAt(0) - 65;
+        const col = this.columnLetterToIndex(match[1]);
         const row = parseInt(match[2], 10) - 1;
         await this.excelService.updateCell(row, col, value);
         this.toastService.success('Value inserted');

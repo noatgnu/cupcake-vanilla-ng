@@ -18,6 +18,7 @@ export class AgeInput implements OnInit {
   readonly years = signal<number | null>(null);
   readonly months = signal<number | null>(null);
   readonly days = signal<number | null>(null);
+  readonly weeks = signal<number | null>(null);
   readonly rangeStartYears = signal<number | null>(null);
   readonly rangeStartMonths = signal<number | null>(null);
   readonly rangeEndYears = signal<number | null>(null);
@@ -38,6 +39,12 @@ export class AgeInput implements OnInit {
 
   private parseValue(value: string): void {
     try {
+      const weeksMatch = value.match(/^(\d+)W$/);
+      if (weeksMatch) {
+        this.weeks.set(parseInt(weeksMatch[1], 10));
+        return;
+      }
+
       const parsed = this.sdrfSyntax.parseValue('age', value) as AgeFormat;
       if (parsed.isRange && parsed.rangeStart && parsed.rangeEnd) {
         this.isRange.set(true);
@@ -63,31 +70,30 @@ export class AgeInput implements OnInit {
       if (startY !== null || endY !== null) {
         const ageData: AgeFormat = {
           isRange: true,
-          rangeStart: {
-            years: startY ?? 0,
-            months: this.rangeStartMonths() ?? 0
-          },
-          rangeEnd: {
-            years: endY ?? 0,
-            months: this.rangeEndMonths() ?? 0
-          }
+          rangeStart: { years: startY ?? 0, months: this.rangeStartMonths() ?? 0 },
+          rangeEnd: { years: endY ?? 0, months: this.rangeEndMonths() ?? 0 }
         };
-        const formatted = this.sdrfSyntax.formatValue('age', ageData);
-        this.valueChange.emit(formatted);
+        this.valueChange.emit(this.sdrfSyntax.formatValue('age', ageData));
       }
-    } else {
-      const y = this.years();
-      const m = this.months();
-      const d = this.days();
-      if (y !== null || m !== null || d !== null) {
-        const ageData: AgeFormat = {
-          years: y ?? undefined,
-          months: m ?? undefined,
-          days: d ?? undefined
-        };
-        const formatted = this.sdrfSyntax.formatValue('age', ageData);
-        this.valueChange.emit(formatted);
-      }
+      return;
+    }
+
+    const w = this.weeks();
+    if (w !== null) {
+      this.valueChange.emit(`${w}W`);
+      return;
+    }
+
+    const y = this.years();
+    const m = this.months();
+    const d = this.days();
+    if (y !== null || m !== null || d !== null) {
+      const ageData: AgeFormat = {
+        years: y ?? undefined,
+        months: m ?? undefined,
+        days: d ?? undefined
+      };
+      this.valueChange.emit(this.sdrfSyntax.formatValue('age', ageData));
     }
   }
 
