@@ -302,9 +302,28 @@ export class SyncPanel {
   }
 
   onColumnsRefresh(): void {
+    this.currentView.set('main');
     this.tableService.getMetadataTable(this.table().id).subscribe({
-      next: (tableData) => {
+      next: async (tableData) => {
         this.fullTable.set(tableData);
+        if (!tableData.columns || tableData.columns.length === 0) return;
+        const sortedColumns = [...tableData.columns].sort((a, b) => a.columnPosition - b.columnPosition);
+        const newHeaders = sortedColumns.map(col => col.name);
+        try {
+          if (this.isProtected()) {
+            await this.excelService.unprotectWorksheet();
+          }
+          await this.excelService.mergeTableStructure(newHeaders);
+          if (this.isProtected()) {
+            await this.excelService.protectWorksheet();
+          }
+          this.toastService.success('Column structure updated');
+        } catch {
+          this.toastService.error('Failed to update Excel structure');
+        }
+      },
+      error: () => {
+        this.toastService.error('Failed to reload table');
       }
     });
   }
@@ -316,6 +335,6 @@ export class SyncPanel {
 
   onAutofillApplied(): void {
     this.currentView.set('main');
-    this.toastService.success('Autofill applied - pull data to refresh');
+    this.toastService.success('Autofill applied - pull to refresh cell values');
   }
 }

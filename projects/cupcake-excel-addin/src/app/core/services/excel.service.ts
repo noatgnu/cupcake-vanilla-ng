@@ -88,6 +88,49 @@ export class ExcelService {
     });
   }
 
+  /**
+   * Rewrites the sheet with new headers while preserving existing cell values for
+   * columns whose names still exist. New columns are written as empty. Columns
+   * removed from newHeaders are dropped. Existing data rows for surviving columns
+   * are carried over so unsaved edits are not lost.
+   */
+  async mergeTableStructure(newHeaders: string[]): Promise<void> {
+    return Excel.run(async (context: any) => {
+      const sheet = context.workbook.worksheets.getActiveWorksheet();
+      const usedRange = sheet.getUsedRange();
+      usedRange.load(['values', 'rowCount', 'columnCount']);
+      await context.sync();
+
+      const existing = usedRange.values as any[][];
+      const oldHeaders: string[] = existing[0] ?? [];
+      const oldRows: any[][] = existing.slice(1);
+
+      const mergedRows: any[][] = oldRows.map(oldRow =>
+        newHeaders.map(header => {
+          const oldIdx = oldHeaders.indexOf(header);
+          return oldIdx >= 0 ? (oldRow[oldIdx] ?? '') : '';
+        })
+      );
+
+      const oldEndCol = this.columnIndexToLetter(oldHeaders.length - 1);
+      const oldEndRow = existing.length;
+      sheet.getRange(`A1:${oldEndCol}${oldEndRow}`).clear();
+      await context.sync();
+
+      const allData = [newHeaders, ...mergedRows];
+      const endCol = this.columnIndexToLetter(newHeaders.length - 1);
+      sheet.getRange(`A1:${endCol}${allData.length}`).values = allData;
+
+      const headerRange = sheet.getRange(`A1:${endCol}1`);
+      headerRange.format.font.bold = true;
+      headerRange.format.fill.color = '#4472C4';
+      headerRange.format.font.color = '#FFFFFF';
+
+      await this.applyTableBoundary(context, sheet, newHeaders.length, allData.length);
+      await context.sync();
+    });
+  }
+
   async writeTableToWorksheet(
     headers: string[],
     data: any[][],
