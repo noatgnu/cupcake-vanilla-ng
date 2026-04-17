@@ -1,5 +1,5 @@
 .ontology-search {
-  color: var(--bs-body-color);
+  color: var(--taskpane-fg, var(--bs-body-color));
 
   .search-match-toggle {
     .btn-outline-secondary {
@@ -12,8 +12,9 @@
     top: 100%;
     left: 0;
     right: 0;
-    background: var(--bs-body-bg);
-    border: 1px solid var(--taskpane-border, var(--bs-border-color));
+    background-color: var(--taskpane-bg, #ffffff);
+    color: var(--taskpane-fg, #212529);
+    border: 1px solid var(--taskpane-border, #dee2e6);
     border-top: 0;
     border-radius: 0 0 0.25rem 0.25rem;
     max-height: 200px;
@@ -25,30 +26,40 @@
   .suggestion-item {
     padding: 0.4rem 0.6rem;
     cursor: pointer;
-    border-bottom: 1px solid var(--taskpane-border, var(--bs-border-color));
-    color: var(--bs-body-color);
+    border-bottom: 1px solid var(--taskpane-border, #dee2e6);
+    color: var(--taskpane-fg, #212529);
+    background-color: var(--taskpane-bg, #ffffff);
 
     &:last-child {
       border-bottom: 0;
     }
 
     &:hover {
-      background-color: var(--taskpane-hover, var(--bs-tertiary-bg));
+      background-color: var(--taskpane-hover, #f8f9fa);
+      color: var(--taskpane-fg, #212529);
     }
   }
 
   .suggestion-label {
     font-size: 0.85rem;
     font-weight: 500;
-    color: var(--bs-body-color);
+    color: var(--taskpane-fg, #212529);
   }
 
   .suggestion-meta {
     font-size: 0.75rem;
+    color: var(--taskpane-fg, #212529);
+    opacity: 0.75;
 
     .badge {
       font-size: 0.65rem;
       font-weight: normal;
+      opacity: 1;
     }
+  }
+
+  .suggestion-id {
+    color: var(--taskpane-fg, #212529);
+    opacity: 0.7;
   }
 }

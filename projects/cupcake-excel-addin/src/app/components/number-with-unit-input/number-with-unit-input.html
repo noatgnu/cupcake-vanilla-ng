@@ -1,0 +1,20 @@
+<div class="input-group input-group-sm">
+  <input
+    type="number"
+    class="form-control"
+    placeholder="Value"
+    [ngModel]="numberPart()"
+    (ngModelChange)="onNumberChange($event)"
+    step="any" />
+  @if (units().length > 0) {
+    <select
+      class="form-select"
+      style="max-width: 90px"
+      [ngModel]="unitPart()"
+      (ngModelChange)="onUnitChange($event)">
+      @for (u of units(); track u) {
+        <option [value]="u">{{ u }}</option>
+      }
+    </select>
+  }
+</div>

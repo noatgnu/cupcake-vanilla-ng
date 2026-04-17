@@ -17,7 +17,8 @@ export enum TaskType {
   REORDER_TABLE_COLUMNS = 'REORDER_TABLE_COLUMNS',
   REORDER_TEMPLATE_COLUMNS = 'REORDER_TEMPLATE_COLUMNS',
   TRANSCRIBE_AUDIO = 'TRANSCRIBE_AUDIO',
-  TRANSCRIBE_VIDEO = 'TRANSCRIBE_VIDEO'
+  TRANSCRIBE_VIDEO = 'TRANSCRIBE_VIDEO',
+  VALIDATE_SDRF_FILE = 'VALIDATE_SDRF_FILE'
 }
 
 export interface TaskParameters {
@@ -148,6 +149,33 @@ export interface MetadataValidationRequest {
   skipOntology?: boolean;
 }
 
+export interface SdrfFileValidationRequest {
+  file: File;
+  schemaNames?: string[];
+  skipOntology?: boolean;
+  useOlsCacheOnly?: boolean;
+}
+
+export interface SdrfValidationSchemaResult {
+  schemaName: string;
+  success: boolean;
+  errors: string[];
+  warnings: string[];
+}
+
+export interface SdrfFileValidationResult {
+  success: boolean;
+  validationTimestamp?: string;
+  schemaResults: SdrfValidationSchemaResult[];
+  errors: string[];
+  warnings: string[];
+  summary: {
+    totalSchemas: number;
+    passedSchemas: number;
+    failedSchemas: number;
+  };
+}
+
 export interface ValidationSchema {
   name: string;
   displayName: string;
@@ -196,6 +224,7 @@ export const TASK_TYPE_LABELS: Record<TaskType, string> = {
   [TaskType.REORDER_TEMPLATE_COLUMNS]: 'Reorder Template Columns',
   [TaskType.TRANSCRIBE_AUDIO]: 'Transcribe Audio',
   [TaskType.TRANSCRIBE_VIDEO]: 'Transcribe Video',
+  [TaskType.VALIDATE_SDRF_FILE]: 'Validate SDRF File',
 };
 
 export const TASK_STATUS_LABELS: Record<TaskStatus, string> = {

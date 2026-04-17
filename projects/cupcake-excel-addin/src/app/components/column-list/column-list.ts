@@ -32,6 +32,8 @@ export class ColumnList implements OnInit, OnChanges {
   readonly isCreating = signal(false);
   readonly searchQuery = signal('');
   readonly currentCellValue = signal('');
+  readonly dragSourceIndex = signal<number | null>(null);
+  readonly dragOverIndex = signal<number | null>(null);
 
   ngOnInit(): void {
     this.loadColumns();
@@ -164,6 +166,54 @@ export class ColumnList implements OnInit, OnChanges {
         this.toastService.error('Failed to reorder column');
       }
     });
+  }
+
+  onDragStart(event: DragEvent, index: number): void {
+    this.dragSourceIndex.set(index);
+    if (event.dataTransfer) {
+      event.dataTransfer.effectAllowed = 'move';
+    }
+  }
+
+  onDragOver(event: DragEvent, index: number): void {
+    event.preventDefault();
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect = 'move';
+    }
+    this.dragOverIndex.set(index);
+  }
+
+  onDragLeave(): void {
+    this.dragOverIndex.set(null);
+  }
+
+  onDrop(event: DragEvent, targetIndex: number): void {
+    event.preventDefault();
+    const sourceIndex = this.dragSourceIndex();
+    this.dragSourceIndex.set(null);
+    this.dragOverIndex.set(null);
+
+    if (sourceIndex === null || sourceIndex === targetIndex) return;
+
+    const cols = this.filteredColumns();
+    const sourceColumn = cols[sourceIndex];
+    const targetColumn = cols[targetIndex];
+    if (!sourceColumn || !targetColumn) return;
+
+    this.tableService.reorderColumn(this.table().id, sourceColumn.id, targetColumn.columnPosition).subscribe({
+      next: () => {
+        this.fetchColumns();
+        this.toastService.success('Column reordered');
+      },
+      error: () => {
+        this.toastService.error('Failed to reorder column');
+      }
+    });
+  }
+
+  onDragEnd(): void {
+    this.dragSourceIndex.set(null);
+    this.dragOverIndex.set(null);
   }
 
   goBack(): void {

@@ -12,13 +12,37 @@
   font-size: 12px;
   color: var(--bs-body-color);
   border-color: var(--taskpane-border, var(--bs-border-color)) !important;
+  cursor: default;
+  transition: background-color 0.1s;
 
   &:hover {
     background-color: var(--taskpane-hover, var(--bs-tertiary-bg));
   }
+
+  &.drag-over {
+    background-color: var(--bs-primary-bg-subtle);
+    border-top: 2px solid var(--bs-primary) !important;
+  }
+
+  &.dragging {
+    opacity: 0.4;
+  }
 }
 
-.column-badges {
+.drag-handle {
+  cursor: grab;
+  padding: 0 2px;
+  font-size: 14px;
+  line-height: 1;
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+.column-info {
+  min-width: 0;
+
   .badge {
     font-size: 9px;
     padding: 2px 4px;
@@ -26,10 +50,9 @@
 }
 
 .column-actions {
-  flex-shrink: 0;
-
   .btn {
-    padding: 2px 4px;
-    font-size: 10px;
+    padding: 2px 5px;
+    font-size: 11px;
+    line-height: 1.4;
   }
 }

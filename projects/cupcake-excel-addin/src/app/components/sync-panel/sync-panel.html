@@ -80,6 +80,46 @@
         </div>
       </div>
 
+      @if (showBackConfirm()) {
+        <div class="alert alert-warning py-2 px-2 mb-2 small">
+          <div class="fw-semibold mb-1">
+            <i class="bi bi-exclamation-triangle-fill me-1"></i>
+            Unsaved changes
+          </div>
+          <div class="text-muted mb-2">
+            You have unpushed edits in Excel for this table. Going back will not delete them, but pulling another table will overwrite them.
+          </div>
+          <div class="d-flex gap-1">
+            <button class="btn btn-warning btn-sm flex-fill" (click)="confirmBack()">
+              <i class="bi bi-arrow-left me-1"></i>Go Back
+            </button>
+            <button class="btn btn-outline-secondary btn-sm" (click)="cancelBack()">
+              Stay
+            </button>
+          </div>
+        </div>
+      }
+
+      @if (showOverwriteConfirm()) {
+        <div class="alert alert-danger py-2 px-2 mb-2 small">
+          <div class="fw-semibold mb-1">
+            <i class="bi bi-exclamation-triangle-fill me-1"></i>
+            Overwrite existing data?
+          </div>
+          <div class="text-muted mb-2">
+            Your Excel sheet still has data from a different table. Pulling will overwrite it.
+          </div>
+          <div class="d-flex gap-1">
+            <button class="btn btn-danger btn-sm flex-fill" (click)="confirmOverwrite()">
+              <i class="bi bi-download me-1"></i>Overwrite &amp; Pull
+            </button>
+            <button class="btn btn-outline-secondary btn-sm" (click)="cancelOverwrite()">
+              Cancel
+            </button>
+          </div>
+        </div>
+      }
+
       <div class="sync-actions mb-3">
         <div class="d-grid gap-2">
           <button

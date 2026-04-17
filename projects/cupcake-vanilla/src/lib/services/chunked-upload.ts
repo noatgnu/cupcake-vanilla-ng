@@ -57,6 +57,18 @@ export class ChunkedUploadService extends BaseApiService {
     if (request.overrideSampleCount !== undefined) {
       formData.append('override_sample_count', request.overrideSampleCount.toString());
     }
+    if (request.validateOnly !== undefined) {
+      formData.append('validate_only', request.validateOnly.toString());
+    }
+    if (request.schemaNames?.length) {
+      formData.append('schema_names', request.schemaNames.join(','));
+    }
+    if (request.skipOntology !== undefined) {
+      formData.append('skip_ontology', request.skipOntology.toString());
+    }
+    if (request.useOlsCacheOnly !== undefined) {
+      formData.append('use_ols_cache_only', request.useOlsCacheOnly.toString());
+    }
 
     const url = uploadId
       ? `${this.apiUrl}/chunked-upload/${uploadId}/`
@@ -106,6 +118,18 @@ export class ChunkedUploadService extends BaseApiService {
     if (request?.overrideSampleCount !== undefined) {
       formData.append('override_sample_count', request.overrideSampleCount.toString());
     }
+    if (request?.validateOnly !== undefined) {
+      formData.append('validate_only', request.validateOnly.toString());
+    }
+    if (request?.schemaNames?.length) {
+      formData.append('schema_names', request.schemaNames.join(','));
+    }
+    if (request?.skipOntology !== undefined) {
+      formData.append('skip_ontology', request.skipOntology.toString());
+    }
+    if (request?.useOlsCacheOnly !== undefined) {
+      formData.append('use_ols_cache_only', request.useOlsCacheOnly.toString());
+    }
 
     return this.post<ChunkedUploadCompletionResponse>(`${this.apiUrl}/chunked-upload/${uploadId}/`, formData);
   }
@@ -142,6 +166,18 @@ export class ChunkedUploadService extends BaseApiService {
         if (request.overrideSampleCount !== undefined) {
           formData.append('override_sample_count', request.overrideSampleCount.toString());
         }
+        if (request.validateOnly !== undefined) {
+          formData.append('validate_only', request.validateOnly.toString());
+        }
+        if (request.schemaNames?.length) {
+          formData.append('schema_names', request.schemaNames.join(','));
+        }
+        if (request.skipOntology !== undefined) {
+          formData.append('skip_ontology', request.skipOntology.toString());
+        }
+        if (request.useOlsCacheOnly !== undefined) {
+          formData.append('use_ols_cache_only', request.useOlsCacheOnly.toString());
+        }
         formData.append('sha256', hash);
 
         return this.post<ChunkedUploadCompletionResponse>(`${this.apiUrl}/chunked-upload/`, formData);
@@ -169,6 +205,10 @@ export class ChunkedUploadService extends BaseApiService {
       replaceExisting?: boolean;
       overrideSampleCount?: boolean;
       uploadSessionId?: string;
+      validateOnly?: boolean;
+      schemaNames?: string[];
+      skipOntology?: boolean;
+      useOlsCacheOnly?: boolean;
       onProgress?: (progress: number) => void;
     }
   ): Observable<ChunkedUploadCompletionResponse> {
@@ -185,7 +225,11 @@ export class ChunkedUploadService extends BaseApiService {
           metadataTableId: options?.metadataTableId,
           createPools: options?.createPools,
           replaceExisting: options?.replaceExisting,
-          overrideSampleCount: options?.overrideSampleCount
+          overrideSampleCount: options?.overrideSampleCount,
+          validateOnly: options?.validateOnly,
+          schemaNames: options?.schemaNames,
+          skipOntology: options?.skipOntology,
+          useOlsCacheOnly: options?.useOlsCacheOnly
         }).subscribe({
           next: (result) => {
             subscriber.next(result);
@@ -203,7 +247,11 @@ export class ChunkedUploadService extends BaseApiService {
               metadataTableId: options?.metadataTableId,
               createPools: options?.createPools,
               replaceExisting: options?.replaceExisting,
-              overrideSampleCount: options?.overrideSampleCount
+              overrideSampleCount: options?.overrideSampleCount,
+              validateOnly: options?.validateOnly,
+              schemaNames: options?.schemaNames,
+              skipOntology: options?.skipOntology,
+              useOlsCacheOnly: options?.useOlsCacheOnly
             }).subscribe({
               next: (result) => {
                 subscriber.next(result);
@@ -231,7 +279,11 @@ export class ChunkedUploadService extends BaseApiService {
             metadataTableId: options?.metadataTableId,
             createPools: options?.createPools,
             replaceExisting: options?.replaceExisting,
-            overrideSampleCount: options?.overrideSampleCount
+            overrideSampleCount: options?.overrideSampleCount,
+            validateOnly: options?.validateOnly,
+            schemaNames: options?.schemaNames,
+            skipOntology: options?.skipOntology,
+            useOlsCacheOnly: options?.useOlsCacheOnly
           }, uploadId, offset, totalSize).subscribe({
             next: (response) => {
               uploadId = response.id;

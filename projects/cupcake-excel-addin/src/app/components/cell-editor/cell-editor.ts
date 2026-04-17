@@ -5,10 +5,13 @@ import {
   SdrfSyntaxService,
   SyntaxType,
   OntologySearchService,
+  OfficialColumnCacheService,
   OntologySuggestion,
   OntologyType,
   OntologyTypeLabels,
-  ONTOLOGY_TYPE_CONFIGS
+  ONTOLOGY_TYPE_CONFIGS,
+  SdrfNumberWithUnitInput,
+  ColumnInputType
 } from '@noatgnu/cupcake-vanilla';
 import { AgeInput } from '../age-input/age-input';
 import { ModificationInput } from '../modification-input/modification-input';
@@ -19,13 +22,14 @@ import { Subject, debounceTime, distinctUntilChanged, switchMap, of, catchError 
 
 @Component({
   selector: 'app-cell-editor',
-  imports: [FormsModule, AgeInput, ModificationInput, CleavageInput],
+  imports: [FormsModule, AgeInput, ModificationInput, CleavageInput, SdrfNumberWithUnitInput],
   templateUrl: './cell-editor.html',
   styleUrl: './cell-editor.scss',
 })
 export class CellEditor implements OnInit {
   private sdrfSyntax = inject(SdrfSyntaxService);
   private ontologyService = inject(OntologySearchService);
+  private columnCache = inject(OfficialColumnCacheService);
   private excelService = inject(ExcelService);
   private toastService = inject(ToastService);
 
@@ -41,6 +45,16 @@ export class CellEditor implements OnInit {
   readonly suggestions = signal<OntologySuggestion[]>([]);
   readonly isSearching = signal(false);
   readonly showSuggestions = signal(false);
+
+  readonly columnInputType = computed<ColumnInputType | null>(() => {
+    const config = this.columnCache.getMergedColumnConfig(this.column().name);
+    return config?.inputType ?? null;
+  });
+
+  readonly columnUnits = computed<string[]>(() => {
+    const config = this.columnCache.getMergedColumnConfig(this.column().name);
+    return config?.units ?? [];
+  });
 
   private searchSubject = new Subject<string>();
 

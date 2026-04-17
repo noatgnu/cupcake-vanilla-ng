@@ -17,7 +17,8 @@ import {
   AsyncExportService,
   SamplePoolService,
   ChunkedUploadService,
-  MetadataColumnService
+  MetadataColumnService,
+  OfficialColumnCacheService
 } from '../../services';
 import { ExcelExportOptions } from '../excel-export-modal/excel-export-modal';
 import { MetadataValueEditConfig } from '../metadata-value-edit-modal/metadata-value-edit-modal';
@@ -209,7 +210,8 @@ export class MetadataTableDetails implements OnInit, OnDestroy {
     private metadataColumnService: MetadataColumnService,
     private toastService: ToastService,
     private asyncTaskService: AsyncTaskUIService,
-    private modalService: NgbModal
+    private modalService: NgbModal,
+    private officialColumnCache: OfficialColumnCacheService
   ) {}
 
   ngOnInit(): void {
@@ -833,6 +835,8 @@ export class MetadataTableDetails implements OnInit, OnDestroy {
       sourceName: row.sourceName || `Sample ${row._sampleIndex}`
     }));
 
+    const columnConfig = this.officialColumnCache.getMergedColumnConfig(column.name);
+
     const config: MetadataValueEditConfig = {
       columnId: column.id,
       columnName: column.name,
@@ -844,21 +848,14 @@ export class MetadataTableDetails implements OnInit, OnDestroy {
       tableId: table.id,
       enableMultiSampleEdit: true,
       sampleData: sampleData,
-      maxSampleCount: table.sampleCount
+      maxSampleCount: table.sampleCount,
+      inputType: columnConfig?.inputType,
+      units: columnConfig?.units
     };
 
     const modalRef = this.modalService.open(MetadataValueEditModal, {
       size: 'xl',
       backdrop: 'static'
-    });
-
-    modalRef.componentInstance.config = config;
-
-    // Debug log to check if multi-sample editing is enabled
-    console.log('Multi-sample editing config:', {
-      enableMultiSampleEdit: config.enableMultiSampleEdit,
-      sampleDataLength: config.sampleData?.length,
-      hasMultiSampleEdit: config.enableMultiSampleEdit && config.sampleData && config.sampleData.length > 0
     });
 
     modalRef.componentInstance.valueSaved.subscribe((result: string | { value: string; sampleIndices: number[] }) => {
@@ -1078,6 +1075,8 @@ export class MetadataTableDetails implements OnInit, OnDestroy {
     const poolColumn = pool.metadataColumns?.find(pc => pc.name === column.name);
     if (!poolColumn || !poolColumn.id) return;
 
+    const poolColumnConfig = this.officialColumnCache.getMergedColumnConfig(poolColumn.name);
+
     const config: MetadataValueEditConfig = {
       columnId: poolColumn.id,
       columnName: poolColumn.name,
@@ -1087,7 +1086,9 @@ export class MetadataTableDetails implements OnInit, OnDestroy {
       currentValue: poolColumn.value,
       context: 'pool',
       tableId: table.id,
-      poolId: pool.id
+      poolId: pool.id,
+      inputType: poolColumnConfig?.inputType,
+      units: poolColumnConfig?.units
     };
 
     const modalRef = this.modalService.open(MetadataValueEditModal, {
@@ -1125,6 +1126,8 @@ export class MetadataTableDetails implements OnInit, OnDestroy {
     // Get current value for this sample (could be default or modified)
     const currentValue = this.getSampleColumnValue(column, sampleIndex);
 
+    const sampleColumnConfig = this.officialColumnCache.getMergedColumnConfig(column.name);
+
     const config: MetadataValueEditConfig = {
       columnId: column.id,
       columnName: column.name,
@@ -1133,7 +1136,9 @@ export class MetadataTableDetails implements OnInit, OnDestroy {
       enableTypeahead: true,
       currentValue: currentValue,
       context: 'table',
-      tableId: table.id
+      tableId: table.id,
+      inputType: sampleColumnConfig?.inputType,
+      units: sampleColumnConfig?.units
     };
 
     const modalRef = this.modalService.open(MetadataValueEditModal, {

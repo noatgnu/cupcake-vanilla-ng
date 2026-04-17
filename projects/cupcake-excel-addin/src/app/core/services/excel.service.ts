@@ -1,6 +1,7 @@
 import { Injectable, signal } from '@angular/core';
 
 declare const Excel: any;
+declare const Office: any;
 
 export interface CellData {
   row: number;
@@ -89,6 +90,31 @@ export class ExcelService {
   }
 
   /**
+   * Checks actual Excel protection state, unprotects if needed, clears the used
+   * range, then re-protects if it was protected. Returns whether the sheet was
+   * protected so callers can decide to re-protect after writing.
+   */
+  private async unprotectAndClear(context: any, sheet: any): Promise<boolean> {
+    sheet.protection.load('protected');
+    const usedRange = sheet.getUsedRangeOrNullObject();
+    usedRange.load('isNullObject');
+    await context.sync();
+
+    const wasProtected: boolean = sheet.protection.protected;
+    if (wasProtected) {
+      sheet.protection.unprotect();
+      await context.sync();
+    }
+
+    if (!usedRange.isNullObject) {
+      usedRange.clear();
+      await context.sync();
+    }
+
+    return wasProtected;
+  }
+
+  /**
    * Rewrites the sheet with new headers while preserving existing cell values for
    * columns whose names still exist. New columns are written as empty. Columns
    * removed from newHeaders are dropped. Existing data rows for surviving columns
@@ -97,11 +123,14 @@ export class ExcelService {
   async mergeTableStructure(newHeaders: string[]): Promise<void> {
     return Excel.run(async (context: any) => {
       const sheet = context.workbook.worksheets.getActiveWorksheet();
-      const usedRange = sheet.getUsedRange();
-      usedRange.load(['values', 'rowCount', 'columnCount']);
+
+      sheet.protection.load('protected');
+      const usedRange = sheet.getUsedRangeOrNullObject();
+      usedRange.load(['isNullObject', 'values']);
       await context.sync();
 
-      const existing = usedRange.values as any[][];
+      const wasProtected: boolean = sheet.protection.protected;
+      const existing: any[][] = usedRange.isNullObject ? [] : (usedRange.values as any[][]);
       const oldHeaders: string[] = existing[0] ?? [];
       const oldRows: any[][] = existing.slice(1);
 
@@ -112,21 +141,24 @@ export class ExcelService {
         })
       );
 
-      const oldEndCol = this.columnIndexToLetter(oldHeaders.length - 1);
-      const oldEndRow = existing.length;
-      sheet.getRange(`A1:${oldEndCol}${oldEndRow}`).clear();
+      if (wasProtected) {
+        sheet.protection.unprotect();
+      }
+      if (!usedRange.isNullObject) {
+        usedRange.clear();
+      }
       await context.sync();
 
       const allData = [newHeaders, ...mergedRows];
       const endCol = this.columnIndexToLetter(newHeaders.length - 1);
       sheet.getRange(`A1:${endCol}${allData.length}`).values = allData;
 
-      const headerRange = sheet.getRange(`A1:${endCol}1`);
-      headerRange.format.font.bold = true;
-      headerRange.format.fill.color = '#4472C4';
-      headerRange.format.font.color = '#FFFFFF';
-
       await this.applyTableBoundary(context, sheet, newHeaders.length, allData.length);
+
+      if (wasProtected) {
+        sheet.protection.protect(this.protectionOptions());
+      }
+
       await context.sync();
     });
   }
@@ -139,23 +171,33 @@ export class ExcelService {
     return Excel.run(async (context: any) => {
       const sheet = context.workbook.worksheets.getActiveWorksheet();
 
+      await this.unprotectAndClear(context, sheet);
+
       const allData = [headers, ...data];
       const endColumn = this.columnIndexToLetter(headers.length - 1);
       const endRow = allData.length;
-      const rangeAddress = `${startCell}:${endColumn}${endRow}`;
 
-      const range = sheet.getRange(rangeAddress);
-      range.values = allData;
-
-      const headerRange = sheet.getRange(`A1:${endColumn}1`);
-      headerRange.format.font.bold = true;
-      headerRange.format.fill.color = '#4472C4';
-      headerRange.format.font.color = '#FFFFFF';
+      sheet.getRange(`A1:${endColumn}${endRow}`).values = allData;
 
       await this.applyTableBoundary(context, sheet, headers.length, allData.length);
 
       await context.sync();
     });
+  }
+
+  private protectionOptions(): any {
+    return {
+      allowInsertRows: false,
+      allowInsertColumns: false,
+      allowDeleteRows: false,
+      allowDeleteColumns: false,
+      allowFormatCells: true,
+      allowFormatColumns: true,
+      allowFormatRows: true,
+      allowEditObjects: false,
+      allowEditScenarios: false,
+      selectionMode: 'Normal'
+    };
   }
 
   private async applyTableBoundary(
@@ -191,6 +233,17 @@ export class ExcelService {
     headerBottomRange.format.borders.getItem('EdgeBottom').weight = 'Thick';
     headerBottomRange.format.borders.getItem('EdgeBottom').color = '#1F4E79';
 
+    const staleHeaderRange = sheet.getRangeByIndexes(0, columnCount, 1, 200);
+    staleHeaderRange.format.fill.clear();
+    staleHeaderRange.format.font.bold = false;
+    staleHeaderRange.format.font.color = '#000000';
+    staleHeaderRange.format.font.italic = false;
+
+    const headerFillRange = sheet.getRangeByIndexes(0, 0, 1, columnCount);
+    headerFillRange.format.fill.color = '#4472C4';
+    headerFillRange.format.font.bold = true;
+    headerFillRange.format.font.color = '#FFFFFF';
+
     const warningCol = this.columnIndexToLetter(columnCount);
     const warningRange = sheet.getRange(`${warningCol}1`);
     warningRange.values = [['⬅ SDRF Table Boundary']];
@@ -209,23 +262,15 @@ export class ExcelService {
       const dataRange = sheet.getRange(`A2:${endColumn}${rowCount}`);
       dataRange.format.protection.locked = false;
     }
+
+    const fullTableRange = sheet.getRange(`A1:${endColumn}${rowCount}`);
+    fullTableRange.format.autofitColumns();
   }
 
   async protectWorksheet(): Promise<void> {
     return Excel.run(async (context: any) => {
       const sheet = context.workbook.worksheets.getActiveWorksheet();
-      sheet.protection.protect({
-        allowInsertRows: false,
-        allowInsertColumns: false,
-        allowDeleteRows: false,
-        allowDeleteColumns: false,
-        allowFormatCells: true,
-        allowFormatColumns: true,
-        allowFormatRows: true,
-        allowEditObjects: false,
-        allowEditScenarios: false,
-        selectionMode: 'Normal'
-      });
+      sheet.protection.protect(this.protectionOptions());
       await context.sync();
     });
   }
@@ -357,6 +402,46 @@ export class ExcelService {
 
       await context.sync();
     });
+  }
+
+  onSelectionChanged(handler: () => void): void {
+    if (typeof Office !== 'undefined' && Office.context?.document) {
+      Office.context.document.addHandlerAsync(
+        Office.EventType.DocumentSelectionChanged,
+        handler
+      );
+    }
+  }
+
+  removeSelectionChangedHandler(handler: () => void): void {
+    if (typeof Office !== 'undefined' && Office.context?.document) {
+      Office.context.document.removeHandlerAsync(
+        Office.EventType.DocumentSelectionChanged,
+        { handler }
+      );
+    }
+  }
+
+  /**
+   * Registers a handler that fires whenever cell content changes on the active
+   * worksheet — including Ctrl+Z undo, paste, and direct edits. Returns a
+   * cleanup function that removes the handler.
+   */
+  async onWorksheetChanged(handler: () => void): Promise<() => void> {
+    let eventResult: any;
+    await Excel.run(async (context: any) => {
+      const sheet = context.workbook.worksheets.getActiveWorksheet();
+      eventResult = sheet.onChanged.add(() => { handler(); });
+      await context.sync();
+    });
+    return async () => {
+      if (eventResult) {
+        await Excel.run(async (context: any) => {
+          eventResult.remove();
+          await context.sync();
+        });
+      }
+    };
   }
 
   async getSelectedRange(): Promise<{ address: string; values: any[][] }> {

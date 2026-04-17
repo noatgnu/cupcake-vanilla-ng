@@ -21,6 +21,10 @@ export interface ChunkedUploadRequest {
   createPools?: boolean;
   replaceExisting?: boolean;
   overrideSampleCount?: boolean;
+  validateOnly?: boolean;
+  schemaNames?: string[];
+  skipOntology?: boolean;
+  useOlsCacheOnly?: boolean;
 }
 
 export interface ChunkedUploadResponse {
@@ -38,6 +42,10 @@ export interface ChunkedUploadCompletionRequest {
   createPools?: boolean;
   replaceExisting?: boolean;
   overrideSampleCount?: boolean;
+  validateOnly?: boolean;
+  schemaNames?: string[];
+  skipOntology?: boolean;
+  useOlsCacheOnly?: boolean;
 }
 
 export interface ChunkedUploadCompletionResponse {

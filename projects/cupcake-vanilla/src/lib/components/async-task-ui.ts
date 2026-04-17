@@ -322,6 +322,7 @@ export class AsyncTaskUIService implements OnDestroy {
       [TaskType.REORDER_TEMPLATE_COLUMNS]: 'Template column reordering',
       [TaskType.TRANSCRIBE_AUDIO]: 'Audio transcription',
       [TaskType.TRANSCRIBE_VIDEO]: 'Video transcription',
+      [TaskType.VALIDATE_SDRF_FILE]: 'SDRF file validation',
     };
     return typeMap[taskType] || taskType;
   }

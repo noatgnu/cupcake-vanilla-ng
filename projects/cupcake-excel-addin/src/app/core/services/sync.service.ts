@@ -13,7 +13,7 @@ export interface CellChange {
   sampleIndex: number;
 }
 
-export interface SyncState {
+export interface SheetSyncState {
   tableId: number | null;
   tableName: string;
   originalData: string[][];
@@ -29,43 +29,58 @@ export interface PushResult {
   errors: string[];
 }
 
+const defaultState = (): SheetSyncState => ({
+  tableId: null,
+  tableName: '',
+  originalData: [],
+  columns: [],
+  lastPulledAt: null,
+  isDirty: false
+});
+
 @Injectable({
   providedIn: 'root'
 })
 export class SyncService {
   private columnService = inject(MetadataColumnService);
 
-  private _state = signal<SyncState>({
-    tableId: null,
-    tableName: '',
-    originalData: [],
-    columns: [],
-    lastPulledAt: null,
-    isDirty: false
-  });
+  private _sessions = signal<Record<string, SheetSyncState>>({});
+  readonly sessions = this._sessions.asReadonly();
 
-  readonly state = this._state.asReadonly();
-
-  setPulledData(table: MetadataTable, data: string[][]): void {
-    this._state.set({
-      tableId: table.id,
-      tableName: table.name,
-      originalData: data.map(row => [...row]),
-      columns: table.columns ? [...table.columns].sort((a, b) => a.columnPosition - b.columnPosition) : [],
-      lastPulledAt: new Date(),
-      isDirty: false
-    });
+  getSheetState(sheetName: string): SheetSyncState {
+    return this._sessions()[sheetName] ?? defaultState();
   }
 
-  detectChanges(currentData: string[][]): CellChange[] {
-    const state = this._state();
+  hasDataForSheet(sheetName: string): boolean {
+    const state = this._sessions()[sheetName];
+    return !!state && state.tableId !== null && state.originalData.length > 0;
+  }
+
+  setPulledData(sheetName: string, table: MetadataTable, data: string[][]): void {
+    this._sessions.update(sessions => ({
+      ...sessions,
+      [sheetName]: {
+        tableId: table.id,
+        tableName: table.name,
+        originalData: data.map(row => [...row]),
+        columns: table.columns
+          ? [...table.columns].sort((a, b) => a.columnPosition - b.columnPosition)
+          : [],
+        lastPulledAt: new Date(),
+        isDirty: false
+      }
+    }));
+  }
+
+  detectChanges(sheetName: string, currentData: string[][]): CellChange[] {
+    const state = this.getSheetState(sheetName);
     const changes: CellChange[] = [];
 
     if (!state.originalData.length || !state.columns.length) {
       return changes;
     }
 
-    const maxRows = Math.max(state.originalData.length, currentData.length);
+    const maxRows = state.originalData.length;
     const maxCols = state.columns.length;
 
     for (let rowIdx = 0; rowIdx < maxRows; rowIdx++) {
@@ -93,13 +108,8 @@ export class SyncService {
     return changes;
   }
 
-  /**
-   * Compare a remotely-fetched data matrix against the stored originalData.
-   * Returns true if the backend data differs from what was pulled — meaning
-   * someone else modified column values since the last pull.
-   */
-  hasRemoteChanges(remoteData: string[][]): boolean {
-    const state = this._state();
+  hasRemoteChanges(sheetName: string, remoteData: string[][]): boolean {
+    const state = this.getSheetState(sheetName);
     if (!state.originalData.length) return false;
 
     const maxRows = Math.max(state.originalData.length, remoteData.length);
@@ -168,32 +178,30 @@ export class SyncService {
     );
   }
 
-  updateOriginalData(currentData: string[][]): void {
-    this._state.update(state => ({
-      ...state,
-      originalData: currentData.map(row => [...row]),
-      lastPulledAt: new Date(),
-      isDirty: false
-    }));
-  }
-
-  markDirty(): void {
-    this._state.update(state => ({ ...state, isDirty: true }));
-  }
-
-  clear(): void {
-    this._state.set({
-      tableId: null,
-      tableName: '',
-      originalData: [],
-      columns: [],
-      lastPulledAt: null,
-      isDirty: false
+  updateOriginalData(sheetName: string, currentData: string[][]): void {
+    this._sessions.update(sessions => {
+      const existing = sessions[sheetName];
+      if (!existing) return sessions;
+      return {
+        ...sessions,
+        [sheetName]: {
+          ...existing,
+          originalData: currentData.map(row => [...row]),
+          lastPulledAt: new Date(),
+          isDirty: false
+        }
+      };
     });
   }
 
-  hasData(): boolean {
-    const state = this._state();
-    return state.tableId !== null && state.originalData.length > 0;
+  clearSheet(sheetName: string): void {
+    this._sessions.update(sessions => {
+      const { [sheetName]: _, ...rest } = sessions;
+      return rest;
+    });
+  }
+
+  getActiveSheetNames(): string[] {
+    return Object.keys(this._sessions());
   }
 }

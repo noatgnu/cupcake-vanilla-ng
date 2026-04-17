@@ -1,8 +1,9 @@
-import { Component, inject, signal, input, output, computed } from '@angular/core';
+import { Component, inject, signal, input, output, computed, OnInit, OnDestroy } from '@angular/core';
 import { MetadataTableService, MetadataTable, MetadataColumnService } from '@noatgnu/cupcake-vanilla';
 import { ExcelService } from '../../core/services/excel.service';
 import { SyncService, CellChange } from '../../core/services/sync.service';
 import { ToastService } from '../../core/services/toast.service';
+import { SettingsService } from '../../core/services/settings';
 import { ColumnList } from '../column-list/column-list';
 import { ExportPanel } from '../export-panel/export-panel';
 import { ImportPanel } from '../import-panel/import-panel';
@@ -18,12 +19,13 @@ type PanelView = 'main' | 'columns' | 'export' | 'import' | 'pools' | 'autofill'
   templateUrl: './sync-panel.html',
   styleUrl: './sync-panel.scss',
 })
-export class SyncPanel {
+export class SyncPanel implements OnInit, OnDestroy {
   private tableService = inject(MetadataTableService);
   private columnService = inject(MetadataColumnService);
   private excelService = inject(ExcelService);
   private syncService = inject(SyncService);
   private toastService = inject(ToastService);
+  private settingsService = inject(SettingsService);
 
   readonly table = input.required<MetadataTable>();
   readonly back = output<void>();
@@ -45,8 +47,81 @@ export class SyncPanel {
   readonly currentView = signal<PanelView>('main');
   readonly protectSheet = signal(true);
   readonly isProtected = signal(false);
+  readonly showBackConfirm = signal(false);
+  readonly showOverwriteConfirm = signal(false);
+
+  private removeWorksheetChangedHandler: (() => void) | null = null;
+  private autoDetectTimer: ReturnType<typeof setTimeout> | null = null;
+
+  ngOnInit(): void {
+    this.excelService.onWorksheetChanged(() => this.onExcelContentChanged()).then(cleanup => {
+      this.removeWorksheetChangedHandler = cleanup;
+    });
+  }
+
+  ngOnDestroy(): void {
+    if (this.removeWorksheetChangedHandler) {
+      this.removeWorksheetChangedHandler();
+      this.removeWorksheetChangedHandler = null;
+    }
+    if (this.autoDetectTimer) {
+      clearTimeout(this.autoDetectTimer);
+      this.autoDetectTimer = null;
+    }
+  }
+
+  private onExcelContentChanged(): void {
+    this.pendingChanges.set([]);
+    this.showDiffPreview.set(false);
+
+    if (!this.settingsService.autoDetectChanges()) return;
+
+    if (this.autoDetectTimer) {
+      clearTimeout(this.autoDetectTimer);
+    }
+    this.autoDetectTimer = setTimeout(() => {
+      this.autoDetectTimer = null;
+      this.runAutoDetect();
+    }, 800);
+  }
+
+  private async runAutoDetect(): Promise<void> {
+    const status = this.syncStatus();
+    if (status === 'pulling' || status === 'pushing' || status === 'detecting') return;
+
+    const sheetName = await this.excelService.getActiveWorksheetName();
+    if (!this.syncService.hasDataForSheet(sheetName)) return;
+
+    try {
+      const worksheetData = await this.excelService.readWorksheetData();
+      const changes = this.syncService.detectChanges(sheetName, worksheetData.rows);
+      this.pendingChanges.set(changes);
+      this.showDiffPreview.set(changes.length > 0);
+    } catch {
+      // silent — auto-detect failure should not surface as an error
+    }
+  }
 
   async pullToExcel(): Promise<void> {
+    const sheetName = await this.excelService.getActiveWorksheetName();
+    const state = this.syncService.getSheetState(sheetName);
+    if (state.tableId !== null && state.tableId !== this.table().id && this.syncService.hasDataForSheet(sheetName)) {
+      this.showOverwriteConfirm.set(true);
+      return;
+    }
+    this.doPull();
+  }
+
+  confirmOverwrite(): void {
+    this.showOverwriteConfirm.set(false);
+    this.doPull();
+  }
+
+  cancelOverwrite(): void {
+    this.showOverwriteConfirm.set(false);
+  }
+
+  private async doPull(): Promise<void> {
     this.syncStatus.set('pulling');
     this.statusMessage.set('Loading table data...');
     this.pendingChanges.set([]);
@@ -54,10 +129,7 @@ export class SyncPanel {
     this.showConflictWarning.set(false);
 
     try {
-      if (this.isProtected()) {
-        await this.excelService.unprotectWorksheet();
-        this.isProtected.set(false);
-      }
+      const sheetName = await this.excelService.getActiveWorksheetName();
 
       this.tableService.getMetadataTable(this.table().id).subscribe({
         next: async (tableData) => {
@@ -85,12 +157,14 @@ export class SyncPanel {
           this.statusMessage.set('Writing to Excel...');
           await this.excelService.writeTableToWorksheet(headers, rows);
 
-          this.syncService.setPulledData(tableData, rows);
+          this.syncService.setPulledData(sheetName, tableData, rows);
 
           if (this.protectSheet()) {
             this.statusMessage.set('Applying protection...');
             await this.excelService.protectWorksheet();
             this.isProtected.set(true);
+          } else {
+            this.isProtected.set(false);
           }
 
           this.syncStatus.set('success');
@@ -156,7 +230,9 @@ export class SyncPanel {
   }
 
   async detectChanges(): Promise<void> {
-    if (!this.syncService.hasData()) {
+    const sheetName = await this.excelService.getActiveWorksheetName();
+
+    if (!this.syncService.hasDataForSheet(sheetName)) {
       this.toastService.warning('Pull data first to detect changes');
       return;
     }
@@ -166,7 +242,7 @@ export class SyncPanel {
 
     try {
       const worksheetData = await this.excelService.readWorksheetData();
-      const changes = this.syncService.detectChanges(worksheetData.rows);
+      const changes = this.syncService.detectChanges(sheetName, worksheetData.rows);
 
       this.pendingChanges.set(changes);
 
@@ -187,28 +263,26 @@ export class SyncPanel {
   }
 
   async pushFromExcel(): Promise<void> {
-    let changes = this.pendingChanges();
+    await this.detectChanges();
+    const changes = this.pendingChanges();
 
     if (changes.length === 0) {
-      await this.detectChanges();
-      changes = this.pendingChanges();
-      if (changes.length === 0) {
-        this.toastService.info('No changes to push');
-        return;
-      }
+      this.toastService.info('No changes to push');
       return;
     }
 
-    const syncState = this.syncService.state();
+    const sheetName = await this.excelService.getActiveWorksheetName();
+    const syncState = this.syncService.getSheetState(sheetName);
     if (!syncState.tableId) return;
 
     this.syncStatus.set('checking');
     this.statusMessage.set('Checking for remote changes...');
 
     this.tableService.getMetadataTable(syncState.tableId).subscribe({
-      next: (remoteTable) => {
+      next: async (remoteTable) => {
         const remoteData = this.buildDataMatrix(remoteTable);
-        if (this.syncService.hasRemoteChanges(remoteData)) {
+        const sn = await this.excelService.getActiveWorksheetName();
+        if (this.syncService.hasRemoteChanges(sn, remoteData)) {
           this.showConflictWarning.set(true);
           this.syncStatus.set('idle');
           this.statusMessage.set('');
@@ -261,7 +335,8 @@ export class SyncPanel {
           this.toastService.success(`Pushed ${result.updatedCount} change(s) to backend`);
 
           const worksheetData = await this.excelService.readWorksheetData();
-          this.syncService.updateOriginalData(worksheetData.rows);
+          const sheetName = await this.excelService.getActiveWorksheetName();
+          this.syncService.updateOriginalData(sheetName, worksheetData.rows);
           this.pendingChanges.set([]);
           this.showDiffPreview.set(false);
         } else {
@@ -289,8 +364,24 @@ export class SyncPanel {
     this.statusMessage.set('');
   }
 
-  goBack(): void {
+  async goBack(): Promise<void> {
+    const sheetName = await this.excelService.getActiveWorksheetName();
+    if (this.syncService.hasDataForSheet(sheetName)) {
+      this.showBackConfirm.set(true);
+    } else {
+      this.back.emit();
+    }
+  }
+
+  async confirmBack(): Promise<void> {
+    this.showBackConfirm.set(false);
+    const sheetName = await this.excelService.getActiveWorksheetName();
+    this.syncService.clearSheet(sheetName);
     this.back.emit();
+  }
+
+  cancelBack(): void {
+    this.showBackConfirm.set(false);
   }
 
   openView(view: PanelView): void {
