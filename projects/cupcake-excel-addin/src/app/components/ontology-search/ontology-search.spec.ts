@@ -6,6 +6,7 @@ import { OntologySearch } from './ontology-search';
 import { ExcelService } from '../../core/services/excel.service';
 import {
   OntologySearchService,
+  MetadataColumnService,
   OntologySuggestion,
   OntologyType,
   MetadataColumn
@@ -44,6 +45,7 @@ describe('OntologySearch', () => {
   let excelServiceSpy: jasmine.SpyObj<ExcelService>;
 
   const mockColumn = createMockColumn({
+    id: 42,
     name: 'characteristics[organism]',
     ontologyType: OntologyType.SPECIES
   });
@@ -63,6 +65,7 @@ describe('OntologySearch', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         OntologySearchService,
+        MetadataColumnService,
         { provide: CUPCAKE_CORE_CONFIG, useValue: { apiUrl: 'http://localhost:8000/api/v1' } },
         { provide: ExcelService, useValue: excelServiceSpy }
       ]
@@ -84,19 +87,19 @@ describe('OntologySearch', () => {
 
   it('should initialize with default values', () => {
     expect(component.searchQuery()).toBe('');
-    expect(component.selectedType()).toBe(OntologyType.NONE);
     expect(component.searchMatch()).toBe('contains');
     expect(component.suggestions().length).toBe(0);
     expect(component.showResults()).toBeFalse();
+    expect(component.selectedConfig()).toBeNull();
   });
 
-  it('should have all ontology types available', () => {
-    expect(component.ontologyTypes.length).toBeGreaterThan(0);
-    expect(component.ontologyTypes.some(t => t.value === OntologyType.SPECIES)).toBeTrue();
-    expect(component.ontologyTypes.some(t => t.value === OntologyType.TISSUE)).toBeTrue();
+  it('should have all ontology configs available', () => {
+    expect(component.ontologyConfigs.length).toBeGreaterThan(0);
+    expect(component.ontologyConfigs.some(c => c.value === OntologyType.SPECIES)).toBeTrue();
+    expect(component.ontologyConfigs.some(c => c.value === OntologyType.TISSUE)).toBeTrue();
   });
 
-  it('should search on input change', async () => {
+  it('should search generic endpoint when no column set', async () => {
     component.onSearchInput('human');
     await new Promise(r => setTimeout(r, 400));
 
@@ -105,13 +108,45 @@ describe('OntologySearch', () => {
     req.flush({ suggestions: [] });
   });
 
-  it('should filter by selected type', async () => {
-    component.selectedType.set(OntologyType.SPECIES);
-    component.onSearchInput('human');
+  it('should use column-specific endpoint when column is set', async () => {
+    fixture.componentRef.setInput('column', mockColumn);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    component.onSearchInput('mus');
     await new Promise(r => setTimeout(r, 400));
 
-    const req = httpMock.expectOne(req => req.url.includes('/ontology/search/suggest/'));
-    expect(req.request.params.get('type')).toBe('species');
+    const req = httpMock.expectOne(req => req.url.includes('/metadata-columns/ontology_suggestions/'));
+    expect(req.request.params.get('column_id')).toBe('42');
+    expect(req.request.params.get('search')).toBe('mus');
+    req.flush({ suggestions: [] });
+  });
+
+  it('should send istartswith when startswith selected with column', async () => {
+    fixture.componentRef.setInput('column', mockColumn);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    component.onMatchChange('startswith');
+    component.onSearchInput('mus');
+    await new Promise(r => setTimeout(r, 400));
+
+    const req = httpMock.expectOne(req => req.url.includes('/metadata-columns/ontology_suggestions/'));
+    expect(req.request.params.get('search_type')).toBe('istartswith');
+    req.flush({ suggestions: [] });
+  });
+
+  it('should send icontains when contains selected with column', async () => {
+    fixture.componentRef.setInput('column', mockColumn);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    component.onMatchChange('contains');
+    component.onSearchInput('mus');
+    await new Promise(r => setTimeout(r, 400));
+
+    const req = httpMock.expectOne(req => req.url.includes('/metadata-columns/ontology_suggestions/'));
+    expect(req.request.params.get('search_type')).toBe('icontains');
     req.flush({ suggestions: [] });
   });
 
@@ -119,37 +154,18 @@ describe('OntologySearch', () => {
     component.onSearchInput('h');
     await new Promise(r => setTimeout(r, 400));
 
-    httpMock.expectNone(req => req.url.includes('/ontology/search/suggest/'));
+    httpMock.expectNone(req =>
+      req.url.includes('/ontology/search/suggest/') ||
+      req.url.includes('/metadata-columns/ontology_suggestions/')
+    );
   });
 
-  it('should update type and re-search', async () => {
-    component.searchQuery.set('human');
-    component.onTypeChange(OntologyType.SPECIES);
-    await new Promise(r => setTimeout(r, 400));
-
-    const req = httpMock.expectOne(req => req.url.includes('/ontology/search/suggest/'));
-    expect(req.request.params.get('type')).toBe('species');
-    req.flush({ suggestions: [] });
-  });
-
-  it('should change search match type', async () => {
-    component.searchQuery.set('human');
+  it('should update match type signal', () => {
     component.onMatchChange('startswith');
-    await new Promise(r => setTimeout(r, 400));
-
     expect(component.searchMatch()).toBe('startswith');
-    const req = httpMock.expectOne(req => req.url.includes('/ontology/search/suggest/'));
-    expect(req.request.params.get('match')).toBe('startswith');
-    req.flush({ suggestions: [] });
-  });
 
-  it('should use contains match by default', async () => {
-    component.onSearchInput('human');
-    await new Promise(r => setTimeout(r, 400));
-
-    const req = httpMock.expectOne(req => req.url.includes('/ontology/search/suggest/'));
-    expect(req.request.params.get('match')).toBe('contains');
-    req.flush({ suggestions: [] });
+    component.onMatchChange('contains');
+    expect(component.searchMatch()).toBe('contains');
   });
 
   it('should display suggestions', async () => {
@@ -172,7 +188,7 @@ describe('OntologySearch', () => {
     expect(component.showResults()).toBeTrue();
   });
 
-  it('should select suggestion and emit term with displayName only', async () => {
+  it('should select suggestion and emit term', () => {
     const termSpy = spyOn(component.termSelected, 'emit');
     const suggestion: OntologySuggestion = {
       id: '9606',
@@ -182,28 +198,23 @@ describe('OntologySearch', () => {
     };
 
     component.selectSuggestion(suggestion);
-    await fixture.whenStable();
 
     expect(termSpy).toHaveBeenCalledWith('Homo sapiens');
     expect(component.searchQuery()).toBe('');
     expect(component.showResults()).toBeFalse();
   });
 
-  it('should format MS_UNIQUE_VOCABULARIES with NT/AC syntax', async () => {
+  it('should format MS_UNIQUE_VOCABULARIES with NT/AC syntax', () => {
     const termSpy = spyOn(component.termSelected, 'emit');
     const suggestion: OntologySuggestion = {
       id: 'MS:1001251',
       value: 'Trypsin',
       displayName: 'Trypsin',
       ontologyType: OntologyType.MS_UNIQUE_VOCABULARIES,
-      fullData: {
-        name: 'Trypsin',
-        accession: 'MS:1001251'
-      }
+      fullData: { name: 'Trypsin', accession: 'MS:1001251' }
     };
 
     component.selectSuggestion(suggestion);
-    await fixture.whenStable();
 
     expect(termSpy).toHaveBeenCalledWith('NT=Trypsin;AC=MS:1001251');
   });
@@ -238,26 +249,13 @@ describe('OntologySearch', () => {
     expect(label).toBe('Species');
   });
 
-  it('should set context when column is provided', async () => {
+  it('should set context label when column with ontology type is provided', async () => {
     fixture.componentRef.setInput('column', mockColumn);
     fixture.detectChanges();
     await fixture.whenStable();
 
-    expect(component.selectedType()).toBe(OntologyType.SPECIES);
     expect(component.contextLabel()).toBeTruthy();
-  });
-
-  it('should filter by column ontology type when searching', async () => {
-    fixture.componentRef.setInput('column', mockColumn);
-    fixture.detectChanges();
-    await fixture.whenStable();
-
-    component.onSearchInput('human');
-    await new Promise(r => setTimeout(r, 400));
-
-    const req = httpMock.expectOne(req => req.url.includes('/ontology/search/suggest/'));
-    expect(req.request.params.get('type')).toBe('species');
-    req.flush({ suggestions: [] });
+    expect(component.selectedConfig()).not.toBeNull();
   });
 
   it('should handle search error gracefully', async () => {
