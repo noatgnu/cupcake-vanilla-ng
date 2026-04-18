@@ -4,6 +4,30 @@
     SDRF Validation
   </h6>
 
+  <div class="btn-group btn-group-sm w-100 mb-2" role="group">
+    <button
+      type="button"
+      class="btn btn-outline-secondary"
+      [class.active]="mode() === 'table'"
+      (click)="onModeChange('table')">
+      <i class="bi bi-table me-1"></i>Table
+    </button>
+    <button
+      type="button"
+      class="btn btn-outline-secondary"
+      [class.active]="mode() === 'excel'"
+      (click)="onModeChange('excel')">
+      <i class="bi bi-file-spreadsheet me-1"></i>Sheet
+    </button>
+    <button
+      type="button"
+      class="btn btn-outline-secondary"
+      [class.active]="mode() === 'file'"
+      (click)="onModeChange('file')">
+      <i class="bi bi-file-earmark-text me-1"></i>File
+    </button>
+  </div>
+
   @if (schemas().length > 0) {
     <div class="mb-2">
       <label class="form-label small mb-1">Schema</label>
@@ -18,69 +42,139 @@
     </div>
   }
 
-  <div class="mb-2">
-    <div class="form-check form-check-sm">
-      <input class="form-check-input" type="checkbox" id="includePools"
-             [ngModel]="includePools()"
-             (ngModelChange)="includePools.set($event)">
-      <label class="form-check-label small" for="includePools">Include Pools</label>
+  @if (mode() === 'table') {
+    <div class="mb-2">
+      <div class="form-check form-check-sm">
+        <input class="form-check-input" type="checkbox" id="includePools"
+               [ngModel]="includePools()"
+               (ngModelChange)="includePools.set($event)">
+        <label class="form-check-label small" for="includePools">Include Pools</label>
+      </div>
+      <div class="form-check form-check-sm">
+        <input class="form-check-input" type="checkbox" id="skipOntology"
+               [ngModel]="skipOntology()"
+               (ngModelChange)="skipOntology.set($event)">
+        <label class="form-check-label small" for="skipOntology">Skip Ontology Check</label>
+      </div>
     </div>
-    <div class="form-check form-check-sm">
-      <input class="form-check-input" type="checkbox" id="skipOntology"
-             [ngModel]="skipOntology()"
-             (ngModelChange)="skipOntology.set($event)">
-      <label class="form-check-label small" for="skipOntology">Skip Ontology Check</label>
-    </div>
-  </div>
 
-  @if (showUnsavedWarning()) {
-    <div class="alert alert-warning py-2 px-2 mb-2 small">
-      <div class="fw-semibold mb-1">
-        <i class="bi bi-exclamation-triangle-fill me-1"></i>
-        Unsaved changes detected
+    @if (showUnsavedWarning()) {
+      <div class="alert alert-warning py-2 px-2 mb-2 small">
+        <div class="fw-semibold mb-1">
+          <i class="bi bi-exclamation-triangle-fill me-1"></i>
+          Unsaved changes detected
+        </div>
+        <div class="text-muted mb-2">
+          {{ changesSummary() }} must be saved before validation.
+        </div>
+        <div class="d-flex gap-1">
+          <button
+            class="btn btn-warning btn-sm flex-fill"
+            (click)="saveAndValidate()"
+            [disabled]="isSaving()">
+            @if (isSaving()) {
+              <span class="spinner-border spinner-border-sm me-1"></span>
+            } @else {
+              <i class="bi bi-cloud-upload me-1"></i>
+            }
+            Save & Validate
+          </button>
+          <button
+            class="btn btn-outline-secondary btn-sm"
+            (click)="dismissUnsavedWarning()"
+            [disabled]="isSaving()">
+            Cancel
+          </button>
+        </div>
       </div>
-      <div class="text-muted mb-2">
-        {{ changesSummary() }} must be saved before validation.
-      </div>
-      <div class="d-flex gap-1">
+    } @else {
+      <div class="d-grid gap-2 mb-2">
         <button
-          class="btn btn-warning btn-sm flex-fill"
-          (click)="saveAndValidate()"
-          [disabled]="isSaving()">
-          @if (isSaving()) {
+          class="btn btn-primary btn-sm"
+          (click)="validate()"
+          [disabled]="isValidating() || isLoading() || isSaving()">
+          @if (isValidating()) {
             <span class="spinner-border spinner-border-sm me-1"></span>
           } @else {
-            <i class="bi bi-cloud-upload me-1"></i>
+            <i class="bi bi-play-fill me-1"></i>
           }
-          Save & Validate
+          Validate
         </button>
         <button
           class="btn btn-outline-secondary btn-sm"
-          (click)="dismissUnsavedWarning()"
-          [disabled]="isSaving()">
-          Cancel
+          (click)="clearHighlights()"
+          [disabled]="isValidating()">
+          <i class="bi bi-eraser me-1"></i>
+          Clear Highlights
         </button>
       </div>
+    }
+  }
+
+  @if (mode() === 'excel') {
+    <div class="mb-2">
+      <div class="form-check form-check-sm">
+        <input class="form-check-input" type="checkbox" id="skipOntologyExcel"
+               [ngModel]="skipOntology()"
+               (ngModelChange)="skipOntology.set($event)">
+        <label class="form-check-label small" for="skipOntologyExcel">Skip Ontology Check</label>
+      </div>
+      <div class="form-check form-check-sm">
+        <input class="form-check-input" type="checkbox" id="useOlsCacheOnlyExcel"
+               [ngModel]="useOlsCacheOnly()"
+               (ngModelChange)="useOlsCacheOnly.set($event)">
+        <label class="form-check-label small" for="useOlsCacheOnlyExcel">Use OLS Cache Only</label>
+      </div>
     </div>
-  } @else {
-    <div class="d-grid gap-2 mb-2">
+    <div class="d-grid mb-2">
       <button
         class="btn btn-primary btn-sm"
-        (click)="validate()"
-        [disabled]="isValidating() || isLoading() || isSaving()">
+        (click)="validateFromExcel()"
+        [disabled]="isValidating()">
         @if (isValidating()) {
           <span class="spinner-border spinner-border-sm me-1"></span>
         } @else {
           <i class="bi bi-play-fill me-1"></i>
         }
-        Validate
+        Validate Sheet
       </button>
+    </div>
+  }
+
+  @if (mode() === 'file') {
+    <div class="mb-2">
+      <label class="form-label small mb-1">SDRF File</label>
+      <input
+        type="file"
+        class="form-control form-control-sm"
+        accept=".tsv,.txt,.sdrf"
+        (change)="onFileChange($event)">
+    </div>
+    <div class="mb-2">
+      <div class="form-check form-check-sm">
+        <input class="form-check-input" type="checkbox" id="skipOntologyFile"
+               [ngModel]="skipOntology()"
+               (ngModelChange)="skipOntology.set($event)">
+        <label class="form-check-label small" for="skipOntologyFile">Skip Ontology Check</label>
+      </div>
+      <div class="form-check form-check-sm">
+        <input class="form-check-input" type="checkbox" id="useOlsCacheOnly"
+               [ngModel]="useOlsCacheOnly()"
+               (ngModelChange)="useOlsCacheOnly.set($event)">
+        <label class="form-check-label small" for="useOlsCacheOnly">Use OLS Cache Only</label>
+      </div>
+    </div>
+    <div class="d-grid mb-2">
       <button
-        class="btn btn-outline-secondary btn-sm"
-        (click)="clearHighlights()"
-        [disabled]="isValidating()">
-        <i class="bi bi-eraser me-1"></i>
-        Clear Highlights
+        class="btn btn-primary btn-sm"
+        (click)="validateFile()"
+        [disabled]="isValidating() || !selectedFile()">
+        @if (isValidating()) {
+          <span class="spinner-border spinner-border-sm me-1"></span>
+        } @else {
+          <i class="bi bi-cloud-upload me-1"></i>
+        }
+        Upload & Validate
       </button>
     </div>
   }
@@ -94,15 +188,57 @@
   @if (statusMessage()) {
     <div
       class="alert py-1 px-2 small mb-2"
-      [class.alert-success]="errors().length === 0 && warnings().length === 0 && !isValidating()"
-      [class.alert-danger]="errors().length > 0"
+      [class.alert-success]="fileValidationSuccess() === true || (errors().length === 0 && warnings().length === 0 && !isValidating() && mode() === 'table')"
+      [class.alert-danger]="errors().length > 0 || fileValidationSuccess() === false"
       [class.alert-warning]="warnings().length > 0 && errors().length === 0"
       [class.alert-info]="isValidating()">
       {{ statusMessage() }}
     </div>
   }
 
-  @if (errors().length > 0) {
+  @if ((mode() === 'file' || mode() === 'excel') && fileSchemaResults().length > 0) {
+    <div class="schema-results">
+      @for (result of fileSchemaResults(); track result.schemaName) {
+        <div class="mb-2">
+          <div class="d-flex align-items-center gap-1 mb-1">
+            <i
+              class="bi small"
+              [class.bi-check-circle-fill]="result.success"
+              [class.text-success]="result.success"
+              [class.bi-x-circle-fill]="!result.success"
+              [class.text-danger]="!result.success"></i>
+            <span class="small fw-semibold">{{ result.schemaName }}</span>
+          </div>
+          @if (result.errors.length > 0) {
+            <div class="list-group list-group-flush small mb-1">
+              @for (err of result.errors; track $index; let i = $index) {
+                @if (i < 5) {
+                  <div class="list-group-item py-1 px-2 text-danger">{{ err }}</div>
+                }
+              }
+              @if (result.errors.length > 5) {
+                <div class="small text-muted text-center py-1">... and {{ result.errors.length - 5 }} more</div>
+              }
+            </div>
+          }
+          @if (result.warnings.length > 0) {
+            <div class="list-group list-group-flush small">
+              @for (warn of result.warnings; track $index; let i = $index) {
+                @if (i < 3) {
+                  <div class="list-group-item py-1 px-2 text-warning">{{ warn }}</div>
+                }
+              }
+              @if (result.warnings.length > 3) {
+                <div class="small text-muted text-center py-1">... and {{ result.warnings.length - 3 }} more</div>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  @if (mode() === 'table' && errors().length > 0) {
     <div class="error-list mb-2">
       <h6 class="small text-danger mb-1">
         <i class="bi bi-x-circle me-1"></i>Errors ({{ errors().length }})
@@ -128,7 +264,7 @@
     </div>
   }
 
-  @if (warnings().length > 0) {
+  @if (mode() === 'table' && warnings().length > 0) {
     <div class="warning-list">
       <h6 class="small text-warning mb-1">
         <i class="bi bi-exclamation-triangle me-1"></i>Warnings ({{ warnings().length }})

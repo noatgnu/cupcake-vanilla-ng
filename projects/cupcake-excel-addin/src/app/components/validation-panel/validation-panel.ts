@@ -1,10 +1,12 @@
 import { Component, inject, signal, OnInit, OnDestroy, computed, effect, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AsyncValidationService } from '@noatgnu/cupcake-vanilla';
-import { ValidationSchema, TaskStatus, AsyncTaskMonitorService } from '@noatgnu/cupcake-core';
+import { ValidationSchema, TaskStatus, AsyncTaskMonitorService, SdrfValidationSchemaResult } from '@noatgnu/cupcake-core';
 import { ExcelService } from '../../core/services/excel.service';
 import { ToastService } from '../../core/services/toast.service';
 import { SyncService, CellChange } from '../../core/services/sync.service';
+
+type ValidationMode = 'table' | 'excel' | 'file';
 
 interface ValidationError {
   row: number;
@@ -28,6 +30,7 @@ export class ValidationPanel implements OnInit, OnDestroy {
 
   private activeTaskId = signal<string | null>(null);
 
+  readonly mode = signal<ValidationMode>('table');
   readonly schemas = signal<ValidationSchema[]>([]);
   readonly selectedSchema = signal<string>('default');
   readonly isValidating = signal(false);
@@ -41,6 +44,11 @@ export class ValidationPanel implements OnInit, OnDestroy {
   readonly includePools = signal(true);
   readonly pendingChanges = signal<CellChange[]>([]);
   readonly showUnsavedWarning = signal(false);
+
+  readonly selectedFile = signal<File | null>(null);
+  readonly useOlsCacheOnly = signal(false);
+  readonly fileSchemaResults = signal<SdrfValidationSchemaResult[]>([]);
+  readonly fileValidationSuccess = signal<boolean | null>(null);
 
   readonly hasPendingChanges = computed(() => this.pendingChanges().length > 0);
   readonly changesSummary = computed(() => {
@@ -67,7 +75,11 @@ export class ValidationPanel implements OnInit, OnDestroy {
 
         if (task.status === TaskStatus.SUCCESS) {
           this.activeTaskId.set(null);
-          this.handleValidationResult(task.result);
+          if (this.mode() === 'file') {
+            this.handleFileValidationResult(task.result);
+          } else {
+            this.handleValidationResult(task.result);
+          }
         } else if (task.status === TaskStatus.FAILURE) {
           this.activeTaskId.set(null);
           this.isValidating.set(false);
@@ -268,6 +280,101 @@ export class ValidationPanel implements OnInit, OnDestroy {
       this.toastService.success('Validation passed');
     } else {
       this.statusMessage.set('Validation completed');
+    }
+  }
+
+  onModeChange(mode: ValidationMode): void {
+    this.mode.set(mode);
+    this.errors.set([]);
+    this.warnings.set([]);
+    this.statusMessage.set('');
+    this.fileSchemaResults.set([]);
+    this.fileValidationSuccess.set(null);
+  }
+
+  onFileChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.selectedFile.set(input.files?.[0] ?? null);
+    this.fileSchemaResults.set([]);
+    this.fileValidationSuccess.set(null);
+    this.statusMessage.set('');
+  }
+
+  async validateFromExcel(): Promise<void> {
+    let worksheetData;
+    try {
+      worksheetData = await this.excelService.readWorksheetData();
+    } catch {
+      this.toastService.error('Failed to read worksheet data');
+      return;
+    }
+
+    if (!worksheetData.headers.length) {
+      this.toastService.warning('No data found in the active worksheet');
+      return;
+    }
+
+    const rows = [worksheetData.headers, ...worksheetData.rows];
+    const tsv = rows.map(r => r.map(cell => (cell ?? '').toString().replace(/\t/g, ' ')).join('\t')).join('\n');
+    const file = new File([tsv], 'excel-table.sdrf.tsv', { type: 'text/tab-separated-values' });
+    this.runFileValidation(file);
+  }
+
+  validateFile(): void {
+    const file = this.selectedFile();
+    if (!file) {
+      this.toastService.warning('Select an SDRF file first');
+      return;
+    }
+    this.runFileValidation(file);
+  }
+
+  private runFileValidation(file: File): void {
+    this.isValidating.set(true);
+    this.fileSchemaResults.set([]);
+    this.fileValidationSuccess.set(null);
+    this.errors.set([]);
+    this.warnings.set([]);
+    this.statusMessage.set('Uploading file...');
+    this.taskProgress.set(0);
+
+    this.validationService.sdrfFile({
+      file,
+      schemaNames: [this.selectedSchema()],
+      skipOntology: this.skipOntology(),
+      useOlsCacheOnly: this.useOlsCacheOnly()
+    }).subscribe({
+      next: (response) => {
+        this.activeTaskId.set(response.taskId);
+        this.asyncTaskMonitor.loadSingleTask(response.taskId);
+        this.statusMessage.set('Validation running...');
+      },
+      error: () => {
+        this.isValidating.set(false);
+        this.statusMessage.set('Failed to start validation');
+        this.toastService.error('Failed to upload and validate SDRF file');
+      }
+    });
+  }
+
+  private handleFileValidationResult(result: any): void {
+    this.isValidating.set(false);
+
+    const schemaResults: SdrfValidationSchemaResult[] = result?.schemaResults ?? [];
+    const success: boolean = result?.success ?? false;
+
+    this.fileSchemaResults.set(schemaResults);
+    this.fileValidationSuccess.set(success);
+
+    const totalErrors = schemaResults.reduce((n, r) => n + r.errors.length, 0);
+    const totalWarnings = schemaResults.reduce((n, r) => n + r.warnings.length, 0);
+
+    if (success) {
+      this.statusMessage.set('File validation passed');
+      this.toastService.success('SDRF file validation passed');
+    } else {
+      this.statusMessage.set(`Found ${totalErrors} error(s), ${totalWarnings} warning(s)`);
+      this.toastService.warning(`SDRF validation: ${totalErrors} error(s)`);
     }
   }
 
