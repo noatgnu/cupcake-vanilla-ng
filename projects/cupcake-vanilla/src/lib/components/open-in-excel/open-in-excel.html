@@ -27,18 +27,24 @@
           <p>Use this code in the Excel add-in to open the table:</p>
 
           <div class="launch-code-display">
-            <code class="launch-code">{{ launchCode()?.code }}</code>
-            <button
-              type="button"
-              class="btn btn-outline-secondary btn-sm"
-              (click)="copyCode()"
-              [title]="copySuccess() ? 'Copied!' : 'Copy to clipboard'">
-              @if (copySuccess()) {
-                <i class="bi bi-check"></i>
-              } @else {
-                <i class="bi bi-clipboard"></i>
-              }
-            </button>
+            <div class="input-group">
+              <input
+                type="text"
+                class="form-control form-control-sm font-monospace"
+                [value]="launchCode()?.code"
+                readonly>
+              <button
+                type="button"
+                class="btn btn-outline-secondary btn-sm"
+                (click)="copyCode()"
+                [title]="copySuccess() ? 'Copied!' : 'Copy to clipboard'">
+                @if (copySuccess()) {
+                  <i class="bi bi-check text-success"></i>
+                } @else {
+                  <i class="bi bi-clipboard"></i>
+                }
+              </button>
+            </div>
           </div>
 
           <div class="mt-3">
