@@ -15,14 +15,14 @@ import { User, LabGroupService, MetadataValidationConfig } from '@noatgnu/cupcak
 import { MetadataTableService } from '@noatgnu/cupcake-vanilla';
 import { NavigationState } from '../../shared/services/navigation-state';
 import { ToastService } from '@noatgnu/cupcake-core';
-import { AsyncTaskUIService, MetadataValidationModal, ExcelExportModalComponent, ExcelExportOptions, MetadataTableEditModal } from '@noatgnu/cupcake-vanilla';
+import { AsyncTaskUIService, MetadataValidationModal, ExcelExportModalComponent, ExcelExportOptions, MetadataTableEditModal, OpenInExcel } from '@noatgnu/cupcake-vanilla';
 import { environment } from '../../../environments/environment';
 import { AuthService } from '@noatgnu/cupcake-core';
 
 @Component({
   selector: 'app-metadata-tables',
   standalone: true,
-  imports: [CommonModule, RouterModule, ReactiveFormsModule, NgbModule],
+  imports: [CommonModule, RouterModule, ReactiveFormsModule, NgbModule, OpenInExcel],
   templateUrl: './metadata-tables.html',
   styleUrl: './metadata-tables.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
