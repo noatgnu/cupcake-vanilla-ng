@@ -223,16 +223,18 @@ export class SdrfModificationInput implements OnInit {
   }
 
   onTargetAminoAcidChange(event: any) {
-    const value = event.target.value;
-    if (value) {
-      // Format as uppercase and validate amino acid letters
-      const formatted = value
-        .replace(/[^A-Za-z,]/g, '') // Only allow letters and commas
-        .split(',')
-        .map((aa: string) => aa.trim().toUpperCase())
-        .filter((aa: string) => aa.length > 0)
-        .join(',');
+    const raw: string = event.target.value;
+    if (!raw) return;
 
+    const endsWithComma = raw.trimEnd().endsWith(',');
+    const parts = raw
+      .replace(/[^A-Za-z,]/g, '')
+      .split(',')
+      .map((aa: string) => aa.trim().toUpperCase())
+      .filter((aa: string) => aa.length > 0);
+
+    const formatted = parts.join(',') + (endsWithComma ? ',' : '');
+    if (this.modificationForm.get('TA')?.value !== formatted) {
       this.modificationForm.patchValue({ TA: formatted });
     }
   }
