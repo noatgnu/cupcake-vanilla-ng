@@ -5,6 +5,8 @@ import { AsyncTaskStatus, TaskStatus, TaskResultData, PaginatedResponse } from '
 import { BaseApiService } from './base-api';
 import { WebSocketService, WebSocketMessage } from './websocket';
 
+const TERMINAL_STATUSES = new Set<TaskStatus>([TaskStatus.SUCCESS, TaskStatus.FAILURE, TaskStatus.CANCELLED]);
+
 interface TaskUpdateMessage extends WebSocketMessage {
   task_id: string;
   status: TaskStatus;
@@ -138,6 +140,19 @@ export class AsyncTaskMonitorService extends BaseApiService implements OnDestroy
       console.log('AsyncTaskMonitorService: Task not found in current list, fetching all tasks');
       this.loadAllTasks();
     }
+  }
+
+  pollUntilComplete(taskId: string, intervalMs: number = 3000): void {
+    this.loadSingleTask(taskId);
+
+    const intervalId = setInterval(() => {
+      const task = this._tasks().find(t => t.id === taskId);
+      if (task && TERMINAL_STATUSES.has(task.status)) {
+        clearInterval(intervalId);
+        return;
+      }
+      this.loadSingleTask(taskId);
+    }, intervalMs);
   }
 
   loadSingleTask(taskId: string): void {

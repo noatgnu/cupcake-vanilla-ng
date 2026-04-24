@@ -1,6 +1,6 @@
 import { Component, inject, signal, computed, OnInit, OnDestroy, ViewChild, effect, untracked } from '@angular/core';
 import { AuthService, AsyncTaskMonitorService } from '@noatgnu/cupcake-core';
-import { MetadataColumn, SdrfSyntaxService, SyntaxType, MetadataTableService, MetadataColumnTemplateService, MetadataColumnTemplate, ColumnInputType } from '@noatgnu/cupcake-vanilla';
+import { MetadataColumn, SdrfSyntaxService, SyntaxType, MetadataTableService, MetadataColumnTemplateService, MetadataColumnTemplate, ColumnInputType, createSyntheticColumnFromTemplate } from '@noatgnu/cupcake-vanilla';
 import { ConnectionPanel } from '../components/connection-panel/connection-panel';
 import { TableBrowser } from '../components/table-browser/table-browser';
 import { OntologySearch } from '../components/ontology-search/ontology-search';
@@ -15,6 +15,8 @@ import { NumberWithUnitInput } from '../components/number-with-unit-input/number
 import { ConnectionService } from '../core/services/connection.service';
 import { ToastService } from '../core/services/toast.service';
 import { SyncService } from '../core/services/sync.service';
+import { SchemaContext } from '../core/services/schema-context';
+import { FormsModule } from '@angular/forms';
 import { ExcelService } from '../core/services/excel.service';
 import { ThemeService } from '../core/services/theme.service';
 import { SettingsService } from '../core/services/settings';
@@ -25,6 +27,7 @@ type TabType = 'tables' | 'ontology' | 'validate' | 'info';
 @Component({
   selector: 'app-taskpane',
   imports: [
+    FormsModule,
     CompactLogin,
     ConnectionPanel,
     TableBrowser,
@@ -53,6 +56,9 @@ export class Taskpane implements OnInit, OnDestroy {
   private tableService = inject(MetadataTableService);
   private columnTemplateService = inject(MetadataColumnTemplateService);
   private asyncTaskMonitor = inject(AsyncTaskMonitorService);
+  readonly schemaContext = inject(SchemaContext);
+
+  private sheetModeTemplateCache = new Map<string, MetadataColumnTemplate | null>();
 
   @ViewChild(TableBrowser) tableBrowser?: TableBrowser;
 
@@ -79,10 +85,16 @@ export class Taskpane implements OnInit, OnDestroy {
       untracked(() => {
         if (isAuthenticated) {
           this.asyncTaskMonitor.startRealtimeUpdates();
+          this.schemaContext.loadSchemas();
         } else {
           this.asyncTaskMonitor.stopRealtimeUpdates();
         }
       });
+    });
+
+    effect(() => {
+      this.schemaContext.selectedSchema();
+      untracked(() => this.sheetModeTemplateCache.clear());
     });
   }
 
@@ -126,38 +138,31 @@ export class Taskpane implements OnInit, OnDestroy {
     try {
       const sheetName = await this.excelService.getActiveWorksheetName();
       const state = this.syncService.getSheetState(sheetName);
-      if (!state.columns.length) {
-        this.selectedColumn.set(null);
-        this.selectedTemplate.set(null);
-        this.specialSyntaxType.set(null);
-        return;
-      }
-
       const selection = await this.excelService.getSelectedRange();
       const colMatch = selection.address.match(/\$?([A-Z]+)\$?\d+/);
-      if (colMatch) {
-        const colLetter = colMatch[1];
-        const colIndex = this.columnLetterToIndex(colLetter);
-        const column = state.columns[colIndex] || null;
+      if (!colMatch) return;
 
+      const colLetter = colMatch[1];
+      const colIndex = this.columnLetterToIndex(colLetter);
+
+      if (state.columns.length) {
+        const column = state.columns[colIndex] || null;
         if (column?.id !== this.selectedColumn()?.id) {
           this.selectedColumn.set(column);
           this.fetchColumnTemplate(column);
-
-          if (column) {
-            const syntax = this.sdrfSyntax.detectSpecialSyntax(column.name, column.type || '');
-            this.specialSyntaxType.set(syntax);
-          } else {
-            this.specialSyntaxType.set(null);
-          }
+          this.specialSyntaxType.set(
+            column ? this.sdrfSyntax.detectSpecialSyntax(column.name, column.type || '') : null
+          );
         }
+      } else {
+        await this.updateSheetModeColumn(colIndex);
+      }
 
-        if (selection.values.length > 0 && selection.values[0].length > 0) {
-          const cellValue = String(selection.values[0][0] || '');
-          if (cellValue !== this.currentCellValue()) {
-            this.currentCellValue.set(cellValue);
-            this.specialInputValue.set(cellValue);
-          }
+      if (selection.values.length > 0 && selection.values[0].length > 0) {
+        const cellValue = String(selection.values[0][0] || '');
+        if (cellValue !== this.currentCellValue()) {
+          this.currentCellValue.set(cellValue);
+          this.specialInputValue.set(cellValue);
         }
       }
     } catch {
@@ -165,6 +170,54 @@ export class Taskpane implements OnInit, OnDestroy {
       this.selectedTemplate.set(null);
       this.specialSyntaxType.set(null);
     }
+  }
+
+  private async updateSheetModeColumn(colIndex: number): Promise<void> {
+    const header = await this.excelService.getHeaderAtColumn(colIndex);
+    if (!header) {
+      this.selectedColumn.set(null);
+      this.selectedTemplate.set(null);
+      this.specialSyntaxType.set(null);
+      return;
+    }
+
+    const cacheKey = `${this.schemaContext.selectedSchema()}:${header}`;
+    if (this.sheetModeTemplateCache.has(cacheKey)) {
+      this.applySheetModeTemplate(header, this.sheetModeTemplateCache.get(cacheKey) ?? null);
+      return;
+    }
+
+    this.columnTemplateService.getMetadataColumnTemplates({
+      search: header,
+      sourceSchema: this.schemaContext.selectedSchema(),
+      isSystemTemplate: true,
+      limit: 10
+    }).subscribe({
+      next: response => {
+        const match = response.results.find(t => t.columnName === header) ?? null;
+        this.sheetModeTemplateCache.set(cacheKey, match);
+        this.applySheetModeTemplate(header, match);
+      },
+      error: () => {
+        this.sheetModeTemplateCache.set(cacheKey, null);
+        this.applySheetModeTemplate(header, null);
+      }
+    });
+  }
+
+  private applySheetModeTemplate(header: string, template: MetadataColumnTemplate | null): void {
+    if (!template?.ontologyType) {
+      this.selectedColumn.set(null);
+      this.selectedTemplate.set(template ?? null);
+      this.specialSyntaxType.set(null);
+      return;
+    }
+
+    this.selectedColumn.set(createSyntheticColumnFromTemplate(header, template));
+    this.selectedTemplate.set(template);
+    this.specialSyntaxType.set(
+      this.sdrfSyntax.detectSpecialSyntax(header, template.columnType ?? '')
+    );
   }
 
   private fetchColumnTemplate(column: MetadataColumn | null): void {

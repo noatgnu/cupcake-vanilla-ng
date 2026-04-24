@@ -9,6 +9,7 @@
       type="button"
       class="btn btn-outline-secondary"
       [class.active]="mode() === 'table'"
+      [disabled]="!hasBackendTable()"
       (click)="onModeChange('table')">
       <i class="bi bi-table me-1"></i>Table
     </button>
@@ -28,14 +29,14 @@
     </button>
   </div>
 
-  @if (schemas().length > 0) {
+  @if (schemaContext.availableSchemas().length > 0) {
     <div class="mb-2">
       <label class="form-label small mb-1">Schema</label>
       <select
         class="form-select form-select-sm"
-        [ngModel]="selectedSchema()"
+        [ngModel]="schemaContext.selectedSchema()"
         (ngModelChange)="onSchemaChange($event)">
-        @for (schema of schemas(); track schema.name) {
+        @for (schema of schemaContext.availableSchemas(); track schema.name) {
           <option [value]="schema.name">{{ schema.displayName }}</option>
         }
       </select>
@@ -196,7 +197,7 @@
     </div>
   }
 
-  @if ((mode() === 'file' || mode() === 'excel') && fileSchemaResults().length > 0) {
+  @if (fileSchemaResults().length > 0) {
     <div class="schema-results">
       @for (result of fileSchemaResults(); track result.schemaName) {
         <div class="mb-2">
@@ -238,7 +239,7 @@
     </div>
   }
 
-  @if (mode() === 'table' && errors().length > 0) {
+  @if (mode() === 'table' && errors().length > 0 && fileSchemaResults().length === 0) {
     <div class="error-list mb-2">
       <h6 class="small text-danger mb-1">
         <i class="bi bi-x-circle me-1"></i>Errors ({{ errors().length }})
@@ -264,7 +265,7 @@
     </div>
   }
 
-  @if (mode() === 'table' && warnings().length > 0) {
+  @if (mode() === 'table' && warnings().length > 0 && fileSchemaResults().length === 0) {
     <div class="warning-list">
       <h6 class="small text-warning mb-1">
         <i class="bi bi-exclamation-triangle me-1"></i>Warnings ({{ warnings().length }})

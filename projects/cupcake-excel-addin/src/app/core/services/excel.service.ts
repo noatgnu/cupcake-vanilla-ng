@@ -65,6 +65,28 @@ export class ExcelService {
     });
   }
 
+  private indexToColumnLetter(index: number): string {
+    let letter = '';
+    let n = index + 1;
+    while (n > 0) {
+      const remainder = (n - 1) % 26;
+      letter = String.fromCharCode(65 + remainder) + letter;
+      n = Math.floor((n - 1) / 26);
+    }
+    return letter;
+  }
+
+  async getHeaderAtColumn(colIndex: number): Promise<string> {
+    return Excel.run(async (context: any) => {
+      const sheet = context.workbook.worksheets.getActiveWorksheet();
+      const colLetter = this.indexToColumnLetter(colIndex);
+      const cell = sheet.getRange(`${colLetter}1`);
+      cell.load('values');
+      await context.sync();
+      return String(cell.values[0][0] ?? '');
+    });
+  }
+
   async readWorksheetData(startRow: number = 0, maxRows: number = 1000): Promise<WorksheetData> {
     return Excel.run(async (context: any) => {
       const sheet = context.workbook.worksheets.getActiveWorksheet();

@@ -4,6 +4,7 @@ import { BaseApiService } from '@noatgnu/cupcake-core';
 
 import {
   Schema,
+  SchemaColumn,
   PaginatedResponse
 } from '../models';
 
@@ -43,6 +44,13 @@ export class SchemaService extends BaseApiService {
    */
   getAvailableSchemas(): Observable<Schema[]> {
     return this.get<Schema[]>(`${this.apiUrl}/schemas/available/`);
+  }
+
+  /**
+   * Get columns for a schema by its integer ID
+   */
+  getSchemaColumns(id: number): Observable<SchemaColumn[]> {
+    return this.get<SchemaColumn[]>(`${this.apiUrl}/schemas/${id}/columns/`);
   }
 
   /**

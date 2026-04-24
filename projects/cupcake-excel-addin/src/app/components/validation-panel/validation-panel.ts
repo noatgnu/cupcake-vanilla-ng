@@ -1,10 +1,11 @@
 import { Component, inject, signal, OnInit, OnDestroy, computed, effect, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AsyncValidationService } from '@noatgnu/cupcake-vanilla';
-import { ValidationSchema, TaskStatus, AsyncTaskMonitorService, SdrfValidationSchemaResult } from '@noatgnu/cupcake-core';
+import { TaskStatus, AsyncTaskMonitorService, SdrfValidationSchemaResult } from '@noatgnu/cupcake-core';
 import { ExcelService } from '../../core/services/excel.service';
 import { ToastService } from '../../core/services/toast.service';
 import { SyncService, CellChange } from '../../core/services/sync.service';
+import { SchemaContext } from '../../core/services/schema-context';
 
 type ValidationMode = 'table' | 'excel' | 'file';
 
@@ -27,12 +28,12 @@ export class ValidationPanel implements OnInit, OnDestroy {
   private excelService = inject(ExcelService);
   private toastService = inject(ToastService);
   private syncService = inject(SyncService);
+  readonly schemaContext = inject(SchemaContext);
 
   private activeTaskId = signal<string | null>(null);
+  private activeSheetName = signal<string>('');
 
   readonly mode = signal<ValidationMode>('table');
-  readonly schemas = signal<ValidationSchema[]>([]);
-  readonly selectedSchema = signal<string>('default');
   readonly isValidating = signal(false);
   readonly isLoading = signal(false);
   readonly isSaving = signal(false);
@@ -50,6 +51,13 @@ export class ValidationPanel implements OnInit, OnDestroy {
   readonly fileSchemaResults = signal<SdrfValidationSchemaResult[]>([]);
   readonly fileValidationSuccess = signal<boolean | null>(null);
 
+  readonly hasBackendTable = computed(() => {
+    const sheet = this.activeSheetName();
+    const sessions = this.syncService.sessions();
+    const state = sessions[sheet];
+    return !!state && state.tableId !== null && state.originalData.length > 0;
+  });
+
   readonly hasPendingChanges = computed(() => this.pendingChanges().length > 0);
   readonly changesSummary = computed(() => {
     const changes = this.pendingChanges();
@@ -58,6 +66,12 @@ export class ValidationPanel implements OnInit, OnDestroy {
   });
 
   constructor() {
+    effect(() => {
+      if (!this.hasBackendTable() && this.mode() === 'table') {
+        untracked(() => this.mode.set('excel'));
+      }
+    });
+
     effect(() => {
       const tasks = this.asyncTaskMonitor.tasks();
       const taskId = this.activeTaskId();
@@ -75,10 +89,10 @@ export class ValidationPanel implements OnInit, OnDestroy {
 
         if (task.status === TaskStatus.SUCCESS) {
           this.activeTaskId.set(null);
-          if (this.mode() === 'file') {
-            this.handleFileValidationResult(task.result);
-          } else {
+          if (this.mode() === 'table') {
             this.handleValidationResult(task.result);
+          } else {
+            this.handleFileValidationResult(task.result);
           }
         } else if (task.status === TaskStatus.FAILURE) {
           this.activeTaskId.set(null);
@@ -95,29 +109,16 @@ export class ValidationPanel implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.loadSchemas();
+    this.schemaContext.loadSchemas();
+    this.excelService.getActiveWorksheetName().then(name => this.activeSheetName.set(name));
   }
 
   ngOnDestroy(): void {
     this.activeTaskId.set(null);
   }
 
-  private loadSchemas(): void {
-    this.isLoading.set(true);
-    this.validationService.getAvailableSchemas().subscribe({
-      next: (schemas) => {
-        this.schemas.set(schemas);
-        this.isLoading.set(false);
-      },
-      error: () => {
-        this.schemas.set([]);
-        this.isLoading.set(false);
-      }
-    });
-  }
-
   onSchemaChange(schema: string): void {
-    this.selectedSchema.set(schema);
+    this.schemaContext.setSchema(schema);
   }
 
   async validate(): Promise<void> {
@@ -208,12 +209,12 @@ export class ValidationPanel implements OnInit, OnDestroy {
       metadataTableId: syncState.tableId!,
       validateSdrfFormat: true,
       includePools: this.includePools(),
-      schemaNames: [this.selectedSchema()],
+      schemaNames: [this.schemaContext.selectedSchema()],
       skipOntology: this.skipOntology()
     }).subscribe({
       next: (response) => {
         this.activeTaskId.set(response.taskId);
-        this.asyncTaskMonitor.loadSingleTask(response.taskId);
+        this.asyncTaskMonitor.pollUntilComplete(response.taskId);
         this.statusMessage.set('Validation running...');
       },
       error: () => {
@@ -227,21 +228,26 @@ export class ValidationPanel implements OnInit, OnDestroy {
   private async handleValidationResult(result: any): Promise<void> {
     this.isValidating.set(false);
 
+    if (Array.isArray(result?.schemaResults) && result.schemaResults.length > 0) {
+      this.handleFileValidationResult(result);
+      return;
+    }
+
     const validationErrors: ValidationError[] = [];
     const validationWarnings: ValidationError[] = [];
 
-    if (result?.validationErrors && Array.isArray(result.validationErrors)) {
+    if (Array.isArray(result?.validationErrors)) {
       for (const error of result.validationErrors) {
         validationErrors.push({
           row: error.row || 0,
           column: error.column || 'Unknown',
-          message: error.message || error,
+          message: error.message || String(error),
           severity: 'error'
         });
       }
     }
 
-    if (result?.errors && Array.isArray(result.errors)) {
+    if (Array.isArray(result?.errors)) {
       for (const error of result.errors) {
         if (typeof error === 'string') {
           validationErrors.push({ row: 0, column: 'General', message: error, severity: 'error' });
@@ -249,7 +255,7 @@ export class ValidationPanel implements OnInit, OnDestroy {
       }
     }
 
-    if (result?.warnings && Array.isArray(result.warnings)) {
+    if (Array.isArray(result?.warnings)) {
       for (const warning of result.warnings) {
         if (typeof warning === 'string') {
           validationWarnings.push({ row: 0, column: 'General', message: warning, severity: 'warning' });
@@ -340,13 +346,13 @@ export class ValidationPanel implements OnInit, OnDestroy {
 
     this.validationService.sdrfFile({
       file,
-      schemaNames: [this.selectedSchema()],
+      schemaNames: [this.schemaContext.selectedSchema()],
       skipOntology: this.skipOntology(),
       useOlsCacheOnly: this.useOlsCacheOnly()
     }).subscribe({
       next: (response) => {
         this.activeTaskId.set(response.taskId);
-        this.asyncTaskMonitor.loadSingleTask(response.taskId);
+        this.asyncTaskMonitor.pollUntilComplete(response.taskId);
         this.statusMessage.set('Validation running...');
       },
       error: () => {

@@ -124,6 +124,23 @@ export interface Schema {
   usageCount?: number;
 }
 
+export interface SchemaColumn {
+  id: number;
+  columnName: string;
+  columnType: string;
+  name: string;
+  ontologyType: string | null;
+  ontologyOptions: string[];
+  customOntologyFilters: Record<string, unknown>;
+  enableTypeahead: boolean;
+  inputType: string;
+  possibleDefaultValues: string[];
+  units: string[];
+  notApplicable: boolean;
+  notAvailable: boolean;
+  validators: unknown[];
+}
+
 export interface OntologySuggestion {
   id: string;
   value: string;
