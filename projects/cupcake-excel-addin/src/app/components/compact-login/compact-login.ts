@@ -75,7 +75,7 @@ export class CompactLogin implements OnInit {
   }
 
   private submitLaunchCode(): void {
-    const code = this.launchCode().trim().toUpperCase();
+    const code = this.launchCode().trim();
     if (!code) {
       this.error.set('Please enter a launch code');
       return;

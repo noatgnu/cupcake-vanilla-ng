@@ -83,16 +83,18 @@
         <label class="form-label small text-muted">
           Enter the code from the web app:
         </label>
-        <input
-          type="text"
-          class="form-control form-control-sm text-center launch-code-input"
-          placeholder="XXXXXX"
+        <textarea
+          class="form-control form-control-sm launch-code-input font-monospace"
+          placeholder="Paste launch code here..."
           [ngModel]="launchCode()"
           (ngModelChange)="launchCode.set($event)"
           name="launchCode"
           [disabled]="loading()"
-          maxlength="10"
-          autocomplete="off" />
+          rows="3"
+          autocomplete="off"
+          autocorrect="off"
+          autocapitalize="off"
+          spellcheck="false"></textarea>
       </div>
 
       <button

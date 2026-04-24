@@ -29,7 +29,8 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
       req.url.includes('/auth/exchange-code/') ||
       req.url.includes('/site-config/public/') ||
       req.url.includes('/users/auth_config/') ||
-      req.url.includes('/users/registration_status/')) {
+      req.url.includes('/users/registration_status/') ||
+      req.url.includes('/excel-launch/claim/')) {
     return next(req);
   }
 
