@@ -105,32 +105,26 @@ export class SdrfModificationInput implements OnInit {
 
   private updateValue() {
     const formValue = this.modificationForm.value;
+    const nt = this.getStringValue(formValue.NT);
 
-    // Only emit if we have required fields
-    if (formValue.NT && formValue.TA) {
-      // Build cleaned value, ensuring NT is always included and properly stringified
-      const cleanedValue: ModificationParameters = {
-        NT: this.getStringValue(formValue.NT), // Always include NT field as string
-        TA: this.getStringValue(formValue.TA)  // Always include TA field as string
-      };
-
-      // Add other non-empty fields
-      Object.keys(formValue).forEach(key => {
-        if (key !== 'NT' && key !== 'TA') { // Skip NT and TA as they're already added
-          const value = formValue[key];
-          const stringValue = this.getStringValue(value);
-          if (stringValue) {
-            cleanedValue[key as keyof ModificationParameters] = stringValue;
-          }
-        }
-      });
-
-      const formatted = this.sdrfSyntax.formatValue('modification', cleanedValue);
-      this.valueChange.emit(formatted);
-    } else if (!formValue.NT && !formValue.TA) {
-      // If both required fields are empty, emit empty string
+    if (!nt) {
       this.valueChange.emit('');
+      return;
     }
+
+    const cleanedValue: ModificationParameters = { NT: nt };
+
+    Object.keys(formValue).forEach(key => {
+      if (key !== 'NT') {
+        const value = formValue[key];
+        const stringValue = this.getStringValue(value);
+        if (stringValue) {
+          cleanedValue[key as keyof ModificationParameters] = stringValue;
+        }
+      }
+    });
+
+    this.valueChange.emit(this.sdrfSyntax.formatValue('modification', cleanedValue));
   }
 
   // Typeahead for NT field (Name of Term) - using ontology suggestions from API
@@ -224,8 +218,6 @@ export class SdrfModificationInput implements OnInit {
 
   onTargetAminoAcidChange(event: any) {
     const raw: string = event.target.value;
-    if (!raw) return;
-
     const endsWithComma = raw.trimEnd().endsWith(',');
     const parts = raw
       .replace(/[^A-Za-z,]/g, '')

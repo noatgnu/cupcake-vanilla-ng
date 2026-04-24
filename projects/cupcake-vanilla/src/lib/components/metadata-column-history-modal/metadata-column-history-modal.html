@@ -6,13 +6,13 @@
 </div>
 
 <div class="modal-body">
-  @if (error) {
+  @if (error()) {
     <div class="alert alert-danger">
-      <i class="bi bi-exclamation-triangle me-2"></i>{{ error }}
+      <i class="bi bi-exclamation-triangle me-2"></i>{{ error() }}
     </div>
   }
 
-  @if (loading && history.length === 0) {
+  @if (loading() && history().length === 0) {
     <div class="text-center py-4">
       <div class="spinner-border text-primary" role="status">
         <span class="visually-hidden">Loading...</span>
@@ -21,14 +21,14 @@
     </div>
   }
 
-  @if (history.length > 0) {
+  @if (history().length > 0) {
     <div class="mb-3 text-muted">
       <i class="bi bi-info-circle me-1"></i>
-      Showing {{ history.length }} of {{ totalCount }} records
+      Showing {{ history().length }} of {{ totalCount() }} records
     </div>
 
     <div class="timeline">
-      @for (record of history; track record.historyId) {
+      @for (record of history(); track record.historyId) {
         <div class="timeline-item mb-4">
           <div class="d-flex justify-content-between align-items-start mb-2">
             <div>
@@ -97,14 +97,14 @@
       }
     </div>
 
-    @if (hasMore) {
+    @if (hasMore()) {
       <div class="text-center mt-3">
         <button
           type="button"
           class="btn btn-outline-primary"
           (click)="loadMore()"
-          [disabled]="loading">
-          @if (loading) {
+          [disabled]="loading()">
+          @if (loading()) {
             <span class="spinner-border spinner-border-sm me-2"></span>
           }
           Load More
@@ -113,7 +113,7 @@
     }
   }
 
-  @if (!loading && history.length === 0 && !error) {
+  @if (!loading() && history().length === 0 && !error()) {
     <div class="alert alert-info">
       <i class="bi bi-info-circle me-2"></i>
       No history records found for this column.

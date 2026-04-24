@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, Output, EventEmitter, ChangeDetectionStrategy } from '@angular/core';
+import { Component, Input, OnInit, Output, EventEmitter, ChangeDetectionStrategy, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 
@@ -22,45 +22,43 @@ export class MetadataColumnHistoryModal implements OnInit {
   @Input() config!: ColumnHistoryModalConfig;
   @Output() closed = new EventEmitter<void>();
 
-  history: MetadataColumnHistoryRecord[] = [];
-  loading = false;
-  error: string | null = null;
+  readonly history = signal<MetadataColumnHistoryRecord[]>([]);
+  readonly loading = signal(false);
+  readonly error = signal<string | null>(null);
+  readonly totalCount = signal(0);
+  readonly hasMore = signal(false);
 
-  totalCount = 0;
-  limit = 20;
-  offset = 0;
-  hasMore = false;
+  private limit = 20;
+  private offset = 0;
 
-  constructor(
-    public activeModal: NgbActiveModal,
-    private columnService: MetadataColumnService
-  ) {}
+  readonly activeModal = inject(NgbActiveModal);
+  private columnService = inject(MetadataColumnService);
 
   ngOnInit(): void {
     this.loadHistory();
   }
 
   loadHistory(): void {
-    this.loading = true;
-    this.error = null;
+    this.loading.set(true);
+    this.error.set(null);
 
     this.columnService.getHistory(this.config.columnId, { limit: this.limit, offset: this.offset })
       .subscribe({
         next: (response: MetadataColumnHistoryResponse) => {
-          this.history = [...this.history, ...response.history];
-          this.totalCount = response.count;
-          this.hasMore = response.hasMore;
-          this.loading = false;
+          this.history.set([...this.history(), ...response.history]);
+          this.totalCount.set(response.count);
+          this.hasMore.set(response.hasMore);
+          this.loading.set(false);
         },
         error: (err) => {
-          this.error = 'Failed to load history: ' + (err.error?.detail || err.message);
-          this.loading = false;
+          this.error.set('Failed to load history: ' + (err.error?.detail || err.message));
+          this.loading.set(false);
         }
       });
   }
 
   loadMore(): void {
-    if (!this.hasMore || this.loading) {
+    if (!this.hasMore() || this.loading()) {
       return;
     }
     this.offset += this.limit;
@@ -73,20 +71,20 @@ export class MetadataColumnHistoryModal implements OnInit {
   }
 
   getChangeLabel(field: string): string {
-    const labels: { [key: string]: string } = {
-      'name': 'Name',
-      'type': 'Type',
-      'value': 'Value',
-      'columnPosition': 'Position',
-      'mandatory': 'Mandatory',
-      'hidden': 'Hidden',
-      'readonly': 'Read-only',
-      'modifiers': 'Modifiers',
-      'ontologyType': 'Ontology Type',
-      'notApplicable': 'Not Applicable',
-      'notAvailable': 'Not Available',
-      'enableTypeahead': 'Typeahead',
-      'staffOnly': 'Staff Only'
+    const labels: Record<string, string> = {
+      name: 'Name',
+      type: 'Type',
+      value: 'Value',
+      columnPosition: 'Position',
+      mandatory: 'Mandatory',
+      hidden: 'Hidden',
+      readonly: 'Read-only',
+      modifiers: 'Modifiers',
+      ontologyType: 'Ontology Type',
+      notApplicable: 'Not Applicable',
+      notAvailable: 'Not Available',
+      enableTypeahead: 'Typeahead',
+      staffOnly: 'Staff Only'
     };
     return labels[field] || field;
   }
@@ -106,14 +104,10 @@ export class MetadataColumnHistoryModal implements OnInit {
 
   getHistoryTypeClass(type: string): string {
     switch (type.toLowerCase()) {
-      case 'created':
-        return 'badge bg-success';
-      case 'changed':
-        return 'badge bg-primary';
-      case 'deleted':
-        return 'badge bg-danger';
-      default:
-        return 'badge bg-secondary';
+      case 'created': return 'badge bg-success';
+      case 'changed': return 'badge bg-primary';
+      case 'deleted': return 'badge bg-danger';
+      default: return 'badge bg-secondary';
     }
   }
 }

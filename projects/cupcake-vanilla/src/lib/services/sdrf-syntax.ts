@@ -341,11 +341,6 @@ export class SdrfSyntaxService {
       result.errors.push('At least one modification parameter is required');
     }
 
-    if (params.PP && !/^\d+$/.test(params.PP)) {
-      result.errors.push('PP (protein position) must be a number');
-      result.isValid = false;
-    }
-
     if (params.MM && !/^\d+(\.\d+)?$/.test(params.MM)) {
       result.errors.push('MM (monoisotopic mass) must be a valid number');
       result.isValid = false;
