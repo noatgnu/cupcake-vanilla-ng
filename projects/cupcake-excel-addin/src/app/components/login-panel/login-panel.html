@@ -1,0 +1,4 @@
+<div class="login-panel d-flex flex-column h-100 overflow-auto">
+  <app-connection-panel />
+  <app-compact-login (loginSuccess)="onLoginSuccess()" (tableReady)="onTableReady($event)" />
+</div>

@@ -13,23 +13,24 @@ describe('CompactLogin', () => {
   let fixture: ComponentFixture<CompactLogin>;
   let authService: jasmine.SpyObj<AuthService>;
   let launchService: jasmine.SpyObj<ExcelLaunchService>;
-  let syncService: jasmine.SpyObj<SyncService>;
+
+  const mockUser = {
+    id: 1,
+    username: 'testuser',
+    email: 'test@example.com',
+    firstName: 'Test',
+    lastName: 'User',
+    isStaff: false,
+    isSuperuser: false,
+    isActive: true,
+    dateJoined: '2024-01-01T00:00:00Z',
+    hasOrcid: false
+  };
 
   const mockAuthResponse: AuthResponse = {
     accessToken: 'access-token-123',
     refreshToken: 'refresh-token-456',
-    user: {
-      id: 1,
-      username: 'testuser',
-      email: 'test@example.com',
-      firstName: 'Test',
-      lastName: 'User',
-      isStaff: false,
-      isSuperuser: false,
-      isActive: true,
-      dateJoined: '2024-01-01T00:00:00Z',
-      hasOrcid: false
-    }
+    user: mockUser
   };
 
   const mockClaimResponse: ExcelLaunchClaimResponse = {
@@ -45,7 +46,7 @@ describe('CompactLogin', () => {
   };
 
   beforeEach(async () => {
-    const authServiceSpy = jasmine.createSpyObj('AuthService', ['login']);
+    const authServiceSpy = jasmine.createSpyObj('AuthService', ['login', 'fetchUserProfile']);
     const launchServiceSpy = jasmine.createSpyObj('ExcelLaunchService', ['claimLaunchCode']);
     const syncServiceSpy = jasmine.createSpyObj('SyncService', [], { state: () => ({}) });
 
@@ -65,7 +66,6 @@ describe('CompactLogin', () => {
     component = fixture.componentInstance;
     authService = TestBed.inject(AuthService) as jasmine.SpyObj<AuthService>;
     launchService = TestBed.inject(ExcelLaunchService) as jasmine.SpyObj<ExcelLaunchService>;
-    syncService = TestBed.inject(SyncService) as jasmine.SpyObj<SyncService>;
 
     localStorage.clear();
   });
@@ -175,6 +175,7 @@ describe('CompactLogin', () => {
   describe('launch code login', () => {
     beforeEach(() => {
       component.setMode('launchCode');
+      authService.fetchUserProfile.and.returnValue(of(mockUser as any));
     });
 
     it('should show error when launch code is empty', () => {
@@ -186,19 +187,19 @@ describe('CompactLogin', () => {
       expect(launchService.claimLaunchCode).not.toHaveBeenCalled();
     });
 
-    it('should trim and uppercase the launch code', async () => {
+    it('should trim whitespace from the launch code', async () => {
       launchService.claimLaunchCode.and.returnValue(of(mockClaimResponse));
       component.launchCode.set('  abc123  ');
 
       component.onSubmit();
       await fixture.whenStable();
 
-      expect(launchService.claimLaunchCode).toHaveBeenCalledWith('ABC123');
+      expect(launchService.claimLaunchCode).toHaveBeenCalledWith('abc123');
     });
 
     it('should store tokens in localStorage on success', async () => {
       launchService.claimLaunchCode.and.returnValue(of(mockClaimResponse));
-      component.launchCode.set('ABC123');
+      component.launchCode.set('validCode');
 
       component.onSubmit();
       await fixture.whenStable();
@@ -209,7 +210,7 @@ describe('CompactLogin', () => {
 
     it('should emit tableReady with table ID on success', async () => {
       launchService.claimLaunchCode.and.returnValue(of(mockClaimResponse));
-      component.launchCode.set('ABC123');
+      component.launchCode.set('validCode');
       const tableReadySpy = jasmine.createSpy('tableReady');
       component.tableReady.subscribe(tableReadySpy);
 
@@ -221,7 +222,7 @@ describe('CompactLogin', () => {
 
     it('should emit loginSuccess on success', async () => {
       launchService.claimLaunchCode.and.returnValue(of(mockClaimResponse));
-      component.launchCode.set('ABC123');
+      component.launchCode.set('validCode');
       const loginSuccessSpy = jasmine.createSpy('loginSuccess');
       component.loginSuccess.subscribe(loginSuccessSpy);
 
@@ -229,6 +230,16 @@ describe('CompactLogin', () => {
       await fixture.whenStable();
 
       expect(loginSuccessSpy).toHaveBeenCalled();
+    });
+
+    it('should call fetchUserProfile after claiming code', async () => {
+      launchService.claimLaunchCode.and.returnValue(of(mockClaimResponse));
+      component.launchCode.set('validCode');
+
+      component.onSubmit();
+      await fixture.whenStable();
+
+      expect(authService.fetchUserProfile).toHaveBeenCalled();
     });
 
     it('should show expired error for 410 status', async () => {
@@ -262,7 +273,7 @@ describe('CompactLogin', () => {
         status: 500,
         error: { detail: 'Server error' }
       })));
-      component.launchCode.set('ABC123');
+      component.launchCode.set('validCode');
 
       component.onSubmit();
       await fixture.whenStable();
@@ -275,7 +286,7 @@ describe('CompactLogin', () => {
         status: 500,
         error: {}
       })));
-      component.launchCode.set('ABC123');
+      component.launchCode.set('validCode');
 
       component.onSubmit();
       await fixture.whenStable();

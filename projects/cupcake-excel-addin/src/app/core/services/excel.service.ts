@@ -65,6 +65,91 @@ export class ExcelService {
     });
   }
 
+  async getSheetId(): Promise<string | null> {
+    try {
+      return await Excel.run(async (context: any) => {
+        const sheet = context.workbook.worksheets.getActiveWorksheet();
+        const prop = sheet.customProperties.getItemOrNullObject('cupcake-sheet-id');
+        prop.load(['isNullObject', 'value']);
+        await context.sync();
+        return prop.isNullObject ? null : prop.value;
+      });
+    } catch {
+      return null;
+    }
+  }
+
+  async getOrCreateSheetId(): Promise<string> {
+    try {
+      return await Excel.run(async (context: any) => {
+        const sheet = context.workbook.worksheets.getActiveWorksheet();
+        const props = sheet.customProperties;
+        const prop = props.getItemOrNullObject('cupcake-sheet-id');
+        prop.load(['isNullObject', 'value']);
+        await context.sync();
+        if (!prop.isNullObject) {
+          return prop.value;
+        }
+        const id = crypto.randomUUID();
+        props.add('cupcake-sheet-id', id);
+        await context.sync();
+        return id;
+      });
+    } catch {
+      return crypto.randomUUID();
+    }
+  }
+
+  async getSheetTableId(): Promise<number | null> {
+    try {
+      return await Excel.run(async (context: any) => {
+        const sheet = context.workbook.worksheets.getActiveWorksheet();
+        const prop = sheet.customProperties.getItemOrNullObject('cupcake-table-id');
+        prop.load(['isNullObject', 'value']);
+        await context.sync();
+        if (prop.isNullObject) return null;
+        const id = parseInt(prop.value, 10);
+        return isNaN(id) ? null : id;
+      });
+    } catch {
+      return null;
+    }
+  }
+
+  async setSheetTableId(tableId: number): Promise<void> {
+    try {
+      await Excel.run(async (context: any) => {
+        const sheet = context.workbook.worksheets.getActiveWorksheet();
+        const props = sheet.customProperties;
+        const prop = props.getItemOrNullObject('cupcake-table-id');
+        prop.load('isNullObject');
+        await context.sync();
+        if (!prop.isNullObject) {
+          prop.delete();
+        }
+        props.add('cupcake-table-id', tableId.toString());
+        await context.sync();
+      });
+    } catch {
+    }
+  }
+
+  async clearSheetTableId(): Promise<void> {
+    try {
+      await Excel.run(async (context: any) => {
+        const sheet = context.workbook.worksheets.getActiveWorksheet();
+        const prop = sheet.customProperties.getItemOrNullObject('cupcake-table-id');
+        prop.load('isNullObject');
+        await context.sync();
+        if (!prop.isNullObject) {
+          prop.delete();
+          await context.sync();
+        }
+      });
+    } catch {
+    }
+  }
+
   private indexToColumnLetter(index: number): string {
     let letter = '';
     let n = index + 1;

@@ -1,5 +1,6 @@
 import { Component, inject, signal, output, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { switchMap } from 'rxjs';
 import { AuthService } from '@noatgnu/cupcake-core';
 import { ExcelLaunchService } from '@noatgnu/cupcake-vanilla';
 import { SyncService } from '../../core/services/sync.service';
@@ -84,21 +85,20 @@ export class CompactLogin implements OnInit {
     this.loading.set(true);
     this.error.set(null);
 
-    this.launchService.claimLaunchCode(code).subscribe({
-      next: (response) => {
+    this.launchService.claimLaunchCode(code).pipe(
+      switchMap(response => {
         localStorage.setItem('ccvAccessToken', response.accessToken);
         localStorage.setItem('ccvRefreshToken', response.refreshToken);
-
         if (response.tableId) {
           localStorage.setItem(PENDING_TABLE_KEY, response.tableId.toString());
         }
-
+        return this.authService.fetchUserProfile();
+      })
+    ).subscribe({
+      next: () => {
         this.loading.set(false);
         this.loginSuccess.emit();
-
-        if (response.tableId) {
-          this.tableReady.emit(response.tableId);
-        }
+        this.checkPendingTable();
       },
       error: (err) => {
         this.loading.set(false);

@@ -54,11 +54,11 @@
                   <bt:Image size="80" resid="Icon.80x80"/>
                 </Icon>
 
-                <Control xsi:type="Button" id="TaskpaneButton">
-                  <Label resid="TaskpaneButton.Label"/>
+                <Control xsi:type="Button" id="LoginButton">
+                  <Label resid="LoginButton.Label"/>
                   <Supertip>
-                    <Title resid="TaskpaneButton.Label"/>
-                    <Description resid="TaskpaneButton.Tooltip"/>
+                    <Title resid="LoginButton.Label"/>
+                    <Description resid="LoginButton.Tooltip"/>
                   </Supertip>
                   <Icon>
                     <bt:Image size="16" resid="Icon.16x16"/>
@@ -67,39 +67,41 @@
                   </Icon>
                   <Action xsi:type="ShowTaskpane">
                     <TaskpaneId>CupcakeTaskpane</TaskpaneId>
-                    <SourceLocation resid="Taskpane.Url"/>
+                    <SourceLocation resid="Login.Url"/>
                   </Action>
                 </Control>
 
-                <Control xsi:type="Button" id="SyncButton">
-                  <Label resid="SyncButton.Label"/>
+                <Control xsi:type="Button" id="SdrfSheetButton">
+                  <Label resid="SdrfSheetButton.Label"/>
                   <Supertip>
-                    <Title resid="SyncButton.Label"/>
-                    <Description resid="SyncButton.Tooltip"/>
+                    <Title resid="SdrfSheetButton.Label"/>
+                    <Description resid="SdrfSheetButton.Tooltip"/>
                   </Supertip>
                   <Icon>
                     <bt:Image size="16" resid="Icon.16x16"/>
                     <bt:Image size="32" resid="Icon.32x32"/>
                     <bt:Image size="80" resid="Icon.80x80"/>
                   </Icon>
-                  <Action xsi:type="ExecuteFunction">
-                    <FunctionName>syncTable</FunctionName>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>CupcakeTaskpane</TaskpaneId>
+                    <SourceLocation resid="SdrfSheet.Url"/>
                   </Action>
                 </Control>
 
-                <Control xsi:type="Button" id="ValidateButton">
-                  <Label resid="ValidateButton.Label"/>
+                <Control xsi:type="Button" id="ImportTableButton">
+                  <Label resid="ImportTableButton.Label"/>
                   <Supertip>
-                    <Title resid="ValidateButton.Label"/>
-                    <Description resid="ValidateButton.Tooltip"/>
+                    <Title resid="ImportTableButton.Label"/>
+                    <Description resid="ImportTableButton.Tooltip"/>
                   </Supertip>
                   <Icon>
                     <bt:Image size="16" resid="Icon.16x16"/>
                     <bt:Image size="32" resid="Icon.32x32"/>
                     <bt:Image size="80" resid="Icon.80x80"/>
                   </Icon>
-                  <Action xsi:type="ExecuteFunction">
-                    <FunctionName>validateTable</FunctionName>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>CupcakeTaskpane</TaskpaneId>
+                    <SourceLocation resid="ImportTable.Url"/>
                   </Action>
                 </Control>
 
@@ -119,20 +121,22 @@
       <bt:Urls>
         <bt:Url id="GetStarted.LearnMoreUrl" DefaultValue="https://github.com/noatgnu/cupcake-vanilla-ng"/>
         <bt:Url id="Commands.Url" DefaultValue="https://localhost:3000/commands.html"/>
-        <bt:Url id="Taskpane.Url" DefaultValue="https://localhost:3000/index.html"/>
+        <bt:Url id="Login.Url" DefaultValue="https://localhost:3000/index.html#/login"/>
+        <bt:Url id="SdrfSheet.Url" DefaultValue="https://localhost:3000/index.html#/non-imported"/>
+        <bt:Url id="ImportTable.Url" DefaultValue="https://localhost:3000/index.html#/imported"/>
       </bt:Urls>
       <bt:ShortStrings>
         <bt:String id="GetStarted.Title" DefaultValue="Get started with Cupcake Vanilla"/>
         <bt:String id="CupcakeGroup.Label" DefaultValue="Cupcake Vanilla"/>
-        <bt:String id="TaskpaneButton.Label" DefaultValue="Open Panel"/>
-        <bt:String id="SyncButton.Label" DefaultValue="Sync Table"/>
-        <bt:String id="ValidateButton.Label" DefaultValue="Validate"/>
+        <bt:String id="LoginButton.Label" DefaultValue="Login"/>
+        <bt:String id="SdrfSheetButton.Label" DefaultValue="SDRF Sheet"/>
+        <bt:String id="ImportTableButton.Label" DefaultValue="Import Table"/>
       </bt:ShortStrings>
       <bt:LongStrings>
         <bt:String id="GetStarted.Description" DefaultValue="Manage metadata for mass spectrometry experiments directly in Excel."/>
-        <bt:String id="TaskpaneButton.Tooltip" DefaultValue="Open the Cupcake Vanilla task pane"/>
-        <bt:String id="SyncButton.Tooltip" DefaultValue="Sync the current worksheet with the backend"/>
-        <bt:String id="ValidateButton.Tooltip" DefaultValue="Validate the current worksheet against SDRF schema"/>
+        <bt:String id="LoginButton.Tooltip" DefaultValue="Sign in to Cupcake Vanilla"/>
+        <bt:String id="SdrfSheetButton.Tooltip" DefaultValue="Open SDRF sheet tools: ontology search, validation, column info"/>
+        <bt:String id="ImportTableButton.Tooltip" DefaultValue="Import and sync a metadata table from the backend"/>
       </bt:LongStrings>
     </Resources>
   </VersionOverrides>

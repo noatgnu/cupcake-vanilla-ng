@@ -85,8 +85,8 @@ export class SyncService {
 
     for (let rowIdx = 0; rowIdx < maxRows; rowIdx++) {
       for (let colIdx = 0; colIdx < maxCols; colIdx++) {
-        const originalValue = state.originalData[rowIdx]?.[colIdx] ?? '';
-        const newValue = currentData[rowIdx]?.[colIdx] ?? '';
+        const originalValue = String(state.originalData[rowIdx]?.[colIdx] ?? '');
+        const newValue = String(currentData[rowIdx]?.[colIdx] ?? '');
 
         if (originalValue !== newValue) {
           const column = state.columns[colIdx];
@@ -96,8 +96,8 @@ export class SyncService {
               columnIndex: colIdx,
               columnId: column.id,
               columnName: column.name,
-              originalValue: originalValue.toString(),
-              newValue: newValue.toString(),
+              originalValue,
+              newValue,
               sampleIndex: rowIdx + 1
             });
           }
@@ -117,8 +117,8 @@ export class SyncService {
 
     for (let rowIdx = 0; rowIdx < maxRows; rowIdx++) {
       for (let colIdx = 0; colIdx < maxCols; colIdx++) {
-        const original = state.originalData[rowIdx]?.[colIdx] ?? '';
-        const remote = remoteData[rowIdx]?.[colIdx] ?? '';
+        const original = String(state.originalData[rowIdx]?.[colIdx] ?? '');
+        const remote = String(remoteData[rowIdx]?.[colIdx] ?? '');
         if (original !== remote) return true;
       }
     }

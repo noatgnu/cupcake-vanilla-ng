@@ -156,5 +156,6 @@ export class TableBrowser implements OnInit {
   clearSelection(): void {
     this.selectedTable.set(null);
     localStorage.removeItem(STORAGE_KEY_TABLE);
+    this.excelService.clearSheetTableId();
   }
 }

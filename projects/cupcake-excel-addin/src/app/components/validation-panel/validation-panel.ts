@@ -31,7 +31,7 @@ export class ValidationPanel implements OnInit, OnDestroy {
   readonly schemaContext = inject(SchemaContext);
 
   private activeTaskId = signal<string | null>(null);
-  private activeSheetName = signal<string>('');
+  private activeSheetKey = signal<string | null>(null);
 
   readonly mode = signal<ValidationMode>('table');
   readonly isValidating = signal(false);
@@ -52,9 +52,10 @@ export class ValidationPanel implements OnInit, OnDestroy {
   readonly fileValidationSuccess = signal<boolean | null>(null);
 
   readonly hasBackendTable = computed(() => {
-    const sheet = this.activeSheetName();
+    const sheetKey = this.activeSheetKey();
+    if (!sheetKey) return false;
     const sessions = this.syncService.sessions();
-    const state = sessions[sheet];
+    const state = sessions[sheetKey];
     return !!state && state.tableId !== null && state.originalData.length > 0;
   });
 
@@ -110,7 +111,7 @@ export class ValidationPanel implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.schemaContext.loadSchemas();
-    this.excelService.getActiveWorksheetName().then(name => this.activeSheetName.set(name));
+    this.excelService.getSheetId().then(key => this.activeSheetKey.set(key));
   }
 
   ngOnDestroy(): void {
@@ -122,9 +123,13 @@ export class ValidationPanel implements OnInit, OnDestroy {
   }
 
   async validate(): Promise<void> {
-    const sheetName = await this.excelService.getActiveWorksheetName();
-    const syncState = this.syncService.getSheetState(sheetName);
-    if (!syncState.tableId || !this.syncService.hasDataForSheet(sheetName)) {
+    const sheetKey = await this.excelService.getSheetId();
+    if (!sheetKey) {
+      this.toastService.warning('Pull table data first before validating');
+      return;
+    }
+    const syncState = this.syncService.getSheetState(sheetKey);
+    if (!syncState.tableId || !this.syncService.hasDataForSheet(sheetKey)) {
       this.toastService.warning('Pull table data first before validating');
       return;
     }
@@ -133,7 +138,7 @@ export class ValidationPanel implements OnInit, OnDestroy {
 
     try {
       const worksheetData = await this.excelService.readWorksheetData();
-      const changes = this.syncService.detectChanges(sheetName, worksheetData.rows);
+      const changes = this.syncService.detectChanges(sheetKey, worksheetData.rows);
 
       if (changes.length > 0) {
         this.pendingChanges.set(changes);
@@ -166,8 +171,10 @@ export class ValidationPanel implements OnInit, OnDestroy {
         if (result.success) {
           try {
             const worksheetData = await this.excelService.readWorksheetData();
-            const sn = await this.excelService.getActiveWorksheetName();
-            this.syncService.updateOriginalData(sn, worksheetData.rows);
+            const sk = await this.excelService.getSheetId();
+            if (sk) {
+              this.syncService.updateOriginalData(sk, worksheetData.rows);
+            }
           } catch {}
 
           this.pendingChanges.set([]);
@@ -196,8 +203,8 @@ export class ValidationPanel implements OnInit, OnDestroy {
   }
 
   private async runValidation(): Promise<void> {
-    const sheetName = await this.excelService.getActiveWorksheetName();
-    const syncState = this.syncService.getSheetState(sheetName);
+    const sheetKey = await this.excelService.getSheetId();
+    const syncState = this.syncService.getSheetState(sheetKey ?? '');
 
     this.isValidating.set(true);
     this.errors.set([]);

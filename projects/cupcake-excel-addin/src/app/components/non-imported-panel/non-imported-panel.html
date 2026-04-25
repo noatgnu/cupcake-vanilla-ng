@@ -1,0 +1,142 @@
+<div class="panel-header border-bottom px-2 py-1 d-flex align-items-center justify-content-between">
+  <span class="small fw-semibold text-muted">
+    <i class="bi bi-file-earmark-spreadsheet me-1"></i>SDRF Sheet
+  </span>
+  <div class="d-flex align-items-center gap-2">
+    @if (currentUser()) {
+      <small class="text-muted"><i class="bi bi-person-circle me-1"></i>{{ displayName }}</small>
+      <button class="btn btn-link btn-sm p-0 text-muted" (click)="logout()">
+        <small>Logout</small>
+      </button>
+    }
+  </div>
+</div>
+
+<div class="schema-section px-2 pt-2 pb-1 border-bottom">
+  <label class="form-label small fw-semibold mb-1">
+    <i class="bi bi-diagram-3 me-1"></i>Schema
+  </label>
+  @if (schemaContext.schemasLoaded()) {
+    @if (schemaContext.availableSchemas().length > 0) {
+      <select
+        class="form-select form-select-sm"
+        [ngModel]="schemaContext.selectedSchema()"
+        (ngModelChange)="schemaContext.setSchema($event)">
+        @for (schema of schemaContext.availableSchemas(); track schema.name) {
+          <option [value]="schema.name">{{ schema.displayName | lowercase }}</option>
+        }
+      </select>
+      <small class="text-muted d-block mt-1">
+        Select the schema for your SDRF sheet to enable column hints, ontology lookup, and validation.
+      </small>
+    } @else {
+      <small class="text-muted">No schemas available from server.</small>
+    }
+  } @else {
+    <small class="text-muted">
+      <i class="bi bi-hourglass-split me-1"></i>Loading schemas...
+    </small>
+  }
+</div>
+
+<ul class="nav nav-tabs nav-sm px-1 pt-1">
+  <li class="nav-item">
+    <button
+      class="nav-link py-1 px-2"
+      [class.active]="activeTab() === 'ontology'"
+      (click)="setTab('ontology')">
+      <i class="bi bi-search me-1"></i>Ontology
+    </button>
+  </li>
+  <li class="nav-item">
+    <button
+      class="nav-link py-1 px-2"
+      [class.active]="activeTab() === 'validate'"
+      (click)="setTab('validate')">
+      <i class="bi bi-check2-square me-1"></i>Validate
+    </button>
+  </li>
+  <li class="nav-item">
+    <button
+      class="nav-link py-1 px-2"
+      [class.active]="activeTab() === 'info'"
+      (click)="setTab('info')">
+      <i class="bi bi-info-circle me-1"></i>Info
+    </button>
+  </li>
+</ul>
+
+<div class="tab-content overflow-auto flex-grow-1">
+  @if (activeTab() === 'ontology') {
+    <div class="p-2">
+      @if (selectedColumn()) {
+        <div class="alert alert-info py-1 px-2 small mb-2">
+          <i class="bi bi-crosshair me-1"></i>
+          <strong>{{ selectedColumn()!.name }}</strong>
+        </div>
+      } @else {
+        <div class="text-muted small mb-2">
+          <i class="bi bi-cursor me-1"></i>Click a column cell to see hints.
+        </div>
+      }
+
+      @if (specialSyntaxType()) {
+        <div class="mb-3">
+          <div class="small fw-semibold mb-1">
+            @switch (specialSyntaxType()) {
+              @case ('age') { <i class="bi bi-calendar me-1"></i>Age Format }
+              @case ('modification') { <i class="bi bi-gear me-1"></i>Modification Parameters }
+              @case ('cleavage') { <i class="bi bi-scissors me-1"></i>Cleavage Agent }
+            }
+          </div>
+          @switch (specialSyntaxType()) {
+            @case ('age') {
+              <app-age-input [value]="specialInputValue()" (valueChange)="onSpecialInputChange($event)" />
+            }
+            @case ('modification') {
+              <app-modification-input [value]="specialInputValue()" (valueChange)="onSpecialInputChange($event)" />
+            }
+            @case ('cleavage') {
+              <app-cleavage-input [value]="specialInputValue()" (valueChange)="onSpecialInputChange($event)" />
+            }
+          }
+          <button class="btn btn-sm btn-primary mt-2" (click)="insertSpecialValue()">
+            <i class="bi bi-arrow-down-circle me-1"></i>Insert into Cell
+          </button>
+        </div>
+        <hr class="my-2">
+      }
+
+      @if (!specialSyntaxType() && columnInputType() === 'number_with_unit') {
+        <div class="mb-3">
+          <div class="small fw-semibold mb-1">
+            <i class="bi bi-123 me-1"></i>Value with Unit
+          </div>
+          <app-number-with-unit-input
+            [value]="specialInputValue()"
+            [units]="columnUnits()"
+            (valueChange)="onSpecialInputChange($event)" />
+          <button class="btn btn-sm btn-primary mt-2" (click)="insertSpecialValue()">
+            <i class="bi bi-arrow-down-circle me-1"></i>Insert into Cell
+          </button>
+        </div>
+        <hr class="my-2">
+      }
+
+      <app-favorites-panel [column]="selectedColumn()" class="mb-3" />
+      <hr class="my-2">
+      <div class="small text-muted mb-1">Search ontology terms</div>
+      <app-ontology-search [column]="selectedColumn()" />
+    </div>
+  }
+
+  @if (activeTab() === 'validate') {
+    <app-validation-panel />
+  }
+
+  @if (activeTab() === 'info') {
+    <div class="p-2">
+      <app-column-info [column]="selectedColumn()" [cellValue]="currentCellValue()" />
+    </div>
+  }
+</div>
