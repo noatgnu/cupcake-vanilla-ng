@@ -26,6 +26,10 @@ export interface MetadataTableQueryParams {
   limit?: number;
   offset?: number;
   ordering?: string;
+  columnName?: string;
+  columnValue?: string;
+  columnType?: string;
+  columnMatch?: 'contains' | 'exact';
 }
 
 @Injectable({
@@ -150,6 +154,21 @@ export class MetadataTableService extends BaseApiService {
    */
   searchMetadataTables(query: string): Observable<MetadataTableQueryResponse> {
     return this.getMetadataTables({ search: query });
+  }
+
+  /**
+   * Find tables that contain a column matching the given name and/or value
+   */
+  findByColumnContent(params: {
+    columnName?: string;
+    columnValue?: string;
+    columnType?: string;
+    columnMatch?: 'contains' | 'exact';
+    showShared?: boolean;
+    limit?: number;
+    offset?: number;
+  }): Observable<MetadataTableQueryResponse> {
+    return this.getMetadataTables(params);
   }
 
   /**

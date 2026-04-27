@@ -74,6 +74,7 @@ export class NonImportedPanel implements OnInit, OnDestroy {
   constructor() {
     effect(() => {
       this.schemaContext.selectedSchema();
+      this.schemaContext.selectedTableTemplate();
       untracked(() => {
         this.sheetModeTemplateCache.clear();
         this.updateSelectedColumn();
@@ -84,6 +85,7 @@ export class NonImportedPanel implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.excelService.onSelectionChanged(this.selectionChangedHandler);
     this.selectionInterval = setInterval(() => this.updateSelectedColumn(), 3000);
+    this.schemaContext.loadTableTemplates();
     this.updateSelectedColumn();
   }
 
@@ -173,6 +175,17 @@ export class NonImportedPanel implements OnInit, OnDestroy {
       return;
     }
 
+    const tableTemplate = this.schemaContext.selectedTableTemplate();
+    if (tableTemplate?.userColumns) {
+      const col = (tableTemplate.userColumns as any[]).find(c => c.name === header) ?? null;
+      if (col) {
+        this.selectedColumn.set(col);
+        this.selectedTemplate.set(null);
+        this.specialSyntaxType.set(this.sdrfSyntax.detectSpecialSyntax(header, col.type || ''));
+        return;
+      }
+    }
+
     const cacheKey = `${this.schemaContext.selectedSchema()}:${header}`;
     if (this.sheetModeTemplateCache.has(cacheKey)) {
       this.applySheetModeTemplate(header, this.sheetModeTemplateCache.get(cacheKey) ?? null);
@@ -198,9 +211,9 @@ export class NonImportedPanel implements OnInit, OnDestroy {
   }
 
   private applySheetModeTemplate(header: string, template: MetadataColumnTemplate | null): void {
-    if (!template?.ontologyType) {
+    if (!template) {
       this.selectedColumn.set(null);
-      this.selectedTemplate.set(template ?? null);
+      this.selectedTemplate.set(null);
       this.specialSyntaxType.set(null);
       return;
     }

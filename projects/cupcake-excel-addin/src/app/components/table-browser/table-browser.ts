@@ -1,6 +1,6 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { MetadataTableService, MetadataTable } from '@noatgnu/cupcake-vanilla';
+import { MetadataTableService, MetadataTable, MetadataTableQueryParams } from '@noatgnu/cupcake-vanilla';
 import { LabGroupService, LabGroup } from '@noatgnu/cupcake-core';
 import { ExcelService } from '../../core/services/excel.service';
 import { SyncPanel } from '../sync-panel/sync-panel';
@@ -30,11 +30,16 @@ export class TableBrowser implements OnInit {
   readonly isLoadingLabGroups = signal(false);
   readonly isLoadingSavedTable = signal(false);
 
+  readonly showColumnSearch = signal(false);
+  readonly columnName = signal('');
+  readonly columnValue = signal('');
+  readonly columnMatchExact = signal(false);
+
   ngOnInit(): void {
     this.loadSavedLabGroup();
     this.loadLabGroups();
     this.loadSavedTable();
-    this.loadTables();
+    this.search();
   }
 
   private loadSavedLabGroup(): void {
@@ -88,51 +93,31 @@ export class TableBrowser implements OnInit {
   onLabGroupChange(labGroupId: string): void {
     const id = labGroupId ? parseInt(labGroupId, 10) : null;
     this.selectedLabGroupId.set(id);
-
     if (id) {
       localStorage.setItem(STORAGE_KEY_LAB_GROUP, id.toString());
     } else {
       localStorage.removeItem(STORAGE_KEY_LAB_GROUP);
     }
-
-    this.loadTables();
+    this.search();
   }
 
-  loadTables(): void {
+  search(): void {
     this.isLoading.set(true);
     this.errorMessage.set(null);
 
-    const params: any = { limit: 10 };
+    const params: MetadataTableQueryParams = { limit: 10 };
+
     const labGroupId = this.selectedLabGroupId();
-    if (labGroupId) {
-      params.labGroupId = labGroupId;
-    }
+    if (labGroupId) params.labGroupId = labGroupId;
 
-    this.tableService.getMetadataTables(params).subscribe({
-      next: (response) => {
-        this.tables.set(response.results);
-        this.isLoading.set(false);
-      },
-      error: () => {
-        this.errorMessage.set('Failed to load tables');
-        this.isLoading.set(false);
-      }
-    });
-  }
+    const q = this.searchQuery().trim();
+    if (q) params.search = q;
 
-  searchTables(): void {
-    if (!this.searchQuery()) {
-      this.loadTables();
-      return;
-    }
-
-    this.isLoading.set(true);
-
-    const params: any = { search: this.searchQuery(), limit: 10 };
-    const labGroupId = this.selectedLabGroupId();
-    if (labGroupId) {
-      params.labGroupId = labGroupId;
-    }
+    const colName = this.columnName().trim();
+    const colValue = this.columnValue().trim();
+    if (colName) params.columnName = colName;
+    if (colValue) params.columnValue = colValue;
+    if (colName || colValue) params.columnMatch = this.columnMatchExact() ? 'exact' : 'contains';
 
     this.tableService.getMetadataTables(params).subscribe({
       next: (response) => {
@@ -144,6 +129,13 @@ export class TableBrowser implements OnInit {
         this.isLoading.set(false);
       }
     });
+  }
+
+  clearColumnSearch(): void {
+    this.columnName.set('');
+    this.columnValue.set('');
+    this.columnMatchExact.set(false);
+    this.search();
   }
 
   selectTable(table: MetadataTable): void {

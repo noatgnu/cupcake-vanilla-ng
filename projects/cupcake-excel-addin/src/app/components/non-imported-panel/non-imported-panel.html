@@ -39,6 +39,32 @@
   }
 </div>
 
+<div class="schema-section px-2 pt-2 pb-1 border-bottom">
+  <label class="form-label small fw-semibold mb-1">
+    <i class="bi bi-layout-text-window me-1"></i>Table Template <span class="text-muted fw-normal">(optional)</span>
+  </label>
+  @if (schemaContext.tableTemplatesLoaded()) {
+    @if (schemaContext.availableTableTemplates().length > 0) {
+      <select
+        class="form-select form-select-sm"
+        [ngModel]="schemaContext.selectedTableTemplate()?.id ?? ''"
+        (ngModelChange)="schemaContext.setTableTemplate($event || null)">
+        <option value="">— use schema only —</option>
+        @for (tpl of schemaContext.availableTableTemplates(); track tpl.id) {
+          <option [value]="tpl.id">{{ tpl.name }}</option>
+        }
+      </select>
+      <small class="text-muted d-block mt-1">
+        Override schema lookup with a specific table template.
+      </small>
+    } @else {
+      <small class="text-muted">No table templates available.</small>
+    }
+  } @else {
+    <small class="text-muted"><i class="bi bi-hourglass-split me-1"></i>Loading...</small>
+  }
+</div>
+
 <ul class="nav nav-tabs nav-sm px-1 pt-1">
   <li class="nav-item">
     <button

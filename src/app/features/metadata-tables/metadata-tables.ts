@@ -12,7 +12,7 @@ import {
   LabGroupQueryResponse
 } from '../../shared/models';
 import { User, LabGroupService, MetadataValidationConfig } from '@noatgnu/cupcake-core';
-import { MetadataTableService } from '@noatgnu/cupcake-vanilla';
+import { MetadataTableService, MetadataTableQueryParams } from '@noatgnu/cupcake-vanilla';
 import { NavigationState } from '../../shared/services/navigation-state';
 import { ToastService } from '@noatgnu/cupcake-core';
 import { AsyncTaskUIService, MetadataValidationModal, ExcelExportModalComponent, ExcelExportOptions, MetadataTableEditModal, OpenInExcel } from '@noatgnu/cupcake-vanilla';
@@ -49,7 +49,11 @@ export class MetadataTablesComponent implements OnInit, OnDestroy {
     showShared: true,
     adminView: false,
     limit: 12,
-    offset: 0
+    offset: 0,
+    columnName: '',
+    columnValue: '',
+    columnType: '',
+    columnMatchExact: false
   });
 
   private labGroupParams = signal({
@@ -93,7 +97,11 @@ export class MetadataTablesComponent implements OnInit, OnDestroy {
       isLocked: [null],
       isPublished: [null],
       showShared: [true],
-      adminView: [false]
+      adminView: [false],
+      columnName: [''],
+      columnValue: [''],
+      columnType: [''],
+      columnMatchExact: [false]
     });
 
     effect(() => {
@@ -159,7 +167,11 @@ export class MetadataTablesComponent implements OnInit, OnDestroy {
       showShared: this.showSharedTables(),
       adminView: this.showAdminView(),
       limit: this.pageSize(),
-      offset: 0
+      offset: 0,
+      columnName: '',
+      columnValue: '',
+      columnType: '',
+      columnMatchExact: false
     });
   }
 
@@ -191,7 +203,11 @@ export class MetadataTablesComponent implements OnInit, OnDestroy {
         showShared: this.showSharedTables(),
         adminView: this.showAdminView(),
         limit: this.pageSize(),
-        offset: 0
+        offset: 0,
+        columnName: formValue.columnName || '',
+        columnValue: formValue.columnValue || '',
+        columnType: formValue.columnType || '',
+        columnMatchExact: formValue.columnMatchExact || false
       });
     });
   }
@@ -199,15 +215,18 @@ export class MetadataTablesComponent implements OnInit, OnDestroy {
   private loadTablesWithParams(params: any): void {
     this.isLoading.set(true);
 
-    const requestParams = {
+    const requestParams: MetadataTableQueryParams = {
       search: params.search || undefined,
       labGroupId: params.labGroupId || undefined,
-      isLocked: params.isLocked,
-      isPublished: params.isPublished,
+      isLocked: params.isLocked ?? undefined,
+      isPublished: params.isPublished ?? undefined,
       showShared: params.showShared || false,
-      adminView: params.adminView || false,
       limit: params.limit,
-      offset: params.offset
+      offset: params.offset,
+      columnName: params.columnName || undefined,
+      columnValue: params.columnValue || undefined,
+      columnType: params.columnType || undefined,
+      columnMatch: (params.columnName || params.columnValue) ? (params.columnMatchExact ? 'exact' : 'contains') : undefined
     };
 
     this.metadataTableService.getMetadataTables(requestParams).subscribe({

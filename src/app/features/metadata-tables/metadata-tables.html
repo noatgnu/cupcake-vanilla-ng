@@ -90,6 +90,56 @@
           </div>
         </form>
 
+        <!-- Column Content Search -->
+        <div class="row g-3 mt-2 pt-3 border-top">
+          <div class="col-12">
+            <small class="text-muted fw-medium"><i class="bi bi-filter me-1"></i>Column Content</small>
+          </div>
+          <div class="col-md-4">
+            <div class="form-floating">
+              <input
+                type="search"
+                class="form-control"
+                id="columnNameSearch"
+                formControlName="columnName"
+                placeholder="Column name">
+              <label for="columnNameSearch">Column Name</label>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="form-floating">
+              <input
+                type="search"
+                class="form-control"
+                id="columnValueSearch"
+                formControlName="columnValue"
+                placeholder="Column value">
+              <label for="columnValueSearch">Column Value</label>
+            </div>
+          </div>
+          <div class="col-md-2">
+            <div class="form-floating">
+              <select class="form-select" id="columnTypeSelect" formControlName="columnType">
+                <option value="">Any Type</option>
+                <option value="characteristics">Characteristics</option>
+                <option value="factor value">Factor Value</option>
+                <option value="comment">Comment</option>
+              </select>
+              <label for="columnTypeSelect">Column Type</label>
+            </div>
+          </div>
+          <div class="col-md-2">
+            <div class="form-check form-switch mt-3">
+              <input
+                class="form-check-input"
+                type="checkbox"
+                id="columnMatchExact"
+                formControlName="columnMatchExact">
+              <label class="form-check-label" for="columnMatchExact">Exact match</label>
+            </div>
+          </div>
+        </div>
+
         <!-- Permission Controls -->
         <div class="row g-3 mt-2 pt-3 border-top">
           <div class="col-md-4">
@@ -339,7 +389,7 @@
             <i class="bi bi-table fs-1 text-muted mb-3"></i>
             <h5 class="text-muted">No Metadata Tables Found</h5>
             <p class="text-muted">
-              @if (searchForm.get('search')?.value || searchForm.get('labGroupId')?.value) {
+              @if (searchForm.get('search')?.value || searchForm.get('labGroupId')?.value || searchForm.get('columnName')?.value || searchForm.get('columnValue')?.value) {
                 Try adjusting your search criteria or create a new table.
               } @else {
                 Get started by creating your first metadata table.
