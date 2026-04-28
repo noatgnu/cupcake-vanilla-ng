@@ -1,0 +1,278 @@
+<div class="modal-header">
+  <h5 class="modal-title">
+    <i class="bi bi-file-earmark-arrow-up me-2"></i>Import / Override Columns
+    @if (config) {
+      <small class="text-muted ms-2 fw-normal">{{ config.tableName }}</small>
+    }
+  </h5>
+  <button type="button" class="btn-close" (click)="dismiss()"></button>
+</div>
+
+<div class="modal-body">
+  @if (error()) {
+    <div class="alert alert-danger py-2 small">{{ error() }}</div>
+  }
+
+  @switch (step()) {
+
+    @case ('upload') {
+      <form [formGroup]="optionsForm">
+        <div class="mb-3">
+          <label class="form-label fw-medium">File</label>
+          <input
+            type="file"
+            class="form-control form-control-sm"
+            accept=".tsv,.txt,.xlsx,.xls,.csv"
+            (change)="onFileChange($event)">
+          <div class="form-text">SDRF (.tsv), Excel (.xlsx), or CSV</div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-medium">Initial mapping algorithm</label>
+          <select class="form-select form-select-sm" formControlName="algorithm">
+            <option value="name">By name — match headers to columns with the same name</option>
+            <option value="position">By position — match by column index order</option>
+            <option value="none">None — map everything manually</option>
+          </select>
+          <div class="form-text">Duplicate names on either side are always left unmatched for manual resolution.</div>
+        </div>
+
+        <div class="mb-3 d-flex flex-column gap-2">
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="updateValue" formControlName="updateValue">
+            <label class="form-check-label" for="updateValue">Update default value</label>
+          </div>
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="updateModifiers" formControlName="updateModifiers">
+            <label class="form-check-label" for="updateModifiers">Update per-sample values</label>
+          </div>
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="normalizeOntology" formControlName="normalizeOntology">
+            <label class="form-check-label" for="normalizeOntology">Normalise ontology terms on commit</label>
+          </div>
+        </div>
+      </form>
+    }
+
+    @case ('map') {
+      @let result = suggestResult()!;
+
+      <div class="d-flex align-items-center justify-content-between mb-2">
+        <small class="text-muted">
+          {{ result.fileHeaders.length }} file columns &middot; {{ result.tableColumns.length }} table columns
+          @if (newColumnCount() > 0) {
+            &middot; <span class="text-warning fw-medium">{{ newColumnCount() }} will be created</span>
+          }
+        </small>
+        <div class="d-flex gap-1 align-items-center">
+          <select class="form-select form-select-sm" style="width:auto" [formControl]="$any(optionsForm.get('algorithm'))">
+            <option value="name">By name</option>
+            <option value="position">By position</option>
+            <option value="none">None</option>
+          </select>
+          <button class="btn btn-outline-secondary btn-sm" [disabled]="isLoading()" (click)="reapplyAlgorithm()">
+            @if (isLoading()) {
+              <span class="spinner-border spinner-border-sm"></span>
+            } @else {
+              <i class="bi bi-arrow-clockwise"></i>
+            }
+          </button>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table table-sm table-bordered mb-0 small">
+          <thead class="table-light">
+            <tr>
+              <th>File column</th>
+              <th>Maps to</th>
+              <th class="text-center" style="width:60px">Ignore</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (fh of result.fileHeaders; track fh.fileColIndex) {
+              <tr [class.table-warning]="!isIgnored(fh.fileColIndex) && getColumnIdForFileCol(fh.fileColIndex) === 'null'"
+                  [class.text-muted]="isIgnored(fh.fileColIndex)">
+                <td>
+                  {{ fh.header }}
+                  @if (!isIgnored(fh.fileColIndex) && getColumnIdForFileCol(fh.fileColIndex) === 'null') {
+                    <span class="badge bg-warning text-dark ms-1" title="This column does not exist and will be created">
+                      <i class="bi bi-exclamation-triangle me-1"></i>new
+                    </span>
+                  }
+                  @if (isIgnored(fh.fileColIndex)) {
+                    <span class="badge bg-secondary ms-1">ignored</span>
+                  }
+                </td>
+                <td>
+                  @if (isIgnored(fh.fileColIndex)) {
+                    <span class="text-muted fst-italic">—</span>
+                  } @else {
+                    <select
+                      class="form-select form-select-sm"
+                      [value]="getColumnIdForFileCol(fh.fileColIndex)"
+                      (change)="updateMappingEntry(fh.fileColIndex, $any($event.target).value)">
+                      <option value="null">Create new column</option>
+                      <optgroup label="Existing table columns">
+                        @for (tc of result.tableColumns; track tc.columnId) {
+                          <option
+                            [value]="tc.columnId"
+                            [disabled]="mappedColumnIds().has(tc.columnId) && getColumnIdForFileCol(fh.fileColIndex) !== tc.columnId.toString()">
+                            {{ tc.columnName }}
+                          </option>
+                        }
+                      </optgroup>
+                    </select>
+                  }
+                </td>
+                <td class="text-center">
+                  @if (isIgnored(fh.fileColIndex)) {
+                    <button class="btn btn-link btn-sm p-0 text-primary" (click)="restoreMappingEntry(fh.fileColIndex)" title="Include">
+                      <i class="bi bi-plus-circle"></i>
+                    </button>
+                  } @else {
+                    <button class="btn btn-link btn-sm p-0 text-secondary" (click)="removeMappingEntry(fh.fileColIndex)" title="Ignore this column">
+                      <i class="bi bi-x-circle"></i>
+                    </button>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    @case ('preview') {
+      @let result = previewResult()!;
+
+      @if (result.sampleCountMismatch) {
+        <div class="alert alert-warning py-2 small mb-2">
+          <i class="bi bi-exclamation-triangle me-1"></i>
+          @for (w of result.warnings; track $index) { {{ w }} }
+        </div>
+      }
+
+      @if (result.columnsMatched.length > 0) {
+        <div class="mb-3">
+          <div class="fw-medium small mb-1">
+            <i class="bi bi-pencil me-1"></i>Columns to update
+            <span class="badge bg-primary ms-1">{{ result.columnsMatched.length }}</span>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-sm table-bordered mb-0 small">
+              <thead class="table-light">
+                <tr>
+                  <th>Column</th>
+                  <th>Current value</th>
+                  <th>New value</th>
+                  <th class="text-center">Modifiers</th>
+                  <th class="text-center">Rows</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (col of result.columnsMatched; track col.columnId) {
+                  <tr [class.table-warning]="col.currentValue !== col.newValue && col.newValue !== null">
+                    <td class="text-nowrap">{{ col.columnName }}</td>
+                    <td class="text-muted text-truncate" style="max-width:140px">{{ col.currentValue ?? '—' }}</td>
+                    <td class="text-truncate" style="max-width:140px">{{ col.newValue ?? '—' }}</td>
+                    <td class="text-center">
+                      @if (col.newModifiers.length > 0) {
+                        <span class="badge bg-info">{{ col.newModifiers.length }}</span>
+                      } @else { — }
+                    </td>
+                    <td class="text-center">{{ col.rowsChanged }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
+
+      @if (result.columnsToAdd.length > 0) {
+        <div class="mb-3">
+          <div class="fw-medium small mb-1 text-warning">
+            <i class="bi bi-exclamation-triangle me-1"></i>Columns that will be created
+            <span class="badge bg-warning text-dark ms-1">{{ result.columnsToAdd.length }}</span>
+          </div>
+          <ul class="list-unstyled small mb-0">
+            @for (col of result.columnsToAdd; track col.fileColIndex) {
+              <li><i class="bi bi-plus me-1 text-warning"></i>{{ col.fileHeader }}</li>
+            }
+          </ul>
+        </div>
+      }
+
+      @if (result.columnsMatched.length === 0 && result.columnsToAdd.length === 0) {
+        <div class="text-center text-muted py-3 small">
+          <i class="bi bi-inbox d-block fs-4 mb-1"></i>No columns would be changed.
+        </div>
+      }
+    }
+
+    @case ('confirming') {
+      <div class="text-center py-4">
+        <div class="spinner-border spinner-border-sm text-primary"></div>
+        <small class="d-block mt-2 text-muted">Applying override...</small>
+      </div>
+    }
+
+    @case ('done') {
+      @let result = commitResult()!;
+      <div class="alert alert-success py-2 small">
+        <i class="bi bi-check-circle me-1"></i>{{ result.message }}
+      </div>
+      <ul class="list-unstyled small mb-0">
+        <li><strong>{{ result.columnsUpdated }}</strong> columns updated</li>
+        @if (result.columnsAdded > 0) {
+          <li><strong>{{ result.columnsAdded }}</strong> columns created</li>
+        }
+      </ul>
+    }
+
+  }
+</div>
+
+<div class="modal-footer">
+  @switch (step()) {
+    @case ('upload') {
+      <button type="button" class="btn btn-secondary btn-sm" (click)="dismiss()">Cancel</button>
+      <button
+        type="button"
+        class="btn btn-primary btn-sm"
+        [disabled]="!selectedFile() || isLoading()"
+        (click)="generateMapping()">
+        @if (isLoading()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+        Next: Map Columns
+      </button>
+    }
+
+    @case ('map') {
+      <button type="button" class="btn btn-secondary btn-sm" (click)="backToUpload()">Back</button>
+      <button
+        type="button"
+        class="btn btn-primary btn-sm"
+        [disabled]="userMapping().length === 0 || isLoading()"
+        (click)="preview()">
+        @if (isLoading()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+        Preview Changes
+      </button>
+    }
+
+    @case ('preview') {
+      <button type="button" class="btn btn-secondary btn-sm" (click)="backToMap()">Back</button>
+      <button
+        type="button"
+        class="btn btn-warning btn-sm"
+        [disabled]="previewResult()!.columnsMatched.length === 0 && previewResult()!.columnsToAdd.length === 0"
+        (click)="confirm()">
+        Confirm Import
+      </button>
+    }
+
+    @case ('done') {
+      <button type="button" class="btn btn-primary btn-sm" (click)="close()">Close</button>
+    }
+  }
+</div>

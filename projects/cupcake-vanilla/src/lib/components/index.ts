@@ -27,3 +27,4 @@ export * from './sample-pool-create-modal/sample-pool-create-modal';
 export * from './metadata-column-autofill-modal/metadata-column-autofill-modal';
 export * from './metadata-column-history-modal/metadata-column-history-modal';
 export * from './open-in-excel/open-in-excel';
+export * from './column-override-import-modal/column-override-import-modal';

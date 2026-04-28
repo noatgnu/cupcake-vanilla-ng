@@ -13,7 +13,12 @@ import {
   SampleCountValidationResponse,
   SampleCountConfirmationError,
   AdvancedAutofillRequest,
-  AdvancedAutofillResponse
+  AdvancedAutofillResponse,
+  ColumnOverrideMappingEntry,
+  ColumnOverrideImportOptions,
+  ColumnOverrideSuggestResult,
+  ColumnOverridePreviewResult,
+  ColumnOverrideCommitResult,
 } from '../models';
 
 export interface MetadataTableQueryParams {
@@ -265,5 +270,32 @@ export class MetadataTableService extends BaseApiService {
 
   advancedAutofill(id: number, request: AdvancedAutofillRequest): Observable<AdvancedAutofillResponse> {
     return this.post<AdvancedAutofillResponse>(`${this.apiUrl}/metadata-tables/${id}/advanced_autofill/`, request);
+  }
+
+  suggestColumnMapping(tableId: number, file: File, algorithm: 'name' | 'position' | 'none'): Observable<ColumnOverrideSuggestResult> {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('algorithm', algorithm);
+    return this.post<ColumnOverrideSuggestResult>(`${this.apiUrl}/metadata-tables/${tableId}/suggest_column_mapping/`, formData);
+  }
+
+  previewColumnOverride(tableId: number, file: File, mapping: ColumnOverrideMappingEntry[], options: ColumnOverrideImportOptions): Observable<ColumnOverridePreviewResult> {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('column_mapping', JSON.stringify(mapping));
+    formData.append('update_value', String(options.updateValue));
+    formData.append('update_modifiers', String(options.updateModifiers));
+    formData.append('normalize_ontology', 'false');
+    return this.post<ColumnOverridePreviewResult>(`${this.apiUrl}/metadata-tables/${tableId}/preview_column_override/`, formData);
+  }
+
+  commitColumnOverride(tableId: number, file: File, mapping: ColumnOverrideMappingEntry[], options: ColumnOverrideImportOptions): Observable<ColumnOverrideCommitResult> {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('column_mapping', JSON.stringify(mapping));
+    formData.append('update_value', String(options.updateValue));
+    formData.append('update_modifiers', String(options.updateModifiers));
+    formData.append('normalize_ontology', String(options.normalizeOntology ?? true));
+    return this.post<ColumnOverrideCommitResult>(`${this.apiUrl}/metadata-tables/${tableId}/commit_column_override/`, formData);
   }
 }

@@ -33,7 +33,9 @@ import {
   MetadataColumnAutofillModal,
   MetadataColumnAutofillConfig,
   MetadataColumnHistoryModal,
-  ColumnHistoryModalConfig
+  ColumnHistoryModalConfig,
+  ColumnOverrideImportModal,
+  ColumnOverrideImportModalConfig,
 } from '../';
 import { SamplePoolDetailsModal } from '../sample-pool-details-modal/sample-pool-details-modal';
 import { SamplePoolEditModal } from '../sample-pool-edit-modal/sample-pool-edit-modal';
@@ -1040,6 +1042,33 @@ export class MetadataTableDetails implements OnInit, OnDestroy {
     });
 
     modalRef.componentInstance.config = config;
+  }
+
+  openColumnOverrideImportModal(): void {
+    const table = this.table();
+    if (!table) return;
+
+    const config: ColumnOverrideImportModalConfig = {
+      tableId: table.id,
+      tableName: table.name,
+      sampleCount: table.sampleCount,
+    };
+
+    const modalRef = this.modalService.open(ColumnOverrideImportModal, {
+      size: 'lg',
+      backdrop: 'static',
+    });
+
+    modalRef.componentInstance.config = config;
+
+    modalRef.result
+      .then((result) => {
+        if (result) {
+          this.toastService.success(`Import applied: ${result.columnsUpdated} column(s) updated`);
+          this.loadTable(table.id);
+        }
+      })
+      .catch(() => {});
   }
 
   // Update column settings

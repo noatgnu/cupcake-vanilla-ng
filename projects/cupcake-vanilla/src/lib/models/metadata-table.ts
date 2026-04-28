@@ -128,3 +128,57 @@ export interface AdvancedAutofillResponse {
   variationsCombinations: number;
   strategy: string;
 }
+
+export interface ColumnOverrideMappingEntry {
+  fileColIndex: number;
+  columnId: number | null;
+}
+
+export interface ColumnOverrideImportOptions {
+  updateValue: boolean;
+  updateModifiers: boolean;
+  normalizeOntology?: boolean;
+}
+
+export interface ColumnOverrideSuggestResult {
+  fileHeaders: { fileColIndex: number; header: string }[];
+  tableColumns: { columnId: number; columnName: string; columnPosition: number }[];
+  suggestedMapping: ColumnOverrideMappingEntry[];
+  fileRowCount: number;
+  tableSampleCount: number;
+}
+
+export interface ColumnOverrideMatchedColumn {
+  columnId: number;
+  columnName: string;
+  fileHeader: string;
+  fileColIndex: number;
+  currentValue: string | null;
+  newValue: string | null;
+  currentModifiers: { samples: string; value: string }[];
+  newModifiers: { samples: string; value: string }[];
+  rowsChanged: number;
+}
+
+export interface ColumnOverridePreviewResult {
+  columnsMatched: ColumnOverrideMatchedColumn[];
+  columnsToAdd: {
+    fileHeader: string;
+    fileColIndex: number;
+    columnType: string;
+    newValue: string | null;
+    newModifiers: { samples: string; value: string }[];
+    warning: string;
+  }[];
+  warnings: string[];
+  sampleCountMismatch: boolean;
+  fileRowCount: number;
+}
+
+export interface ColumnOverrideCommitResult {
+  message: string;
+  columnsUpdated: number;
+  columnsAdded: number;
+  warnings: string[];
+  updatedColumns: { id: number; name: string }[];
+}
