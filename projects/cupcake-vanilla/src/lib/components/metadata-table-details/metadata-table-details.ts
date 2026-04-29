@@ -41,11 +41,12 @@ import { SamplePoolDetailsModal } from '../sample-pool-details-modal/sample-pool
 import { SamplePoolEditModal } from '../sample-pool-edit-modal/sample-pool-edit-modal';
 import { SamplePoolCreateModal } from '../sample-pool-create-modal/sample-pool-create-modal';
 import { ToastService } from '@noatgnu/cupcake-core';
+import { DualScrollDirective } from '../../directives/dual-scroll';
 
 @Component({
   selector: 'ccv-metadata-table-details',
   standalone: true,
-  imports: [CommonModule, RouterModule, NgbModule, DragDropModule],
+  imports: [CommonModule, RouterModule, NgbModule, DragDropModule, DualScrollDirective],
   templateUrl: './metadata-table-details.html',
   styleUrl: './metadata-table-details.scss',
   changeDetection: ChangeDetectionStrategy.OnPush

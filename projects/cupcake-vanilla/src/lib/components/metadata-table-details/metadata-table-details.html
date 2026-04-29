@@ -288,7 +288,7 @@
             </h5>
           </div>
           <div class="card-body p-0">
-            <div class="table-responsive">
+            <div class="table-responsive" appDualScroll>
               <table class="table table-hover mb-0">
                 <thead class="table-light">
                   <tr>
@@ -429,7 +429,7 @@
         @if (hasColumns()) {
           <!-- List Mode: Column Definitions -->
           @if (viewMode() === 'list') {
-            <div class="table-responsive">
+            <div class="table-responsive" appDualScroll>
               <table class="table table-hover mb-0">
                 <thead>
                   <tr>
@@ -592,7 +592,7 @@
           <!-- Table Data -->
           @if (viewMode() === 'table') {
             <div class="card-body p-0">
-              <div class="table-responsive">
+              <div class="table-responsive" appDualScroll>
                 <table class="table table-hover mb-0">
                   <thead class="table-light">
                     <tr>
