@@ -39,7 +39,8 @@ describe('ManagementComponent', () => {
       'restoreDatabase',
       'restoreMedia',
       'deleteBackup',
-      'openBackupFolder'
+      'openBackupFolder',
+      'importInitialDatabase'
     ], {
       commandOutput: commandOutputSignal.asReadonly(),
       isWails: false
@@ -58,6 +59,7 @@ describe('ManagementComponent', () => {
     mockWailsService.restoreMedia.and.resolveTo();
     mockWailsService.deleteBackup.and.resolveTo();
     mockWailsService.openBackupFolder.and.resolveTo();
+    mockWailsService.importInitialDatabase.and.resolveTo();
 
     await TestBed.configureTestingModule({
       imports: [ManagementComponent],
@@ -74,8 +76,8 @@ describe('ManagementComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should have seven commands', () => {
-    expect(component.commands().length).toBe(7);
+  it('should have eight commands', () => {
+    expect(component.commands().length).toBe(8);
   });
 
   it('should have sync-schemas command', () => {
@@ -116,6 +118,12 @@ describe('ManagementComponent', () => {
     const cmd = component.commands().find(c => c.name === 'restore-media');
     expect(cmd).toBeTruthy();
     expect(cmd?.displayName).toBe('Restore Media');
+  });
+
+  it('should have import-initial-database command', () => {
+    const cmd = component.commands().find(c => c.name === 'import-initial-database');
+    expect(cmd).toBeTruthy();
+    expect(cmd?.displayName).toBe('Import Pre-built Database');
   });
 
   it('should start with empty output lines', () => {
@@ -288,6 +296,24 @@ describe('ManagementComponent', () => {
     it('should run restore-media command', async () => {
       await component.runCommand('restore-media');
       expect(mockWailsService.restoreMedia).toHaveBeenCalled();
+    });
+
+    it('should run import-initial-database command', async () => {
+      await component.runCommand('import-initial-database');
+      expect(mockWailsService.importInitialDatabase).toHaveBeenCalled();
+    });
+
+    it('should handle import-initial-database error', async () => {
+      mockWailsService.importInitialDatabase.and.rejectWith(new Error('Import failed'));
+      await component.runCommand('import-initial-database');
+      const lines = component.outputLines();
+      expect(lines.some(l => l.type === 'error')).toBeTrue();
+    });
+
+    it('should refresh stats after import-initial-database', async () => {
+      mockWailsService.listBackups.calls.reset();
+      await component.runCommand('import-initial-database');
+      expect(mockWailsService.listBackups).toHaveBeenCalled();
     });
 
     it('should delete backup', async () => {

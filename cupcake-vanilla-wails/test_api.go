@@ -82,6 +82,8 @@ func (t *TestAPI) Start(port int) {
 	mux.HandleFunc("/test/backup/restore-media", t.handleBackupRestoreMedia)
 	mux.HandleFunc("/test/backup/list", t.handleBackupList)
 	mux.HandleFunc("/test/backup/delete", t.handleBackupDelete)
+	mux.HandleFunc("/test/backup/import-initial-database", t.handleBackupImportInitialDatabase)
+	mux.HandleFunc("/test/backup/seed-initial-database", t.handleBackupSeedInitialDatabase)
 
 	addr := fmt.Sprintf("127.0.0.1:%d", port)
 	log.Printf("[TestAPI] Starting test API server on %s", addr)
@@ -1486,5 +1488,97 @@ func (t *TestAPI) handleBackupDelete(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"success": true,
 		"message": "Backup deleted",
+	})
+}
+
+func (t *TestAPI) handleBackupSeedInitialDatabase(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req struct {
+		DestPath string `json:"destPath"`
+		Content  string `json:"content"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if req.DestPath == "" {
+		req.DestPath = os.TempDir()
+	}
+
+	seedFile := req.DestPath + "/test-initial.sqlite3"
+	content := []byte(req.Content)
+	if len(content) == 0 {
+		content = []byte("SQLite format 3\x00test-initial-database-seed-content")
+	}
+
+	if err := os.MkdirAll(req.DestPath, 0755); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if err := os.WriteFile(seedFile, content, 0644); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	log.Printf("[TestAPI] Seeded initial database at: %s (%d bytes)", seedFile, len(content))
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"success": true,
+		"path":    seedFile,
+		"size":    len(content),
+	})
+}
+
+func (t *TestAPI) handleBackupImportInitialDatabase(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req struct {
+		FilePath string `json:"filePath"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if req.FilePath == "" {
+		http.Error(w, "filePath is required", http.StatusBadRequest)
+		return
+	}
+
+	if t.app.backupManager == nil {
+		http.Error(w, "backup manager not initialized", http.StatusInternalServerError)
+		return
+	}
+
+	backendDir := t.app.getBackendPath()
+	log.Printf("[TestAPI] Importing initial database from: %s into backendDir: %s", req.FilePath, backendDir)
+
+	if err := t.app.backupManager.ImportDatabaseFromFile(req.FilePath, backendDir); err != nil {
+		log.Printf("[TestAPI] Import initial database error: %v", err)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"success": false,
+			"message": err.Error(),
+		})
+		return
+	}
+
+	log.Println("[TestAPI] Initial database imported successfully")
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"success":    true,
+		"message":    "Initial database imported",
+		"backendDir": backendDir,
 	})
 }

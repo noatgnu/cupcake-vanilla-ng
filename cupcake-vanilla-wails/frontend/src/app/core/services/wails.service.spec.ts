@@ -261,5 +261,9 @@ describe('WailsService', () => {
     it('rollbackBackend should return without error', async () => {
       await expectAsync(service.rollbackBackend()).toBeResolved();
     });
+
+    it('importInitialDatabase should return without error', async () => {
+      await expectAsync(service.importInitialDatabase()).toBeResolved();
+    });
   });
 });
