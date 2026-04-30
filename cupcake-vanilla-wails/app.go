@@ -1512,3 +1512,53 @@ func (a *App) RollbackBackend() error {
 	a.sendBackendLog("Rollback completed successfully", "success")
 	return nil
 }
+
+func (a *App) ImportInitialDatabase() error {
+	emit := func(output string, isError bool) {
+		msgType := "info"
+		if isError {
+			msgType = "error"
+		}
+		a.wailsApp.Event.Emit("command:output", map[string]interface{}{
+			"command": "import-initial-database",
+			"output":  output,
+			"type":    msgType,
+		})
+	}
+
+	selectedFile, err := a.wailsApp.Dialog.OpenFile().
+		SetTitle("Select Initial Database File").
+		AddFilter("SQLite Database", "*.sqlite3").
+		PromptForSingleSelection()
+	if err != nil {
+		return fmt.Errorf("file selection failed: %w", err)
+	}
+	if selectedFile == "" {
+		return nil
+	}
+
+	emit("Stopping backend services...", false)
+	a.backendManager.StopServices()
+
+	backendDir := a.getBackendPath()
+	emit(fmt.Sprintf("Importing database from: %s", selectedFile), false)
+	if err := a.backupManager.ImportDatabaseFromFile(selectedFile, backendDir); err != nil {
+		return err
+	}
+
+	emit("Running database migrations...", false)
+	if err := a.backendManager.RunMigrations(backendDir, a.venvPath); err != nil {
+		return fmt.Errorf("migrations failed: %w", err)
+	}
+
+	emit("Restarting backend services...", false)
+	if err := a.backendManager.StartDjangoServer(backendDir, a.venvPath); err != nil {
+		return fmt.Errorf("failed to restart Django server: %w", err)
+	}
+	if err := a.backendManager.StartRQWorker(backendDir, a.venvPath); err != nil {
+		return fmt.Errorf("failed to restart RQ worker: %w", err)
+	}
+
+	emit("Database import completed successfully.", false)
+	return nil
+}

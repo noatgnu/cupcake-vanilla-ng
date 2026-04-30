@@ -147,6 +147,17 @@ export class ManagementComponent implements OnInit, OnDestroy {
       icon: 'bi bi-file-earmark-arrow-up',
       expanded: false,
       options: []
+    },
+    {
+      name: 'import-initial-database',
+      displayName: 'Import Pre-built Database',
+      description: 'Replace the current database with a pre-populated SQLite file',
+      running: false,
+      success: null,
+      count: null,
+      icon: 'bi bi-database-add',
+      expanded: false,
+      options: []
     }
   ]);
 
@@ -293,6 +304,9 @@ export class ManagementComponent implements OnInit, OnDestroy {
           break;
         case 'restore-media':
           await this.wails.restoreMedia();
+          break;
+        case 'import-initial-database':
+          await this.wails.importInitialDatabase();
           break;
       }
 

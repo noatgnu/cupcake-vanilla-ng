@@ -515,4 +515,9 @@ export class WailsService {
     if (!this.isWails) return;
     return App.RollbackBackend();
   }
+
+  async importInitialDatabase(): Promise<void> {
+    if (!this.isWails) return;
+    return App.ImportInitialDatabase();
+  }
 }

@@ -2,6 +2,7 @@ package services
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -254,6 +255,40 @@ func (b *BackupManager) ListBackups() ([]BackupInfo, error) {
 	})
 
 	return backups, nil
+}
+
+func (b *BackupManager) ImportDatabaseFromFile(srcPath, backendDir string) error {
+	b.log(fmt.Sprintf("Importing database from: %s", srcPath), "info")
+
+	dbDir := filepath.Join(backendDir, "cupcake-vanilla")
+	if err := os.MkdirAll(dbDir, 0755); err != nil {
+		b.log(fmt.Sprintf("Failed to create database directory: %v", err), "error")
+		return fmt.Errorf("failed to create database directory: %w", err)
+	}
+
+	dbPath := filepath.Join(dbDir, "cupcake_vanilla.db")
+
+	src, err := os.Open(srcPath)
+	if err != nil {
+		b.log(fmt.Sprintf("Failed to open source file: %v", err), "error")
+		return fmt.Errorf("failed to open source file: %w", err)
+	}
+	defer src.Close()
+
+	dst, err := os.Create(dbPath)
+	if err != nil {
+		b.log(fmt.Sprintf("Failed to create destination database file: %v", err), "error")
+		return fmt.Errorf("failed to create database file: %w", err)
+	}
+	defer dst.Close()
+
+	if _, err := io.Copy(dst, src); err != nil {
+		b.log(fmt.Sprintf("Failed to copy database file: %v", err), "error")
+		return fmt.Errorf("failed to copy database file: %w", err)
+	}
+
+	b.log("Database file imported successfully", "success")
+	return nil
 }
 
 func (b *BackupManager) DeleteBackup(backupPath string) error {

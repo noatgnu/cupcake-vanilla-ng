@@ -1,6 +1,7 @@
 package services
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
 	"testing"
@@ -241,6 +242,183 @@ func TestDeleteBackupInvalidPath(t *testing.T) {
 	err := backupManager.DeleteBackup("/etc/passwd")
 	if err == nil {
 		t.Error("DeleteBackup should fail for path outside backup directory")
+	}
+}
+
+func TestImportDatabaseFromFile(t *testing.T) {
+	testDataPath := filepath.Join(os.TempDir(), "cupcake-backup-test-import")
+	defer os.RemoveAll(testDataPath)
+
+	if err := os.MkdirAll(testDataPath, 0755); err != nil {
+		t.Fatalf("Failed to create test data path: %v", err)
+	}
+
+	redisManager := NewRedisManager(RedisManagerOptions{
+		UserDataPath: testDataPath,
+		IsDev:        true,
+	})
+	backendManager := NewBackendManager(testDataPath, true, redisManager)
+	backupManager := NewBackupManager(testDataPath, backendManager, nil)
+
+	srcContent := []byte("SQLite format 3\x00fake-database-content-for-test")
+	srcFile := filepath.Join(testDataPath, "test-import.sqlite3")
+	if err := os.WriteFile(srcFile, srcContent, 0644); err != nil {
+		t.Fatalf("Failed to create source database file: %v", err)
+	}
+
+	backendDir := filepath.Join(testDataPath, "backend")
+	if err := backupManager.ImportDatabaseFromFile(srcFile, backendDir); err != nil {
+		t.Fatalf("ImportDatabaseFromFile failed: %v", err)
+	}
+
+	expectedPath := filepath.Join(backendDir, "cupcake-vanilla", "cupcake_vanilla.db")
+	if _, err := os.Stat(expectedPath); os.IsNotExist(err) {
+		t.Errorf("Expected database file at %s does not exist", expectedPath)
+	}
+
+	importedContent, err := os.ReadFile(expectedPath)
+	if err != nil {
+		t.Fatalf("Failed to read imported database file: %v", err)
+	}
+
+	if !bytes.Equal(importedContent, srcContent) {
+		t.Errorf("Imported database content does not match source: got %d bytes, expected %d bytes", len(importedContent), len(srcContent))
+	}
+}
+
+func TestImportDatabaseFromFileMissingSource(t *testing.T) {
+	testDataPath := filepath.Join(os.TempDir(), "cupcake-backup-test-import-missing")
+	defer os.RemoveAll(testDataPath)
+
+	if err := os.MkdirAll(testDataPath, 0755); err != nil {
+		t.Fatalf("Failed to create test data path: %v", err)
+	}
+
+	redisManager := NewRedisManager(RedisManagerOptions{
+		UserDataPath: testDataPath,
+		IsDev:        true,
+	})
+	backendManager := NewBackendManager(testDataPath, true, redisManager)
+	backupManager := NewBackupManager(testDataPath, backendManager, nil)
+
+	backendDir := filepath.Join(testDataPath, "backend")
+	err := backupManager.ImportDatabaseFromFile("/nonexistent/path/db.sqlite3", backendDir)
+	if err == nil {
+		t.Error("ImportDatabaseFromFile should fail when source file does not exist")
+	}
+}
+
+func TestExportThenImportDatabase(t *testing.T) {
+	testDataPath := filepath.Join(os.TempDir(), "cupcake-backup-test-roundtrip")
+	defer os.RemoveAll(testDataPath)
+
+	if err := os.MkdirAll(testDataPath, 0755); err != nil {
+		t.Fatalf("Failed to create test data path: %v", err)
+	}
+
+	redisManager := NewRedisManager(RedisManagerOptions{
+		UserDataPath: testDataPath,
+		IsDev:        true,
+	})
+	backendManager := NewBackendManager(testDataPath, true, redisManager)
+	backupManager := NewBackupManager(testDataPath, backendManager, nil)
+
+	exportContent := []byte("SQLite format 3\x00exported-database-content-round-trip-test")
+
+	exportFile := filepath.Join(backupManager.GetBackupDir(), "default-2024-01-01-120000.sqlite3")
+	if err := os.WriteFile(exportFile, exportContent, 0644); err != nil {
+		t.Fatalf("Failed to write export file: %v", err)
+	}
+
+	backups, err := backupManager.ListBackups()
+	if err != nil {
+		t.Fatalf("ListBackups failed: %v", err)
+	}
+
+	var exportedBackup *BackupInfo
+	for i := range backups {
+		if backups[i].Type == "database" {
+			exportedBackup = &backups[i]
+			break
+		}
+	}
+
+	if exportedBackup == nil {
+		t.Fatal("No database backup found in list after export")
+	}
+
+	backendDir := filepath.Join(testDataPath, "backend")
+	if err := backupManager.ImportDatabaseFromFile(exportedBackup.Path, backendDir); err != nil {
+		t.Fatalf("ImportDatabaseFromFile failed: %v", err)
+	}
+
+	importedPath := filepath.Join(backendDir, "cupcake-vanilla", "cupcake_vanilla.db")
+	importedContent, err := os.ReadFile(importedPath)
+	if err != nil {
+		t.Fatalf("Failed to read imported database file: %v", err)
+	}
+
+	if !bytes.Equal(importedContent, exportContent) {
+		t.Errorf("Round-trip content mismatch: exported %d bytes, imported %d bytes", len(exportContent), len(importedContent))
+	}
+
+	exportStat, err := os.Stat(exportFile)
+	if err != nil {
+		t.Fatalf("Failed to stat export file: %v", err)
+	}
+	importStat, err := os.Stat(importedPath)
+	if err != nil {
+		t.Fatalf("Failed to stat imported file: %v", err)
+	}
+	if exportStat.Size() != importStat.Size() {
+		t.Errorf("File size mismatch: export=%d bytes, import=%d bytes", exportStat.Size(), importStat.Size())
+	}
+}
+
+func TestImportDatabaseOverwritesExisting(t *testing.T) {
+	testDataPath := filepath.Join(os.TempDir(), "cupcake-backup-test-overwrite")
+	defer os.RemoveAll(testDataPath)
+
+	if err := os.MkdirAll(testDataPath, 0755); err != nil {
+		t.Fatalf("Failed to create test data path: %v", err)
+	}
+
+	redisManager := NewRedisManager(RedisManagerOptions{
+		UserDataPath: testDataPath,
+		IsDev:        true,
+	})
+	backendManager := NewBackendManager(testDataPath, true, redisManager)
+	backupManager := NewBackupManager(testDataPath, backendManager, nil)
+
+	backendDir := filepath.Join(testDataPath, "backend")
+	dbDir := filepath.Join(backendDir, "cupcake-vanilla")
+	if err := os.MkdirAll(dbDir, 0755); err != nil {
+		t.Fatalf("Failed to create db dir: %v", err)
+	}
+
+	existingContent := []byte("old-database-content")
+	dbPath := filepath.Join(dbDir, "cupcake_vanilla.db")
+	if err := os.WriteFile(dbPath, existingContent, 0644); err != nil {
+		t.Fatalf("Failed to write existing database: %v", err)
+	}
+
+	newContent := []byte("SQLite format 3\x00new-imported-database-content")
+	srcFile := filepath.Join(testDataPath, "new-import.sqlite3")
+	if err := os.WriteFile(srcFile, newContent, 0644); err != nil {
+		t.Fatalf("Failed to create import source file: %v", err)
+	}
+
+	if err := backupManager.ImportDatabaseFromFile(srcFile, backendDir); err != nil {
+		t.Fatalf("ImportDatabaseFromFile failed: %v", err)
+	}
+
+	importedContent, err := os.ReadFile(dbPath)
+	if err != nil {
+		t.Fatalf("Failed to read database after import: %v", err)
+	}
+
+	if !bytes.Equal(importedContent, newContent) {
+		t.Errorf("Database was not overwritten: expected new content but got old or corrupted content")
 	}
 }
 
