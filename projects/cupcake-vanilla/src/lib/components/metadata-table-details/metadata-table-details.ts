@@ -861,6 +861,8 @@ export class MetadataTableDetails implements OnInit, OnDestroy {
       backdrop: 'static'
     });
 
+    modalRef.componentInstance.config = config;
+
     modalRef.componentInstance.valueSaved.subscribe((result: string | { value: string; sampleIndices: number[] }) => {
       let apiData: any;
 
