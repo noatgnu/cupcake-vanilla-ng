@@ -43,7 +43,7 @@ export class OntologyUtils {
   }
 
   static getActiveUnimodSpecifications(suggestion: any): (UnimodSpecification & { specNumber: string })[] {
-    return this.getUnimodSpecifications(suggestion).filter(spec => !spec['hidden']);
+    return this.getUnimodSpecifications(suggestion).filter(spec => spec['hidden'] !== '1');
   }
 
   static formatUnimodName(data: UnimodFullData): string {
