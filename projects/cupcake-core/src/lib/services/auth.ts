@@ -48,7 +48,7 @@ export class AuthService {
       window.addEventListener('tokenRefreshed', () => {
         this.updateAuthStateAfterRefresh();
       });
-      
+
       window.addEventListener('authCleared', () => {
         this.clearAuthData();
       });
@@ -57,14 +57,11 @@ export class AuthService {
 
   private hasValidTokenOnInit(): boolean {
     if (typeof window === 'undefined') return false;
-    
     const token = localStorage.getItem('ccvAccessToken');
     if (!token) return false;
-    
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
-      const now = Math.floor(Date.now() / 1000);
-      return payload.exp > now;
+      return payload.exp > Math.floor(Date.now() / 1000);
     } catch {
       return false;
     }
@@ -73,27 +70,16 @@ export class AuthService {
   private initializeAuthState(): void {
     const token = this.getAccessToken();
     const refreshToken = this.getRefreshToken();
-    
+
     if (token && !this.isTokenExpired(token)) {
       this._isAuthenticated.set(true);
-      
       const user = this.getUserFromToken();
       if (user) {
         this._currentUser.set(user);
       }
-
-      this.fetchUserProfile().subscribe({
-        next: (fullUser) => {
-        },
-        error: (error) => {
-        }
-      });
-    } else if (refreshToken && token && this.isTokenExpired(token)) {
-      this._isAuthenticated.set(false);
-      this._currentUser.set(null);
-    } else if (refreshToken && !token) {
-      this._isAuthenticated.set(false);
-      this._currentUser.set(null);
+      this.fetchUserProfile().subscribe({ next: () => {}, error: () => {} });
+    } else if (refreshToken) {
+      this.tryRefreshToken().subscribe({ next: () => {}, error: () => {} });
     } else {
       this._isAuthenticated.set(false);
       this._currentUser.set(null);
@@ -103,8 +89,7 @@ export class AuthService {
   private isTokenExpired(token: string): boolean {
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
-      const now = Math.floor(Date.now() / 1000);
-      return payload.exp < now;
+      return payload.exp < Math.floor(Date.now() / 1000);
     } catch {
       return true;
     }
@@ -130,7 +115,6 @@ export class AuthService {
   getUserFromToken(): User | null {
     const token = this.getAccessToken();
     if (!token) return null;
-
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
       return this.convertUserFromSnakeToCamel({
@@ -151,31 +135,24 @@ export class AuthService {
     }
   }
 
-  initiateORCIDLogin(rememberMe: boolean = false): Observable<{authorizationUrl: string, state: string}> {
+  initiateORCIDLogin(rememberMe: boolean = false): Observable<{ authorizationUrl: string; state: string }> {
     const params = rememberMe ? '?remember_me=true' : '';
-    return this.http.get<{authorization_url: string, state: string}>(`${this.apiUrl}/auth/orcid/login/${params}`)
-      .pipe(
-        map(response => ({
-          authorizationUrl: response.authorization_url,
-          state: response.state
-        }))
-      );
+    return this.http.get<{ authorization_url: string; state: string }>(`${this.apiUrl}/auth/orcid/login/${params}`).pipe(
+      map(response => ({ authorizationUrl: response.authorization_url, state: response.state }))
+    );
   }
 
   exchangeAuthCode(authCode: string): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${this.apiUrl}/auth/exchange-code/`, {
-      auth_code: authCode
-    }).pipe(
+    return this.http.post<AuthResponse>(`${this.apiUrl}/auth/exchange-code/`, { auth_code: authCode }).pipe(
       tap(response => this.setAuthData(response))
     );
   }
 
   handleORCIDCallback(code: string, state: string, rememberMe: boolean = false): Observable<AuthResponse> {
     const params = new URLSearchParams({ code, state, remember_me: rememberMe.toString() });
-    return this.http.get<AuthResponse>(`${this.apiUrl}/auth/orcid/callback/?${params}`)
-      .pipe(
-        tap(response => this.setAuthData(response))
-      );
+    return this.http.get<AuthResponse>(`${this.apiUrl}/auth/orcid/callback/?${params}`).pipe(
+      tap(response => this.setAuthData(response))
+    );
   }
 
   exchangeORCIDToken(accessToken: string, orcidId: string, rememberMe: boolean = false): Observable<AuthResponse> {
@@ -189,11 +166,7 @@ export class AuthService {
   }
 
   login(username: string, password: string, rememberMe: boolean = false): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${this.apiUrl}/auth/login/`, {
-      username,
-      password,
-      remember_me: rememberMe
-    }).pipe(
+    return this.http.post<AuthResponse>(`${this.apiUrl}/auth/login/`, { username, password, remember_me: rememberMe }).pipe(
       tap(response => this.setAuthData(response))
     );
   }
@@ -201,36 +174,32 @@ export class AuthService {
   logout(): Observable<any> {
     const refreshToken = this.getRefreshToken();
     const payload = refreshToken ? { refresh: refreshToken } : {};
-    
-    return this.http.post(`${this.apiUrl}/auth/logout/`, payload)
-      .pipe(
-        tap(() => this.clearAuthData())
-      );
+    return this.http.post(`${this.apiUrl}/auth/logout/`, payload).pipe(
+      tap(() => this.clearAuthData())
+    );
   }
 
   checkAuthStatus(): Observable<AuthStatus> {
-    return this.http.get<AuthStatus>(`${this.apiUrl}/auth/status/`)
-      .pipe(
-        tap(status => {
-          if (status.authenticated && status.user) {
-            this._currentUser.set(status.user);
-            this._isAuthenticated.set(true);
-          } else {
-            this.clearAuthData();
-          }
-        })
-      );
+    return this.http.get<AuthStatus>(`${this.apiUrl}/auth/status/`).pipe(
+      tap(status => {
+        if (status.authenticated && status.user) {
+          this._currentUser.set(status.user);
+          this._isAuthenticated.set(true);
+        } else {
+          this.clearAuthData();
+        }
+      })
+    );
   }
 
   fetchUserProfile(): Observable<User> {
-    return this.http.get<{user: any}>(`${this.apiUrl}/auth/profile/`)
-      .pipe(
-        map(response => this.convertUserFromSnakeToCamel(response.user)),
-        tap(user => {
-          this._currentUser.set(user);
-          this._isAuthenticated.set(true);
-        })
-      );
+    return this.http.get<{ user: any }>(`${this.apiUrl}/auth/profile/`).pipe(
+      map(response => this.convertUserFromSnakeToCamel(response.user)),
+      tap(user => {
+        this._currentUser.set(user);
+        this._isAuthenticated.set(true);
+      })
+    );
   }
 
   getCurrentUser(): User | null {
@@ -265,32 +234,28 @@ export class AuthService {
     resetRefreshState();
   }
 
-  tryRefreshToken(): Observable<{access: string}> {
+  tryRefreshToken(): Observable<{ access: string; refresh?: string }> {
     const refreshToken = this.getRefreshToken();
-    
+
     if (!refreshToken) {
       this.clearAuthData();
       return throwError(() => new Error('No refresh token available'));
     }
 
-    return this.http.post<{access: string}>(`${this.apiUrl}/auth/token/refresh/`, {
+    return this.http.post<{ access: string; refresh?: string }>(`${this.apiUrl}/auth/token/refresh/`, {
       refresh: refreshToken
     }).pipe(
       tap((response) => {
         localStorage.setItem('ccvAccessToken', response.access);
+        if (response.refresh) {
+          localStorage.setItem('ccvRefreshToken', response.refresh);
+        }
         this._isAuthenticated.set(true);
-
         const user = this.getUserFromToken();
         if (user) {
           this._currentUser.set(user);
         }
-
-        this.fetchUserProfile().subscribe({
-          next: (fullUser) => {
-          },
-          error: (error) => {
-          }
-        });
+        this.fetchUserProfile().subscribe({ next: () => {}, error: () => {} });
       }),
       catchError((error) => {
         this.clearAuthData();
@@ -299,45 +264,15 @@ export class AuthService {
     );
   }
 
-  refreshToken(): Observable<{access: string}> {
-    const refreshToken = this.getRefreshToken();
-    if (!refreshToken) {
-      throw new Error('No refresh token available');
-    }
-
-    return this.http.post<{access: string}>(`${this.apiUrl}/auth/token/refresh/`, {
-      refresh: refreshToken
-    }).pipe(
-      tap(response => {
-        localStorage.setItem('ccvAccessToken', response.access);
-        this._isAuthenticated.set(true);
-
-        this.fetchUserProfile().subscribe({
-          next: (fullUser) => {
-          },
-          error: (error) => {
-          }
-        });
-      })
-    );
-  }
-
   updateAuthStateAfterRefresh(): void {
     const token = this.getAccessToken();
     if (token && !this.isTokenExpired(token)) {
       this._isAuthenticated.set(true);
-
       const user = this.getUserFromToken();
       if (user) {
         this._currentUser.set(user);
       }
-
-      this.fetchUserProfile().subscribe({
-        next: (fullUser) => {
-        },
-        error: (error) => {
-        }
-      });
+      this.fetchUserProfile().subscribe({ next: () => {}, error: () => {} });
     }
   }
 

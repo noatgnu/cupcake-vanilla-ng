@@ -1,14 +1,11 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
+import { map, catchError, of } from 'rxjs';
 import { AuthService } from '../services/auth';
 
-/**
- * Extract original return URL to prevent accumulating login URLs
- */
 function getCleanReturnUrl(currentUrl: string): string {
   try {
     const url = new URL(currentUrl, window.location.origin);
-
     if (url.pathname === '/login') {
       const innerReturnUrl = url.searchParams.get('returnUrl');
       if (innerReturnUrl) {
@@ -16,9 +13,8 @@ function getCleanReturnUrl(currentUrl: string): string {
       }
       return '/';
     }
-
     return url.pathname + url.search;
-  } catch (error) {
+  } catch {
     if (currentUrl.startsWith('/login')) {
       const urlParams = new URLSearchParams(currentUrl.split('?')[1]);
       const innerReturnUrl = urlParams.get('returnUrl');
@@ -39,11 +35,16 @@ export const authGuard: CanActivateFn = (route, state) => {
     return true;
   }
 
-  const cleanReturnUrl = getCleanReturnUrl(state.url);
+  if (authService.getRefreshToken()) {
+    return authService.tryRefreshToken().pipe(
+      map(() => true),
+      catchError(() => {
+        router.navigate(['/login'], { queryParams: { returnUrl: getCleanReturnUrl(state.url) } });
+        return of(false);
+      })
+    );
+  }
 
-  router.navigate(['/login'], {
-    queryParams: { returnUrl: cleanReturnUrl }
-  });
-
+  router.navigate(['/login'], { queryParams: { returnUrl: getCleanReturnUrl(state.url) } });
   return false;
 };
