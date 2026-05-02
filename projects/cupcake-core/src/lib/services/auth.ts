@@ -1,4 +1,5 @@
 import { Injectable, inject, InjectionToken, signal } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap, throwError, catchError, map, shareReplay, finalize } from 'rxjs';
 import { User } from '../models';
@@ -37,10 +38,12 @@ export class AuthService {
 
   private _currentUser = signal<User | null>(null);
   public currentUser = this._currentUser.asReadonly();
+  public currentUser$ = toObservable(this._currentUser);
 
   private _isAuthenticated = signal<boolean>(this.hasValidTokenOnInit());
   private _refreshInProgress: Observable<{ access: string; refresh?: string }> | null = null;
   public authenticated = this._isAuthenticated.asReadonly();
+  public authenticated$ = toObservable(this._isAuthenticated);
 
   constructor() {
     this.initializeAuthState();
