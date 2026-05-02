@@ -1,6 +1,6 @@
-import { Injectable, inject, Inject, InjectionToken, signal } from '@angular/core';
+import { Injectable, inject, InjectionToken, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, tap, throwError, catchError, map } from 'rxjs';
+import { Observable, tap, throwError, catchError, map, shareReplay, finalize } from 'rxjs';
 import { User } from '../models';
 import { resetRefreshState } from '../interceptors';
 
@@ -39,6 +39,7 @@ export class AuthService {
   public currentUser = this._currentUser.asReadonly();
 
   private _isAuthenticated = signal<boolean>(this.hasValidTokenOnInit());
+  private _refreshInProgress: Observable<{ access: string; refresh?: string }> | null = null;
   public authenticated = this._isAuthenticated.asReadonly();
 
   constructor() {
@@ -235,6 +236,10 @@ export class AuthService {
   }
 
   tryRefreshToken(): Observable<{ access: string; refresh?: string }> {
+    if (this._refreshInProgress) {
+      return this._refreshInProgress;
+    }
+
     const refreshToken = this.getRefreshToken();
 
     if (!refreshToken) {
@@ -242,7 +247,7 @@ export class AuthService {
       return throwError(() => new Error('No refresh token available'));
     }
 
-    return this.http.post<{ access: string; refresh?: string }>(`${this.apiUrl}/auth/token/refresh/`, {
+    this._refreshInProgress = this.http.post<{ access: string; refresh?: string }>(`${this.apiUrl}/auth/token/refresh/`, {
       refresh: refreshToken
     }).pipe(
       tap((response) => {
@@ -260,8 +265,14 @@ export class AuthService {
       catchError((error) => {
         this.clearAuthData();
         return throwError(() => error);
-      })
+      }),
+      finalize(() => {
+        this._refreshInProgress = null;
+      }),
+      shareReplay(1)
     );
+
+    return this._refreshInProgress;
   }
 
   updateAuthStateAfterRefresh(): void {
