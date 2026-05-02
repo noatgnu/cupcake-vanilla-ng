@@ -1,0 +1,12 @@
+{
+  "preset": "ts-jest",
+  "testEnvironment": "node",
+  "testMatch": ["<rootDir>/**/*.spec.ts"],
+  "transform": {
+    "^.+\\.ts$": ["ts-jest", { "tsconfig": "tsconfig.e2e.json" }]
+  },
+  "testTimeout": 60000,
+  "globalSetup": "<rootDir>/jest.global-setup.ts",
+  "globalTeardown": "<rootDir>/jest.global-teardown.ts",
+  "setupFilesAfterFramework": []
+}

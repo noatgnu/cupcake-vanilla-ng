@@ -83,7 +83,7 @@ export class MetadataTableEditModal implements OnInit {
           sampleCount: formValue.sampleCount,
           version: formValue.version?.trim() || undefined,
           labGroup: formValue.labGroup || undefined,
-          sourceApp: 'cupcake-vanilla'
+          sourceApp: 'ccv'
         };
 
         this.performCreate(createData);

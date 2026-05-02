@@ -35,9 +35,8 @@
     "excel:stop": "office-addin-debugging stop projects/cupcake-excel-addin/manifest.xml",
     "excel:generate-certs": "office-addin-dev-certs install --days 365",
     "excel:validate-manifest": "office-addin-manifest validate projects/cupcake-excel-addin/manifest.xml",
-    "e2e": "playwright test --config=playwright.config.ts",
-    "e2e:ui": "playwright test --config=playwright.config.ts --ui",
-    "e2e:headed": "playwright test --config=playwright.config.ts --headed",
+    "e2e": "jest --config=e2e/jest.e2e.config.json --runInBand",
+    "e2e:watch": "jest --config=e2e/jest.e2e.config.json --runInBand --watch",
     "excel:test": "playwright test --config=projects/cupcake-excel-addin/playwright.config.ts",
     "excel:test:ui": "playwright test --config=projects/cupcake-excel-addin/playwright.config.ts --ui",
     "excel:test:headed": "playwright test --config=projects/cupcake-excel-addin/playwright.config.ts --headed"

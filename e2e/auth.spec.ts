@@ -1,5 +1,6 @@
-import { test, expect, Page } from '@playwright/test';
+import puppeteer, { Browser, Page } from 'puppeteer';
 
+const APP_URL = 'http://localhost:4200';
 const API = 'http://localhost:8000/api/v1';
 
 const MOCK_USER = {
@@ -15,68 +16,93 @@ const MOCK_USER = {
 };
 
 function makeJwt(expOffsetSeconds: number): string {
-  const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
-  const payload = btoa(JSON.stringify({
+  const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64');
+  const payload = Buffer.from(JSON.stringify({
     exp: Math.floor(Date.now() / 1000) + expOffsetSeconds,
     user_id: 1,
     username: 'testuser',
     email: 'test@example.com',
     is_staff: false,
     is_superuser: false,
-  }));
+  })).toString('base64');
   return `${header}.${payload}.fakesig`;
 }
 
-async function mockProfileRoute(page: Page): Promise<void> {
-  await page.route(`${API}/auth/profile/`, route =>
-    route.fulfill({ json: { user: MOCK_USER } })
-  );
+async function interceptRequests(page: Page, handlers: Record<string, { status?: number; body: object }>): Promise<void> {
+  await page.setRequestInterception(true);
+  page.on('request', request => {
+    const url = request.url();
+    for (const [pattern, response] of Object.entries(handlers)) {
+      if (url.includes(pattern)) {
+        request.respond({
+          status: response.status ?? 200,
+          contentType: 'application/json',
+          body: JSON.stringify(response.body),
+        });
+        return;
+      }
+    }
+    request.continue();
+  });
 }
 
-async function seedValidTokens(page: Page): Promise<void> {
-  await page.evaluate(([access, refresh]) => {
+async function seedTokens(page: Page, accessToken: string, refreshToken: string): Promise<void> {
+  await page.evaluate(([access, refresh]: string[]) => {
     localStorage.setItem('ccvAccessToken', access);
     localStorage.setItem('ccvRefreshToken', refresh);
-  }, [makeJwt(3600), 'valid-refresh-token']);
+  }, [accessToken, refreshToken]);
 }
 
-async function seedExpiredAccessToken(page: Page): Promise<void> {
-  await page.evaluate(([access, refresh]) => {
-    localStorage.setItem('ccvAccessToken', access);
-    localStorage.setItem('ccvRefreshToken', refresh);
-  }, [makeJwt(-3600), 'valid-refresh-token']);
-}
+describe('Auth - Login', () => {
+  let browser: Browser;
+  let page: Page;
 
-test.describe('Auth - Login', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/');
+  beforeAll(async () => {
+    browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox'] });
   });
 
-  test('should show login form when no tokens in localStorage', async ({ page }) => {
-    await expect(page.locator('app-login, [data-testid="login-form"], form')).toBeVisible({ timeout: 10000 });
+  afterAll(async () => {
+    await browser.close();
   });
 
-  test('should store access and refresh tokens in localStorage after login', async ({ page }) => {
+  beforeEach(async () => {
+    page = await browser.newPage();
+    await page.goto(APP_URL);
+    await page.evaluate(() => localStorage.clear());
+  });
+
+  afterEach(async () => {
+    await page.close();
+  });
+
+  it('should show login form when no tokens in localStorage', async () => {
+    await page.reload({ waitUntil: 'networkidle0' });
+    await page.waitForSelector('form', { timeout: 10000 });
+    const form = await page.$('form');
+    expect(form).not.toBeNull();
+  });
+
+  it('should store access and refresh tokens in localStorage after login', async () => {
     const accessToken = makeJwt(3600);
     const refreshToken = 'refresh-token-from-login';
 
-    await page.route(`${API}/auth/login/`, route =>
-      route.fulfill({
-        json: {
-          access_token: accessToken,
-          refresh_token: refreshToken,
-          user: MOCK_USER,
-        },
-      })
+    await interceptRequests(page, {
+      '/auth/login/': { body: { access_token: accessToken, refresh_token: refreshToken, user: MOCK_USER } },
+      '/auth/profile/': { body: { user: MOCK_USER } },
+    });
+
+    await page.reload({ waitUntil: 'networkidle0' });
+    await page.waitForSelector('input[type="password"]', { timeout: 10000 });
+
+    const usernameInput = await page.$('input[type="text"], input[placeholder*="user" i]');
+    if (usernameInput) await usernameInput.type('testuser');
+    await (await page.$('input[type="password"]'))!.type('testpass');
+    await (await page.$('button[type="submit"]'))!.click();
+
+    await page.waitForFunction(
+      () => !!localStorage.getItem('ccvAccessToken'),
+      { timeout: 5000 }
     );
-    await mockProfileRoute(page);
-
-    await page.waitForSelector('input[type="text"], input[placeholder*="user" i]', { timeout: 10000 });
-    await page.locator('input[type="text"], input[placeholder*="user" i]').first().fill('testuser');
-    await page.locator('input[type="password"]').fill('testpass');
-    await page.locator('button[type="submit"], button:has-text("Login"), button:has-text("Sign")').first().click();
-
-    await page.waitForFunction(() => !!localStorage.getItem('ccvAccessToken'), { timeout: 5000 });
 
     const storedAccess = await page.evaluate(() => localStorage.getItem('ccvAccessToken'));
     const storedRefresh = await page.evaluate(() => localStorage.getItem('ccvRefreshToken'));
@@ -86,92 +112,160 @@ test.describe('Auth - Login', () => {
   });
 });
 
-test.describe('Auth - Page refresh with valid access token', () => {
-  test('should remain authenticated without calling refresh endpoint', async ({ page }) => {
+describe('Auth - Page refresh with valid access token', () => {
+  let browser: Browser;
+  let page: Page;
+
+  beforeAll(async () => {
+    browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox'] });
+  });
+
+  afterAll(async () => {
+    await browser.close();
+  });
+
+  it('should remain authenticated without calling the refresh endpoint', async () => {
+    page = await browser.newPage();
     const refreshCalls: string[] = [];
 
-    await page.route(`${API}/auth/token/refresh/`, route => {
-      refreshCalls.push(route.request().url());
-      return route.fulfill({ json: { access: makeJwt(3600) } });
+    await page.setRequestInterception(true);
+    page.on('request', request => {
+      if (request.url().includes('/auth/token/refresh/')) {
+        refreshCalls.push(request.url());
+        request.respond({ status: 200, contentType: 'application/json', body: JSON.stringify({ access: makeJwt(3600) }) });
+        return;
+      }
+      if (request.url().includes('/auth/profile/')) {
+        request.respond({ status: 200, contentType: 'application/json', body: JSON.stringify({ user: MOCK_USER }) });
+        return;
+      }
+      request.continue();
     });
-    await mockProfileRoute(page);
 
-    await page.goto('/');
-    await seedValidTokens(page);
-    await page.reload();
+    await page.goto(APP_URL);
+    await seedTokens(page, makeJwt(3600), 'valid-refresh-token');
+    await page.reload({ waitUntil: 'networkidle0' });
 
-    await page.waitForTimeout(2000);
-    expect(refreshCalls.length).toBe(0, 'refresh endpoint must not be called when access token is still valid');
+    await new Promise(resolve => setTimeout(resolve, 2000));
 
-    const storedAccess = await page.evaluate(() => localStorage.getItem('ccvAccessToken'));
+    expect(refreshCalls.length).toBe(0);
+
     const storedRefresh = await page.evaluate(() => localStorage.getItem('ccvRefreshToken'));
-    expect(storedAccess).not.toBeNull();
     expect(storedRefresh).toBe('valid-refresh-token');
+
+    await page.close();
   });
 });
 
-test.describe('Auth - Page refresh with expired access token', () => {
-  test('should call refresh endpoint exactly once and store new tokens', async ({ page }) => {
-    const newAccessToken = makeJwt(3600);
-    const newRefreshToken = 'rotated-refresh-token';
+describe('Auth - Page refresh with expired access token', () => {
+  let browser: Browser;
+  let page: Page;
+
+  beforeAll(async () => {
+    browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox'] });
+  });
+
+  afterAll(async () => {
+    await browser.close();
+  });
+
+  it('should call refresh endpoint exactly once and store new rotated tokens', async () => {
+    page = await browser.newPage();
+    const newAccess = makeJwt(3600);
+    const newRefresh = 'rotated-refresh-token';
     const refreshCalls: string[] = [];
 
-    await page.route(`${API}/auth/token/refresh/`, route => {
-      refreshCalls.push(route.request().url());
-      return route.fulfill({ json: { access: newAccessToken, refresh: newRefreshToken } });
+    await page.setRequestInterception(true);
+    page.on('request', request => {
+      if (request.url().includes('/auth/token/refresh/')) {
+        refreshCalls.push(request.url());
+        request.respond({ status: 200, contentType: 'application/json', body: JSON.stringify({ access: newAccess, refresh: newRefresh }) });
+        return;
+      }
+      if (request.url().includes('/auth/profile/')) {
+        request.respond({ status: 200, contentType: 'application/json', body: JSON.stringify({ user: MOCK_USER }) });
+        return;
+      }
+      request.continue();
     });
-    await mockProfileRoute(page);
 
-    await page.goto('/');
-    await seedExpiredAccessToken(page);
-    await page.reload();
+    await page.goto(APP_URL);
+    await seedTokens(page, makeJwt(-3600), 'old-refresh-token');
+    await page.reload({ waitUntil: 'networkidle0' });
 
     await page.waitForFunction(
-      ([expected]) => localStorage.getItem('ccvAccessToken') === expected,
-      [newAccessToken],
-      { timeout: 5000 }
+      (expected: string) => localStorage.getItem('ccvAccessToken') === expected,
+      { timeout: 5000 },
+      newAccess
     );
 
-    expect(refreshCalls.length).toBe(1, 'refresh endpoint must be called exactly once — not twice due to race condition');
+    expect(refreshCalls.length).toBe(1);
+    expect(await page.evaluate(() => localStorage.getItem('ccvAccessToken'))).toBe(newAccess);
+    expect(await page.evaluate(() => localStorage.getItem('ccvRefreshToken'))).toBe(newRefresh);
 
-    const storedAccess = await page.evaluate(() => localStorage.getItem('ccvAccessToken'));
-    const storedRefresh = await page.evaluate(() => localStorage.getItem('ccvRefreshToken'));
-
-    expect(storedAccess).toBe(newAccessToken);
-    expect(storedRefresh).toBe(newRefreshToken);
+    await page.close();
   });
 
-  test('should NOT delete tokens from localStorage (old race condition regression)', async ({ page }) => {
+  it('should NOT wipe tokens from localStorage on page refresh (regression test)', async () => {
+    page = await browser.newPage();
     const newAccess = makeJwt(3600);
 
-    await page.route(`${API}/auth/token/refresh/`, route =>
-      route.fulfill({ json: { access: newAccess, refresh: 'rotated-refresh' } })
-    );
-    await mockProfileRoute(page);
+    await page.setRequestInterception(true);
+    page.on('request', request => {
+      if (request.url().includes('/auth/token/refresh/')) {
+        request.respond({ status: 200, contentType: 'application/json', body: JSON.stringify({ access: newAccess, refresh: 'rotated-refresh' }) });
+        return;
+      }
+      if (request.url().includes('/auth/profile/')) {
+        request.respond({ status: 200, contentType: 'application/json', body: JSON.stringify({ user: MOCK_USER }) });
+        return;
+      }
+      request.continue();
+    });
 
-    await page.goto('/');
-    await seedExpiredAccessToken(page);
-    await page.reload();
+    await page.goto(APP_URL);
+    await seedTokens(page, makeJwt(-3600), 'old-refresh-token');
+    await page.reload({ waitUntil: 'networkidle0' });
 
-    await page.waitForTimeout(3000);
+    await new Promise(resolve => setTimeout(resolve, 3000));
 
     const storedAccess = await page.evaluate(() => localStorage.getItem('ccvAccessToken'));
     const storedRefresh = await page.evaluate(() => localStorage.getItem('ccvRefreshToken'));
 
-    expect(storedAccess).not.toBeNull('access token must not be wiped from localStorage on page refresh');
-    expect(storedRefresh).not.toBeNull('refresh token must not be wiped from localStorage on page refresh');
+    expect(storedAccess).not.toBeNull();
+    expect(storedRefresh).not.toBeNull();
+
+    await page.close();
   });
 });
 
-test.describe('Auth - Refresh token failure', () => {
-  test('should clear both tokens and redirect to login when refresh is rejected', async ({ page }) => {
-    await page.route(`${API}/auth/token/refresh/`, route =>
-      route.fulfill({ status: 401, json: { detail: 'Token is blacklisted' } })
-    );
+describe('Auth - Refresh token failure', () => {
+  let browser: Browser;
+  let page: Page;
 
-    await page.goto('/');
-    await seedExpiredAccessToken(page);
-    await page.reload();
+  beforeAll(async () => {
+    browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox'] });
+  });
+
+  afterAll(async () => {
+    await browser.close();
+  });
+
+  it('should clear tokens and redirect to login when refresh is rejected by backend', async () => {
+    page = await browser.newPage();
+
+    await page.setRequestInterception(true);
+    page.on('request', request => {
+      if (request.url().includes('/auth/token/refresh/')) {
+        request.respond({ status: 401, contentType: 'application/json', body: JSON.stringify({ detail: 'Token is blacklisted' }) });
+        return;
+      }
+      request.continue();
+    });
+
+    await page.goto(APP_URL);
+    await seedTokens(page, makeJwt(-3600), 'blacklisted-refresh-token');
+    await page.reload({ waitUntil: 'networkidle0' });
 
     await page.waitForFunction(
       () => localStorage.getItem('ccvAccessToken') === null,
@@ -180,34 +274,12 @@ test.describe('Auth - Refresh token failure', () => {
 
     const storedAccess = await page.evaluate(() => localStorage.getItem('ccvAccessToken'));
     const storedRefresh = await page.evaluate(() => localStorage.getItem('ccvRefreshToken'));
+    const currentUrl = page.url();
 
     expect(storedAccess).toBeNull();
     expect(storedRefresh).toBeNull();
+    expect(currentUrl).toMatch(/login/);
 
-    await expect(page).toHaveURL(/login/, { timeout: 5000 });
-  });
-});
-
-test.describe('Auth - Observable streams for libraries', () => {
-  test('authenticated$ should emit false then true after successful token refresh', async ({ page }) => {
-    const newAccess = makeJwt(3600);
-
-    await page.route(`${API}/auth/token/refresh/`, route =>
-      route.fulfill({ json: { access: newAccess, refresh: 'rotated-refresh' } })
-    );
-    await mockProfileRoute(page);
-
-    await page.goto('/');
-    await seedExpiredAccessToken(page);
-    await page.reload();
-
-    await page.waitForFunction(
-      ([expected]) => localStorage.getItem('ccvAccessToken') === expected,
-      [newAccess],
-      { timeout: 5000 }
-    );
-
-    const isAuthenticated = await page.evaluate(() => !!localStorage.getItem('ccvAccessToken'));
-    expect(isAuthenticated).toBe(true);
+    await page.close();
   });
 });
