@@ -82,8 +82,10 @@ export class AsyncTaskUIService implements OnDestroy {
         this.taskCompletedSubject.next(task);
 
         if (task.status === TaskStatus.SUCCESS && isTaskFromThisTab) {
-          if (this.isImportTask(task.taskType) && task.metadataTable) {
-            this.metadataTableRefreshSubject.next(task.metadataTable);
+          const tableId = task.metadataTableId;
+
+          if (this.isImportTask(task.taskType) && tableId) {
+            this.metadataTableRefreshSubject.next(tableId);
           }
 
           if (this.isExportTask(task.taskType)) {
@@ -91,12 +93,12 @@ export class AsyncTaskUIService implements OnDestroy {
             this.handleExportTaskCompletion(task);
           }
 
-          if (task.taskType === TaskType.VALIDATE_TABLE && task.metadataTable) {
-            this.metadataTableRefreshSubject.next(task.metadataTable);
+          if (task.taskType === TaskType.VALIDATE_TABLE && tableId) {
+            this.metadataTableRefreshSubject.next(tableId);
           }
 
-          if ((task.taskType === TaskType.REORDER_TABLE_COLUMNS) && task.metadataTable) {
-            this.metadataTableRefreshSubject.next(task.metadataTable);
+          if (task.taskType === TaskType.REORDER_TABLE_COLUMNS && tableId) {
+            this.metadataTableRefreshSubject.next(tableId);
           }
         }
 
@@ -130,18 +132,19 @@ export class AsyncTaskUIService implements OnDestroy {
       if (existingTask) {
         this.showTaskCompletionNotification(existingTask);
         if (existingTask.status === TaskStatus.SUCCESS) {
-          if (this.isImportTask(existingTask.taskType) && existingTask.metadataTable) {
-            this.metadataTableRefreshSubject.next(existingTask.metadataTable);
+          const tableId = existingTask.metadataTableId;
+          if (this.isImportTask(existingTask.taskType) && tableId) {
+            this.metadataTableRefreshSubject.next(tableId);
           }
           if (this.isExportTask(existingTask.taskType)) {
             this.exportTaskCompletedSubject.next(existingTask);
             this.handleExportTaskCompletion(existingTask);
           }
-          if (existingTask.taskType === TaskType.VALIDATE_TABLE && existingTask.metadataTable) {
-            this.metadataTableRefreshSubject.next(existingTask.metadataTable);
+          if (existingTask.taskType === TaskType.VALIDATE_TABLE && tableId) {
+            this.metadataTableRefreshSubject.next(tableId);
           }
-          if (existingTask.taskType === TaskType.REORDER_TABLE_COLUMNS && existingTask.metadataTable) {
-            this.metadataTableRefreshSubject.next(existingTask.metadataTable);
+          if (existingTask.taskType === TaskType.REORDER_TABLE_COLUMNS && tableId) {
+            this.metadataTableRefreshSubject.next(tableId);
           }
         }
       } else {

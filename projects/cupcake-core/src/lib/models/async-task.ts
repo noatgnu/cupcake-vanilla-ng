@@ -55,6 +55,7 @@ export interface AsyncTaskStatus {
   user: number;
   userUsername?: string;
   metadataTable?: number;
+  metadataTableId?: number;
   metadataTableName?: string;
   taskTypeDisplay?: string;
   statusDisplay?: string;
