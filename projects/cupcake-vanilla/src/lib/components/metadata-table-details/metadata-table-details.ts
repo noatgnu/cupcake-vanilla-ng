@@ -103,6 +103,7 @@ export class MetadataTableDetails implements OnInit, OnDestroy {
 
   isLoading = signal(false);
   overrideSampleCount = signal(false);
+  applySchemaTemplates = signal(false);
   table = signal<MetadataTable | null>(null);
   tableId = signal<number | null>(null);
   viewMode = signal<'list' | 'table'>('table');
@@ -333,37 +334,23 @@ export class MetadataTableDetails implements OnInit, OnDestroy {
   }
 
   importSdrf(event: Event): void {
-    console.log('importSdrf called', event);
     const input = event.target as HTMLInputElement;
-    if (!input.files || input.files.length === 0) {
-      console.log('No files selected');
-      return;
-    }
+    if (!input.files || input.files.length === 0) return;
 
     const file = input.files[0];
     const table = this.table();
     if (!table) return;
 
-    // Validate file type
     if (!file.name.toLowerCase().endsWith('.txt') && !file.name.toLowerCase().endsWith('.tsv')) {
       this.toastService.error('Please select a valid SDRF file (.txt or .tsv)');
-      input.value = ''; // Reset input
+      input.value = '';
       return;
     }
 
     if (confirm(`Import SDRF data into table "${table.name}"?\n\nThis will add new columns and may modify existing data.`)) {
-      input.value = ''; // Reset input early
-
-      // Use chunked upload service for import with progress tracking
+      input.value = '';
       this.isLoading.set(true);
 
-      console.log('Starting SDRF import using chunked upload:', {
-        fileName: file.name,
-        fileSize: file.size,
-        metadataTableId: table.id
-      });
-
-      // Use chunked upload - it now triggers async import task on completion
       this.chunkedUploadService.uploadFileInChunks(
         file,
         1024 * 1024,
@@ -372,37 +359,28 @@ export class MetadataTableDetails implements OnInit, OnDestroy {
           createPools: true,
           replaceExisting: false,
           overrideSampleCount: this.overrideSampleCount(),
-          onProgress: (progress) => {
-            console.log(`SDRF upload progress: ${Math.round(progress)}%`);
-          }
+          applySchemaTemplates: this.applySchemaTemplates(),
+          onProgress: (_progress) => {}
         }
       ).subscribe({
         next: (result) => {
           this.isLoading.set(false);
-          console.log('SDRF chunked upload completed:', result);
-          
-          // If a taskId is returned, monitor the async import task
           if (result?.taskId) {
-            console.log('Starting async task monitoring for taskId:', result.taskId);
             this.toastService.success(`SDRF import task queued successfully! Task ID: ${result.taskId}`);
-            
-            // Mark task for monitoring and start real-time updates (same pattern as export)
             this.asyncTaskService.monitorTask(result.taskId);
           } else {
-            // Fallback for immediate processing (backward compatibility)
             this.toastService.success('SDRF file imported successfully!');
             this.loadTable(table.id);
           }
         },
         error: (error) => {
           this.isLoading.set(false);
-          console.error('Error importing SDRF:', error);
           const errorMsg = error?.error?.detail || error?.error?.message || 'Failed to import SDRF file';
           this.toastService.error(errorMsg);
         }
       });
     } else {
-      input.value = ''; // Reset input if cancelled
+      input.value = '';
     }
   }
 

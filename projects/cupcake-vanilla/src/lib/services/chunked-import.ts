@@ -11,6 +11,7 @@ export interface ChunkedFileImportRequest {
   replaceExisting?: boolean;
   validateOntologies?: boolean;
   createPools?: boolean;
+  applySchemaTemplates?: boolean;
 }
 
 export interface ChunkedImportProgress {
@@ -110,6 +111,9 @@ export class ChunkedImportService extends BaseApiService {
           }
           if (request.validateOntologies !== undefined) {
             formData.append('validate_ontologies', request.validateOntologies.toString());
+          }
+          if (request.applySchemaTemplates !== undefined) {
+            formData.append('apply_schema_templates', request.applySchemaTemplates.toString());
           }
 
           return this.post<AsyncTaskCreateResponse>(`${this.apiUrl}/async-import/sdrf_file/`, formData);

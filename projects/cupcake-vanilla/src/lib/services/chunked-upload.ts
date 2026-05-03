@@ -69,6 +69,9 @@ export class ChunkedUploadService extends BaseApiService {
     if (request.useOlsCacheOnly !== undefined) {
       formData.append('use_ols_cache_only', request.useOlsCacheOnly.toString());
     }
+    if (request.applySchemaTemplates !== undefined) {
+      formData.append('apply_schema_templates', request.applySchemaTemplates.toString());
+    }
 
     const url = uploadId
       ? `${this.apiUrl}/chunked-upload/${uploadId}/`
@@ -130,6 +133,9 @@ export class ChunkedUploadService extends BaseApiService {
     if (request?.useOlsCacheOnly !== undefined) {
       formData.append('use_ols_cache_only', request.useOlsCacheOnly.toString());
     }
+    if (request?.applySchemaTemplates !== undefined) {
+      formData.append('apply_schema_templates', request.applySchemaTemplates.toString());
+    }
 
     return this.post<ChunkedUploadCompletionResponse>(`${this.apiUrl}/chunked-upload/${uploadId}/`, formData);
   }
@@ -178,6 +184,9 @@ export class ChunkedUploadService extends BaseApiService {
         if (request.useOlsCacheOnly !== undefined) {
           formData.append('use_ols_cache_only', request.useOlsCacheOnly.toString());
         }
+        if (request.applySchemaTemplates !== undefined) {
+          formData.append('apply_schema_templates', request.applySchemaTemplates.toString());
+        }
         formData.append('sha256', hash);
 
         return this.post<ChunkedUploadCompletionResponse>(`${this.apiUrl}/chunked-upload/`, formData);
@@ -198,7 +207,7 @@ export class ChunkedUploadService extends BaseApiService {
    */
   uploadFileInChunks(
     file: File,
-    chunkSize: number = 1024 * 1024, // 1MB chunks by default
+    chunkSize: number = 1024 * 1024,
     options?: {
       metadataTableId?: number;
       createPools?: boolean;
@@ -209,6 +218,7 @@ export class ChunkedUploadService extends BaseApiService {
       schemaNames?: string[];
       skipOntology?: boolean;
       useOlsCacheOnly?: boolean;
+      applySchemaTemplates?: boolean;
       onProgress?: (progress: number) => void;
     }
   ): Observable<ChunkedUploadCompletionResponse> {
@@ -229,7 +239,8 @@ export class ChunkedUploadService extends BaseApiService {
           validateOnly: options?.validateOnly,
           schemaNames: options?.schemaNames,
           skipOntology: options?.skipOntology,
-          useOlsCacheOnly: options?.useOlsCacheOnly
+          useOlsCacheOnly: options?.useOlsCacheOnly,
+          applySchemaTemplates: options?.applySchemaTemplates
         }).subscribe({
           next: (result) => {
             subscriber.next(result);
@@ -251,7 +262,8 @@ export class ChunkedUploadService extends BaseApiService {
               validateOnly: options?.validateOnly,
               schemaNames: options?.schemaNames,
               skipOntology: options?.skipOntology,
-              useOlsCacheOnly: options?.useOlsCacheOnly
+              useOlsCacheOnly: options?.useOlsCacheOnly,
+              applySchemaTemplates: options?.applySchemaTemplates
             }).subscribe({
               next: (result) => {
                 subscriber.next(result);
@@ -283,7 +295,8 @@ export class ChunkedUploadService extends BaseApiService {
             validateOnly: options?.validateOnly,
             schemaNames: options?.schemaNames,
             skipOntology: options?.skipOntology,
-            useOlsCacheOnly: options?.useOlsCacheOnly
+            useOlsCacheOnly: options?.useOlsCacheOnly,
+            applySchemaTemplates: options?.applySchemaTemplates
           }, uploadId, offset, totalSize).subscribe({
             next: (response) => {
               uploadId = response.id;

@@ -131,6 +131,7 @@ export interface MetadataImportRequest {
   file: File;
   replaceExisting?: boolean;
   validateOntologies?: boolean;
+  applySchemaTemplates?: boolean;
 }
 
 export interface ChunkedImportRequest {

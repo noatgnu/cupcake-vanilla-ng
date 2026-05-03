@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable, from } from 'rxjs';
-import { switchMap, map } from 'rxjs/operators';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { BaseApiService } from '@noatgnu/cupcake-core';
 import { ChunkedUploadService } from './chunked-upload';
 
@@ -20,21 +20,19 @@ export class AsyncImportService extends BaseApiService {
   }
 
   sdrfFile(request: MetadataImportRequest): Observable<AsyncTaskCreateResponse> {
-    // Always use chunked upload - it handles everything (SHA256, chunking, processing)
     return this.chunkedUploadService.uploadFileInChunks(
       request.file,
-      1024 * 1024, // 1MB chunks
+      1024 * 1024,
       {
         metadataTableId: request.metadataTableId,
         createPools: true,
         replaceExisting: request.replaceExisting,
-        onProgress: (progress) => {
-          console.log(`SDRF upload progress: ${Math.round(progress)}%`);
-        }
+        applySchemaTemplates: request.applySchemaTemplates,
+        onProgress: (_progress) => {}
       }
     ).pipe(
       map(result => ({
-        taskId: 'chunked-completed', // Processing is done immediately
+        taskId: result.taskId || '',
         message: result.message || 'SDRF file processed successfully',
         result: result
       } as AsyncTaskCreateResponse))
@@ -42,21 +40,18 @@ export class AsyncImportService extends BaseApiService {
   }
 
   excelFile(request: MetadataImportRequest): Observable<AsyncTaskCreateResponse> {
-    // Always use chunked upload - it handles everything (SHA256, chunking, processing)
     return this.chunkedUploadService.uploadFileInChunks(
       request.file,
-      1024 * 1024, // 1MB chunks
+      1024 * 1024,
       {
         metadataTableId: request.metadataTableId,
         createPools: true,
         replaceExisting: request.replaceExisting,
-        onProgress: (progress) => {
-          console.log(`Excel upload progress: ${Math.round(progress)}%`);
-        }
+        onProgress: (_progress) => {}
       }
     ).pipe(
       map(result => ({
-        taskId: 'chunked-completed', // Processing is done immediately
+        taskId: result.taskId || '',
         message: result.message || 'Excel file processed successfully',
         result: result
       } as AsyncTaskCreateResponse))

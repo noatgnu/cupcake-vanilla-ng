@@ -25,6 +25,7 @@ export interface ChunkedUploadRequest {
   schemaNames?: string[];
   skipOntology?: boolean;
   useOlsCacheOnly?: boolean;
+  applySchemaTemplates?: boolean;
 }
 
 export interface ChunkedUploadResponse {
@@ -46,6 +47,7 @@ export interface ChunkedUploadCompletionRequest {
   schemaNames?: string[];
   skipOntology?: boolean;
   useOlsCacheOnly?: boolean;
+  applySchemaTemplates?: boolean;
 }
 
 export interface ChunkedUploadCompletionResponse {
