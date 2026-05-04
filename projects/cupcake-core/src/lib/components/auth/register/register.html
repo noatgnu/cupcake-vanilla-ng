@@ -19,7 +19,9 @@
         @if (error()) {
           <ngb-alert type="danger" (closed)="clearError()" [dismissible]="true">
             <i class="bi bi-exclamation-triangle me-2"></i>
-            <span [innerHTML]="error()?.replace('\n', '<br>') || ''"></span>
+            @for (line of error()?.split('\n'); track $index) {
+              <div>{{ line }}</div>
+            }
           </ngb-alert>
         }
 
@@ -131,12 +133,19 @@
                 <i class="bi bi-lock"></i>
               </span>
               <input 
-                type="password" 
+                [type]="showPassword() ? 'text' : 'password'" 
                 class="form-control" 
                 id="password"
                 formControlName="password"
                 [class.is-invalid]="hasFieldError('password')"
                 placeholder="Create a password">
+              <button 
+                class="btn btn-outline-secondary" 
+                type="button" 
+                (click)="showPassword.set(!showPassword())"
+                tabindex="-1">
+                <i class="bi" [class.bi-eye]="!showPassword()" [class.bi-eye-slash]="showPassword()"></i>
+              </button>
             </div>
             @if (getFieldErrorMessage('password')) {
               <div class="invalid-feedback d-block">
@@ -156,12 +165,19 @@
                 <i class="bi bi-lock-fill"></i>
               </span>
               <input 
-                type="password" 
+                [type]="showConfirmPassword() ? 'text' : 'password'" 
                 class="form-control" 
                 id="confirm_password"
                 formControlName="confirmPassword"
                 [class.is-invalid]="hasFieldError('confirmPassword')"
                 placeholder="Confirm your password">
+              <button 
+                class="btn btn-outline-secondary" 
+                type="button" 
+                (click)="showConfirmPassword.set(!showConfirmPassword())"
+                tabindex="-1">
+                <i class="bi" [class.bi-eye]="!showConfirmPassword()" [class.bi-eye-slash]="showConfirmPassword()"></i>
+              </button>
             </div>
             @if (getFieldErrorMessage('confirmPassword')) {
               <div class="invalid-feedback d-block">

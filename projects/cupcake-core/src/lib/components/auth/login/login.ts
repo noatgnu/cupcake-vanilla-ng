@@ -27,6 +27,8 @@ export class LoginComponent implements OnInit {
 
   loginForm: FormGroup;
   loading = signal(false);
+  loadingORCID = signal(false);
+  showPassword = signal(false);
   error = signal<string | null>(null);
   success = signal<string | null>(null);
 
@@ -230,7 +232,7 @@ export class LoginComponent implements OnInit {
    * Initiate ORCID OAuth login
    */
   loginWithORCID() {
-    this.loading.set(true);
+    this.loadingORCID.set(true);
     this.error.set(null);
 
     const rememberMe = this.loginForm.get('rememberMe')?.value || false;
@@ -241,7 +243,7 @@ export class LoginComponent implements OnInit {
         window.location.href = response.authorizationUrl;
       },
       error: (error) => {
-        this.loading.set(false);
+        this.loadingORCID.set(false);
         this.error.set(error.error?.error || 'Failed to initiate ORCID login.');
       }
     });
