@@ -8,7 +8,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/noatgnu/cupcake-vanilla-wails/backend/models"
+	"github.com/noatgnu/cupcake-vanilla-ng/cupcake-vanilla-wails/backend/models"
 )
 
 type ProcessTracker struct {

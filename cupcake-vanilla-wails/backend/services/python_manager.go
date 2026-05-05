@@ -12,7 +12,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/noatgnu/cupcake-vanilla-wails/backend/models"
+	"github.com/noatgnu/cupcake-vanilla-ng/cupcake-vanilla-wails/backend/models"
 )
 
 type PythonManager struct {

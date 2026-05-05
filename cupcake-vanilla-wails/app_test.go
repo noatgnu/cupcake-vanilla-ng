@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/noatgnu/cupcake-vanilla-wails/backend/models"
+	"github.com/noatgnu/cupcake-vanilla-ng/cupcake-vanilla-wails/backend/models"
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
 

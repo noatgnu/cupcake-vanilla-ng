@@ -1,4 +1,4 @@
-module github.com/noatgnu/cupcake-vanilla-wails
+module github.com/noatgnu/cupcake-vanilla-ng/cupcake-vanilla-wails
 
 go 1.25
 

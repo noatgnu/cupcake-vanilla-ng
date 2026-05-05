@@ -9,8 +9,8 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/noatgnu/cupcake-vanilla-wails/backend/models"
-	"github.com/noatgnu/cupcake-vanilla-wails/backend/services"
+	"github.com/noatgnu/cupcake-vanilla-ng/cupcake-vanilla-wails/backend/models"
+	"github.com/noatgnu/cupcake-vanilla-ng/cupcake-vanilla-wails/backend/services"
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
 )
