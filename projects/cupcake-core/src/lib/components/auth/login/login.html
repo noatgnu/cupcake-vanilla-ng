@@ -4,7 +4,7 @@
         <div class="card-body">
           @if (siteConfig(); as config) {
             <h3 class="card-title text-center mb-4">
-              <i class="bi bi-flask me-2"></i>{{ config.siteName }}
+              {{ config.siteName }}
             </h3>
           }
 
@@ -89,9 +89,9 @@
                     formControlName="password"
                     [class.is-invalid]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
                     placeholder="Enter your password">
-                  <button 
-                    class="btn btn-outline-secondary" 
-                    type="button" 
+                  <button
+                    class="btn btn-outline-secondary"
+                    type="button"
                     (click)="showPassword.set(!showPassword())"
                     tabindex="-1">
                     <i class="bi" [class.bi-eye]="!showPassword()" [class.bi-eye-slash]="showPassword()"></i>
