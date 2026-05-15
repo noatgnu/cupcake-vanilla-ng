@@ -331,6 +331,29 @@
   color: var(--cupcake-text);
 }
 
+// Colored toast variants — header inherits the toast background color
+.toast.bg-success,
+.toast.bg-danger,
+.toast.bg-primary {
+  .toast-header {
+    background-color: rgba(0, 0, 0, 0.15);
+    color: #fff;
+    border-bottom-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
+  }
+}
+
+.toast.bg-warning {
+  .toast-header {
+    background-color: rgba(0, 0, 0, 0.1);
+    color: rgba(0, 0, 0, 0.75);
+    border-bottom-color: rgba(0, 0, 0, 0.15);
+  }
+}
+
 // Offcanvas components
 .offcanvas {
   background-color: var(--cupcake-card-bg);
