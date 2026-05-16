@@ -1,6 +1,6 @@
 {
   "name": "@noatgnu/cupcake-mint-chocolate",
-  "version": "1.2.37",
+  "version": "1.2.38",
   "description": "An extension for cupcake-core that provides additional api and interfaces for managing notifications and messaging.",
   "author": "Toan Phung",
   "license": "MIT",
@@ -13,8 +13,8 @@
     "url": "https://github.com/noatgnu/cupcake-vanilla-ng/issues"
   },
   "peerDependencies": {
-    "@angular/common": "^21.0.0",
-    "@angular/core": "^21.0.0",
+    "@angular/common": "^21.2.0",
+    "@angular/core": "^21.2.0",
     "rxjs": "~7.8.0"
   },
   "dependencies": {

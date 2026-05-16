@@ -150,6 +150,13 @@
   box-shadow: 0 0 0 1px #fff, 0 0 0 0.25rem rgba(var(--cupcake-primary-rgb), 0.25);
 }
 
+:root[data-bs-theme="dark"] .btn-secondary,
+.dark-mode .btn-secondary {
+  --bs-btn-color: #000;
+  --bs-btn-hover-color: #000;
+  --bs-btn-active-color: #000;
+}
+
 // Navigation components
 .nav-pills .nav-link.active,
 .nav-pills .show > .nav-link {
@@ -175,21 +182,21 @@
 
 .navbar-dark .nav-link,
 .navbar[data-bs-theme="dark"] .nav-link {
-  color: rgba(255, 255, 255, 0.55);
+  color: rgba(255, 255, 255, 0.55) !important;
 
   &:hover,
   &:focus {
-    color: rgba(255, 255, 255, 0.75);
+    color: rgba(255, 255, 255, 0.75) !important;
   }
 
   &.active {
-    color: #fff;
+    color: #fff !important;
   }
 }
 
 .navbar-dark .navbar-brand,
 .navbar[data-bs-theme="dark"] .navbar-brand {
-  color: #fff;
+  color: #fff !important;
 }
 
 // Pagination
@@ -350,7 +357,6 @@
   color: var(--cupcake-text);
 }
 
-// Colored toast variants — header inherits the toast background color
 .toast.bg-success,
 .toast.bg-danger,
 .toast.bg-primary {

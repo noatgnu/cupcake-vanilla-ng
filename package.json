@@ -109,5 +109,8 @@
   },
   "optionalDependencies": {
     "@rollup/rollup-win32-x64-msvc": "^4.60.1"
+  },
+  "overrides": {
+    "protobufjs": "^8.3.0"
   }
 }
