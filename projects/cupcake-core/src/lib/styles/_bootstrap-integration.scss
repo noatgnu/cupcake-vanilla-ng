@@ -158,12 +158,12 @@
 
 .nav-link {
   color: var(--cupcake-text);
-  
+
   &:hover,
   &:focus {
     color: var(--cupcake-primary);
   }
-  
+
   &.active {
     color: var(--cupcake-primary);
   }
@@ -171,6 +171,25 @@
 
 .navbar-nav .nav-link.active {
   color: var(--cupcake-primary) !important;
+}
+
+.navbar-dark .nav-link,
+.navbar[data-bs-theme="dark"] .nav-link {
+  color: rgba(255, 255, 255, 0.55);
+
+  &:hover,
+  &:focus {
+    color: rgba(255, 255, 255, 0.75);
+  }
+
+  &.active {
+    color: #fff;
+  }
+}
+
+.navbar-dark .navbar-brand,
+.navbar[data-bs-theme="dark"] .navbar-brand {
+  color: #fff;
 }
 
 // Pagination
