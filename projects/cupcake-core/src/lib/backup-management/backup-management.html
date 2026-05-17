@@ -1,0 +1,121 @@
+<div class="container-fluid py-2">
+  <h5 class="mb-3"><i class="bi bi-archive me-2"></i>Backup Management</h5>
+
+  @if (error()) {
+    <div class="alert alert-danger py-1 px-2 small mb-3">{{ error() }}</div>
+  }
+
+  <div class="card mb-3">
+    <div class="card-header py-1">
+      <span class="small fw-semibold">Run Backup</span>
+    </div>
+    <div class="card-body py-2">
+      <form [formGroup]="form">
+        <div class="mb-2">
+          <label class="form-label small mb-1">Backup Type</label>
+          <select class="form-select form-select-sm" formControlName="backupType">
+            <option value="full">Full</option>
+            <option value="database">Database only</option>
+            <option value="media">Media only</option>
+          </select>
+        </div>
+
+        <div class="mb-2">
+          <label class="form-label small mb-1">Destination</label>
+          <div class="d-flex flex-column gap-1">
+            <div class="form-check form-check-sm">
+              <input class="form-check-input" type="radio" formControlName="destinationType" value="mounted" id="destMounted" />
+              <label class="form-check-label small" for="destMounted">Mounted storage (/mnt/cupcake-data/backups)</label>
+            </div>
+            <div class="form-check form-check-sm">
+              <input class="form-check-input" type="radio" formControlName="destinationType" value="custom" id="destCustom" />
+              <label class="form-check-label small" for="destCustom">Custom path</label>
+            </div>
+          </div>
+        </div>
+
+        @if (destinationType === 'custom') {
+          <div class="mb-2">
+            <input class="form-control form-control-sm" formControlName="customPath" placeholder="/opt/cupcake/backups" />
+            <div class="form-text small">Must start with /mnt/cupcake-data/ or /opt/cupcake/backups</div>
+          </div>
+        }
+
+        @if (validationError()) {
+          <div class="alert alert-warning py-1 px-2 small mb-2">{{ validationError() }}</div>
+        }
+
+        @if (hasRunningBackup()) {
+          <div class="alert alert-info py-1 px-2 small mb-2">A backup is currently running.</div>
+        }
+
+        <button
+          class="btn btn-sm btn-primary"
+          type="button"
+          (click)="runBackup()"
+          [disabled]="runLoading() || hasRunningBackup()">
+          @if (runLoading()) {
+            <span class="spinner-border spinner-border-sm me-1"></span>
+          }
+          Run Backup
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header py-1 d-flex align-items-center justify-content-between">
+      <span class="small fw-semibold">Backup History</span>
+      <button class="btn btn-sm btn-outline-secondary py-0" (click)="loadLogs()" [disabled]="loading()">
+        @if (loading()) {
+          <span class="spinner-border spinner-border-sm"></span>
+        } @else {
+          <i class="bi bi-arrow-clockwise"></i>
+        }
+      </button>
+    </div>
+    <div class="card-body p-0">
+      @if (logs().length === 0) {
+        <div class="text-muted small p-2">No backup records.</div>
+      } @else {
+        <table class="table table-sm table-hover mb-0 small">
+          <thead class="table-light">
+            <tr>
+              <th>Date</th>
+              <th>Type</th>
+              <th>Status</th>
+              <th>Size</th>
+              <th>Destination</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (log of logs(); track log.id) {
+              <tr>
+                <td class="font-monospace">{{ log.startedAt | date:'short' }}</td>
+                <td>{{ log.backupType }}</td>
+                <td>
+                  @switch (log.status) {
+                    @case ('running') {
+                      <span class="badge bg-primary">
+                        <span class="spinner-border spinner-border-sm me-1" style="width: .65rem; height: .65rem;"></span>
+                        Running
+                      </span>
+                    }
+                    @case ('completed') {
+                      <span class="badge bg-success">Completed</span>
+                    }
+                    @case ('failed') {
+                      <span class="badge bg-danger" [title]="log.errorMessage">Failed</span>
+                    }
+                  }
+                </td>
+                <td>{{ formatBytes(log.sizeBytes) }}</td>
+                <td class="text-truncate font-monospace" style="max-width: 180px;">{{ log.destination }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </div>
+  </div>
+</div>

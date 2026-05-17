@@ -1,0 +1,149 @@
+<div class="container-fluid py-2">
+  <h5 class="mb-3"><i class="bi bi-hdd me-2"></i>Storage Management</h5>
+
+  @if (loading()) {
+    <div class="d-flex align-items-center gap-2 text-muted small mb-3">
+      <div class="spinner-border spinner-border-sm"></div>
+      Loading status...
+    </div>
+  }
+
+  @if (error()) {
+    <div class="alert alert-danger py-1 px-2 small mb-3">{{ error() }}</div>
+  }
+
+  @if (status(); as s) {
+    <div class="card mb-3">
+      <div class="card-header py-1 d-flex align-items-center justify-content-between">
+        <span class="small fw-semibold">Current Status</span>
+        @if (s.mounted) {
+          <span class="badge bg-success">Mounted</span>
+        } @else {
+          <span class="badge bg-secondary">Unmounted</span>
+        }
+      </div>
+      <div class="card-body py-2">
+        @if (s.mounted) {
+          <div class="row g-1 small">
+            <div class="col-4 text-muted">Mount Point</div>
+            <div class="col-8 font-monospace">{{ s.mountPoint }}</div>
+            <div class="col-4 text-muted">Device</div>
+            <div class="col-8 font-monospace">{{ s.device }}</div>
+            <div class="col-4 text-muted">Filesystem</div>
+            <div class="col-8">{{ s.fsType }}</div>
+          </div>
+          <button
+            class="btn btn-sm btn-outline-danger mt-2"
+            (click)="unmountStorage()"
+            [disabled]="unmountLoading()">
+            @if (unmountLoading()) {
+              <span class="spinner-border spinner-border-sm me-1"></span>
+            }
+            Unmount
+          </button>
+        } @else {
+          <span class="text-muted small">No storage mounted.</span>
+        }
+      </div>
+    </div>
+  }
+
+  <div class="card">
+    <div class="card-header py-1">
+      <span class="small fw-semibold">Configure Storage</span>
+    </div>
+    <div class="card-body py-2">
+      <form [formGroup]="form">
+        <div class="mb-2">
+          <label class="form-label small mb-1">Type</label>
+          <select class="form-select form-select-sm" formControlName="mountType">
+            <option value="usb">USB</option>
+            <option value="nfs">NFS</option>
+            <option value="smb">SMB</option>
+          </select>
+        </div>
+
+        @if (mountType === 'usb') {
+          <div class="mb-2">
+            <label class="form-label small mb-1">Device Label</label>
+            <div class="input-group input-group-sm">
+              <input class="form-control form-control-sm" formControlName="label" placeholder="e.g. BACKUP" />
+              <button class="btn btn-outline-secondary btn-sm" type="button" (click)="scanDevices()" [disabled]="scanLoading()">
+                @if (scanLoading()) {
+                  <span class="spinner-border spinner-border-sm"></span>
+                } @else {
+                  Scan
+                }
+              </button>
+            </div>
+          </div>
+          @if (blockDevices().length > 0) {
+            <div class="mb-2">
+              <label class="form-label small mb-1">Detected Devices</label>
+              <div class="list-group list-group-flush small">
+                @for (dev of blockDevices(); track dev.name) {
+                  <button
+                    type="button"
+                    class="list-group-item list-group-item-action py-1 px-2"
+                    (click)="form.patchValue({ label: dev.label })">
+                    <span class="font-monospace">/dev/{{ dev.name }}</span>
+                    <span class="ms-2 text-muted">{{ dev.label }} &bull; {{ dev.size }} &bull; {{ dev.fsType }}</span>
+                  </button>
+                }
+              </div>
+            </div>
+          }
+        }
+
+        @if (mountType === 'nfs') {
+          <div class="mb-2">
+            <label class="form-label small mb-1">Host</label>
+            <input class="form-control form-control-sm" formControlName="host" placeholder="192.168.1.100" />
+          </div>
+          <div class="mb-2">
+            <label class="form-label small mb-1">Path</label>
+            <input class="form-control form-control-sm" formControlName="share" placeholder="/exports/data" />
+          </div>
+        }
+
+        @if (mountType === 'smb') {
+          <div class="mb-2">
+            <label class="form-label small mb-1">Host</label>
+            <input class="form-control form-control-sm" formControlName="host" placeholder="192.168.1.100" />
+          </div>
+          <div class="mb-2">
+            <label class="form-label small mb-1">Share</label>
+            <input class="form-control form-control-sm" formControlName="share" placeholder="sharename" />
+          </div>
+          <div class="mb-2">
+            <label class="form-label small mb-1">Username</label>
+            <input class="form-control form-control-sm" formControlName="username" />
+          </div>
+          <div class="mb-2">
+            <label class="form-label small mb-1">Password</label>
+            <input type="password" class="form-control form-control-sm" formControlName="password" />
+          </div>
+        }
+
+        @if (validationError()) {
+          <div class="alert alert-warning py-1 px-2 small mb-2">{{ validationError() }}</div>
+        }
+
+        <button
+          class="btn btn-sm btn-primary"
+          type="button"
+          (click)="applyStorage()"
+          [disabled]="applyLoading()">
+          @if (applyLoading()) {
+            <span class="spinner-border spinner-border-sm me-1"></span>
+          }
+          Apply
+        </button>
+      </form>
+
+      @if (output()) {
+        <pre class="mt-2 p-2 bg-dark text-light rounded small" style="max-height: 200px; overflow-y: auto;">{{ output() }}</pre>
+      }
+    </div>
+  </div>
+</div>
