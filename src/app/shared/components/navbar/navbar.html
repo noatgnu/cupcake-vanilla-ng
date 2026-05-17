@@ -93,6 +93,20 @@
                     User Management
                   </a>
                 </li>
+                @if (!isWails) {
+                  <li>
+                    <a class="dropdown-item" routerLink="/admin/storage">
+                      <i class="bi bi-hdd me-2"></i>
+                      Storage
+                    </a>
+                  </li>
+                  <li>
+                    <a class="dropdown-item" routerLink="/admin/backup">
+                      <i class="bi bi-archive me-2"></i>
+                      Backup
+                    </a>
+                  </li>
+                }
                 <li>
                   <a class="dropdown-item" routerLink="/admin/site-config">
                     <i class="bi bi-building me-2"></i>

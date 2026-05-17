@@ -14,3 +14,7 @@ export * from './site-config/site-config';
 export * from './demo-mode-banner/demo-mode-banner';
 export * from './toast-container/toast-container';
 export * from './powered-by-footer/powered-by-footer';
+
+// Admin appliance components
+export * from '../storage-management/storage-management';
+export * from '../backup-management/backup-management';

@@ -10,6 +10,7 @@ import { Subscription, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { TaskListItem, TaskType, TaskStatus } from '@noatgnu/cupcake-core';
 import { environment } from '../../../../environments/environment';
+import { EnvironmentService } from '../../services/environment';
 
 @Component({
   selector: 'app-navbar',
@@ -29,6 +30,9 @@ export class NavbarComponent implements OnInit, OnDestroy {
   private webSocketService = inject(Websocket);
   private asyncTaskService = inject(AsyncTaskUIService);
   private demoModeService = inject(DemoModeService);
+  private environmentService = inject(EnvironmentService);
+
+  get isWails(): boolean { return this.environmentService.isWails(); }
 
   isAuthenticated = this.authService.authenticated;
   currentUser = this.authService.currentUser;

@@ -13,3 +13,4 @@ export * from './websocket';
 export * from './websocket-config';
 export * from './admin-websocket';
 export * from './lab-group';
+export * from './appliance';
