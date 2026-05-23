@@ -68,6 +68,14 @@ export class ThemeService {
     return stored && ['default', 'eink'].includes(stored) ? stored : 'default';
   }
 
+  private readonly PRIMARY_INLINE_VARS = [
+    '--cupcake-primary',
+    '--cupcake-primary-rgb',
+    '--cupcake-primary-dark',
+    '--cupcake-primary-light',
+    '--cupcake-primary-contrast',
+  ];
+
   private updateDocumentTheme(): void {
     const isDark = this.isDark();
     const palette = this._palette();
@@ -77,6 +85,12 @@ export class ThemeService {
 
     document.documentElement.classList.remove('theme-default', 'theme-eink');
     document.documentElement.classList.add(`theme-${palette}`);
+
+    if (palette !== 'default') {
+      this.PRIMARY_INLINE_VARS.forEach(v =>
+        document.documentElement.style.removeProperty(v)
+      );
+    }
   }
 
   getThemeIcon(): string {
