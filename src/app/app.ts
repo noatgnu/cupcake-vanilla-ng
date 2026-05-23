@@ -1,11 +1,11 @@
-import { Component, signal, inject, OnInit, OnDestroy, DOCUMENT, effect, ChangeDetectionStrategy, untracked } from '@angular/core';
+import { Component, signal, inject, OnInit, OnDestroy, effect, ChangeDetectionStrategy, untracked } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { CommonModule } from '@angular/common';
 import { NavbarComponent } from './shared/components/navbar/navbar';
 import { DesktopService } from '@noatgnu/cupcake-vanilla';
 import { AsyncTaskMonitorService, AuthService, WebSocketService } from '@noatgnu/cupcake-core';
-import { SiteConfigService, ThemeService, ToastService, ToastContainerComponent, PoweredByFooterComponent } from '@noatgnu/cupcake-core';
+import { ToastService, ToastContainerComponent, PoweredByFooterComponent } from '@noatgnu/cupcake-core';
 import { environment } from '../environments/environment';
 
 @Component({
@@ -20,9 +20,6 @@ export class App implements OnInit, OnDestroy {
   protected readonly title = signal('cupcake-vanilla-ng');
   protected readonly environment = environment;
 
-  private document = inject(DOCUMENT);
-  private siteConfigService = inject(SiteConfigService);
-  private themeService = inject(ThemeService);
   private asyncTaskService = inject(AsyncTaskMonitorService);
   private toastService = inject(ToastService);
   private desktopService = inject(DesktopService);
@@ -32,27 +29,15 @@ export class App implements OnInit, OnDestroy {
   private _appInitialized = signal<boolean>(false);
   public appInitialized = this._appInitialized.asReadonly();
 
-  private themeEffect = effect(() => {
-    const isDark = this.themeService.isDark();
-    const palette = this.themeService.palette();
-    const config = this.siteConfigService.siteConfig();
-    untracked(() => {
-      this.updatePrimaryColorTheme(config.primaryColor || '#1976d2', palette !== 'default');
-    });
-  });
-
   private authEffect = effect(() => {
     const user = this.authService.currentUser();
     untracked(() => {
       if (user) {
-        console.log('User authenticated, connecting WebSocket for async task monitoring...');
         this.websocket.connect();
         if (environment.features?.asyncTasks) {
-          console.log('Starting async task real-time updates');
           this.asyncTaskService.startRealtimeUpdates();
         }
       } else {
-        console.log('User not authenticated, disconnecting WebSocket');
         this.websocket.disconnect();
       }
     });
@@ -71,87 +56,11 @@ export class App implements OnInit, OnDestroy {
       this._appInitialized.set(true);
       this.desktopService.getAppVersion().then(appVersion => {
         this.desktopService.logToFile(`App Version: ${appVersion}`);
-        this.toastService.show("Application initialized")
-      })
+        this.toastService.show('Application initialized');
+      });
     } catch (error) {
       this.desktopService.logToFile(`Failed to initialize app: ${error}`);
       this._appInitialized.set(true);
     }
   }
-
-  private updatePrimaryColorTheme(primaryColor: string, einkMode = false): void {
-    const root = this.document.documentElement;
-
-    if (einkMode) {
-      root.style.removeProperty('--cupcake-primary');
-      root.style.removeProperty('--cupcake-primary-rgb');
-      root.style.removeProperty('--cupcake-primary-dark');
-      root.style.removeProperty('--cupcake-primary-light');
-      root.style.removeProperty('--cupcake-primary-contrast');
-      return;
-    }
-
-    const isDark = this.themeService.isDark();
-
-    let adjustedPrimary = primaryColor;
-    if (isDark) {
-      adjustedPrimary = this.adjustColorForDarkMode(primaryColor);
-    }
-
-    const rgbValues = this.hexToRgb(adjustedPrimary);
-    const darkerColor = this.adjustColorBrightness(adjustedPrimary, isDark ? -15 : -20);
-    const lighterColor = this.adjustColorBrightness(adjustedPrimary, isDark ? 15 : 20);
-    const contrastColor = this.getContrastColor(adjustedPrimary);
-
-    root.style.setProperty('--cupcake-primary', adjustedPrimary);
-    root.style.setProperty('--cupcake-primary-rgb', rgbValues);
-    root.style.setProperty('--cupcake-primary-dark', darkerColor);
-    root.style.setProperty('--cupcake-primary-light', lighterColor);
-    root.style.setProperty('--cupcake-primary-contrast', contrastColor);
-  }
-
-  private getContrastColor(hex: string): string {
-    const rgb = this.hexToRgb(hex).split(', ').map(Number);
-    const [r, g, b] = rgb;
-    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-    return luminance > 0.5 ? '#000000' : '#ffffff';
-  }
-
-  private hexToRgb(hex: string): string {
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    if (!result) return '25, 118, 210';
-
-    const r = parseInt(result[1], 16);
-    const g = parseInt(result[2], 16);
-    const b = parseInt(result[3], 16);
-
-    return `${r}, ${g}, ${b}`;
-  }
-
-  private adjustColorBrightness(hex: string, percent: number): string {
-    const num = parseInt(hex.replace('#', ''), 16);
-    const amt = Math.round(2.55 * percent);
-    const R = (num >> 16) + amt;
-    const G = (num >> 8 & 0x00FF) + amt;
-    const B = (num & 0x0000FF) + amt;
-
-    return '#' + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
-      (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
-      (B < 255 ? B < 1 ? 0 : B : 255)).toString(16).slice(1);
-  }
-
-  private adjustColorForDarkMode(hex: string): string {
-    const rgb = this.hexToRgb(hex).split(', ').map(Number);
-    const [r, g, b] = rgb;
-
-    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-
-    if (luminance < 0.5) {
-      const brightnessIncrease = Math.max(40, 80 * (0.5 - luminance));
-      return this.adjustColorBrightness(hex, brightnessIncrease);
-    }
-
-    return this.adjustColorBrightness(hex, 10);
-  }
-
 }

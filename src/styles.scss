@@ -13,11 +13,11 @@
 /* Import cupcake-core Bootstrap integration */
 @import '@noatgnu/cupcake-core/src/lib/styles/bootstrap-integration';
 
-/* Import palette themes */
-@import '@noatgnu/cupcake-core/src/lib/styles/themes/eink';
-
 /* Import cupcake-core component styles */
 @import '@noatgnu/cupcake-core/src/lib/styles/components';
+
+/* Import palette themes — must come last so palette selectors win over :root */
+@import '@noatgnu/cupcake-core/src/lib/styles/themes/eink';
 
 // Empty states
 .empty-state {
