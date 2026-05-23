@@ -15,11 +15,14 @@
   --bs-btn-color: var(--cupcake-primary-contrast);
   --bs-btn-bg: var(--cupcake-primary);
   --bs-btn-border-color: var(--cupcake-primary);
+  --bs-btn-hover-color: var(--cupcake-primary-contrast);
   --bs-btn-hover-bg: var(--cupcake-primary-dark);
   --bs-btn-hover-border-color: var(--cupcake-primary-dark);
   --bs-btn-focus-shadow-rgb: var(--cupcake-primary-rgb);
+  --bs-btn-active-color: var(--cupcake-primary-contrast);
   --bs-btn-active-bg: var(--cupcake-primary-dark);
   --bs-btn-active-border-color: var(--cupcake-primary-dark);
+  --bs-btn-disabled-color: var(--cupcake-primary-contrast);
   --bs-btn-disabled-bg: var(--cupcake-primary);
   --bs-btn-disabled-border-color: var(--cupcake-primary);
 }
@@ -27,12 +30,13 @@
 .btn-outline-primary {
   --bs-btn-color: var(--cupcake-primary);
   --bs-btn-border-color: var(--cupcake-primary);
+  --bs-btn-hover-color: var(--cupcake-primary-contrast);
   --bs-btn-hover-bg: var(--cupcake-primary);
   --bs-btn-hover-border-color: var(--cupcake-primary);
   --bs-btn-focus-shadow-rgb: var(--cupcake-primary-rgb);
+  --bs-btn-active-color: var(--cupcake-primary-contrast);
   --bs-btn-active-bg: var(--cupcake-primary);
   --bs-btn-active-border-color: var(--cupcake-primary);
-  --bs-btn-active-color: #fff;
   --bs-btn-disabled-color: var(--cupcake-primary);
   --bs-btn-disabled-border-color: var(--cupcake-primary);
 }

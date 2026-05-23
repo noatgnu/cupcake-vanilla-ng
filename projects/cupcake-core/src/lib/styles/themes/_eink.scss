@@ -1,7 +1,7 @@
 html.theme-eink {
   --cupcake-primary: #000000;
   --cupcake-primary-rgb: 0, 0, 0;
-  --cupcake-primary-dark: #000000;
+  --cupcake-primary-dark: #111111;
   --cupcake-primary-light: #444444;
   --cupcake-primary-contrast: #ffffff;
 
@@ -33,14 +33,14 @@ html.theme-eink {
   --cupcake-input-border: #000000;
   --cupcake-input-bg: #ffffff;
 
-  --cupcake-success: #444444;
-  --cupcake-success-rgb: 68, 68, 68;
-  --cupcake-warning: #333333;
-  --cupcake-warning-rgb: 51, 51, 51;
+  --cupcake-success: #000000;
+  --cupcake-success-rgb: 0, 0, 0;
+  --cupcake-warning: #444444;
+  --cupcake-warning-rgb: 68, 68, 68;
   --cupcake-danger: #000000;
   --cupcake-danger-rgb: 0, 0, 0;
-  --cupcake-info: #666666;
-  --cupcake-info-rgb: 102, 102, 102;
+  --cupcake-info: #444444;
+  --cupcake-info-rgb: 68, 68, 68;
 
   --cupcake-transition: none;
   --cupcake-transition-fast: none;
@@ -49,13 +49,25 @@ html.theme-eink {
 
   --bs-primary: #000000;
   --bs-primary-rgb: 0, 0, 0;
+  --bs-secondary: #444444;
+  --bs-secondary-rgb: 68, 68, 68;
+  --bs-success: #000000;
+  --bs-success-rgb: 0, 0, 0;
+  --bs-danger: #000000;
+  --bs-danger-rgb: 0, 0, 0;
+  --bs-warning: #444444;
+  --bs-warning-rgb: 68, 68, 68;
+  --bs-info: #444444;
+  --bs-info-rgb: 68, 68, 68;
+  --bs-link-color: #000000;
+  --bs-link-hover-color: #333333;
 
   &[data-bs-theme="dark"],
   &.dark-mode {
     --cupcake-primary: #ffffff;
     --cupcake-primary-rgb: 255, 255, 255;
-    --cupcake-primary-dark: #ffffff;
-    --cupcake-primary-light: #cccccc;
+    --cupcake-primary-dark: #cccccc;
+    --cupcake-primary-light: #ffffff;
     --cupcake-primary-contrast: #000000;
 
     --cupcake-secondary: #cccccc;
@@ -82,19 +94,33 @@ html.theme-eink {
     --cupcake-input-border: #ffffff;
     --cupcake-input-bg: #000000;
 
-    --cupcake-success: #cccccc;
-    --cupcake-success-rgb: 204, 204, 204;
-    --cupcake-warning: #aaaaaa;
-    --cupcake-warning-rgb: 170, 170, 170;
+    --cupcake-success: #ffffff;
+    --cupcake-success-rgb: 255, 255, 255;
+    --cupcake-warning: #cccccc;
+    --cupcake-warning-rgb: 204, 204, 204;
     --cupcake-danger: #ffffff;
     --cupcake-danger-rgb: 255, 255, 255;
-    --cupcake-info: #888888;
-    --cupcake-info-rgb: 136, 136, 136;
+    --cupcake-info: #aaaaaa;
+    --cupcake-info-rgb: 170, 170, 170;
 
     --cupcake-loading-overlay: rgba(0, 0, 0, 0.95);
 
     --bs-primary: #ffffff;
     --bs-primary-rgb: 255, 255, 255;
+    --bs-secondary: #cccccc;
+    --bs-secondary-rgb: 204, 204, 204;
+    --bs-success: #ffffff;
+    --bs-success-rgb: 255, 255, 255;
+    --bs-danger: #ffffff;
+    --bs-danger-rgb: 255, 255, 255;
+    --bs-warning: #cccccc;
+    --bs-warning-rgb: 204, 204, 204;
+    --bs-info: #aaaaaa;
+    --bs-info-rgb: 170, 170, 170;
+    --bs-link-color: #ffffff;
+    --bs-link-hover-color: #cccccc;
+    --bs-body-color: #ffffff;
+    --bs-body-bg: #000000;
   }
 
   *,
@@ -131,5 +157,154 @@ html.theme-eink {
   .progress {
     background-color: var(--cupcake-bg-tertiary);
     border: 1px solid var(--cupcake-border);
+  }
+
+  .badge {
+    &.bg-primary,
+    &.bg-success,
+    &.bg-danger,
+    &.bg-info {
+      background-color: var(--cupcake-text) !important;
+      color: var(--cupcake-bg) !important;
+    }
+
+    &.bg-secondary,
+    &.bg-warning,
+    &.bg-light {
+      background-color: var(--cupcake-bg-tertiary) !important;
+      color: var(--cupcake-text) !important;
+      border: 1px solid var(--cupcake-border);
+    }
+  }
+
+  .alert {
+    &.alert-primary,
+    &.alert-success,
+    &.alert-danger,
+    &.alert-info {
+      background-color: var(--cupcake-bg-secondary);
+      border-color: var(--cupcake-border);
+      color: var(--cupcake-text);
+    }
+
+    &.alert-warning,
+    &.alert-secondary {
+      background-color: var(--cupcake-bg-tertiary);
+      border-color: var(--cupcake-border-light);
+      color: var(--cupcake-text);
+    }
+  }
+
+  .btn-success,
+  .btn-danger,
+  .btn-info,
+  .btn-warning {
+    --bs-btn-color: var(--cupcake-primary-contrast);
+    --bs-btn-bg: var(--cupcake-primary);
+    --bs-btn-border-color: var(--cupcake-primary);
+    --bs-btn-hover-color: var(--cupcake-primary-contrast);
+    --bs-btn-hover-bg: var(--cupcake-primary-dark);
+    --bs-btn-hover-border-color: var(--cupcake-primary-dark);
+    --bs-btn-active-color: var(--cupcake-primary-contrast);
+    --bs-btn-active-bg: var(--cupcake-primary-dark);
+    --bs-btn-active-border-color: var(--cupcake-primary-dark);
+  }
+
+  .btn-outline-success,
+  .btn-outline-danger,
+  .btn-outline-info,
+  .btn-outline-warning {
+    --bs-btn-color: var(--cupcake-primary);
+    --bs-btn-border-color: var(--cupcake-primary);
+    --bs-btn-hover-color: var(--cupcake-primary-contrast);
+    --bs-btn-hover-bg: var(--cupcake-primary);
+    --bs-btn-hover-border-color: var(--cupcake-primary);
+    --bs-btn-active-color: var(--cupcake-primary-contrast);
+    --bs-btn-active-bg: var(--cupcake-primary);
+    --bs-btn-active-border-color: var(--cupcake-primary);
+  }
+
+  .text-success,
+  .text-danger,
+  .text-info,
+  .text-warning,
+  .text-primary {
+    color: var(--cupcake-text) !important;
+  }
+
+  .bg-success,
+  .bg-danger,
+  .bg-info,
+  .bg-warning {
+    background-color: var(--cupcake-text) !important;
+    color: var(--cupcake-bg) !important;
+  }
+
+  .border-success,
+  .border-danger,
+  .border-info,
+  .border-warning,
+  .border-primary {
+    border-color: var(--cupcake-border) !important;
+  }
+
+  a {
+    color: var(--cupcake-text);
+    text-decoration: underline;
+
+    &:hover,
+    &:focus {
+      color: var(--cupcake-text-muted);
+    }
+  }
+
+  .progress-bar {
+    background-color: var(--cupcake-text);
+  }
+
+  .form-check-input:checked {
+    background-color: var(--cupcake-text);
+    border-color: var(--cupcake-text);
+  }
+
+  .nav-pills .nav-link.active {
+    background-color: var(--cupcake-text);
+    color: var(--cupcake-bg);
+  }
+
+  .list-group-item.active {
+    background-color: var(--cupcake-text);
+    border-color: var(--cupcake-text);
+    color: var(--cupcake-bg);
+  }
+
+  .page-item.active .page-link {
+    background-color: var(--cupcake-text);
+    border-color: var(--cupcake-text);
+    color: var(--cupcake-bg);
+  }
+
+  .page-link {
+    color: var(--cupcake-text);
+
+    &:hover,
+    &:focus {
+      color: var(--cupcake-text);
+      background-color: var(--cupcake-bg-tertiary);
+      border-color: var(--cupcake-border);
+    }
+  }
+
+  .dropdown-item {
+    &.active,
+    &:active {
+      background-color: var(--cupcake-text);
+      color: var(--cupcake-bg);
+    }
+  }
+
+  .accordion-button:not(.collapsed) {
+    background-color: var(--cupcake-bg-secondary);
+    color: var(--cupcake-text);
   }
 }
