@@ -96,8 +96,8 @@ export class NavbarComponent implements OnInit, OnDestroy {
     return this.userManagementService.getUserDisplayName(user);
   }
 
-  toggleTheme(): void {
-    this.themeService.toggleTheme();
+  toggleMode(): void {
+    this.themeService.toggleMode();
   }
 
   getThemeIcon(): string {

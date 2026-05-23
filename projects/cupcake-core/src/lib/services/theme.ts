@@ -1,28 +1,33 @@
 import { Injectable, signal, computed } from '@angular/core';
 
-export type Theme = 'light' | 'dark' | 'auto';
+export type ThemeMode = 'light' | 'dark' | 'auto';
+export type ThemePalette = 'default' | 'eink';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ThemeService {
-  private readonly THEME_KEY = 'cupcake-theme';
+  private readonly MODE_KEY = 'cupcake-theme';
+  private readonly PALETTE_KEY = 'cupcake-palette';
   private readonly mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
 
-  private _theme = signal<Theme>(this.loadStoredTheme());
+  private _mode = signal<ThemeMode>(this.loadStoredMode());
+  private _palette = signal<ThemePalette>(this.loadStoredPalette());
 
-  readonly theme = this._theme.asReadonly();
+  readonly mode = this._mode.asReadonly();
+  readonly palette = this._palette.asReadonly();
+
   readonly isDark = computed(() => {
-    const theme = this._theme();
-    if (theme === 'auto') {
+    const mode = this._mode();
+    if (mode === 'auto') {
       return this.mediaQuery.matches;
     }
-    return theme === 'dark';
+    return mode === 'dark';
   });
 
   constructor() {
     this.mediaQuery.addEventListener('change', () => {
-      if (this._theme() === 'auto') {
+      if (this._mode() === 'auto') {
         this.updateDocumentTheme();
       }
     });
@@ -30,37 +35,52 @@ export class ThemeService {
     this.updateDocumentTheme();
   }
 
-  setTheme(theme: Theme): void {
-    this._theme.set(theme);
-    localStorage.setItem(this.THEME_KEY, theme);
+  setMode(mode: ThemeMode): void {
+    this._mode.set(mode);
+    localStorage.setItem(this.MODE_KEY, mode);
     this.updateDocumentTheme();
   }
 
-  toggleTheme(): void {
-    const current = this._theme();
+  toggleMode(): void {
+    const current = this._mode();
     if (current === 'light') {
-      this.setTheme('dark');
+      this.setMode('dark');
     } else if (current === 'dark') {
-      this.setTheme('auto');
+      this.setMode('auto');
     } else {
-      this.setTheme('light');
+      this.setMode('light');
     }
   }
 
-  private loadStoredTheme(): Theme {
-    const stored = localStorage.getItem(this.THEME_KEY) as Theme;
+  setPalette(palette: ThemePalette): void {
+    this._palette.set(palette);
+    localStorage.setItem(this.PALETTE_KEY, palette);
+    this.updateDocumentTheme();
+  }
+
+  private loadStoredMode(): ThemeMode {
+    const stored = localStorage.getItem(this.MODE_KEY) as ThemeMode;
     return stored && ['light', 'dark', 'auto'].includes(stored) ? stored : 'auto';
+  }
+
+  private loadStoredPalette(): ThemePalette {
+    const stored = localStorage.getItem(this.PALETTE_KEY) as ThemePalette;
+    return stored && ['default', 'eink'].includes(stored) ? stored : 'default';
   }
 
   private updateDocumentTheme(): void {
     const isDark = this.isDark();
+    const palette = this._palette();
+
     document.documentElement.setAttribute('data-bs-theme', isDark ? 'dark' : 'light');
     document.documentElement.classList.toggle('dark-mode', isDark);
+
+    document.documentElement.classList.remove('theme-default', 'theme-eink');
+    document.documentElement.classList.add(`theme-${palette}`);
   }
 
   getThemeIcon(): string {
-    const theme = this._theme();
-    switch (theme) {
+    switch (this._mode()) {
       case 'light': return 'bi-sun-fill';
       case 'dark': return 'bi-moon-fill';
       case 'auto': return 'bi-circle-half';
@@ -69,8 +89,7 @@ export class ThemeService {
   }
 
   getThemeLabel(): string {
-    const theme = this._theme();
-    switch (theme) {
+    switch (this._mode()) {
       case 'light': return 'Light Mode';
       case 'dark': return 'Dark Mode';
       case 'auto': return 'Auto Mode';

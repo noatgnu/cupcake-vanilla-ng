@@ -34,9 +34,10 @@ export class App implements OnInit, OnDestroy {
 
   private themeEffect = effect(() => {
     const isDark = this.themeService.isDark();
+    const palette = this.themeService.palette();
     const config = this.siteConfigService.siteConfig();
     untracked(() => {
-      this.updatePrimaryColorTheme(config.primaryColor || '#1976d2');
+      this.updatePrimaryColorTheme(config.primaryColor || '#1976d2', palette !== 'default');
     });
   });
 
@@ -78,8 +79,18 @@ export class App implements OnInit, OnDestroy {
     }
   }
 
-  private updatePrimaryColorTheme(primaryColor: string): void {
+  private updatePrimaryColorTheme(primaryColor: string, einkMode = false): void {
     const root = this.document.documentElement;
+
+    if (einkMode) {
+      root.style.removeProperty('--cupcake-primary');
+      root.style.removeProperty('--cupcake-primary-rgb');
+      root.style.removeProperty('--cupcake-primary-dark');
+      root.style.removeProperty('--cupcake-primary-light');
+      root.style.removeProperty('--cupcake-primary-contrast');
+      return;
+    }
+
     const isDark = this.themeService.isDark();
 
     let adjustedPrimary = primaryColor;

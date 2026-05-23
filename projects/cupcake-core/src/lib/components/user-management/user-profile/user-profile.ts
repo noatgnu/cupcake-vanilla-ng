@@ -2,10 +2,10 @@ import { Component, OnInit, signal, inject, computed, ChangeDetectionStrategy } 
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
-import { ApiService } from '../../../services/api';
 import { AuthService } from '../../../services/auth';
 import { User, UserProfileUpdateRequest, PasswordChangeRequest, EmailChangeRequest } from '../../../models';
 import { UserManagementService } from '../../../services/user-management';
+import { ThemeService } from '../../../services/theme';
 
 @Component({
   selector: 'ccc-user-profile',
@@ -19,6 +19,7 @@ export class UserProfileComponent implements OnInit {
   private fb = inject(FormBuilder);
   private userManagementService = inject(UserManagementService);
   private authService = inject(AuthService);
+  readonly themeService = inject(ThemeService);
 
   // User data
   currentUser = signal<User | null>(null);
@@ -30,7 +31,7 @@ export class UserProfileComponent implements OnInit {
   emailChangeForm: FormGroup;
   
   // UI state
-  activeTab = signal<'profile' | 'password' | 'email' | 'account'>('profile');
+  activeTab = signal<'profile' | 'password' | 'email' | 'account' | 'appearance'>('profile');
   isUpdatingProfile = signal(false);
   isChangingPassword = signal(false);
   isChangingEmail = signal(false);
@@ -178,7 +179,7 @@ export class UserProfileComponent implements OnInit {
     }
   }
 
-  setActiveTab(tab: 'profile' | 'password' | 'email' | 'account'): void {
+  setActiveTab(tab: 'profile' | 'password' | 'email' | 'account' | 'appearance'): void {
     this.activeTab.set(tab);
     // Clear messages when switching tabs
     this.profileMessage.set('');

@@ -323,6 +323,60 @@
             </div>
           </ng-template>
         </li>
+
+        <li [ngbNavItem]="'appearance'">
+          <button ngbNavLink (click)="setActiveTab('appearance')">
+            <i class="bi bi-palette me-1"></i>Appearance
+          </button>
+          <ng-template ngbNavContent>
+            <div class="mt-4">
+              <div class="card">
+                <div class="card-header">
+                  <h6 class="mb-0">
+                    <i class="bi bi-palette me-2"></i>Theme
+                  </h6>
+                </div>
+                <div class="card-body">
+                  <p class="text-muted small mb-3">
+                    Choose a display theme. Light or dark mode is controlled by the toggle in the navigation bar.
+                  </p>
+                  <div class="d-flex gap-3">
+                    <div
+                      class="theme-option border rounded p-3 flex-fill"
+                      [class.border-primary]="themeService.palette() === 'default'"
+                      [class.border-2]="themeService.palette() === 'default'"
+                      role="button"
+                      (click)="themeService.setPalette('default')">
+                      <div class="d-flex align-items-center gap-2 mb-2">
+                        <i class="bi bi-display fs-5"></i>
+                        <strong>Default</strong>
+                        @if (themeService.palette() === 'default') {
+                          <i class="bi bi-check-circle-fill text-primary ms-auto"></i>
+                        }
+                      </div>
+                      <small class="text-muted">Full colour with standard animations</small>
+                    </div>
+                    <div
+                      class="theme-option border rounded p-3 flex-fill"
+                      [class.border-primary]="themeService.palette() === 'eink'"
+                      [class.border-2]="themeService.palette() === 'eink'"
+                      role="button"
+                      (click)="themeService.setPalette('eink')">
+                      <div class="d-flex align-items-center gap-2 mb-2">
+                        <i class="bi bi-book fs-5"></i>
+                        <strong>E-Ink</strong>
+                        @if (themeService.palette() === 'eink') {
+                          <i class="bi bi-check-circle-fill text-primary ms-auto"></i>
+                        }
+                      </div>
+                      <small class="text-muted">Monochrome, no animation, optimised for e-ink displays</small>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </ng-template>
+        </li>
       </ul>
 
       <div [ngbNavOutlet]="profileNav" class="mt-3"></div>

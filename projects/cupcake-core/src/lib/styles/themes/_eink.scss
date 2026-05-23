@@ -1,0 +1,135 @@
+.theme-eink {
+  --cupcake-primary: #000000;
+  --cupcake-primary-rgb: 0, 0, 0;
+  --cupcake-primary-dark: #000000;
+  --cupcake-primary-light: #444444;
+  --cupcake-primary-contrast: #ffffff;
+
+  --cupcake-secondary: #444444;
+  --cupcake-secondary-rgb: 68, 68, 68;
+  --cupcake-accent: #222222;
+
+  --cupcake-bg: #ffffff;
+  --cupcake-bg-secondary: #f2f2f2;
+  --cupcake-bg-tertiary: #e0e0e0;
+
+  --cupcake-text: #000000;
+  --cupcake-text-muted: #555555;
+
+  --cupcake-border: #000000;
+  --cupcake-border-light: #888888;
+
+  --cupcake-shadow: none;
+  --cupcake-shadow-lg: none;
+
+  --cupcake-card-bg: #ffffff;
+  --cupcake-card-header-bg: #f0f0f0;
+  --cupcake-card-border: #000000;
+
+  --cupcake-table-striped: rgba(0, 0, 0, 0.05);
+  --cupcake-table-hover: rgba(0, 0, 0, 0.1);
+  --cupcake-table-border: #000000;
+
+  --cupcake-input-border: #000000;
+  --cupcake-input-bg: #ffffff;
+
+  --cupcake-success: #444444;
+  --cupcake-success-rgb: 68, 68, 68;
+  --cupcake-warning: #333333;
+  --cupcake-warning-rgb: 51, 51, 51;
+  --cupcake-danger: #000000;
+  --cupcake-danger-rgb: 0, 0, 0;
+  --cupcake-info: #666666;
+  --cupcake-info-rgb: 102, 102, 102;
+
+  --cupcake-transition: none;
+  --cupcake-transition-fast: none;
+  --cupcake-transition-slow: none;
+  --cupcake-loading-overlay: rgba(255, 255, 255, 0.95);
+
+  --bs-primary: #000000;
+  --bs-primary-rgb: 0, 0, 0;
+
+  &[data-bs-theme="dark"],
+  &.dark-mode {
+    --cupcake-primary: #ffffff;
+    --cupcake-primary-rgb: 255, 255, 255;
+    --cupcake-primary-dark: #ffffff;
+    --cupcake-primary-light: #cccccc;
+    --cupcake-primary-contrast: #000000;
+
+    --cupcake-secondary: #cccccc;
+    --cupcake-secondary-rgb: 204, 204, 204;
+
+    --cupcake-bg: #000000;
+    --cupcake-bg-secondary: #111111;
+    --cupcake-bg-tertiary: #222222;
+
+    --cupcake-text: #ffffff;
+    --cupcake-text-muted: #aaaaaa;
+
+    --cupcake-border: #ffffff;
+    --cupcake-border-light: #666666;
+
+    --cupcake-card-bg: #000000;
+    --cupcake-card-header-bg: #111111;
+    --cupcake-card-border: #ffffff;
+
+    --cupcake-table-striped: rgba(255, 255, 255, 0.05);
+    --cupcake-table-hover: rgba(255, 255, 255, 0.1);
+    --cupcake-table-border: #ffffff;
+
+    --cupcake-input-border: #ffffff;
+    --cupcake-input-bg: #000000;
+
+    --cupcake-success: #cccccc;
+    --cupcake-success-rgb: 204, 204, 204;
+    --cupcake-warning: #aaaaaa;
+    --cupcake-warning-rgb: 170, 170, 170;
+    --cupcake-danger: #ffffff;
+    --cupcake-danger-rgb: 255, 255, 255;
+    --cupcake-info: #888888;
+    --cupcake-info-rgb: 136, 136, 136;
+
+    --cupcake-loading-overlay: rgba(0, 0, 0, 0.95);
+
+    --bs-primary: #ffffff;
+    --bs-primary-rgb: 255, 255, 255;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    transition-delay: 0ms !important;
+  }
+
+  .spinner-border,
+  .spinner-grow {
+    visibility: hidden;
+  }
+
+  .card,
+  .modal-content,
+  .dropdown-menu,
+  .popover,
+  .toast,
+  .offcanvas {
+    box-shadow: none !important;
+  }
+
+  .form-control:focus,
+  .form-select:focus,
+  .form-check-input:focus,
+  .btn:focus-visible {
+    box-shadow: none !important;
+    outline: 2px solid var(--cupcake-border);
+  }
+
+  .progress {
+    background-color: var(--cupcake-bg-tertiary);
+    border: 1px solid var(--cupcake-border);
+  }
+}
