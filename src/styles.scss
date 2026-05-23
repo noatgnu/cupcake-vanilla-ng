@@ -13,6 +13,9 @@
 /* Import cupcake-core Bootstrap integration */
 @import '@noatgnu/cupcake-core/src/lib/styles/bootstrap-integration';
 
+/* Import palette themes */
+@import '@noatgnu/cupcake-core/src/lib/styles/themes/eink';
+
 /* Import cupcake-core component styles */
 @import '@noatgnu/cupcake-core/src/lib/styles/components';
 
@@ -104,6 +107,11 @@ body, html {
   background-color: var(--cupcake-bg-secondary);
   color: var(--cupcake-text);
   transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+html.theme-eink,
+html.theme-eink body {
+  transition: none !important;
 }
 
 // Dark mode specific body styling
