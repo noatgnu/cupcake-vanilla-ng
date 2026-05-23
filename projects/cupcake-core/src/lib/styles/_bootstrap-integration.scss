@@ -362,13 +362,10 @@
   color: var(--cupcake-text);
 }
 
-.toast-body {
-  color: var(--cupcake-text);
-}
-
 .toast.bg-success,
-.toast.bg-danger,
-.toast.bg-primary {
+.toast.bg-danger {
+  color: #fff;
+
   .toast-header {
     background-color: rgba(0, 0, 0, 0.15);
     color: #fff;
@@ -380,7 +377,23 @@
   }
 }
 
+.toast.bg-primary {
+  color: var(--cupcake-primary-contrast);
+
+  .toast-header {
+    background-color: rgba(0, 0, 0, 0.15);
+    color: var(--cupcake-primary-contrast);
+    border-bottom-color: rgba(var(--cupcake-primary-rgb), 0.3);
+  }
+
+  .btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
+  }
+}
+
 .toast.bg-warning {
+  color: rgba(0, 0, 0, 0.85);
+
   .toast-header {
     background-color: rgba(0, 0, 0, 0.1);
     color: rgba(0, 0, 0, 0.75);

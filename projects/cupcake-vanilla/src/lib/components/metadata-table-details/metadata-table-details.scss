@@ -36,19 +36,18 @@ thead th:hover .header-actions {
     .sample-cell {
       cursor: pointer;
       transition: background-color 0.1s ease;
-      
+
       &:hover {
-        background-color: rgba(40, 167, 69, 0.08);
+        background-color: var(--cupcake-table-hover);
         position: relative;
-        
-        // Add edit indicator on hover using pseudo-element
+
         &::after {
           content: '✎';
           position: absolute;
           right: 4px;
           top: 50%;
           transform: translateY(-50%);
-          color: rgba(40, 167, 69, 0.6);
+          color: var(--cupcake-text-muted);
           font-size: 0.75em;
           pointer-events: none;
         }
@@ -59,42 +58,40 @@ thead th:hover .header-actions {
 
 .pool-row {
   &.editable {
-    // Pool name cell (first cell) - for editing pool structure
     td.clickable {
       cursor: pointer;
       transition: background-color 0.1s ease;
-      
+
       &:hover {
-        background-color: rgba(13, 202, 240, 0.1);
-        color: var(--bs-info);
-        
+        background-color: var(--cupcake-table-hover);
+        color: var(--cupcake-text);
+
         .bi-pencil-square {
           opacity: 0.8;
         }
       }
-      
+
       .bi-pencil-square {
         opacity: 0.4;
         transition: opacity 0.1s ease;
       }
     }
-    
-    // Pool metadata cells - for editing values
+
     .pool-cell {
       cursor: pointer;
       transition: background-color 0.1s ease;
-      
+
       &:hover {
-        background-color: rgba(255, 193, 7, 0.15);
+        background-color: var(--cupcake-table-hover);
         position: relative;
-        
+
         &::after {
           content: '✎';
           position: absolute;
           right: 4px;
           top: 50%;
           transform: translateY(-50%);
-          color: rgba(255, 193, 7, 0.8);
+          color: var(--cupcake-text-muted);
           font-size: 0.75em;
           pointer-events: none;
         }
@@ -111,30 +108,29 @@ thead th:hover .header-actions {
   }
 }
 
-// Sortable column headers
 .sortable {
   cursor: pointer;
   user-select: none;
   transition: background-color 0.2s ease;
-  
+
   &:hover {
-    background-color: rgba(var(--bs-primary-rgb), 0.1);
+    background-color: var(--cupcake-table-hover);
   }
-  
+
   &.sorted {
-    background-color: rgba(var(--bs-primary-rgb), 0.15);
-    
+    background-color: var(--cupcake-bg-secondary);
+
     .bi {
-      color: var(--bs-primary);
+      color: var(--cupcake-primary);
     }
   }
-  
+
   .bi {
     opacity: 0.5;
     transition: all 0.2s ease;
     font-size: 0.75em;
   }
-  
+
   &:hover .bi {
     opacity: 0.8;
   }
@@ -173,7 +169,7 @@ thead th:hover .header-actions {
 
 .cdk-drag-placeholder {
   opacity: 0.5;
-  background: rgba(var(--bs-primary-rgb), 0.1);
+  background: var(--cupcake-table-hover);
 }
 
 .cdk-drag-animating {

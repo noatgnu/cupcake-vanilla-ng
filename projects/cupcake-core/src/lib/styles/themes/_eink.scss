@@ -331,7 +331,9 @@ html.theme-eink {
   .table-warning,
   .table-info,
   .table-primary,
-  .table-secondary {
+  .table-secondary,
+  .table-light,
+  .table-dark {
     --bs-table-color: var(--cupcake-text);
     --bs-table-bg: var(--cupcake-bg-secondary);
     --bs-table-border-color: var(--cupcake-table-border);
@@ -341,5 +343,31 @@ html.theme-eink {
     --bs-table-active-color: var(--cupcake-text);
     --bs-table-hover-bg: var(--cupcake-table-hover);
     --bs-table-hover-color: var(--cupcake-text);
+    color: var(--cupcake-text);
+    border-color: var(--cupcake-table-border);
   }
+
+  --bs-primary-bg-subtle: var(--cupcake-bg-secondary);
+  --bs-primary-text-emphasis: var(--cupcake-text);
+  --bs-primary-border-subtle: var(--cupcake-border);
+
+  --bs-secondary-bg-subtle: var(--cupcake-bg-secondary);
+  --bs-secondary-text-emphasis: var(--cupcake-text-muted);
+  --bs-secondary-border-subtle: var(--cupcake-border);
+
+  --bs-success-bg-subtle: var(--cupcake-bg-tertiary);
+  --bs-success-text-emphasis: var(--cupcake-text);
+  --bs-success-border-subtle: var(--cupcake-border);
+
+  --bs-info-bg-subtle: var(--cupcake-bg-secondary);
+  --bs-info-text-emphasis: var(--cupcake-text-muted);
+  --bs-info-border-subtle: var(--cupcake-border);
+
+  --bs-warning-bg-subtle: var(--cupcake-bg-tertiary);
+  --bs-warning-text-emphasis: var(--cupcake-text);
+  --bs-warning-border-subtle: var(--cupcake-border);
+
+  --bs-danger-bg-subtle: var(--cupcake-bg-secondary);
+  --bs-danger-text-emphasis: var(--cupcake-text);
+  --bs-danger-border-subtle: var(--cupcake-border);
 }

@@ -23,14 +23,14 @@ export class ToastContainerComponent {
   getToastClass(type: string): string {
     switch (type) {
       case 'success':
-        return 'bg-success text-white';
+        return 'bg-success';
       case 'error':
-        return 'bg-danger text-white';
+        return 'bg-danger';
       case 'warning':
-        return 'bg-warning text-dark';
+        return 'bg-warning';
       case 'info':
       default:
-        return 'bg-primary text-white';
+        return 'bg-primary';
     }
   }
 
