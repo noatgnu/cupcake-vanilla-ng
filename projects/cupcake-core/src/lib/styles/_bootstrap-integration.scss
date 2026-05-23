@@ -248,9 +248,14 @@
 // Table components (enhance Bootstrap tables)
 .table {
   --bs-table-striped-bg: var(--cupcake-table-striped);
+  --bs-table-striped-color: var(--cupcake-text);
   --bs-table-hover-bg: var(--cupcake-table-hover);
+  --bs-table-hover-color: var(--cupcake-text);
+  --bs-table-active-bg: var(--cupcake-table-hover);
+  --bs-table-active-color: var(--cupcake-text);
   --bs-table-border-color: var(--cupcake-table-border);
   background-color: var(--cupcake-card-bg);
+  color: var(--cupcake-text);
 }
 
 .table th {

@@ -307,4 +307,39 @@ html.theme-eink {
     background-color: var(--cupcake-bg-secondary);
     color: var(--cupcake-text);
   }
+
+  .toast {
+    &.bg-success,
+    &.bg-danger,
+    &.bg-primary,
+    &.bg-info,
+    &.bg-warning {
+      .toast-header {
+        background-color: transparent;
+        color: var(--cupcake-bg);
+        border-bottom-color: var(--cupcake-border);
+      }
+
+      .btn-close {
+        filter: none;
+      }
+    }
+  }
+
+  .table-success,
+  .table-danger,
+  .table-warning,
+  .table-info,
+  .table-primary,
+  .table-secondary {
+    --bs-table-color: var(--cupcake-text);
+    --bs-table-bg: var(--cupcake-bg-secondary);
+    --bs-table-border-color: var(--cupcake-table-border);
+    --bs-table-striped-bg: var(--cupcake-bg-tertiary);
+    --bs-table-striped-color: var(--cupcake-text);
+    --bs-table-active-bg: var(--cupcake-table-hover);
+    --bs-table-active-color: var(--cupcake-text);
+    --bs-table-hover-bg: var(--cupcake-table-hover);
+    --bs-table-hover-color: var(--cupcake-text);
+  }
 }
