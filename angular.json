@@ -167,6 +167,11 @@
       "root": "projects/cupcake-core",
       "sourceRoot": "projects/cupcake-core/src",
       "prefix": "ccc",
+      "schematics": {
+        "@schematics/angular:component": {
+          "style": "scss"
+        }
+      },
       "architect": {
         "build": {
           "builder": "@angular/build:ng-packagr",

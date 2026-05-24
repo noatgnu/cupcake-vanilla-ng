@@ -1,7 +1,7 @@
 import { Routes } from '@angular/router';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { LoginComponent, RegisterComponent, SiteConfigComponent, UserManagementComponent, UserProfileComponent, LabGroupsComponent, authGuard, adminGuard, StorageManagement, BackupManagement } from '@noatgnu/cupcake-core';
+import { LoginComponent, RegisterComponent, SiteConfigComponent, UserManagementComponent, UserProfileComponent, LabGroupsComponent, authGuard, adminGuard, StorageManagement, BackupManagement, DeviceTokenManagement } from '@noatgnu/cupcake-core';
 import { MetadataTablesComponent} from './features/metadata-tables/metadata-tables';
 import { MetadataTableTemplates, ColumnTemplates, FavoriteManagement, MetadataTableDetails } from '@noatgnu/cupcake-vanilla';
 import {MetadataSelector} from './features/metadata-selector/metadata-selector';
@@ -104,6 +104,11 @@ export const routes: Routes = [
     path: 'admin/backup',
     component: BackupManagement,
     canActivate: [authGuard, adminGuard, applianceGuard]
+  },
+  {
+    path: 'user/devices',
+    component: DeviceTokenManagement,
+    canActivate: [authGuard]
   },
   {
     path: '**',

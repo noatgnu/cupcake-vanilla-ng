@@ -20,3 +20,4 @@ export * from './worker-status';
 export * from './electron-api';
 export * from './desktop-api';
 export * from './appliance';
+export * from './device-token';

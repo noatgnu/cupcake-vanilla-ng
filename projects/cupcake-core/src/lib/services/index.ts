@@ -14,3 +14,4 @@ export * from './websocket-config';
 export * from './admin-websocket';
 export * from './lab-group';
 export * from './appliance';
+export * from './device-token';

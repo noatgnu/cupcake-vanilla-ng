@@ -18,3 +18,6 @@ export * from './powered-by-footer/powered-by-footer';
 // Admin appliance components
 export * from '../storage-management/storage-management';
 export * from '../backup-management/backup-management';
+
+// Device token management
+export * from './device-token-management/device-token-management';
