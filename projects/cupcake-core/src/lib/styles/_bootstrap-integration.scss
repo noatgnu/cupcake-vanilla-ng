@@ -1,17 +1,25 @@
 // =============================================================================
-// CUPCAKE CORE - Bootstrap Integration
+// CUPCAKE CORE — Bootstrap Integration
 // =============================================================================
-// This file integrates cupcake design tokens with Bootstrap components
-// Import this file after importing Bootstrap to apply cupcake theming
+// Overrides Bootstrap component defaults with cupcake design tokens.
+//
+// SPECIFICITY CONTRACT
+// Every selector here carries a :root prefix (pseudo-class = 0-1-0), giving
+// a combined specificity of 0-2-0. Bootstrap's own dark-mode overrides use
+// [data-bs-theme="dark"] .component (attribute + class = 0-2-0). Because
+// this file is imported AFTER Bootstrap, same-specificity rules from this
+// file win via cascade order — in every mode and every palette theme.
+//
+// This means NO dark-mode-specific blocks are needed here. Theme palette
+// files (themes/_default.scss, themes/_eink.scss, …) are the only place
+// that define --cupcake-* values. Adding a new theme never requires touching
+// this file.
 
 @import './variables';
 
-// =============================================================================
-// BOOTSTRAP COMPONENT OVERRIDES
-// =============================================================================
+// ---- BUTTONS -----------------------------------------------
 
-// Override Bootstrap primary colors with CSS custom properties
-.btn-primary {
+:root .btn-primary {
   --bs-btn-color: var(--cupcake-primary-contrast);
   --bs-btn-bg: var(--cupcake-primary);
   --bs-btn-border-color: var(--cupcake-primary);
@@ -27,7 +35,7 @@
   --bs-btn-disabled-border-color: var(--cupcake-primary);
 }
 
-.btn-outline-primary {
+:root .btn-outline-primary {
   --bs-btn-color: var(--cupcake-primary);
   --bs-btn-border-color: var(--cupcake-primary);
   --bs-btn-hover-color: var(--cupcake-primary-contrast);
@@ -41,8 +49,7 @@
   --bs-btn-disabled-border-color: var(--cupcake-primary);
 }
 
-// Secondary button colors
-.btn-secondary {
+:root .btn-secondary {
   --bs-btn-bg: var(--cupcake-secondary);
   --bs-btn-border-color: var(--cupcake-secondary);
   --bs-btn-hover-bg: color-mix(in srgb, var(--cupcake-secondary) 85%, black);
@@ -52,167 +59,151 @@
   --bs-btn-active-border-color: color-mix(in srgb, var(--cupcake-secondary) 85%, black);
 }
 
-.btn-outline-secondary {
+:root .btn-outline-secondary {
   --bs-btn-color: var(--cupcake-secondary);
   --bs-btn-border-color: var(--cupcake-secondary);
+  --bs-btn-hover-color: var(--cupcake-primary-contrast);
   --bs-btn-hover-bg: var(--cupcake-secondary);
   --bs-btn-hover-border-color: var(--cupcake-secondary);
   --bs-btn-focus-shadow-rgb: var(--cupcake-secondary-rgb);
+  --bs-btn-active-color: var(--cupcake-primary-contrast);
   --bs-btn-active-bg: var(--cupcake-secondary);
   --bs-btn-active-border-color: var(--cupcake-secondary);
 }
 
-// Primary color utilities
-.bg-primary {
+// ---- COLOR UTILITIES ----------------------------------------
+
+:root .bg-primary {
   background-color: var(--cupcake-primary) !important;
+  color: var(--cupcake-primary-contrast) !important;
 }
 
-.text-primary {
+:root .text-primary {
   color: var(--cupcake-primary) !important;
 }
 
-.border-primary {
+:root .border-primary {
   border-color: var(--cupcake-primary) !important;
 }
 
-.link-primary {
+:root .link-primary {
   color: var(--cupcake-primary) !important;
-  
+
   &:hover,
   &:focus {
     color: var(--cupcake-primary-dark) !important;
   }
 }
 
-// Alert components
-.alert-primary {
+// ---- NAVBAR -------------------------------------------------
+// .navbar-dark hardcodes white text via --bs-navbar-* tokens.
+// When the navbar also carries bg-primary (now a light colour in dark
+// mode), we must override those tokens so text tracks the background.
+// Combined specificity 0-3-0 beats Bootstrap's .navbar-dark (0-1-0).
+
+:root .navbar-dark.bg-primary,
+:root .navbar.bg-primary {
+  --bs-navbar-color: var(--cupcake-primary-contrast);
+  --bs-navbar-hover-color: var(--cupcake-primary-contrast);
+  --bs-navbar-active-color: var(--cupcake-primary-contrast);
+  --bs-navbar-disabled-color: rgba(var(--cupcake-primary-rgb), 0.4);
+  --bs-navbar-brand-color: var(--cupcake-primary-contrast);
+  --bs-navbar-brand-hover-color: var(--cupcake-primary-contrast);
+  --bs-navbar-toggler-border-color: rgba(var(--cupcake-primary-rgb), 0.2);
+}
+
+// ---- ALERTS -------------------------------------------------
+
+:root .alert-primary {
   --bs-alert-color: var(--cupcake-primary-dark);
   --bs-alert-bg: rgba(var(--cupcake-primary-rgb), 0.1);
   --bs-alert-border-color: rgba(var(--cupcake-primary-rgb), 0.2);
 }
 
-// Badge components
-.badge.bg-primary {
+// ---- BADGES -------------------------------------------------
+
+:root .badge.bg-primary {
   background-color: var(--cupcake-primary) !important;
+  color: var(--cupcake-primary-contrast) !important;
 }
 
-// Progress bars
-.progress-bar {
+// ---- PROGRESS / SPINNERS -----------------------------------
+
+:root .progress-bar {
   background-color: var(--cupcake-primary);
 }
 
-// Spinner components
-.spinner-border.text-primary {
+:root .spinner-border.text-primary,
+:root .spinner-grow.text-primary {
   color: var(--cupcake-primary) !important;
 }
 
-.spinner-grow.text-primary {
-  color: var(--cupcake-primary) !important;
-}
+// ---- FORMS --------------------------------------------------
 
-// Form controls
-.form-control:focus {
+:root .form-control:focus {
   border-color: var(--cupcake-primary);
   box-shadow: 0 0 0 0.25rem rgba(var(--cupcake-primary-rgb), 0.25);
 }
 
-.form-select:focus {
+:root .form-select:focus {
   border-color: var(--cupcake-primary);
   box-shadow: 0 0 0 0.25rem rgba(var(--cupcake-primary-rgb), 0.25);
 }
 
-.form-check-input:checked {
+:root .form-check-input:checked {
   background-color: var(--cupcake-primary);
   border-color: var(--cupcake-primary);
 }
 
-.form-check-input:focus {
+:root .form-check-input:focus {
   box-shadow: 0 0 0 0.25rem rgba(var(--cupcake-primary-rgb), 0.25);
 }
 
-.form-range::-webkit-slider-thumb {
+:root .form-range::-webkit-slider-thumb {
   background-color: var(--cupcake-primary);
-  
+
   &:active {
     background-color: var(--cupcake-primary-light);
   }
 }
 
-.form-range::-moz-range-thumb {
+:root .form-range::-moz-range-thumb {
   background-color: var(--cupcake-primary);
-  
+
   &:active {
     background-color: var(--cupcake-primary-light);
   }
 }
 
-.form-range:focus::-webkit-slider-thumb {
+:root .form-range:focus::-webkit-slider-thumb {
   box-shadow: 0 0 0 1px #fff, 0 0 0 0.25rem rgba(var(--cupcake-primary-rgb), 0.25);
 }
 
-.form-range:focus::-moz-range-thumb {
+:root .form-range:focus::-moz-range-thumb {
   box-shadow: 0 0 0 1px #fff, 0 0 0 0.25rem rgba(var(--cupcake-primary-rgb), 0.25);
 }
 
-:root[data-bs-theme="dark"] .btn-secondary,
-.dark-mode .btn-secondary {
-  --bs-btn-color: #000;
-  --bs-btn-hover-color: #000;
-  --bs-btn-active-color: #000;
-}
+// ---- NAVIGATION (pills / tabs) -----------------------------
+// Scoped to .nav-pills so we do not conflict with Bootstrap's
+// .navbar-nav .nav-link which relies on --bs-navbar-color tokens.
 
-// Navigation components
-.nav-pills .nav-link.active,
-.nav-pills .show > .nav-link {
+:root .nav-pills .nav-link.active,
+:root .nav-pills .show > .nav-link {
   background-color: var(--cupcake-primary);
+  color: var(--cupcake-primary-contrast);
 }
 
-.nav-link {
-  color: var(--cupcake-text);
+// ---- PAGINATION --------------------------------------------
 
-  &:hover,
-  &:focus {
-    color: var(--cupcake-primary);
-  }
-
-  &.active {
-    color: var(--cupcake-primary);
-  }
-}
-
-.navbar-nav .nav-link.active {
-  color: var(--cupcake-primary) !important;
-}
-
-.navbar-dark .nav-link,
-.navbar[data-bs-theme="dark"] .nav-link {
-  color: rgba(255, 255, 255, 0.55) !important;
-
-  &:hover,
-  &:focus {
-    color: rgba(255, 255, 255, 0.75) !important;
-  }
-
-  &.active {
-    color: #fff !important;
-  }
-}
-
-.navbar-dark .navbar-brand,
-.navbar[data-bs-theme="dark"] .navbar-brand {
-  color: #fff !important;
-}
-
-// Pagination
-.page-link {
+:root .page-link {
   color: var(--cupcake-primary);
-  
+
   &:hover {
     color: var(--cupcake-primary-dark);
     background-color: rgba(var(--cupcake-primary-rgb), 0.1);
     border-color: var(--cupcake-primary);
   }
-  
+
   &:focus {
     color: var(--cupcake-primary-dark);
     background-color: rgba(var(--cupcake-primary-rgb), 0.1);
@@ -221,32 +212,37 @@
   }
 }
 
-.page-item.active .page-link {
+:root .page-item.active .page-link {
   background-color: var(--cupcake-primary);
   border-color: var(--cupcake-primary);
+  color: var(--cupcake-primary-contrast);
 }
 
-// List group
-.list-group-item.active {
+// ---- LIST GROUP --------------------------------------------
+
+:root .list-group-item.active {
   background-color: var(--cupcake-primary);
   border-color: var(--cupcake-primary);
+  color: var(--cupcake-primary-contrast);
 }
 
-// Card components (enhance Bootstrap cards with cupcake styling)
-.card {
+// ---- CARDS -------------------------------------------------
+
+:root .card {
   background-color: var(--cupcake-card-bg);
   border: 1px solid var(--cupcake-card-border);
   box-shadow: 0 0.125rem 0.25rem var(--cupcake-shadow);
   transition: var(--cupcake-transition);
 }
 
-.card-header {
+:root .card-header {
   background-color: var(--cupcake-card-header-bg);
   border-bottom: 1px solid var(--cupcake-card-border);
 }
 
-// Table components (enhance Bootstrap tables)
-.table {
+// ---- TABLES ------------------------------------------------
+
+:root .table {
   --bs-table-striped-bg: var(--cupcake-table-striped);
   --bs-table-striped-color: var(--cupcake-text);
   --bs-table-hover-bg: var(--cupcake-table-hover);
@@ -258,112 +254,117 @@
   color: var(--cupcake-text);
 }
 
-.table th {
+:root .table th {
   font-weight: map-get($cupcake-font-weights, semibold);
   background-color: var(--cupcake-card-header-bg);
   border-bottom: 2px solid var(--cupcake-table-border);
 }
 
-// Modal components
-.modal-content {
+// ---- MODALS ------------------------------------------------
+
+:root .modal-content {
   background-color: var(--cupcake-card-bg);
   border: 1px solid var(--cupcake-card-border);
   box-shadow: 0 0.5rem 1rem var(--cupcake-shadow-lg);
 }
 
-.modal-header {
+:root .modal-header {
   border-bottom: 1px solid var(--cupcake-card-border);
 }
 
-.modal-footer {
+:root .modal-footer {
   border-top: 1px solid var(--cupcake-card-border);
 }
 
-// Dropdown components
-.dropdown-menu {
+// ---- DROPDOWNS ---------------------------------------------
+
+:root .dropdown-menu {
   background-color: var(--cupcake-card-bg);
   border: 1px solid var(--cupcake-card-border);
   box-shadow: 0 0.5rem 1rem var(--cupcake-shadow-lg);
 }
 
-.dropdown-item {
+:root .dropdown-item {
   color: var(--cupcake-text);
-  
+
   &:hover,
   &:focus {
     background-color: var(--cupcake-bg-secondary);
     color: var(--cupcake-text);
   }
-  
+
   &.active,
   &:active {
     background-color: var(--cupcake-primary);
-    color: #fff;
+    color: var(--cupcake-primary-contrast);
   }
 }
 
-// Tooltip and Popover components
-.tooltip-inner {
+// ---- TOOLTIPS & POPOVERS -----------------------------------
+
+:root .tooltip-inner {
   background-color: var(--cupcake-text);
   color: var(--cupcake-bg);
 }
 
-.popover {
+:root .popover {
   background-color: var(--cupcake-card-bg);
   border: 1px solid var(--cupcake-card-border);
   box-shadow: 0 0.5rem 1rem var(--cupcake-shadow-lg);
 }
 
-.popover-header {
+:root .popover-header {
   background-color: var(--cupcake-card-header-bg);
   border-bottom: 1px solid var(--cupcake-card-border);
   color: var(--cupcake-text);
 }
 
-.popover-body {
+:root .popover-body {
   color: var(--cupcake-text);
 }
 
-// Accordion components
-.accordion-item {
+// ---- ACCORDION ---------------------------------------------
+
+:root .accordion-item {
   background-color: var(--cupcake-card-bg);
   border: 1px solid var(--cupcake-card-border);
 }
 
-.accordion-button {
+:root .accordion-button {
   background-color: var(--cupcake-card-header-bg);
   color: var(--cupcake-text);
-  
+
   &:not(.collapsed) {
     background-color: rgba(var(--cupcake-primary-rgb), 0.1);
     color: var(--cupcake-primary-dark);
   }
-  
+
   &:focus {
     border-color: var(--cupcake-primary);
     box-shadow: 0 0 0 0.25rem rgba(var(--cupcake-primary-rgb), 0.25);
   }
 }
 
-.accordion-body {
+:root .accordion-body {
   background-color: var(--cupcake-card-bg);
 }
 
-// Toast components
-.toast {
+// ---- TOASTS ------------------------------------------------
+
+:root .toast {
   background-color: var(--cupcake-card-bg);
   border: 1px solid var(--cupcake-card-border);
   box-shadow: 0 0.5rem 1rem var(--cupcake-shadow-lg);
 }
 
-.toast-header {
+:root .toast-header {
   background-color: var(--cupcake-card-header-bg);
   border-bottom: 1px solid var(--cupcake-card-border);
   color: var(--cupcake-text);
 }
 
-.toast.bg-success,
-.toast.bg-danger {
+:root .toast.bg-success,
+:root .toast.bg-danger {
   color: #fff;
 
   .toast-header {
@@ -377,7 +378,7 @@
   }
 }
 
-.toast.bg-primary {
+:root .toast.bg-primary {
   color: var(--cupcake-primary-contrast);
 
   .toast-header {
@@ -391,7 +392,7 @@
   }
 }
 
-.toast.bg-warning {
+:root .toast.bg-warning {
   color: rgba(0, 0, 0, 0.85);
 
   .toast-header {
@@ -401,16 +402,17 @@
   }
 }
 
-// Offcanvas components
-.offcanvas {
+// ---- OFFCANVAS ---------------------------------------------
+
+:root .offcanvas {
   background-color: var(--cupcake-card-bg);
   border: 1px solid var(--cupcake-card-border);
 }
 
-.offcanvas-header {
+:root .offcanvas-header {
   border-bottom: 1px solid var(--cupcake-card-border);
 }
 
-.offcanvas-body {
+:root .offcanvas-body {
   color: var(--cupcake-text);
 }

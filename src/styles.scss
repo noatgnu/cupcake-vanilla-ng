@@ -1,22 +1,21 @@
 /* You can add global styles to this file, and also import other style files */
 
-/* Import cupcake-core styling system */
+/* SCSS compile-time variables (breakpoints, font maps, etc.) */
 @import '@noatgnu/cupcake-core/src/lib/styles/variables';
 @import '@noatgnu/cupcake-core/src/lib/styles/mixins';
 
-/* Importing Bootstrap SCSS file. */
+/* Bootstrap */
 @import 'bootstrap/scss/bootstrap';
-
-/* Import Bootstrap Icons */
 @import 'bootstrap-icons/font/bootstrap-icons.css';
 
-/* Import cupcake-core Bootstrap integration */
+/* Cupcake Bootstrap integration (theme-agnostic; uses :root prefix) */
 @import '@noatgnu/cupcake-core/src/lib/styles/bootstrap-integration';
 
-/* Import cupcake-core component styles */
+/* Cupcake component styles */
 @import '@noatgnu/cupcake-core/src/lib/styles/components';
 
-/* Import palette themes — must come last so palette selectors win over :root */
+/* Palette themes — default first, then palette overrides */
+@import '@noatgnu/cupcake-core/src/lib/styles/themes/default';
 @import '@noatgnu/cupcake-core/src/lib/styles/themes/eink';
 
 // Empty states

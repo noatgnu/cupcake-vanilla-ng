@@ -1,43 +1,27 @@
 // =============================================================================
-// CUPCAKE CORE - Styles Index
+// CUPCAKE CORE — Styles entry point
 // =============================================================================
-// Entry point for all cupcake-core styles
+// Import order matters for CSS custom-property cascade:
+//   1. themes/default  — base token values (light + dark)
+//   2. themes/<palette> — palette overrides (eink, …)  scoped to html.theme-*
+//   3. cupcake-core    — component styles that consume the tokens
 
-// Import all themes
-@import './themes/light';
-@import './themes/dark';
+@import './themes/default';
 @import './themes/eink';
 
-// Import main stylesheet
 @import './cupcake-core';
 
 // =============================================================================
-// QUICK START GUIDE
+// ADDING A NEW PALETTE THEME
 // =============================================================================
-/*
-
-OPTION 1 - Full Import:
-```scss
-@import 'cupcake-core/styles';
-```
-
-OPTION 2 - With Bootstrap:
-```scss
-@import 'bootstrap/scss/bootstrap';
-@import 'bootstrap-icons/font/bootstrap-icons.css';
-@import 'cupcake-core/styles/cupcake-core';
-@import 'cupcake-core/styles/bootstrap-integration';
-```
-
-OPTION 3 - Custom Theme:
-```scss
-// Override variables first
-:root {
-  --cupcake-primary: #your-brand-color;
-  --cupcake-primary-rgb: r, g, b;
-}
-
-@import 'cupcake-core/styles';
-```
-
-*/
+// 1. Create  themes/_mytheme.scss  scoped under  html.theme-mytheme { … }
+//    Define all --cupcake-* tokens you want to override.
+//    Include a nested  &[data-bs-theme="dark"], &.dark-mode { … }  block
+//    for the dark variant if the palette supports it.
+//
+// 2. Add   @import './themes/mytheme';   below the other theme imports above.
+//
+// 3. In ThemeService, add 'mytheme' to the ThemePalette type and handle
+//    it in setPalette() / removePrimaryVars().
+//
+// No changes to _bootstrap-integration.scss are ever needed.
