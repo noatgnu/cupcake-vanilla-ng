@@ -1,7 +1,9 @@
 import { Routes } from '@angular/router';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { LoginComponent, RegisterComponent, SiteConfigComponent, UserManagementComponent, UserProfileComponent, LabGroupsComponent, authGuard, adminGuard, StorageManagement, BackupManagement, DeviceTokenManagement } from '@noatgnu/cupcake-core';
+import { LoginComponent, RegisterComponent, SiteConfigComponent, UserManagementComponent, UserProfileComponent, LabGroupsComponent, authGuard, adminGuard, DeviceTokenManagement } from '@noatgnu/cupcake-core';
+import { StoragePage } from './features/admin/storage-page/storage-page';
+import { BackupPage } from './features/admin/backup-page/backup-page';
 import { MetadataTablesComponent} from './features/metadata-tables/metadata-tables';
 import { MetadataTableTemplates, ColumnTemplates, FavoriteManagement, MetadataTableDetails } from '@noatgnu/cupcake-vanilla';
 import {MetadataSelector} from './features/metadata-selector/metadata-selector';
@@ -10,7 +12,7 @@ import { EnvironmentService } from './shared/services/environment';
 const applianceGuard = () => {
   const env = inject(EnvironmentService);
   const router = inject(Router);
-  if (env.isWails()) {
+  if (!env.isAppliance()) {
     return router.parseUrl('/metadata');
   }
   return true;
@@ -97,12 +99,12 @@ export const routes: Routes = [
   },
   {
     path: 'admin/storage',
-    component: StorageManagement,
+    component: StoragePage,
     canActivate: [authGuard, adminGuard, applianceGuard]
   },
   {
     path: 'admin/backup',
-    component: BackupManagement,
+    component: BackupPage,
     canActivate: [authGuard, adminGuard, applianceGuard]
   },
   {

@@ -33,6 +33,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
   private environmentService = inject(EnvironmentService);
 
   get isWails(): boolean { return this.environmentService.isWails(); }
+  get isAppliance(): boolean { return this.environmentService.isAppliance(); }
 
   isAuthenticated = this.authService.authenticated;
   currentUser = this.authService.currentUser;

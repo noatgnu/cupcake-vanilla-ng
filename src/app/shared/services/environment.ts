@@ -148,4 +148,8 @@ export class EnvironmentService {
   isProduction(): boolean {
     return this.currentEnvironment.production;
   }
+
+  isAppliance(): boolean {
+    return !!(environment as any).isAppliance;
+  }
 }
