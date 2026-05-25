@@ -1,13 +1,5 @@
-/**
- * CUPCAKE Core (CCC) - Models barrel export
- * User management, lab groups, and core functionality interfaces
- */
-
-// Base types and enums
 export * from './base';
 export * from './enums';
-
-// Core models
 export * from './site-config';
 export * from './user';
 export * from './lab-group';

@@ -13,7 +13,7 @@ export interface PaginatedDeviceTokens {
 export class DeviceTokenService extends BaseApiService {
 
   private get base(): string {
-    return `${this.apiUrl}/ccc/device-tokens`;
+    return `${this.apiUrl}/device-tokens`;
   }
 
   list(): Observable<PaginatedDeviceTokens> {
@@ -41,6 +41,6 @@ export class DeviceTokenService extends BaseApiService {
   }
 
   getSummary(): Observable<DeviceSummary> {
-    return this.get<DeviceSummary>(`${this.apiUrl}/ccc/device/summary/`);
+    return this.get<DeviceSummary>(`${this.apiUrl}/device/summary/`);
   }
 }

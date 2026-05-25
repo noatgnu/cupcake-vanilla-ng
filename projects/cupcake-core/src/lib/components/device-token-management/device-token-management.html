@@ -1,77 +1,71 @@
-<div class="container-fluid p-3">
-  <div class="d-flex align-items-center justify-content-between mb-3">
-    <h5 class="mb-0">Device Tokens</h5>
-    <button class="btn btn-sm btn-primary" (click)="openCreate(createModal)">
-      <i class="bi bi-plus-lg me-1"></i>New Token
-    </button>
+@if (error()) {
+  <div class="alert alert-danger alert-dismissible mb-3" role="alert">
+    {{ error() }}
+    <button type="button" class="btn-close" (click)="error.set(null)" aria-label="Close"></button>
   </div>
+}
 
-  @if (error()) {
-    <div class="alert alert-danger py-2">{{ error() }}</div>
-  }
-
-  @if (loading()) {
-    <div class="text-muted small">Loading...</div>
-  } @else if (tokens().length === 0) {
-    <div class="text-muted small">No device tokens yet.</div>
-  } @else {
-    <table class="table table-sm table-bordered mb-0">
-      <thead>
+@if (loading()) {
+  <div class="text-muted small">Loading...</div>
+} @else if (tokens().length === 0) {
+  <div class="text-muted small">No device tokens yet.</div>
+} @else {
+  <table class="table table-sm table-bordered mb-0">
+    <thead>
+      <tr>
+        <th>Label</th>
+        <th>Permission</th>
+        <th>Last Used</th>
+        <th>Expires</th>
+        <th>Status</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (token of tokens(); track token.id) {
         <tr>
-          <th>Label</th>
-          <th>Permission</th>
-          <th>Last Used</th>
-          <th>Expires</th>
-          <th>Status</th>
-          <th></th>
+          <td>
+            <div class="fw-semibold">{{ token.label }}</div>
+            @if (token.description) {
+              <div class="text-muted small">{{ token.description }}</div>
+            }
+          </td>
+          <td>
+            <span class="badge" [class]="token.permission === 'write' ? 'bg-warning text-dark' : 'bg-secondary'">
+              {{ token.permission }}
+            </span>
+          </td>
+          <td class="text-muted small">{{ token.lastUsedAt ? (token.lastUsedAt | date:'short') : 'Never' }}</td>
+          <td class="text-muted small">
+            @if (token.isExpired) {
+              <span class="text-danger">Expired</span>
+            } @else if (token.expiresAt) {
+              {{ token.expiresAt | date:'shortDate' }}
+            } @else {
+              Never
+            }
+          </td>
+          <td>
+            <span class="badge" [class]="token.enabled && !token.isExpired ? 'bg-success' : 'bg-danger'">
+              {{ token.enabled && !token.isExpired ? 'Active' : 'Disabled' }}
+            </span>
+          </td>
+          <td class="text-end text-nowrap">
+            <button class="btn btn-sm btn-outline-secondary me-1" (click)="toggle(token)" [title]="token.enabled ? 'Disable' : 'Enable'">
+              <i class="bi" [class]="token.enabled ? 'bi-toggle-on' : 'bi-toggle-off'"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-secondary me-1" (click)="rotate(token)" title="Rotate token">
+              <i class="bi bi-arrow-repeat"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-danger" (click)="remove(token)" title="Delete">
+              <i class="bi bi-trash"></i>
+            </button>
+          </td>
         </tr>
-      </thead>
-      <tbody>
-        @for (token of tokens(); track token.id) {
-          <tr>
-            <td>
-              <div class="fw-semibold">{{ token.label }}</div>
-              @if (token.description) {
-                <div class="text-muted small">{{ token.description }}</div>
-              }
-            </td>
-            <td>
-              <span class="badge" [class]="token.permission === 'write' ? 'bg-warning text-dark' : 'bg-secondary'">
-                {{ token.permission }}
-              </span>
-            </td>
-            <td class="text-muted small">{{ token.lastUsedAt ? (token.lastUsedAt | date:'short') : 'Never' }}</td>
-            <td class="text-muted small">
-              @if (token.isExpired) {
-                <span class="text-danger">Expired</span>
-              } @else if (token.expiresAt) {
-                {{ token.expiresAt | date:'shortDate' }}
-              } @else {
-                Never
-              }
-            </td>
-            <td>
-              <span class="badge" [class]="token.enabled && !token.isExpired ? 'bg-success' : 'bg-danger'">
-                {{ token.enabled && !token.isExpired ? 'Active' : 'Disabled' }}
-              </span>
-            </td>
-            <td class="text-end text-nowrap">
-              <button class="btn btn-sm btn-outline-secondary me-1" (click)="toggle(token)" [title]="token.enabled ? 'Disable' : 'Enable'">
-                <i class="bi" [class]="token.enabled ? 'bi-toggle-on' : 'bi-toggle-off'"></i>
-              </button>
-              <button class="btn btn-sm btn-outline-secondary me-1" (click)="rotate(token, rotateModal)" title="Rotate token">
-                <i class="bi bi-arrow-repeat"></i>
-              </button>
-              <button class="btn btn-sm btn-outline-danger" (click)="remove(token)" title="Delete">
-                <i class="bi bi-trash"></i>
-              </button>
-            </td>
-          </tr>
-        }
-      </tbody>
-    </table>
-  }
-</div>
+      }
+    </tbody>
+  </table>
+}
 
 <ng-template #createModal let-modal>
   <div class="modal-header py-2">

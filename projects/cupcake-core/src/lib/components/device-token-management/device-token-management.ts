@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, signal, computed, ChangeDetectionStrategy, ViewChild, TemplateRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { NgbModal, NgbModalRef } from '@ng-bootstrap/ng-bootstrap';
@@ -18,6 +18,9 @@ export class DeviceTokenManagement {
   private service = inject(DeviceTokenService);
   private fb = inject(FormBuilder);
   private modal = inject(NgbModal);
+
+  @ViewChild('createModal') private createModalRef!: TemplateRef<unknown>;
+  @ViewChild('rotateModal') private rotateModalRef!: TemplateRef<unknown>;
 
   tokens = signal<DeviceToken[]>([]);
   loading = signal(false);
@@ -51,10 +54,10 @@ export class DeviceTokenManagement {
     });
   }
 
-  openCreate(content: unknown): void {
+  openCreate(): void {
     this.createForm.reset({ label: '', description: '', permission: 'read', expiresAt: null });
     this.newTokenValue.set(null);
-    this.modal.open(content, { size: 'md' });
+    this.modal.open(this.createModalRef, { size: 'md' });
   }
 
   submitCreate(modalRef: NgbModalRef): void {
@@ -80,12 +83,12 @@ export class DeviceTokenManagement {
     });
   }
 
-  rotate(token: DeviceToken, content: unknown): void {
+  rotate(token: DeviceToken): void {
     this.newTokenValue.set(null);
     this.service.rotate(token.id).subscribe({
       next: res => {
         this.newTokenValue.set(res.token);
-        this.modal.open(content, { size: 'md' });
+        this.modal.open(this.rotateModalRef, { size: 'md' });
       },
       error: () => this.error.set('Failed to rotate token.'),
     });

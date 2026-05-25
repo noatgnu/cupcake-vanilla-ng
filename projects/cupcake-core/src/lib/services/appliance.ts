@@ -8,7 +8,7 @@ import { BaseApiService } from './base-api';
 export class ApplianceService extends BaseApiService {
 
   private get base(): string {
-    return `${this.apiUrl}/ccc/appliance`;
+    return `${this.apiUrl}/appliance`;
   }
 
   getStorageStatus(): Observable<StorageStatus> {
