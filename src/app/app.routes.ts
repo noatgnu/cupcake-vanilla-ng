@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { LoginComponent, RegisterComponent, SiteConfigComponent, UserManagementComponent, UserProfileComponent, LabGroupsComponent, authGuard, adminGuard } from '@noatgnu/cupcake-core';
 import { StoragePage } from './features/admin/storage-page/storage-page';
 import { BackupPage } from './features/admin/backup-page/backup-page';
+import { WifiPage } from './features/admin/wifi-page/wifi-page';
 import { UserDevicesPage } from './features/user-devices/user-devices-page/user-devices-page';
 import { MetadataTablesComponent} from './features/metadata-tables/metadata-tables';
 import { MetadataTableTemplates, ColumnTemplates, FavoriteManagement, MetadataTableDetails } from '@noatgnu/cupcake-vanilla';
@@ -106,6 +107,11 @@ export const routes: Routes = [
   {
     path: 'admin/backup',
     component: BackupPage,
+    canActivate: [authGuard, adminGuard, applianceGuard]
+  },
+  {
+    path: 'admin/wifi',
+    component: WifiPage,
     canActivate: [authGuard, adminGuard, applianceGuard]
   },
   {
