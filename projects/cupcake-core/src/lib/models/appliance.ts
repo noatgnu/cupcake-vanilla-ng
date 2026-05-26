@@ -38,3 +38,25 @@ export interface BackupRunRequest {
   backupType: 'database' | 'media' | 'full';
   destination: string;
 }
+
+export interface WifiConfig {
+  ssid: string;
+  interfaceName: string;
+  authType: 'wpa2-personal' | 'wpa2-enterprise';
+  eapMethod?: 'peap' | 'ttls' | 'tls';
+  phase2Auth?: 'mschapv2' | 'pap' | 'chap';
+  identity?: string;
+  anonymousIdentity?: string;
+  password?: string;
+  caCertFilename?: string;
+  clientCertFilename?: string;
+  clientKeyFilename?: string;
+}
+
+export interface WifiStatus {
+  hasInterface: boolean;
+  interfaceName: string | null;
+  connected: boolean;
+  ssid: string | null;
+  config: WifiConfig | null;
+}

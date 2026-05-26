@@ -69,7 +69,7 @@
     "@noatgnu/cupcake-mint-chocolate": "file:./dist/cupcake-mint-chocolate",
     "@noatgnu/cupcake-red-velvet": "file:./dist/cupcake-red-velvet",
     "@noatgnu/cupcake-salted-caramel": "file:./dist/cupcake-salted-caramel",
-    "@noatgnu/cupcake-vanilla": "file:./dist/cupcake-vanilla",
+    "@noatgnu/cupcake-vanilla": "^1.3.17",
     "@popperjs/core": "^2.11.8",
     "@types/jssha": "^2.0.0",
     "@wailsio/runtime": "^3.0.0-alpha.79",

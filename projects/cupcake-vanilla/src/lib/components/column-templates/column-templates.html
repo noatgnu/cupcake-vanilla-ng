@@ -63,7 +63,6 @@
               <label for="labGroupSelect">Lab Group</label>
             </div>
 
-            <!-- Lab Groups Pagination -->
             @if (showLabGroupsPagination()) {
                 <div class="d-flex justify-content-center mt-2">
                   <ngb-pagination
@@ -94,7 +93,8 @@
                 [showHint]="true"
                 [focusFirst]="false"
                 container="body"
-                [(ngModel)]="schemaSearchText">
+                [(ngModel)]="schemaSearchText"
+                [ngModelOptions]="{standalone: true}">
               <label for="schemaSearch">
                 <i class="bi bi-file-earmark-text me-1"></i>Schema
               </label>
@@ -112,8 +112,6 @@
               </div>
             }
           </div>
-        </form>
-        <div class="row mt-3">
           <div class="col-md-4">
             <div class="form-floating">
               <select
@@ -129,7 +127,7 @@
               <label for="visibilityFilter">Visibility</label>
             </div>
           </div>
-          <div class="col-md-4">
+          <div class="col-md-4 d-flex align-items-center">
             <div class="btn-group btn-group-sm" role="group" aria-label="Schema type filter">
               <button
                 type="button"
@@ -154,7 +152,7 @@
               </button>
             </div>
           </div>
-        </div>
+        </form>
       </div>
     </div>
 
