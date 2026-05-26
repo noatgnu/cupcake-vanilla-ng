@@ -1,0 +1,20 @@
+@if (definition().title) {
+  <div class="fw-semibold small mb-2">{{ definition().title }}</div>
+}
+<form (ngSubmit)="submit()" class="small">
+  @for (field of getFields(); track field) {
+    <div class="mb-2">
+      <label class="form-label mb-0">{{ field }}</label>
+      <input class="form-control form-control-sm" [value]="getValue(field)" (input)="setValue(field, $any($event.target).value)" />
+    </div>
+  }
+  @if (error()) {
+    <div class="text-danger mb-1">{{ error() }}</div>
+  }
+  @if (result()) {
+    <div class="text-success mb-1">Submitted.</div>
+  }
+  <button type="submit" class="btn btn-sm btn-primary" [disabled]="submitting()">
+    {{ submitting() ? 'Submitting...' : 'Submit' }}
+  </button>
+</form>

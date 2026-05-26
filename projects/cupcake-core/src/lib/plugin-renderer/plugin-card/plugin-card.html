@@ -1,0 +1,19 @@
+@if (loading()) {
+  <div class="text-muted small">Loading...</div>
+} @else if (error()) {
+  <div class="text-danger small">{{ error() }}</div>
+} @else if (data()) {
+  <div class="card">
+    @if (definition().title) {
+      <div class="card-header py-1 small fw-semibold">{{ definition().title }}</div>
+    }
+    <div class="card-body py-2 small">
+      @for (entry of $any(data()) | keyvalue; track entry.key) {
+        <div class="row g-0 mb-1">
+          <div class="col-5 text-muted">{{ entry.key }}</div>
+          <div class="col-7">{{ entry.value }}</div>
+        </div>
+      }
+    </div>
+  </div>
+}

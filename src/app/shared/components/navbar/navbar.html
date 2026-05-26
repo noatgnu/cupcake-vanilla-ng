@@ -122,6 +122,28 @@
             </li>
           }
         }
+        @if (pluginsWithNav().length) {
+          <li class="nav-item dropdown" ngbDropdown>
+            <a class="nav-link dropdown-toggle" id="pluginsDropdown" ngbDropdownToggle role="button" aria-expanded="false">
+              <i class="bi bi-puzzle me-1"></i>
+              Plugins
+            </a>
+            <ul class="dropdown-menu" ngbDropdownMenu aria-labelledby="pluginsDropdown">
+              @for (plugin of pluginsWithNav(); track plugin.id) {
+                @for (item of plugin.manifestCache.nav!; track item.path) {
+                  <li>
+                    <a class="dropdown-item" [routerLink]="['/plugins', plugin.id, item.path]">
+                      @if (item.icon) {
+                        <i [class]="item.icon + ' me-2'"></i>
+                      }
+                      {{ item.label }}
+                    </a>
+                  </li>
+                }
+              }
+            </ul>
+          </li>
+        }
       </ul>
 
       <!-- Theme toggle, Notifications and User menu -->

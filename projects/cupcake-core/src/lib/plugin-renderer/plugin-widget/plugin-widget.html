@@ -1,0 +1,23 @@
+@switch (definition().type) {
+  @case ('card') {
+    <ccc-plugin-card [definition]="definition()" [baseUrl]="baseUrl()" />
+  }
+  @case ('list') {
+    <ccc-plugin-list [definition]="definition()" [baseUrl]="baseUrl()" />
+  }
+  @case ('table') {
+    <ccc-plugin-table [definition]="definition()" [baseUrl]="baseUrl()" />
+  }
+  @case ('form') {
+    <ccc-plugin-form [definition]="definition()" [baseUrl]="baseUrl()" />
+  }
+  @case ('chart') {
+    <ccc-plugin-chart [definition]="definition()" [baseUrl]="baseUrl()" />
+  }
+  @case ('iframe') {
+    <ccc-plugin-iframe [definition]="definition()" [baseUrl]="baseUrl()" />
+  }
+  @default {
+    <div class="text-muted small">Unsupported widget type: {{ definition().type }}</div>
+  }
+}

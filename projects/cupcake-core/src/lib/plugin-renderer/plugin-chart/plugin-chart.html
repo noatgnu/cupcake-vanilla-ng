@@ -1,0 +1,10 @@
+@if (loading()) {
+  <div class="text-muted small">Loading...</div>
+} @else if (error()) {
+  <div class="text-danger small">{{ error() }}</div>
+} @else {
+  @if (definition().title) {
+    <div class="fw-semibold small mb-1">{{ definition().title }}</div>
+  }
+  <pre class="small bg-light p-2 rounded">{{ data() | json }}</pre>
+}

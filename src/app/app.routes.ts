@@ -6,6 +6,7 @@ import { StoragePage } from './features/admin/storage-page/storage-page';
 import { BackupPage } from './features/admin/backup-page/backup-page';
 import { WifiPage } from './features/admin/wifi-page/wifi-page';
 import { UserDevicesPage } from './features/user-devices/user-devices-page/user-devices-page';
+import { PluginPageWrapper } from './features/plugins/plugin-page-wrapper/plugin-page-wrapper';
 import { MetadataTablesComponent} from './features/metadata-tables/metadata-tables';
 import { MetadataTableTemplates, ColumnTemplates, FavoriteManagement, MetadataTableDetails } from '@noatgnu/cupcake-vanilla';
 import {MetadataSelector} from './features/metadata-selector/metadata-selector';
@@ -117,6 +118,16 @@ export const routes: Routes = [
   {
     path: 'user/devices',
     component: UserDevicesPage,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'plugins/:pluginId/:pagePath',
+    component: PluginPageWrapper,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'plugins/:pluginId',
+    component: PluginPageWrapper,
     canActivate: [authGuard]
   },
   {

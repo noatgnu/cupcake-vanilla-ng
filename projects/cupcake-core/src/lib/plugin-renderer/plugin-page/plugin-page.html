@@ -1,0 +1,18 @@
+@if (loading()) {
+  <div class="text-muted small p-3">Loading plugin...</div>
+} @else if (error()) {
+  <div class="text-danger small p-3">{{ error() }}</div>
+} @else if (page(); as pg) {
+  <div class="p-3">
+    <h6 class="mb-3">{{ pg.title }}</h6>
+    <div class="row g-3">
+      @for (widget of pg.widgets; track widget.id) {
+        <div class="col-12">
+          <ccc-plugin-widget [definition]="widget" [baseUrl]="plugin()!.baseUrl" />
+        </div>
+      }
+    </div>
+  </div>
+} @else {
+  <div class="text-muted small p-3">Page not found in manifest.</div>
+}

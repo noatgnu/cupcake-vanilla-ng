@@ -2,7 +2,7 @@ import { Component, inject, OnInit, OnDestroy, signal, ChangeDetectionStrategy, 
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { NgbDropdownModule } from '@ng-bootstrap/ng-bootstrap';
-import { AuthService, User, SiteConfigService, UserManagementService, ThemeService, DemoModeService } from '@noatgnu/cupcake-core';
+import { AuthService, User, SiteConfigService, UserManagementService, ThemeService, DemoModeService, PluginService, Plugin } from '@noatgnu/cupcake-core';
 import { AsyncTaskUIService, NotificationService, Websocket } from '@noatgnu/cupcake-vanilla';
 import { NotificationPanel } from '../notification-panel/notification-panel';
 import { AsyncTaskMonitorComponent } from '../async-task-monitor/async-task-monitor';
@@ -31,6 +31,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
   private asyncTaskService = inject(AsyncTaskUIService);
   private demoModeService = inject(DemoModeService);
   private environmentService = inject(EnvironmentService);
+  private pluginService = inject(PluginService);
 
   get isWails(): boolean { return this.environmentService.isWails(); }
   get isAppliance(): boolean { return this.environmentService.isAppliance(); }
@@ -47,6 +48,8 @@ export class NavbarComponent implements OnInit, OnDestroy {
 
   unreadCount = this.notificationService.unreadCount;
   isDemoMode = computed(() => this.demoModeService.demoMode().isActive);
+  activePlugins = signal<Plugin[]>([]);
+  pluginsWithNav = computed(() => this.activePlugins().filter(p => p.manifestCache?.nav?.length));
 
   private subscriptions = new Subscription();
 
@@ -69,6 +72,14 @@ export class NavbarComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    this.loadPlugins();
+  }
+
+  private loadPlugins(): void {
+    this.pluginService.listPlugins().subscribe({
+      next: plugins => this.activePlugins.set(plugins.filter(p => p.isActive)),
+      error: () => this.activePlugins.set([]),
+    });
   }
 
   ngOnDestroy(): void {

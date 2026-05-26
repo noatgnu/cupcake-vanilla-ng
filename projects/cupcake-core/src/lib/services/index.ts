@@ -15,3 +15,5 @@ export * from './admin-websocket';
 export * from './lab-group';
 export * from './appliance';
 export * from './device-token';
+export * from './plugin';
+export * from './plugin-renderer';

@@ -22,3 +22,13 @@ export * from '../wifi-management/wifi-management';
 
 // Device token management
 export * from './device-token-management/device-token-management';
+
+// Plugin renderer components
+export * from '../plugin-renderer/plugin-page/plugin-page';
+export * from '../plugin-renderer/plugin-widget/plugin-widget';
+export * from '../plugin-renderer/plugin-card/plugin-card';
+export * from '../plugin-renderer/plugin-list/plugin-list';
+export * from '../plugin-renderer/plugin-table/plugin-table';
+export * from '../plugin-renderer/plugin-form/plugin-form';
+export * from '../plugin-renderer/plugin-chart/plugin-chart';
+export * from '../plugin-renderer/plugin-iframe/plugin-iframe';

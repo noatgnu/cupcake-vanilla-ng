@@ -1,0 +1,24 @@
+@if (loading()) {
+  <div class="text-muted small">Loading...</div>
+} @else if (error()) {
+  <div class="text-danger small">{{ error() }}</div>
+} @else {
+  @if (definition().title) {
+    <div class="fw-semibold small mb-1">{{ definition().title }}</div>
+  }
+  <ul class="list-group list-group-flush small">
+    @for (item of items(); track $index) {
+      <li class="list-group-item px-0 py-1">
+        @for (field of definition().fields ?? []; track field) {
+          <span class="me-2">{{ item[field] }}</span>
+        }
+        @if (!definition().fields?.length) {
+          {{ item | json }}
+        }
+      </li>
+    }
+    @empty {
+      <li class="list-group-item px-0 py-1 text-muted">No items.</li>
+    }
+  </ul>
+}
