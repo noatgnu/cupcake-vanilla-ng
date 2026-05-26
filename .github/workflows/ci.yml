@@ -23,16 +23,16 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
       - name: Set up Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v5
         with:
           go-version: '1.23'
           cache-dependency-path: cupcake-vanilla-wails/go.sum
 
       - name: Set up Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
@@ -103,16 +103,16 @@ jobs:
             arch: arm64
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
       - name: Set up Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v5
         with:
           go-version: '1.23'
           cache-dependency-path: cupcake-vanilla-wails/go.sum
 
       - name: Set up Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
@@ -172,7 +172,7 @@ jobs:
             -o build/bin/${{ matrix.platform }}-${{ matrix.arch }}/cupcake-vanilla.exe
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v4
         with:
           name: cupcake-vanilla-${{ matrix.platform }}-${{ matrix.arch }}
           path: cupcake-vanilla-wails/build/bin/${{ matrix.platform }}-${{ matrix.arch }}/
