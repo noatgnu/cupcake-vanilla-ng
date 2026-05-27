@@ -48,6 +48,14 @@ export interface PluginManifest {
   pages?: PluginPageDef[];
 }
 
+export type PluginLifecycleStatus =
+  | 'unknown'
+  | 'installing'
+  | 'starting'
+  | 'running'
+  | 'stopped'
+  | 'error';
+
 export interface Plugin {
   id: number;
   name: string;
@@ -57,6 +65,9 @@ export interface Plugin {
   manifestCache: PluginManifest;
   baseUrl: string;
   isActive: boolean;
+  lifecycleStatus: PluginLifecycleStatus;
+  progressMessage: string;
+  progressData: Record<string, unknown>;
   registeredAt: string;
   updatedAt: string;
 }
@@ -117,3 +128,14 @@ export interface PluginMessage {
   scope: 'global' | 'user' | 'lab_group';
   payload: PluginBroadcastPayload;
 }
+
+export interface PluginLifecycleEvent {
+  type: 'plugin.lifecycle';
+  pluginId: number;
+  pluginName: string;
+  lifecycleStatus: PluginLifecycleStatus;
+  progressMessage: string;
+  progressData: Record<string, unknown>;
+}
+
+export type PluginWebSocketEvent = PluginMessage | PluginLifecycleEvent;

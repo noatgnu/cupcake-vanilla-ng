@@ -4,6 +4,10 @@ import { Observable } from 'rxjs';
 import { Plugin, PluginBroadcastRequest, PluginRegisterRequest } from '../models/plugin';
 import { BaseApiService } from './base-api';
 
+export interface PluginWithToken extends Plugin {
+  token: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class PluginService extends BaseApiService {
 
@@ -23,8 +27,12 @@ export class PluginService extends BaseApiService {
     return this.get<Plugin['manifestCache']>(`${this.base}/${id}/manifest/`);
   }
 
-  register(req: PluginRegisterRequest): Observable<Plugin> {
-    return this.post<Plugin>(`${this.base}/register/`, req);
+  register(req: PluginRegisterRequest): Observable<PluginWithToken> {
+    return this.post<PluginWithToken>(`${this.base}/register/`, req);
+  }
+
+  resetToken(id: number): Observable<PluginWithToken> {
+    return this.post<PluginWithToken>(`${this.base}/${id}/reset-token/`, {});
   }
 
   broadcast(id: number, req: PluginBroadcastRequest): Observable<{ sent: boolean; group: string }> {
