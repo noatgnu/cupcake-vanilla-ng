@@ -27,14 +27,135 @@ jobs:
       - name: Check out frontend
         uses: actions/checkout@v4
 
-      - name: Check out backend
-        uses: actions/checkout@v4
-        with:
-          repository: noatgnu/cupcake_vanilla
-          path: cupcake_vanilla
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            python3 python3-venv python3-dev libpq-dev \
+            postgresql postgresql-client redis-server
+          sudo service redis-server start || true
 
-      - name: Start backend stack
-        run: docker compose -f e2e/docker-compose.e2e.yml up -d --wait --wait-timeout 600
+      - name: Set up PostgreSQL
+        run: |
+          sudo service postgresql start
+          sudo -u postgres psql -c "CREATE USER cupcake_vanilla WITH PASSWORD 'cupcake_vanilla_pass';"
+          sudo -u postgres psql -c "CREATE DATABASE cupcake_e2e OWNER cupcake_vanilla;"
+          sudo -u postgres psql -c "ALTER USER cupcake_vanilla CREATEDB;"
+
+      - name: Clone backend and install dependencies
+        run: |
+          python3 -m venv /tmp/venv
+          /tmp/venv/bin/pip install --upgrade pip --quiet
+          git clone --depth 1 https://github.com/noatgnu/cupcake_vanilla.git /tmp/backend
+          /tmp/venv/bin/pip install -r /tmp/backend/requirements.txt --quiet
+          /tmp/venv/bin/pip install gunicorn "uvicorn[standard]" --quiet
+
+      - name: Migrate and seed
+        env:
+          POSTGRES_DB: cupcake_e2e
+          POSTGRES_USER: cupcake_vanilla
+          POSTGRES_PASSWORD: cupcake_vanilla_pass
+          POSTGRES_HOST: 127.0.0.1
+          POSTGRES_PORT: '5432'
+          REDIS_HOST: 127.0.0.1
+          REDIS_PORT: '6379'
+          REDIS_URL: redis://127.0.0.1:6379/0
+          REDIS_DB_RQ: '3'
+          DJANGO_SETTINGS_MODULE: cupcake_vanilla.settings
+          SECRET_KEY: e2e-test-secret-key-not-for-production
+          DEBUG: 'True'
+          ENABLE_CUPCAKE_MACARON: 'True'
+          ENABLE_CUPCAKE_MINT_CHOCOLATE: 'True'
+          ENABLE_CUPCAKE_SALTED_CARAMEL: 'True'
+          ENABLE_CUPCAKE_RED_VELVET: 'True'
+          ALLOWED_HOSTS: localhost
+        run: |
+          cd /tmp/backend
+          MANAGE="/tmp/venv/bin/python manage.py"
+          $MANAGE migrate --noinput
+          DJANGO_SUPERUSER_USERNAME=admin \
+          DJANGO_SUPERUSER_EMAIL=admin@cupcake.local \
+          DJANGO_SUPERUSER_PASSWORD=cupcake \
+          $MANAGE createsuperuser --noinput
+          /tmp/venv/bin/python -c "
+          import django, os
+          os.environ.setdefault('DJANGO_SETTINGS_MODULE','cupcake_vanilla.settings')
+          django.setup()
+          from django.contrib.auth import get_user_model
+          User = get_user_model()
+          User.objects.create_user('testuser','testuser@cupcake.local','testuser123')
+          "
+          $MANAGE load_species
+          $MANAGE load_tissue
+          $MANAGE load_human_disease
+          $MANAGE load_subcellular_location
+          $MANAGE load_ms_mod
+          $MANAGE load_ms_term
+          $MANAGE sync_schemas
+          $MANAGE load_column_templates
+          $MANAGE collectstatic --noinput
+
+      - name: Start backend
+        env:
+          POSTGRES_DB: cupcake_e2e
+          POSTGRES_USER: cupcake_vanilla
+          POSTGRES_PASSWORD: cupcake_vanilla_pass
+          POSTGRES_HOST: 127.0.0.1
+          POSTGRES_PORT: '5432'
+          REDIS_HOST: 127.0.0.1
+          REDIS_PORT: '6379'
+          REDIS_URL: redis://127.0.0.1:6379/0
+          REDIS_DB_RQ: '3'
+          DJANGO_SETTINGS_MODULE: cupcake_vanilla.settings
+          SECRET_KEY: e2e-test-secret-key-not-for-production
+          DEBUG: 'True'
+          ENABLE_RQ_TASKS: 'True'
+          ENABLE_CUPCAKE_MACARON: 'True'
+          ENABLE_CUPCAKE_MINT_CHOCOLATE: 'True'
+          ENABLE_CUPCAKE_SALTED_CARAMEL: 'True'
+          ENABLE_CUPCAKE_RED_VELVET: 'True'
+          ALLOWED_HOSTS: '*'
+          CORS_ALLOW_ALL_ORIGINS: 'True'
+        run: |
+          cd /tmp/backend
+          /tmp/venv/bin/gunicorn cupcake_vanilla.asgi:application \
+            --bind 0.0.0.0:8000 --workers 4 --timeout 300 \
+            -k uvicorn.workers.UvicornWorker --log-level info &
+
+      - name: Start RQ worker
+        env:
+          POSTGRES_DB: cupcake_e2e
+          POSTGRES_USER: cupcake_vanilla
+          POSTGRES_PASSWORD: cupcake_vanilla_pass
+          POSTGRES_HOST: 127.0.0.1
+          POSTGRES_PORT: '5432'
+          REDIS_HOST: 127.0.0.1
+          REDIS_PORT: '6379'
+          REDIS_URL: redis://127.0.0.1:6379/0
+          REDIS_DB_RQ: '3'
+          DJANGO_SETTINGS_MODULE: cupcake_vanilla.settings
+          SECRET_KEY: e2e-test-secret-key-not-for-production
+          DEBUG: 'True'
+          ENABLE_RQ_TASKS: 'True'
+          ENABLE_CUPCAKE_MACARON: 'True'
+          ENABLE_CUPCAKE_MINT_CHOCOLATE: 'True'
+          ENABLE_CUPCAKE_SALTED_CARAMEL: 'True'
+          ENABLE_CUPCAKE_RED_VELVET: 'True'
+        run: |
+          cd /tmp/backend
+          /tmp/venv/bin/python manage.py rqworker default high low &
+
+      - name: Wait for backend
+        run: |
+          for i in $(seq 1 60); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/api/v1/ 2>/dev/null) || true
+            if echo "$code" | grep -qE "^[234]"; then
+              echo "Backend ready after $((i * 2))s"
+              break
+            fi
+            [ "$i" -eq 60 ] && echo "Backend never became ready" && exit 1
+            sleep 2
+          done
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -64,7 +185,7 @@ jobs:
       - name: Run E2E tests
         run: npm run e2e:pw
         env:
-          API_URL: https://localhost:8099
+          API_URL: http://localhost:8000
           VANILLA_NG_URL: http://localhost:4200
           E2E_SKIP_BACKEND_CHECK: "1"
 
@@ -75,8 +196,3 @@ jobs:
           name: playwright-report-vanilla-ng
           path: e2e/playwright-report/
           retention-days: 14
-
-      - name: Stop backend stack
-        if: always()
-        continue-on-error: true
-        run: docker compose -f e2e/docker-compose.e2e.yml down -v

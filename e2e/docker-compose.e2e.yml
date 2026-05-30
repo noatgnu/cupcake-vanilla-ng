@@ -14,6 +14,8 @@ services:
       POSTGRES_DB: cupcake_e2e
       POSTGRES_USER: cupcake_vanilla
       POSTGRES_PASSWORD: cupcake_vanilla_pass
+    tmpfs:
+      - /var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U cupcake_vanilla"]
       interval: 5s
@@ -65,11 +67,11 @@ services:
         gunicorn --workers=4 cupcake_vanilla.asgi:application --bind 0.0.0.0:8000 --timeout 300 -k uvicorn.workers.UvicornWorker --log-level info
       "
     healthcheck:
-      test: ["CMD-SHELL", "curl -fs http://localhost:8000/api/v1/auth/token/ || exit 1"]
-      interval: 5s
+      test: ["CMD-SHELL", "curl -s -o /dev/null http://localhost:8000/api/v1/ || exit 1"]
+      interval: 10s
       timeout: 10s
       retries: 30
-      start_period: 90s
+      start_period: 120s
     depends_on:
       db:
         condition: service_healthy
@@ -119,11 +121,11 @@ services:
       - ssl:/etc/nginx/ssl
       - media:/media/
     healthcheck:
-      test: ["CMD-SHELL", "wget -q --no-check-certificate --spider https://localhost/api/v1/auth/token/ || exit 1"]
-      interval: 5s
+      test: ["CMD-SHELL", "wget -q --no-check-certificate -O /dev/null https://localhost/api/v1/ || exit 1"]
+      interval: 10s
       timeout: 10s
       retries: 12
-      start_period: 10s
+      start_period: 15s
     depends_on:
       ssl:
         condition: service_completed_successfully

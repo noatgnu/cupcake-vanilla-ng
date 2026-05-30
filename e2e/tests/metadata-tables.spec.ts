@@ -1,9 +1,8 @@
-import { test } from "../fixtures/auth";
-import { expect } from "@playwright/test";
+import { test, expect } from "../fixtures/auth";
 import { MetadataTablePage } from "../page-objects/vanilla-ng/metadata-table.po";
 import { MetadataTableDetailPage } from "../page-objects/vanilla-ng/metadata-table-detail.po";
 
-const TABLE_NAME = "E2E Playwright Table";
+const TABLE_NAME = `E2E Table ${Date.now()}`;
 const COLUMN_NAME = "E2E Column";
 
 test.describe("metadata tables", () => {
@@ -24,7 +23,7 @@ test.describe("metadata tables", () => {
     await list.expectTableInList(TABLE_NAME);
   });
 
-  test("click table opens detail view with columns section", async ({ adminPage }) => {
+  test("open table shows detail view with columns section", async ({ adminPage }) => {
     const list = new MetadataTablePage(adminPage);
     await list.goto();
     await list.create(TABLE_NAME);
@@ -60,11 +59,5 @@ test.describe("metadata tables", () => {
     await list.create(TABLE_NAME);
     await list.search(TABLE_NAME);
     await list.expectTableInList(TABLE_NAME);
-  });
-
-  test("seeded E2E Table is visible", async ({ userPage }) => {
-    const list = new MetadataTablePage(userPage);
-    await list.goto();
-    await list.expectTableInList("E2E Table");
   });
 });

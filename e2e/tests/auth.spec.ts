@@ -6,7 +6,7 @@ test.describe("authentication", () => {
   test("login with admin credentials redirects away from login", async ({ page }) => {
     const login = new LoginPage(page);
     await login.goto();
-    await login.login("admin", "admin");
+    await login.login("admin", "cupcake");
     await login.expectRedirectedAwayFromLogin();
   });
 
@@ -17,15 +17,15 @@ test.describe("authentication", () => {
     await login.expectError();
   });
 
-  test("unauthenticated visit to /metadata redirects to /login", async ({ page }) => {
-    await page.goto("/metadata");
+  test("unauthenticated visit to /metadata-tables redirects to /login", async ({ page }) => {
+    await page.goto("/metadata-tables");
     await expect(page).toHaveURL(/\/login/, { timeout: 10000 });
   });
 
   test("logout returns to /login", async ({ page }) => {
     const login = new LoginPage(page);
     await login.goto();
-    await login.login("admin", "admin");
+    await login.login("admin", "cupcake");
     await login.expectRedirectedAwayFromLogin();
     const navbar = new NavbarPage(page);
     await navbar.logout();

@@ -10,7 +10,7 @@ import * as path from "path";
 
 process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = "0";
 
-const API_URL = process.env["API_URL"] || "http://localhost:8099";
+const API_URL = process.env["API_URL"] || "http://localhost:8000";
 const BASE_URL = process.env["VANILLA_NG_URL"] || "http://localhost:4200";
 const AUTH_STATES_DIR = path.join(__dirname, "auth-states");
 
@@ -18,7 +18,7 @@ async function waitForBackend(timeoutMs = 120000): Promise<void> {
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {
     try {
-      const res = await fetch(`${API_URL}/api/v1/auth/token/`, { method: "POST" });
+      const res = await fetch(`${API_URL}/api/v1/`, { method: "GET" });
       if (res.status < 500) return;
     } catch {
       // not ready yet
@@ -65,7 +65,7 @@ export default async function globalSetup(_config: FullConfig): Promise<void> {
 
   fs.mkdirSync(AUTH_STATES_DIR, { recursive: true });
   console.log("Saving auth states...");
-  await saveAuthState("admin", "admin", path.join(AUTH_STATES_DIR, "admin.json"));
+  await saveAuthState("admin", "cupcake", path.join(AUTH_STATES_DIR, "admin.json"));
   await saveAuthState("testuser", "testuser123", path.join(AUTH_STATES_DIR, "user.json"));
   console.log("Auth states saved.");
 }
