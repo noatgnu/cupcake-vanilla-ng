@@ -173,7 +173,7 @@ jobs:
         run: npm run build:libs
 
       - name: Build Angular app
-        run: npx ng build --configuration=appliance --base-href /
+        run: npx ng build cupcake-vanilla-ng --configuration=appliance --base-href /
 
       - name: Configure nginx
         run: |
@@ -181,15 +181,13 @@ jobs:
           echo "Nginx root: $DIST_DIR"
           ls "$DIST_DIR/index.html"
 
+          sudo rm -f /etc/nginx/sites-enabled/default
+
           NGINX_CONF="server {
               listen 4200 default_server;
               root $DIST_DIR;
               index index.html;
-
-              location / {
-                  try_files \$uri \$uri/ /index.html;
-              }
-
+              location / { try_files \$uri \$uri/ /index.html; }
               location /api/ {
                   proxy_pass http://127.0.0.1:8000;
                   proxy_set_header Host \$host;
@@ -197,7 +195,6 @@ jobs:
                   proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
                   proxy_read_timeout 300;
               }
-
               location /ws/ {
                   proxy_pass http://127.0.0.1:8000;
                   proxy_http_version 1.1;
@@ -208,11 +205,13 @@ jobs:
               }
           }"
 
-          echo "$NGINX_CONF" | sudo tee /etc/nginx/sites-available/vanilla-ng.conf
-          sudo ln -sf /etc/nginx/sites-available/vanilla-ng.conf /etc/nginx/sites-enabled/vanilla-ng.conf
-          sudo rm -f /etc/nginx/sites-enabled/default
+          echo "$NGINX_CONF" | sudo tee /etc/nginx/conf.d/e2e.conf
+          echo "=== Written nginx config ==="
+          cat /etc/nginx/conf.d/e2e.conf
           sudo nginx -t
-          sudo service nginx restart
+          sudo nginx -s reload || sudo service nginx restart
+          sleep 2
+          sudo ss -tlnp | grep ':4200' || (echo "nginx not listening on 4200" && sudo nginx -T 2>&1 | head -60 && exit 1)
 
       - name: Install Playwright browsers
         run: npx playwright install chromium --with-deps
@@ -222,10 +221,10 @@ jobs:
           for i in $(seq 1 30); do
             code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:4200/ 2>/dev/null) || true
             if echo "$code" | grep -qE "^[23]"; then
-              echo "nginx ready after ${i}s"
+              echo "nginx ready after $((i * 2))s"
               break
             fi
-            [ "$i" -eq 30 ] && echo "nginx failed to start on port 4200" && sudo service nginx status && exit 1
+            [ "$i" -eq 30 ] && echo "nginx not responding on port 4200" && sudo service nginx status && exit 1
             sleep 2
           done
 
