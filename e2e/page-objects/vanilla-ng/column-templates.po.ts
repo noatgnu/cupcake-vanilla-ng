@@ -10,10 +10,11 @@ export class ColumnTemplatesPage {
     await this.page.goto("/metadata-templates");
   }
 
-  async create(name: string): Promise<void> {
-    await this.page.getByRole("button", { name: /new|create|add/i }).click();
-    await this.page.getByLabel(/name/i).fill(name);
-    await this.page.getByRole("button", { name: /save|create|confirm/i }).click();
+  async create(name: string, columnName = "characteristics[e2e test]"): Promise<void> {
+    await this.page.getByRole("button", { name: /new template/i }).click();
+    await this.page.locator("#templateName").fill(name);
+    await this.page.locator("#columnName").fill(columnName);
+    await this.page.getByRole("button", { name: /save|create|submit/i }).click();
     await expect(this.page.getByText(name)).toBeVisible({ timeout: 10000 });
   }
 
@@ -27,10 +28,10 @@ export class ColumnTemplatesPage {
   async rename(oldName: string, newName: string): Promise<void> {
     const row = this.page.locator("tr, [role='row']").filter({ hasText: oldName });
     await row.getByRole("button", { name: /edit/i }).click();
-    const nameInput = this.page.getByLabel(/name/i);
+    const nameInput = this.page.locator("#templateName");
     await nameInput.clear();
     await nameInput.fill(newName);
-    await this.page.getByRole("button", { name: /save|confirm/i }).click();
+    await this.page.getByRole("button", { name: /save|confirm|submit/i }).click();
     await expect(this.page.getByText(newName)).toBeVisible({ timeout: 10000 });
   }
 }

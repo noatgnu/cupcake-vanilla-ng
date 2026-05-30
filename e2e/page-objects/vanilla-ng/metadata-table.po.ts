@@ -18,7 +18,9 @@ export class MetadataTablePage {
   }
 
   async openTable(name: string): Promise<void> {
-    await this.page.getByText(name).click();
+    const viewBtn = this.page.locator("tr").filter({ hasText: name }).getByRole("button", { name: /view/i });
+    await viewBtn.click();
+    await expect(this.page).toHaveURL(/\/metadata-tables\/\d+/, { timeout: 10000 });
   }
 
   async deleteTable(name: string): Promise<void> {

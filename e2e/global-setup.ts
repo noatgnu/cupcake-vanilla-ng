@@ -8,6 +8,8 @@ import { chromium, FullConfig } from "@playwright/test";
 import * as fs from "fs";
 import * as path from "path";
 
+process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = "0";
+
 const API_URL = process.env["API_URL"] || "http://localhost:8099";
 const BASE_URL = process.env["VANILLA_NG_URL"] || "http://localhost:4200";
 const AUTH_STATES_DIR = path.join(__dirname, "auth-states");

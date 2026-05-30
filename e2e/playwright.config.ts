@@ -11,6 +11,14 @@ export default defineConfig({
   use: {
     ...devices["Desktop Chrome"],
     baseURL: process.env["VANILLA_NG_URL"] || "http://localhost:4200",
+    ignoreHTTPSErrors: true,
+    launchOptions: {
+      args: [
+        "--use-fake-ui-for-media-stream",
+        "--use-fake-device-for-media-stream",
+        "--allow-insecure-localhost",
+      ],
+    },
     trace: "on-first-retry",
     screenshot: "only-on-failure",
     video: "retain-on-failure",
