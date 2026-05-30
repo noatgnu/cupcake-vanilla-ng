@@ -34,7 +34,7 @@ jobs:
           path: cupcake_vanilla
 
       - name: Start backend stack
-        run: docker compose -f cupcake_vanilla/docker-compose.e2e.yml up -d --wait --wait-timeout 600
+        run: docker compose -f e2e/docker-compose.e2e.yml up -d --wait --wait-timeout 600
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -79,7 +79,4 @@ jobs:
       - name: Stop backend stack
         if: always()
         continue-on-error: true
-        run: |
-          if [ -f cupcake_vanilla/docker-compose.e2e.yml ]; then
-            docker compose -f cupcake_vanilla/docker-compose.e2e.yml down -v
-          fi
+        run: docker compose -f e2e/docker-compose.e2e.yml down -v
