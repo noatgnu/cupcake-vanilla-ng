@@ -1,6 +1,8 @@
-import { Component, inject, Input, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, Input, OnInit, signal, Signal, ChangeDetectionStrategy } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder } from '@angular/forms';
+import { map } from 'rxjs';
 import { NgbActiveModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
 
 import { AsyncTaskUIService } from '../async-task-ui';
@@ -37,6 +39,11 @@ export class MetadataValidationModal implements OnInit {
     skip_ontology: [false],
     include_pools: [true]
   });
+
+  readonly validationFormInvalid = toSignal(
+    this.validationForm.statusChanges.pipe(map(() => this.validationForm.invalid)),
+    { initialValue: this.validationForm.invalid }
+  );
 
   ngOnInit(): void {
     this.loadAvailableSchemas();

@@ -142,7 +142,7 @@
                       <button
                         type="submit"
                         class="btn btn-primary"
-                        [disabled]="profileForm.invalid || isUpdatingProfile()">
+                        [disabled]="profileFormInvalid() || isUpdatingProfile()">
                         @if (isUpdatingProfile()) {
                           <span class="spinner-border spinner-border-sm me-2"></span>
                         }
@@ -229,7 +229,7 @@
                     <button
                       type="submit"
                       class="btn btn-primary"
-                      [disabled]="passwordForm.invalid || isChangingPassword()">
+                      [disabled]="passwordFormInvalid() || isChangingPassword()">
                       @if (isChangingPassword()) {
                         <span class="spinner-border spinner-border-sm me-2"></span>
                       }
@@ -310,7 +310,7 @@
                     <button
                       type="submit"
                       class="btn btn-primary"
-                      [disabled]="emailChangeForm.invalid || isChangingEmail()">
+                      [disabled]="emailChangeFormInvalid() || isChangingEmail()">
                       @if (isChangingEmail()) {
                         <span class="spinner-border spinner-border-sm me-2"></span>
                       }

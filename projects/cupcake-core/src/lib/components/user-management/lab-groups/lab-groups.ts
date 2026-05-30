@@ -1,8 +1,9 @@
-import { Component, OnInit, signal, computed, effect, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, signal, computed, effect, inject, ChangeDetectionStrategy, Signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, NonNullableFormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgbModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
-import { debounceTime, distinctUntilChanged } from 'rxjs';
+import { debounceTime, distinctUntilChanged, map } from 'rxjs';
 import { 
   LabGroup, 
   LabGroupQueryResponse,
@@ -33,6 +34,8 @@ export class LabGroupsComponent implements OnInit {
   searchForm: FormGroup;
   createGroupForm: FormGroup;
   inviteForm: FormGroup;
+  createGroupFormInvalid!: Signal<boolean>;
+  inviteFormInvalid!: Signal<boolean>;
   
   // Signals for reactive state management
   private searchParams = signal<{
@@ -103,6 +106,14 @@ export class LabGroupsComponent implements OnInit {
       invitedEmail: ['', [Validators.required, Validators.email]],
       message: ['']
     });
+    this.createGroupFormInvalid = toSignal(
+      this.createGroupForm.statusChanges.pipe(map(() => this.createGroupForm.invalid)),
+      { initialValue: this.createGroupForm.invalid }
+    );
+    this.inviteFormInvalid = toSignal(
+      this.inviteForm.statusChanges.pipe(map(() => this.inviteForm.invalid)),
+      { initialValue: this.inviteForm.invalid }
+    );
 
     // Effect to automatically reload lab groups when search params change
     effect(() => {

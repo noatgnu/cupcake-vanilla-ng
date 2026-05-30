@@ -472,7 +472,7 @@
             type="button"
             class="btn btn-primary"
             (click)="saveFavorite()"
-            [disabled]="editForm.invalid">
+            [disabled]="editFormInvalid()">
             <i class="bi bi-check-circle me-1"></i>
             {{ isEditMode() ? 'Update' : 'Create' }} Favorite
           </button>

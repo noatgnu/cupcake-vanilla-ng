@@ -1,4 +1,6 @@
 import { Component, inject, signal, computed, ChangeDetectionStrategy, ViewChild, TemplateRef } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { map } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { NgbModal, NgbModalRef } from '@ng-bootstrap/ng-bootstrap';
@@ -33,6 +35,11 @@ export class DeviceTokenManagement {
     permission: ['read' as 'read' | 'write', Validators.required],
     expiresAt: [null as string | null],
   });
+
+  readonly createFormInvalid = toSignal(
+    this.createForm.statusChanges.pipe(map(() => this.createForm.invalid)),
+    { initialValue: this.createForm.invalid }
+  );
 
   activeCount = computed(() => this.tokens().filter(t => t.enabled && !t.isExpired).length);
 

@@ -1,7 +1,9 @@
-import { Component, Input, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, Input, signal, Signal, ChangeDetectionStrategy } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
+import { map } from 'rxjs';
 import { MetadataColumn } from '../../models';
 
 export interface SearchReplaceConfig {
@@ -25,6 +27,7 @@ export class SearchReplaceModal {
   @Input() config!: SearchReplaceConfig;
 
   searchReplaceForm: FormGroup;
+  searchReplaceFormInvalid!: Signal<boolean>;
   isProcessing = signal(false);
   result = signal<{
     message: string;
@@ -48,6 +51,11 @@ export class SearchReplaceModal {
       columnName: [''],
       updatePools: [false]
     });
+
+    this.searchReplaceFormInvalid = toSignal(
+      this.searchReplaceForm.statusChanges.pipe(map(() => this.searchReplaceForm.invalid)),
+      { initialValue: this.searchReplaceForm.invalid }
+    );
   }
 
   get isTableContext(): boolean {

@@ -38,7 +38,7 @@ test.describe("lab groups", () => {
       const input = adminPage.locator("#inviteEmail");
       if (await input.isVisible({ timeout: 3000 })) {
         await input.fill("testuser@cupcake.local");
-        await adminPage.getByRole("button", { name: /send invite/i }).click();
+        await adminPage.getByRole("button", { name: /send invite/i }).click({ force: true });
       }
     }
   });

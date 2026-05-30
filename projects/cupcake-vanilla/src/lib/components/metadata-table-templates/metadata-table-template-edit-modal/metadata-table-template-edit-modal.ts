@@ -1,6 +1,8 @@
-import { Component, Input, Output, EventEmitter, OnInit, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, signal, Signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { map } from 'rxjs';
 import { NgbActiveModal, NgbModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { LabGroup, ResourceVisibility } from '@noatgnu/cupcake-core';
@@ -24,6 +26,7 @@ export class MetadataTableTemplateEditModal implements OnInit {
   @Output() templateSaved = new EventEmitter<Partial<MetadataTableTemplate>>();
 
   editForm: FormGroup;
+  editFormInvalid!: Signal<boolean>;
   isLoading = signal(false);
 
   // Column management
@@ -78,6 +81,11 @@ export class MetadataTableTemplateEditModal implements OnInit {
       isDefault: [false],
       labGroup: [null]
     });
+
+    this.editFormInvalid = toSignal(
+      this.editForm.statusChanges.pipe(map(() => this.editForm.invalid)),
+      { initialValue: this.editForm.invalid }
+    );
   }
 
   ngOnInit() {

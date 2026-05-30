@@ -107,7 +107,7 @@
         </div>
       </form>
       <div class="d-flex gap-2 mt-3">
-        <button class="btn btn-sm btn-primary flex-grow-1" [disabled]="createForm.invalid" (click)="submitCreate(modal)">Create</button>
+        <button class="btn btn-sm btn-primary flex-grow-1" [disabled]="createFormInvalid()" (click)="submitCreate(modal)">Create</button>
         <button class="btn btn-sm btn-secondary" (click)="modal.dismiss()">Cancel</button>
       </div>
     }

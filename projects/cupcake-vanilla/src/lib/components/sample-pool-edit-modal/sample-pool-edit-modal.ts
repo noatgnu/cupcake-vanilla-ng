@@ -1,6 +1,8 @@
-import { Component, Input, Output, EventEmitter, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, inject, signal, Signal, ChangeDetectionStrategy } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { map } from 'rxjs';
 import { NgbActiveModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { SamplePool } from '../../models';
 import { SamplePoolService } from '../../services';
@@ -19,6 +21,7 @@ export class SamplePoolEditModal implements OnInit {
   @Output() poolSaved = new EventEmitter<SamplePool>();
 
   editForm: FormGroup;
+  editFormInvalid!: Signal<boolean>;
   isLoading = signal(false);
 
   private fb = inject(FormBuilder);
@@ -33,6 +36,11 @@ export class SamplePoolEditModal implements OnInit {
       pooledOnlySamplesText: [''],
       pooledAndIndependentSamplesText: ['']
     });
+
+    this.editFormInvalid = toSignal(
+      this.editForm.statusChanges.pipe(map(() => this.editForm.invalid)),
+      { initialValue: this.editForm.invalid }
+    );
   }
 
   ngOnInit() {

@@ -69,7 +69,7 @@ test.describe("column template CRUD", () => {
     await expect(adminPage.getByRole("dialog")).toBeVisible({ timeout: 5000 });
     await adminPage.locator("#templateName").fill(TEMPLATE_NAME);
     await adminPage.locator("#columnName").fill("biological_replicate");
-    await adminPage.locator(".modal-footer .btn-primary").click();
+    await adminPage.locator(".modal-footer .btn-primary").click({ force: true });
     await expect(adminPage.getByRole("dialog")).not.toBeVisible({ timeout: 5000 });
     await expect(adminPage.getByText(TEMPLATE_NAME)).toBeVisible({ timeout: 10000 });
   });

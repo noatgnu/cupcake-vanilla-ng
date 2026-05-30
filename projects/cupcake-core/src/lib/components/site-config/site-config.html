@@ -13,7 +13,7 @@
             type="submit" 
             form="configForm"
             class="btn btn-primary btn-sm"
-            [disabled]="configForm.invalid || loading()">
+            [disabled]="configFormInvalid() || loading()">
             @if (loading()) {
               <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
             } @else {

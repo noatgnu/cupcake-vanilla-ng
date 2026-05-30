@@ -8,7 +8,7 @@
   </div>
 
   <!-- Single Age Input -->
-  @if (!isRange) {
+  @if (!isRange()) {
     <div class="row g-2 mb-2">
       <div class="col-sm-3">
         <label for="years" class="form-label">Years</label>
@@ -37,7 +37,7 @@
   }
 
   <!-- Age Range Input -->
-  @if (isRange) {
+  @if (isRange()) {
     <div class="row g-2 mb-2">
       <div class="col-sm-6">
         <label class="form-label fw-semibold">Start Age</label>

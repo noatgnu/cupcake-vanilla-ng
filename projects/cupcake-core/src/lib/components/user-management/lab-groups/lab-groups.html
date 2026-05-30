@@ -125,7 +125,7 @@
                 <button 
                   type="submit" 
                   class="btn btn-primary"
-                  [disabled]="createGroupForm.invalid || isCreatingGroup()">
+                  [disabled]="createGroupFormInvalid() || isCreatingGroup()">
                   @if (isCreatingGroup()) {
                     <span class="spinner-border spinner-border-sm me-2" role="status"></span>
                   }
@@ -353,7 +353,7 @@
                       <button 
                         type="submit" 
                         class="btn btn-primary w-100 h-100"
-                        [disabled]="inviteForm.invalid || isInviting()">
+                        [disabled]="inviteFormInvalid() || isInviting()">
                         @if (isInviting()) {
                           <span class="spinner-border spinner-border-sm me-2" role="status"></span>
                         }

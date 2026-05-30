@@ -1,4 +1,5 @@
-import { Component, Input, Output, EventEmitter, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, signal, Signal, ChangeDetectionStrategy } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgbActiveModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
@@ -22,6 +23,7 @@ export class ColumnTemplateEditModal implements OnInit {
   @Output() templateSaved = new EventEmitter<Partial<MetadataColumnTemplate>>();
 
   editForm: FormGroup;
+  editFormInvalid!: Signal<boolean>;
   isLoading = signal(false);
   isLoadingSuggestions = signal(false);
 
@@ -63,6 +65,11 @@ export class ColumnTemplateEditModal implements OnInit {
       tags: [''],
       category: ['']
     });
+
+    this.editFormInvalid = toSignal(
+      this.editForm.statusChanges.pipe(map(() => this.editForm.invalid)),
+      { initialValue: this.editForm.invalid }
+    );
   }
 
   ngOnInit() {

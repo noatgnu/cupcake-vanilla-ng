@@ -122,7 +122,7 @@
               <button
                 type="submit"
                 class="btn btn-outline-primary w-100"
-                [disabled]="loginForm.invalid || loading()">
+                [disabled]="loginFormInvalid() || loading()">
                 @if (loading()) {
                   <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
                 }

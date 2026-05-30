@@ -21,7 +21,7 @@ test.describe("user profile", () => {
     await lastNameInput.clear();
     await lastNameInput.fill("User");
     await adminPage.locator("#currentPassword").fill("cupcake");
-    await adminPage.getByRole("button", { name: /update profile/i }).click();
+    await adminPage.getByRole("button", { name: /update profile/i }).click({ force: true });
     await expect(adminPage.getByText(/profile updated successfully/i)).toBeVisible({ timeout: 10000 });
   });
 });

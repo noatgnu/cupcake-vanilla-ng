@@ -1,5 +1,6 @@
-import { Component, inject, OnInit, signal, computed, ChangeDetectionStrategy } from '@angular/core';
-import { timer } from 'rxjs';
+import { Component, inject, OnInit, signal, computed, ChangeDetectionStrategy, Signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { timer, map } from 'rxjs';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, AbstractControl } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
@@ -24,6 +25,7 @@ export class RegisterComponent implements OnInit {
   private siteConfigService = inject(SiteConfigService);
 
   registrationForm: FormGroup;
+  registrationFormInvalid!: Signal<boolean>;
   loading = signal(false);
   showPassword = signal(false);
   showConfirmPassword = signal(false);
@@ -46,6 +48,10 @@ export class RegisterComponent implements OnInit {
       password: ['', [Validators.required, Validators.minLength(8)]],
       confirmPassword: ['', [Validators.required]]
     }, { validators: this.passwordMatchValidator });
+    this.registrationFormInvalid = toSignal(
+      this.registrationForm.statusChanges.pipe(map(() => this.registrationForm.invalid)),
+      { initialValue: this.registrationForm.invalid }
+    );
   }
 
   ngOnInit() {

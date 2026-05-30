@@ -342,7 +342,7 @@
     type="button" 
     class="btn btn-primary" 
     (click)="onSubmit()"
-    [disabled]="createForm.invalid || isLoading() || totalPooledSamplesCount === 0 || totalPooledSamplesCount > metadataTable.sampleCount">
+    [disabled]="createFormInvalid() || isLoading() || totalPooledSamplesCount === 0 || totalPooledSamplesCount > metadataTable.sampleCount">
     @if (isLoading()) {
       <span class="spinner-border spinner-border-sm me-2"></span>
     }

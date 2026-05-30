@@ -158,7 +158,7 @@
     <button
       type="submit"
       class="btn btn-success btn-sm"
-      [disabled]="validationForm.invalid || isValidating() || selectedSchemas().size === 0">
+      [disabled]="validationFormInvalid() || isValidating() || selectedSchemas().size === 0">
       @if (isValidating()) {
         <span class="spinner-border spinner-border-sm me-1" role="status"></span>
         Starting...

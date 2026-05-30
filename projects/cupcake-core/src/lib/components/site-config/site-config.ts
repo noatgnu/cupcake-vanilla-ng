@@ -1,5 +1,6 @@
-import { Component, inject, OnInit, signal, computed, ChangeDetectionStrategy } from '@angular/core';
-import { timer } from 'rxjs';
+import { Component, inject, OnInit, signal, computed, ChangeDetectionStrategy, Signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { timer, map } from 'rxjs';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { NgbAlert } from '@ng-bootstrap/ng-bootstrap';
@@ -21,6 +22,7 @@ export class SiteConfigComponent implements OnInit {
   private authService = inject(AuthService);
 
   configForm: FormGroup;
+  configFormInvalid!: Signal<boolean>;
 
   // Signals for reactive state management
   loading = signal(false);
@@ -58,6 +60,10 @@ export class SiteConfigComponent implements OnInit {
       enableOrcidLogin: [false],
       whisperCppModel: ['/app/whisper.cpp/models/ggml-medium.bin']
     });
+    this.configFormInvalid = toSignal(
+      this.configForm.statusChanges.pipe(map(() => this.configForm.invalid)),
+      { initialValue: this.configForm.invalid }
+    );
   }
 
   ngOnInit() {

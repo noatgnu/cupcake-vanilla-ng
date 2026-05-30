@@ -191,7 +191,7 @@
             <button 
               type="submit" 
               class="btn btn-primary"
-              [disabled]="registrationForm.invalid || loading() || !registrationEnabled()">
+              [disabled]="registrationFormInvalid() || loading() || !registrationEnabled()">
               @if (loading()) {
                 <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
               }

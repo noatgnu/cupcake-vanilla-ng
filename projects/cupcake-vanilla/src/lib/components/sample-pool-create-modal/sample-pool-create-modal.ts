@@ -1,7 +1,9 @@
-import { Component, Input, Output, EventEmitter, OnInit, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, signal, Signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgbActiveModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
+import { map } from 'rxjs';
 import { SamplePool, SamplePoolCreateRequest, MetadataTable, MetadataColumn } from '../../models';
 import { SamplePoolService } from '../../services';
 import { ToastService } from '@noatgnu/cupcake-core';
@@ -28,6 +30,7 @@ export class SamplePoolCreateModal implements OnInit {
   Math = Math;
 
   createForm: FormGroup;
+  createFormInvalid!: Signal<boolean>;
   isLoading = signal(false);
   
   // Sample selection management
@@ -71,6 +74,11 @@ export class SamplePoolCreateModal implements OnInit {
       pooled_only_samples_text: [''],
       pooled_and_independent_samples_text: ['']
     });
+
+    this.createFormInvalid = toSignal(
+      this.createForm.statusChanges.pipe(map(() => this.createForm.invalid)),
+      { initialValue: this.createForm.invalid }
+    );
   }
 
   ngOnInit() {

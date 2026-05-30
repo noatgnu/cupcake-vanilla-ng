@@ -1,7 +1,9 @@
-import { Component, EventEmitter, Output, Input, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, EventEmitter, Output, Input, OnInit, Signal, ChangeDetectionStrategy } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
+import { map } from 'rxjs';
 import { LabGroup } from '@noatgnu/cupcake-core';
 import { MetadataTableTemplate } from '../../../models';
 
@@ -28,6 +30,7 @@ export class TableCreationModalComponent implements OnInit {
   @Output() tableCreated = new EventEmitter<TableCreationData>();
 
   tableForm: FormGroup;
+  tableFormInvalid!: Signal<boolean>;
   isCreating = false;
   errorMessage: string | null = null;
 
@@ -41,6 +44,11 @@ export class TableCreationModalComponent implements OnInit {
       description: [''],
       labGroup: [null]
     });
+
+    this.tableFormInvalid = toSignal(
+      this.tableForm.statusChanges.pipe(map(() => this.tableForm.invalid)),
+      { initialValue: this.tableForm.invalid }
+    );
   }
 
   ngOnInit() {

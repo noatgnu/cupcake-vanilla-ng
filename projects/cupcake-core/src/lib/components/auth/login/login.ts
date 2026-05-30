@@ -1,5 +1,6 @@
-import { Component, inject, OnInit, signal, computed, ChangeDetectionStrategy, effect, untracked } from '@angular/core';
-import { timer } from 'rxjs';
+import { Component, inject, OnInit, signal, computed, ChangeDetectionStrategy, effect, untracked, Signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { timer, map } from 'rxjs';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
@@ -26,6 +27,7 @@ export class LoginComponent implements OnInit {
   private apiService = inject(ApiService);
 
   loginForm: FormGroup;
+  loginFormInvalid!: Signal<boolean>;
   loading = signal(false);
   loadingORCID = signal(false);
   showPassword = signal(false);
@@ -43,6 +45,10 @@ export class LoginComponent implements OnInit {
       password: ['', [Validators.required]],
       rememberMe: [false]
     });
+    this.loginFormInvalid = toSignal(
+      this.loginForm.statusChanges.pipe(map(() => this.loginForm.invalid)),
+      { initialValue: this.loginForm.invalid }
+    );
 
     effect(() => {
       if (this.authService.authenticated()) {

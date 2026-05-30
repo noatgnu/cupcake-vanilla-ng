@@ -1,4 +1,6 @@
-import { Component, OnInit, signal, inject, computed, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, signal, inject, computed, ChangeDetectionStrategy, Signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { map } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
@@ -29,7 +31,10 @@ export class UserProfileComponent implements OnInit {
   profileForm: FormGroup;
   passwordForm: FormGroup;
   emailChangeForm: FormGroup;
-  
+  profileFormInvalid!: Signal<boolean>;
+  passwordFormInvalid!: Signal<boolean>;
+  emailChangeFormInvalid!: Signal<boolean>;
+
   // UI state
   activeTab = signal<'profile' | 'password' | 'email' | 'account' | 'appearance'>('profile');
   isUpdatingProfile = signal(false);
@@ -77,6 +82,18 @@ export class UserProfileComponent implements OnInit {
       newEmail: ['', [Validators.required, Validators.email]],
       currentPassword: ['', [Validators.required]]
     });
+    this.profileFormInvalid = toSignal(
+      this.profileForm.statusChanges.pipe(map(() => this.profileForm.invalid)),
+      { initialValue: this.profileForm.invalid }
+    );
+    this.passwordFormInvalid = toSignal(
+      this.passwordForm.statusChanges.pipe(map(() => this.passwordForm.invalid)),
+      { initialValue: this.passwordForm.invalid }
+    );
+    this.emailChangeFormInvalid = toSignal(
+      this.emailChangeForm.statusChanges.pipe(map(() => this.emailChangeForm.invalid)),
+      { initialValue: this.emailChangeForm.invalid }
+    );
   }
 
   ngOnInit() {

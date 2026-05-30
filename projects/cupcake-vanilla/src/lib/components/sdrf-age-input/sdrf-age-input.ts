@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { SdrfSyntaxService, AgeFormat } from '../../services/sdrf-syntax';
@@ -18,7 +18,7 @@ export class SdrfAgeInput implements OnInit {
   private sdrfSyntax = inject(SdrfSyntaxService);
 
   ageForm: FormGroup;
-  isRange = false;
+  isRange = signal(false);
 
   constructor() {
     this.ageForm = this.fb.group({
@@ -44,7 +44,7 @@ export class SdrfAgeInput implements OnInit {
     });
 
     this.ageForm.get('isRange')?.valueChanges.subscribe((isRange) => {
-      this.isRange = isRange;
+      this.isRange.set(isRange);
       this.updateValue();
     });
   }
@@ -60,7 +60,7 @@ export class SdrfAgeInput implements OnInit {
           rangeEndYears: parsed.rangeEnd.years,
           rangeEndMonths: parsed.rangeEnd.months
         });
-        this.isRange = true;
+        this.isRange.set(true);
       } else {
         this.ageForm.patchValue({
           isRange: false,

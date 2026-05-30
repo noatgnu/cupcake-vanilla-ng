@@ -1,4 +1,5 @@
-import { Component, Input, Output, EventEmitter, OnInit, signal, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, signal, Signal, inject, ChangeDetectionStrategy } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgbActiveModal, NgbModule, NgbNavModule } from '@ng-bootstrap/ng-bootstrap';
@@ -57,6 +58,7 @@ export class MetadataValueEditModal implements OnInit {
   @Output() valueSaved = new EventEmitter<string | { value: string; sampleIndices: number[] }>();
 
   editForm: FormGroup;
+  editFormInvalid!: Signal<boolean>;
   isLoading = signal(false);
   isLoadingSuggestions = signal(false);
   searchType = signal<'icontains' | 'istartswith'>('icontains');
@@ -99,6 +101,11 @@ export class MetadataValueEditModal implements OnInit {
     this.editForm = this.fb.group({
       value: ['', [Validators.maxLength(500)]]
     });
+
+    this.editFormInvalid = toSignal(
+      this.editForm.statusChanges.pipe(map(() => this.editForm.invalid)),
+      { initialValue: this.editForm.invalid }
+    );
   }
 
   ngOnInit() {

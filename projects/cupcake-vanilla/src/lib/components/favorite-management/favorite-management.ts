@@ -1,4 +1,5 @@
-import {Component, OnInit, signal, computed, inject, ChangeDetectionStrategy, effect, untracked} from '@angular/core';
+import {Component, OnInit, signal, Signal, computed, inject, ChangeDetectionStrategy, effect, untracked} from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -96,6 +97,7 @@ export class FavoriteManagement implements OnInit {
 
   searchForm: FormGroup;
   editForm: FormGroup;
+  editFormInvalid!: Signal<boolean>;
   isEditMode = signal(false);
   editingFavorite = signal<FavouriteMetadataOption | null>(null);
   showEditModal = signal(false);
@@ -158,6 +160,11 @@ export class FavoriteManagement implements OnInit {
       ontologyType: [''],
       enableTypeahead: [false]
     });
+
+    this.editFormInvalid = toSignal(
+      this.editForm.statusChanges.pipe(map(() => this.editForm.invalid)),
+      { initialValue: this.editForm.invalid }
+    );
 
     this.editForm.get('value')?.valueChanges.subscribe(value => {
       if (typeof value === 'string' && value !== this.selectedOntologyValue) {

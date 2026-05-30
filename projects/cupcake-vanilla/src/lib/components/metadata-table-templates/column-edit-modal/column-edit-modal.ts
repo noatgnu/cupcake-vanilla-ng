@@ -1,6 +1,8 @@
-import { Component, Input, Output, EventEmitter, OnInit, signal, ChangeDetectionStrategy, inject } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, signal, Signal, ChangeDetectionStrategy, inject } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormsModule } from '@angular/forms';
+import { map } from 'rxjs';
 import { NgbActiveModal, NgbModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { MetadataColumn, PaginatedResponse, MetadataColumnTemplate, ONTOLOGY_TYPE_CONFIGS, COLUMN_TYPE_CONFIGS, OntologyTypeConfig, ColumnTypeConfig, ColumnType, OntologyType, Schema } from '../../../models';
 import { MetadataValueEditModal, MetadataValueEditConfig } from '../../metadata-value-edit-modal/metadata-value-edit-modal';
@@ -23,6 +25,7 @@ export class ColumnEditModal implements OnInit {
   @Output() columnSaved = new EventEmitter<Partial<MetadataColumn>>();
 
   editForm: FormGroup;
+  editFormInvalid!: Signal<boolean>;
   isLoading = signal(false);
   showAdvancedMode = signal(false);
 
@@ -81,6 +84,11 @@ export class ColumnEditModal implements OnInit {
       notAvailable: [false],
       staffOnly: [false]
     });
+
+    this.editFormInvalid = toSignal(
+      this.editForm.statusChanges.pipe(map(() => this.editForm.invalid)),
+      { initialValue: this.editForm.invalid }
+    );
   }
 
   ngOnInit() {

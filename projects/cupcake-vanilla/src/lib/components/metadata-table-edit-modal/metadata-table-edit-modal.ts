@@ -1,7 +1,9 @@
-import { Component, Input, Output, EventEmitter, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, signal, Signal, ChangeDetectionStrategy } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgbActiveModal, NgbModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import { map } from 'rxjs';
 import { MetadataTable, MetadataTableUpdateRequest, MetadataTableCreateRequest, SampleCountConfirmationError } from '../../models/metadata-table';
 import { MetadataTableService } from '../../services/metadata-table';
 import { LabGroupService, LabGroup } from '@noatgnu/cupcake-core';
@@ -20,6 +22,7 @@ export class MetadataTableEditModal implements OnInit {
   @Output() tableSaved = new EventEmitter<MetadataTable>();
 
   editForm: FormGroup;
+  editFormInvalid!: Signal<boolean>;
   isLoading = signal(false);
   availableLabGroups = signal<LabGroup[]>([]);
   isLoadingLabGroups = signal(false);
@@ -38,6 +41,11 @@ export class MetadataTableEditModal implements OnInit {
       version: ['', [Validators.maxLength(50)]],
       labGroup: [null]
     });
+
+    this.editFormInvalid = toSignal(
+      this.editForm.statusChanges.pipe(map(() => this.editForm.invalid)),
+      { initialValue: this.editForm.invalid }
+    );
   }
 
   ngOnInit() {
