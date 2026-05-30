@@ -12,6 +12,7 @@ async function createTableWithData(page: import("@playwright/test").Page, name: 
   await expect(page).toHaveURL(/\/metadata-tables\/\d+/, { timeout: 10000 });
 
   await page.getByRole("button", { name: /^import/i }).click();
+  page.once("dialog", dialog => dialog.accept());
   const fileInput = page.locator("input[type='file'][accept='.txt,.tsv']");
   await fileInput.setInputFiles(path.join(FIXTURES_DIR, "PXD019185_PXD018883.sdrf.tsv"));
 
@@ -27,19 +28,13 @@ async function createTableWithData(page: import("@playwright/test").Page, name: 
 test.describe("SDRF export", () => {
   test("Export dropdown is visible on table detail page", async ({ adminPage }) => {
     const tableName = `E2E Export Visible ${Date.now()}`;
-    const list = new MetadataTablePage(adminPage);
-    await list.goto();
-    await list.create(tableName);
-    await list.openTable(tableName);
+    await createTableWithData(adminPage, tableName);
     await expect(adminPage.getByRole("button", { name: /^export/i })).toBeVisible({ timeout: 5000 });
   });
 
   test("Export dropdown shows SDRF and Excel options", async ({ adminPage }) => {
     const tableName = `E2E Export Options ${Date.now()}`;
-    const list = new MetadataTablePage(adminPage);
-    await list.goto();
-    await list.create(tableName);
-    await list.openTable(tableName);
+    await createTableWithData(adminPage, tableName);
     await adminPage.getByRole("button", { name: /^export/i }).click();
     await expect(adminPage.getByRole("link", { name: /export as sdrf/i })).toBeVisible({ timeout: 3000 });
     await expect(adminPage.getByRole("link", { name: /export as excel/i })).toBeVisible({ timeout: 3000 });

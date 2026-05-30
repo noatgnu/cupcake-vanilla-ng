@@ -11,9 +11,9 @@ export class MetadataTablePage {
   }
 
   async create(name: string): Promise<void> {
-    await this.page.getByRole("button", { name: /new|create|add table/i }).click();
-    await this.page.getByLabel(/name/i).fill(name);
-    await this.page.getByRole("button", { name: /save|create|confirm/i }).click();
+    await this.page.getByRole("button", { name: "New Table" }).click();
+    await this.page.locator("#tableName").fill(name);
+    await this.page.locator(".modal-footer .btn-primary").click();
     await expect(this.page.getByText(name)).toBeVisible({ timeout: 10000 });
   }
 
@@ -25,13 +25,13 @@ export class MetadataTablePage {
 
   async deleteTable(name: string): Promise<void> {
     const row = this.page.locator("tr, mat-row, [role='row']").filter({ hasText: name });
-    await row.getByRole("button", { name: /delete|remove/i }).click();
-    await this.page.getByRole("button", { name: /confirm|yes|delete/i }).click();
+    this.page.once("dialog", dialog => dialog.accept());
+    await row.getByRole("button", { name: /^delete$/i }).click();
     await expect(this.page.getByText(name)).not.toBeVisible({ timeout: 10000 });
   }
 
   async search(term: string): Promise<void> {
-    await this.page.getByPlaceholder(/search/i).fill(term);
+    await this.page.locator("#tableSearch").fill(term);
     await this.page.keyboard.press("Enter");
   }
 

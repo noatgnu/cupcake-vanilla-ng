@@ -20,43 +20,41 @@ test.describe("object visibility and ownership", () => {
     await list.deleteTable(name);
   });
 
-  test("public table created by testuser is visible to admin", async ({ userPage, adminPage }) => {
-    const name = `E2E Public Table ${Date.now()}`;
-    await userPage.goto("/#/metadata-tables");
-    await userPage.getByRole("button", { name: /new|create|add table/i }).click();
-    await userPage.getByLabel(/name/i).fill(name);
-    const visibilitySelect = userPage.getByLabel(/visibility/i);
-    if (await visibilitySelect.isVisible({ timeout: 2000 })) {
-      await visibilitySelect.selectOption("public");
-    }
-    await userPage.getByRole("button", { name: /save|create|confirm/i }).click();
-    await expect(userPage.getByText(name)).toBeVisible({ timeout: 10000 });
+  test("admin view toggle shows all tables including other users tables", async ({ userPage, adminPage }) => {
+    const name = `E2E Admin View Table ${Date.now()}`;
+    const userList = new MetadataTablePage(userPage);
+    await userList.goto();
+    await userList.create(name);
+    await userList.expectTableInList(name);
 
     const adminList = new MetadataTablePage(adminPage);
     await adminList.goto();
+    const adminViewToggle = adminPage.locator("#adminViewToggle");
+    if (await adminViewToggle.isVisible({ timeout: 3000 }) && !await adminViewToggle.isChecked()) {
+      await adminViewToggle.click();
+    }
     await adminList.expectTableInList(name);
 
-    await new MetadataTablePage(userPage).goto();
-    await new MetadataTablePage(userPage).deleteTable(name);
+    await userList.goto();
+    await userList.deleteTable(name);
   });
 
-  test("private table created by testuser is not visible to admin", async ({ userPage, adminPage }) => {
+  test("private table created by testuser is not visible to admin without admin view", async ({ userPage, adminPage }) => {
     const name = `E2E Private Table ${Date.now()}`;
-    await userPage.goto("/#/metadata-tables");
-    await userPage.getByRole("button", { name: /new|create|add table/i }).click();
-    await userPage.getByLabel(/name/i).fill(name);
-    const visibilitySelect = userPage.getByLabel(/visibility/i);
-    if (await visibilitySelect.isVisible({ timeout: 2000 })) {
-      await visibilitySelect.selectOption("private");
-    }
-    await userPage.getByRole("button", { name: /save|create|confirm/i }).click();
-    await expect(userPage.getByText(name)).toBeVisible({ timeout: 10000 });
+    const userList = new MetadataTablePage(userPage);
+    await userList.goto();
+    await userList.create(name);
+    await userList.expectTableInList(name);
 
     const adminList = new MetadataTablePage(adminPage);
     await adminList.goto();
+    const adminViewToggle = adminPage.locator("#adminViewToggle");
+    if (await adminViewToggle.isVisible({ timeout: 3000 }) && await adminViewToggle.isChecked()) {
+      await adminViewToggle.click();
+    }
     await adminList.expectTableNotInList(name);
 
-    await new MetadataTablePage(userPage).goto();
-    await new MetadataTablePage(userPage).deleteTable(name);
+    await userList.goto();
+    await userList.deleteTable(name);
   });
 });

@@ -13,16 +13,15 @@ test.describe("user profile", () => {
 
   test("edit display name saves successfully", async ({ adminPage }) => {
     await adminPage.goto("/#/users/profile");
-    const editBtn = adminPage.getByRole("button", { name: /edit|update/i });
-    if (await editBtn.isVisible({ timeout: 3000 })) {
-      await editBtn.click();
-    }
-    const firstNameInput = adminPage.getByLabel(/first.?name/i);
-    if (await firstNameInput.isVisible({ timeout: 3000 })) {
-      await firstNameInput.clear();
-      await firstNameInput.fill("AdminUpdated");
-      await adminPage.getByRole("button", { name: /save|update|confirm/i }).click();
-      await expect(adminPage.getByText(/saved|success|updated/i)).toBeVisible({ timeout: 10000 });
-    }
+    const firstNameInput = adminPage.locator("#firstName");
+    await expect(firstNameInput).toBeVisible({ timeout: 10000 });
+    await firstNameInput.clear();
+    await firstNameInput.fill("AdminUpdated");
+    const lastNameInput = adminPage.locator("#lastName");
+    await lastNameInput.clear();
+    await lastNameInput.fill("User");
+    await adminPage.locator("#currentPassword").fill("cupcake");
+    await adminPage.getByRole("button", { name: /update profile/i }).click();
+    await expect(adminPage.getByText(/profile updated successfully/i)).toBeVisible({ timeout: 10000 });
   });
 });

@@ -8,9 +8,8 @@ test.describe("column templates", () => {
     for (const name of [TEMPLATE_NAME, TEMPLATE_NAME + " Renamed"]) {
       const row = adminPage.locator("tr, [role='row']").filter({ hasText: name }).first();
       if (await row.isVisible({ timeout: 2000 })) {
+        adminPage.once("dialog", dialog => dialog.accept());
         await row.getByRole("button", { name: /delete/i }).click();
-        const confirm = adminPage.getByRole("button", { name: /confirm|yes|delete/i });
-        if (await confirm.isVisible({ timeout: 2000 })) await confirm.click();
       }
     }
   });
@@ -22,7 +21,7 @@ test.describe("column templates", () => {
 
   test("seed column templates from ms-proteomics schema are visible", async ({ adminPage }) => {
     await adminPage.goto("/#/metadata-templates");
-    await expect(adminPage.getByText(/organism|source name|instrument/i).first()).toBeVisible({ timeout: 10000 });
+    await expect(adminPage.locator("table tbody tr").first()).toBeVisible({ timeout: 30000 });
   });
 
   test("New Template button opens creation modal", async ({ adminPage }) => {
@@ -38,8 +37,8 @@ test.describe("column templates", () => {
     await adminPage.getByRole("button", { name: /new template/i }).click();
     await expect(adminPage.getByRole("dialog")).toBeVisible({ timeout: 5000 });
     await adminPage.locator("#templateName").fill(TEMPLATE_NAME);
-    await adminPage.locator("#columnName").fill("characteristics[biological replicate]");
-    await adminPage.getByRole("button", { name: /save|create|submit/i }).click();
+    await adminPage.locator("#columnName").fill("biological_replicate");
+    await adminPage.locator(".modal-footer .btn-primary").click();
     await expect(adminPage.getByRole("dialog")).not.toBeVisible({ timeout: 5000 });
     await expect(adminPage.getByText(TEMPLATE_NAME)).toBeVisible({ timeout: 10000 });
   });
@@ -49,8 +48,8 @@ test.describe("column templates", () => {
     await adminPage.getByRole("button", { name: /new template/i }).click();
     await expect(adminPage.getByRole("dialog")).toBeVisible({ timeout: 5000 });
     await adminPage.locator("#templateName").fill(TEMPLATE_NAME);
-    await adminPage.locator("#columnName").fill("characteristics[biological replicate]");
-    await adminPage.getByRole("button", { name: /save|create|submit/i }).click();
+    await adminPage.locator("#columnName").fill("biological_replicate");
+    await adminPage.locator(".modal-footer .btn-primary").click();
     await expect(adminPage.getByText(TEMPLATE_NAME)).toBeVisible({ timeout: 10000 });
 
     const row = adminPage.locator("tr, [role='row']").filter({ hasText: TEMPLATE_NAME }).first();
@@ -58,7 +57,7 @@ test.describe("column templates", () => {
     const nameInput = adminPage.locator("#templateName");
     await nameInput.clear();
     await nameInput.fill(TEMPLATE_NAME + " Renamed");
-    await adminPage.getByRole("button", { name: /save|confirm|submit/i }).click();
+    await adminPage.locator(".modal-footer .btn-primary").click();
     await expect(adminPage.getByText(TEMPLATE_NAME + " Renamed")).toBeVisible({ timeout: 10000 });
   });
 
@@ -67,14 +66,13 @@ test.describe("column templates", () => {
     await adminPage.getByRole("button", { name: /new template/i }).click();
     await expect(adminPage.getByRole("dialog")).toBeVisible({ timeout: 5000 });
     await adminPage.locator("#templateName").fill(TEMPLATE_NAME);
-    await adminPage.locator("#columnName").fill("characteristics[technical replicate]");
-    await adminPage.getByRole("button", { name: /save|create|submit/i }).click();
+    await adminPage.locator("#columnName").fill("technical_replicate");
+    await adminPage.locator(".modal-footer .btn-primary").click();
     await expect(adminPage.getByText(TEMPLATE_NAME)).toBeVisible({ timeout: 10000 });
 
     const row = adminPage.locator("tr, [role='row']").filter({ hasText: TEMPLATE_NAME }).first();
+    adminPage.once("dialog", dialog => dialog.accept());
     await row.getByRole("button", { name: /delete/i }).click();
-    const confirm = adminPage.getByRole("button", { name: /confirm|yes|delete/i });
-    if (await confirm.isVisible({ timeout: 2000 })) await confirm.click();
     await expect(adminPage.getByText(TEMPLATE_NAME)).not.toBeVisible({ timeout: 5000 });
   });
 

@@ -13,12 +13,14 @@ test.describe("admin pages", () => {
 
   test("admin user list shows admin user", async ({ adminPage }) => {
     await adminPage.goto("/#/admin/users");
-    await expect(adminPage.getByText("admin")).toBeVisible({ timeout: 10000 });
+    await expect(adminPage).toHaveURL(/\/admin\/users/, { timeout: 10000 });
+    await expect(adminPage.getByText("@admin").first()).toBeVisible({ timeout: 15000 });
   });
 
   test("admin user list shows testuser", async ({ adminPage }) => {
     await adminPage.goto("/#/admin/users");
-    await expect(adminPage.getByText("testuser")).toBeVisible({ timeout: 10000 });
+    await expect(adminPage).toHaveURL(/\/admin\/users/, { timeout: 10000 });
+    await expect(adminPage.getByText("@testuser").first()).toBeVisible({ timeout: 15000 });
   });
 
   test("regular user cannot access admin site config", async ({ userPage }) => {

@@ -11,9 +11,9 @@ export class DeviceTokensPage {
   }
 
   async create(label: string): Promise<string> {
-    await this.page.getByRole("button", { name: /new|create|add/i }).click();
-    await this.page.getByLabel(/label|name/i).fill(label);
-    await this.page.getByRole("button", { name: /create|save|confirm/i }).click();
+    await this.page.getByRole("button", { name: /new token|new|create|add/i }).click();
+    await this.page.getByPlaceholder(/lab display badge/i).fill(label);
+    await this.page.getByRole("button", { name: /^create$/i }).click();
     const tokenEl = this.page.locator("[data-token-value], .token-value, code").first();
     await expect(tokenEl).toBeVisible({ timeout: 10000 });
     return (await tokenEl.textContent()) ?? "";
@@ -21,8 +21,7 @@ export class DeviceTokensPage {
 
   async delete(label: string): Promise<void> {
     const row = this.page.locator("tr, [role='row']").filter({ hasText: label });
-    await row.getByRole("button", { name: /delete|remove/i }).click();
-    await this.page.getByRole("button", { name: /confirm|yes|delete/i }).click();
+    await row.getByRole("button", { name: /delete/i }).click();
     await expect(this.page.getByText(label)).not.toBeVisible({ timeout: 10000 });
   }
 }

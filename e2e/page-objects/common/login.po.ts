@@ -18,7 +18,7 @@ export class LoginPage {
 
   async expectError(): Promise<void> {
     await expect(
-      this.page.getByText(/invalid|incorrect|error|failed/i)
+      this.page.locator(".alert-danger, [role='alert']")
     ).toBeVisible({ timeout: 5000 });
   }
 

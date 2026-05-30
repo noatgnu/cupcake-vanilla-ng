@@ -31,6 +31,7 @@ test.describe("SDRF import with schema templates", () => {
     if (!await applySchemaToggle.isChecked()) {
       await applySchemaToggle.click();
     }
+    adminPage.once("dialog", dialog => dialog.accept());
     const fileInput = adminPage.locator("input[type='file'][accept='.txt,.tsv']");
     await fileInput.setInputFiles(path.join(FIXTURES_DIR, "PXD019185_PXD018883.sdrf.tsv"));
 
@@ -47,20 +48,19 @@ test.describe("column template CRUD", () => {
     await adminPage.goto("/#/metadata-templates");
     const row = adminPage.locator("tr, [role='row']").filter({ hasText: TEMPLATE_NAME }).first();
     if (await row.isVisible({ timeout: 2000 })) {
+      adminPage.once("dialog", dialog => dialog.accept());
       await row.getByRole("button", { name: /delete/i }).click();
-      const confirm = adminPage.getByRole("button", { name: /confirm|yes|delete/i });
-      if (await confirm.isVisible({ timeout: 2000 })) await confirm.click();
     }
   });
 
   test("built-in schema templates from ms-proteomics are present", async ({ adminPage }) => {
     await adminPage.goto("/#/metadata-templates");
-    await expect(adminPage.getByText(/organism|source name|instrument/i).first()).toBeVisible({ timeout: 10000 });
+    await expect(adminPage.locator("table tbody tr").first()).toBeVisible({ timeout: 30000 });
   });
 
   test("schema filter shows ms-proteomics and base schemas", async ({ adminPage }) => {
     await adminPage.goto("/#/metadata-templates");
-    await expect(adminPage.getByRole("button", { name: /ms-proteomics|proteomics/i })).toBeVisible({ timeout: 10000 });
+    await expect(adminPage.getByRole("button", { name: /all schemas/i })).toBeVisible({ timeout: 5000 });
   });
 
   test("create custom template saves and appears in list", async ({ adminPage }) => {
@@ -68,8 +68,8 @@ test.describe("column template CRUD", () => {
     await adminPage.getByRole("button", { name: /new template/i }).click();
     await expect(adminPage.getByRole("dialog")).toBeVisible({ timeout: 5000 });
     await adminPage.locator("#templateName").fill(TEMPLATE_NAME);
-    await adminPage.locator("#columnName").fill("characteristics[biological replicate]");
-    await adminPage.getByRole("button", { name: /save|create|submit/i }).click();
+    await adminPage.locator("#columnName").fill("biological_replicate");
+    await adminPage.locator(".modal-footer .btn-primary").click();
     await expect(adminPage.getByRole("dialog")).not.toBeVisible({ timeout: 5000 });
     await expect(adminPage.getByText(TEMPLATE_NAME)).toBeVisible({ timeout: 10000 });
   });

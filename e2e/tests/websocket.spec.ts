@@ -69,6 +69,7 @@ test.describe("notification WebSocket UI", () => {
     await expect(adminPage).toHaveURL(/\/metadata-tables\/\d+/, { timeout: 10000 });
 
     await adminPage.getByRole("button", { name: /^import/i }).click();
+    adminPage.once("dialog", dialog => dialog.accept());
     const fileInput = adminPage.locator("input[type='file'][accept='.txt,.tsv']");
     await fileInput.setInputFiles(path.join(FIXTURES_DIR, "PXD019185_PXD018883.sdrf.tsv"));
 

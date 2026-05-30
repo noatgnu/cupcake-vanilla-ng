@@ -11,21 +11,15 @@ export class LabGroupsPage {
   }
 
   async create(name: string): Promise<void> {
-    await this.page.getByRole("button", { name: /new|create|add/i }).click();
-    await this.page.getByLabel(/name/i).fill(name);
-    await this.page.getByRole("button", { name: /save|create|confirm/i }).click();
+    await this.page.getByRole("button", { name: "New Lab Group" }).click();
+    await this.page.locator("#groupName").fill(name);
+    await this.page.getByRole("button", { name: "Create Group" }).click();
     await expect(this.page.getByText(name)).toBeVisible({ timeout: 10000 });
   }
 
-  async open(name: string): Promise<void> {
-    await this.page.getByText(name).click();
-  }
-
-  async createSubGroup(parentName: string, childName: string): Promise<void> {
-    await this.open(parentName);
-    await this.page.getByRole("button", { name: /add sub.?group|create sub/i }).click();
-    await this.page.getByLabel(/name/i).fill(childName);
-    await this.page.getByRole("button", { name: /save|create|confirm/i }).click();
-    await expect(this.page.getByText(childName)).toBeVisible({ timeout: 10000 });
+  async openMembersModal(name: string): Promise<void> {
+    const row = this.page.locator("tr, [role='row']").filter({ hasText: name }).first();
+    await row.getByRole("button", { name: new RegExp(`view members of ${name}`, "i") }).click();
+    await expect(this.page.getByRole("dialog")).toBeVisible({ timeout: 5000 });
   }
 }

@@ -3,7 +3,7 @@ import { MetadataTablePage } from "../page-objects/vanilla-ng/metadata-table.po"
 import { MetadataTableDetailPage } from "../page-objects/vanilla-ng/metadata-table-detail.po";
 
 const TABLE_NAME = `E2E Table ${Date.now()}`;
-const COLUMN_NAME = "E2E Column";
+const COLUMN_SEARCH = "organism";
 
 test.describe("metadata tables", () => {
   test.afterEach(async ({ adminPage }) => {
@@ -38,8 +38,8 @@ test.describe("metadata tables", () => {
     await list.create(TABLE_NAME);
     await list.openTable(TABLE_NAME);
     const detail = new MetadataTableDetailPage(adminPage);
-    await detail.addColumn(COLUMN_NAME);
-    await detail.expectColumnVisible(COLUMN_NAME);
+    await detail.addColumn(COLUMN_SEARCH);
+    await detail.expectColumnVisible(COLUMN_SEARCH);
   });
 
   test("delete column removes it", async ({ adminPage }) => {
@@ -48,9 +48,9 @@ test.describe("metadata tables", () => {
     await list.create(TABLE_NAME);
     await list.openTable(TABLE_NAME);
     const detail = new MetadataTableDetailPage(adminPage);
-    await detail.addColumn(COLUMN_NAME);
-    await detail.deleteColumn(COLUMN_NAME);
-    await expect(adminPage.getByText(COLUMN_NAME)).not.toBeVisible({ timeout: 5000 });
+    await detail.addColumn(COLUMN_SEARCH);
+    await detail.deleteColumn(COLUMN_SEARCH);
+    await expect(adminPage.getByText(COLUMN_SEARCH)).not.toBeVisible({ timeout: 5000 });
   });
 
   test("search filters table list", async ({ adminPage }) => {

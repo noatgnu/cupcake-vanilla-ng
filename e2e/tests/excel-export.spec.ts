@@ -12,6 +12,7 @@ async function createTableWithData(page: import("@playwright/test").Page, name: 
   await expect(page).toHaveURL(/\/metadata-tables\/\d+/, { timeout: 10000 });
 
   await page.getByRole("button", { name: /^import/i }).click();
+  page.once("dialog", dialog => dialog.accept());
   const fileInput = page.locator("input[type='file'][accept='.txt,.tsv']");
   await fileInput.setInputFiles(path.join(FIXTURES_DIR, "PXD019185_PXD018883.sdrf.tsv"));
 
@@ -27,10 +28,7 @@ async function createTableWithData(page: import("@playwright/test").Page, name: 
 test.describe("Excel export", () => {
   test("Excel export option is visible in export dropdown", async ({ adminPage }) => {
     const tableName = `E2E Excel Visible ${Date.now()}`;
-    const list = new MetadataTablePage(adminPage);
-    await list.goto();
-    await list.create(tableName);
-    await list.openTable(tableName);
+    await createTableWithData(adminPage, tableName);
     await adminPage.getByRole("button", { name: /^export/i }).click();
     await expect(adminPage.getByRole("link", { name: /export as excel/i })).toBeVisible({ timeout: 3000 });
   });
