@@ -37,6 +37,9 @@
     "excel:validate-manifest": "office-addin-manifest validate projects/cupcake-excel-addin/manifest.xml",
     "e2e": "jest --config=e2e/jest.e2e.config.json --runInBand",
     "e2e:watch": "jest --config=e2e/jest.e2e.config.json --runInBand --watch",
+    "e2e:pw": "playwright test --config=e2e/playwright.config.ts",
+    "e2e:pw:ui": "playwright test --config=e2e/playwright.config.ts --ui",
+    "e2e:pw:report": "playwright show-report e2e/playwright-report",
     "excel:test": "playwright test --config=projects/cupcake-excel-addin/playwright.config.ts",
     "excel:test:ui": "playwright test --config=projects/cupcake-excel-addin/playwright.config.ts --ui",
     "excel:test:headed": "playwright test --config=projects/cupcake-excel-addin/playwright.config.ts --headed"
@@ -105,7 +108,8 @@
     "puppeteer": "^24.39.1",
     "ts-jest": "^29.4.1",
     "typescript": "~5.9.3",
-    "vitest": "^4.0.8"
+    "vitest": "^4.0.8",
+    "wait-on": "^8.0.3"
   },
   "optionalDependencies": {
     "@rollup/rollup-win32-x64-msvc": "^4.60.1"
