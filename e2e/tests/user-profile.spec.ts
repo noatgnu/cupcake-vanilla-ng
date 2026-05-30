@@ -2,17 +2,17 @@ import { test, expect } from "../fixtures/auth";
 
 test.describe("user profile", () => {
   test("profile page shows admin user info", async ({ adminPage }) => {
-    await adminPage.goto("/users/profile");
+    await adminPage.goto("/#/users/profile");
     await expect(adminPage.getByText(/admin|admin@cupcake\.local/i)).toBeVisible({ timeout: 10000 });
   });
 
   test("profile page shows testuser info", async ({ userPage }) => {
-    await userPage.goto("/users/profile");
+    await userPage.goto("/#/users/profile");
     await expect(userPage.getByText(/testuser|testuser@cupcake\.local/i)).toBeVisible({ timeout: 10000 });
   });
 
   test("edit display name saves successfully", async ({ adminPage }) => {
-    await adminPage.goto("/users/profile");
+    await adminPage.goto("/#/users/profile");
     const editBtn = adminPage.getByRole("button", { name: /edit|update/i });
     if (await editBtn.isVisible({ timeout: 3000 })) {
       await editBtn.click();

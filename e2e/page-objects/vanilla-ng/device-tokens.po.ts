@@ -7,7 +7,7 @@ export class DeviceTokensPage {
   constructor(private readonly page: Page) {}
 
   async goto(): Promise<void> {
-    await this.page.goto("/user/devices");
+    await this.page.goto("/#/user/devices");
   }
 
   async create(label: string): Promise<string> {

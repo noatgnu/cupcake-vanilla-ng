@@ -18,7 +18,7 @@ test.describe("authentication", () => {
   });
 
   test("unauthenticated visit to /metadata-tables redirects to /login", async ({ page }) => {
-    await page.goto("/metadata-tables");
+    await page.goto("/#/metadata-tables");
     await expect(page).toHaveURL(/\/login/, { timeout: 10000 });
   });
 

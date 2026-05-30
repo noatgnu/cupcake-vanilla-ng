@@ -4,7 +4,7 @@ const TEMPLATE_NAME = `E2E Template ${Date.now()}`;
 
 test.describe("column templates", () => {
   test.afterEach(async ({ adminPage }) => {
-    await adminPage.goto("/metadata-templates");
+    await adminPage.goto("/#/metadata-templates");
     for (const name of [TEMPLATE_NAME, TEMPLATE_NAME + " Renamed"]) {
       const row = adminPage.locator("tr, [role='row']").filter({ hasText: name }).first();
       if (await row.isVisible({ timeout: 2000 })) {
@@ -16,17 +16,17 @@ test.describe("column templates", () => {
   });
 
   test("column templates page loads", async ({ adminPage }) => {
-    await adminPage.goto("/metadata-templates");
+    await adminPage.goto("/#/metadata-templates");
     await expect(adminPage).toHaveURL(/\/metadata-templates/, { timeout: 10000 });
   });
 
   test("seed column templates from ms-proteomics schema are visible", async ({ adminPage }) => {
-    await adminPage.goto("/metadata-templates");
+    await adminPage.goto("/#/metadata-templates");
     await expect(adminPage.getByText(/organism|source name|instrument/i).first()).toBeVisible({ timeout: 10000 });
   });
 
   test("New Template button opens creation modal", async ({ adminPage }) => {
-    await adminPage.goto("/metadata-templates");
+    await adminPage.goto("/#/metadata-templates");
     await adminPage.getByRole("button", { name: /new template/i }).click();
     await expect(adminPage.getByRole("dialog")).toBeVisible({ timeout: 5000 });
     await expect(adminPage.locator("#templateName")).toBeVisible({ timeout: 3000 });
@@ -34,7 +34,7 @@ test.describe("column templates", () => {
   });
 
   test("create new column template appears in list", async ({ adminPage }) => {
-    await adminPage.goto("/metadata-templates");
+    await adminPage.goto("/#/metadata-templates");
     await adminPage.getByRole("button", { name: /new template/i }).click();
     await expect(adminPage.getByRole("dialog")).toBeVisible({ timeout: 5000 });
     await adminPage.locator("#templateName").fill(TEMPLATE_NAME);
@@ -45,7 +45,7 @@ test.describe("column templates", () => {
   });
 
   test("rename template updates in list", async ({ adminPage }) => {
-    await adminPage.goto("/metadata-templates");
+    await adminPage.goto("/#/metadata-templates");
     await adminPage.getByRole("button", { name: /new template/i }).click();
     await expect(adminPage.getByRole("dialog")).toBeVisible({ timeout: 5000 });
     await adminPage.locator("#templateName").fill(TEMPLATE_NAME);
@@ -63,7 +63,7 @@ test.describe("column templates", () => {
   });
 
   test("delete template removes it", async ({ adminPage }) => {
-    await adminPage.goto("/metadata-templates");
+    await adminPage.goto("/#/metadata-templates");
     await adminPage.getByRole("button", { name: /new template/i }).click();
     await expect(adminPage.getByRole("dialog")).toBeVisible({ timeout: 5000 });
     await adminPage.locator("#templateName").fill(TEMPLATE_NAME);
@@ -79,12 +79,12 @@ test.describe("column templates", () => {
   });
 
   test("schema filter buttons are visible", async ({ adminPage }) => {
-    await adminPage.goto("/metadata-templates");
+    await adminPage.goto("/#/metadata-templates");
     await expect(adminPage.getByRole("button", { name: /all schemas/i })).toBeVisible({ timeout: 5000 });
   });
 
   test("visibility filter changes displayed templates", async ({ adminPage }) => {
-    await adminPage.goto("/metadata-templates");
+    await adminPage.goto("/#/metadata-templates");
     const visibilitySelect = adminPage.locator("#visibilityFilter");
     await expect(visibilitySelect).toBeVisible({ timeout: 5000 });
     await visibilitySelect.selectOption("private");

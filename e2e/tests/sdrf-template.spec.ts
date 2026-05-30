@@ -44,7 +44,7 @@ test.describe("column template CRUD", () => {
   const TEMPLATE_NAME = `E2E SDRF Template ${Date.now()}`;
 
   test.afterEach(async ({ adminPage }) => {
-    await adminPage.goto("/metadata-templates");
+    await adminPage.goto("/#/metadata-templates");
     const row = adminPage.locator("tr, [role='row']").filter({ hasText: TEMPLATE_NAME }).first();
     if (await row.isVisible({ timeout: 2000 })) {
       await row.getByRole("button", { name: /delete/i }).click();
@@ -54,17 +54,17 @@ test.describe("column template CRUD", () => {
   });
 
   test("built-in schema templates from ms-proteomics are present", async ({ adminPage }) => {
-    await adminPage.goto("/metadata-templates");
+    await adminPage.goto("/#/metadata-templates");
     await expect(adminPage.getByText(/organism|source name|instrument/i).first()).toBeVisible({ timeout: 10000 });
   });
 
   test("schema filter shows ms-proteomics and base schemas", async ({ adminPage }) => {
-    await adminPage.goto("/metadata-templates");
+    await adminPage.goto("/#/metadata-templates");
     await expect(adminPage.getByRole("button", { name: /ms-proteomics|proteomics/i })).toBeVisible({ timeout: 10000 });
   });
 
   test("create custom template saves and appears in list", async ({ adminPage }) => {
-    await adminPage.goto("/metadata-templates");
+    await adminPage.goto("/#/metadata-templates");
     await adminPage.getByRole("button", { name: /new template/i }).click();
     await expect(adminPage.getByRole("dialog")).toBeVisible({ timeout: 5000 });
     await adminPage.locator("#templateName").fill(TEMPLATE_NAME);

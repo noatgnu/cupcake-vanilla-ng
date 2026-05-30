@@ -7,7 +7,7 @@ export class MetadataTablePage {
   constructor(private readonly page: Page) {}
 
   async goto(): Promise<void> {
-    await this.page.goto("/metadata-tables");
+    await this.page.goto("/#/metadata-tables");
   }
 
   async create(name: string): Promise<void> {

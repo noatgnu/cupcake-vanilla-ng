@@ -6,27 +6,27 @@ const FIXTURES_DIR = process.env["E2E_FIXTURES_DIR"] || path.join(__dirname, "..
 
 test.describe("notification WebSocket UI", () => {
   test("notification bell is visible after login", async ({ adminPage }) => {
-    await adminPage.goto("/metadata-tables");
+    await adminPage.goto("/#/metadata-tables");
     const bellBtn = adminPage.locator("button[aria-label*='Notifications']");
     await expect(bellBtn).toBeVisible({ timeout: 10000 });
   });
 
   test("clicking notification bell opens notification panel", async ({ adminPage }) => {
-    await adminPage.goto("/metadata-tables");
+    await adminPage.goto("/#/metadata-tables");
     await adminPage.locator("button[aria-label*='Notifications']").click();
     await expect(adminPage.locator("app-notification-panel")).toBeVisible({ timeout: 5000 });
     await expect(adminPage.getByText("Notifications")).toBeVisible({ timeout: 5000 });
   });
 
   test("notification panel shows connected state — no disconnected alert", async ({ adminPage }) => {
-    await adminPage.goto("/metadata-tables");
+    await adminPage.goto("/#/metadata-tables");
     await adminPage.locator("button[aria-label*='Notifications']").click();
     await expect(adminPage.locator("app-notification-panel")).toBeVisible({ timeout: 5000 });
     await expect(adminPage.getByText(/real-time notifications are disconnected/i)).not.toBeVisible({ timeout: 5000 });
   });
 
   test("notification panel filter tabs switch views", async ({ adminPage }) => {
-    await adminPage.goto("/metadata-tables");
+    await adminPage.goto("/#/metadata-tables");
     await adminPage.locator("button[aria-label*='Notifications']").click();
     await expect(adminPage.locator("app-notification-panel")).toBeVisible({ timeout: 5000 });
 
@@ -42,7 +42,7 @@ test.describe("notification WebSocket UI", () => {
   });
 
   test("background tasks monitor button opens panel", async ({ adminPage }) => {
-    await adminPage.goto("/metadata-tables");
+    await adminPage.goto("/#/metadata-tables");
     const tasksBtn = adminPage.locator("button[aria-label*='Background tasks']");
     await expect(tasksBtn).toBeVisible({ timeout: 10000 });
     await tasksBtn.click();
@@ -51,7 +51,7 @@ test.describe("notification WebSocket UI", () => {
   });
 
   test("background tasks monitor shows filter tabs", async ({ adminPage }) => {
-    await adminPage.goto("/metadata-tables");
+    await adminPage.goto("/#/metadata-tables");
     await adminPage.locator("button[aria-label*='Background tasks']").click();
     await expect(adminPage.locator("app-async-task-monitor")).toBeVisible({ timeout: 5000 });
     const monitor = adminPage.locator("app-async-task-monitor");
@@ -78,7 +78,7 @@ test.describe("notification WebSocket UI", () => {
   });
 
   test("mark all notifications as read via UI", async ({ adminPage }) => {
-    await adminPage.goto("/metadata-tables");
+    await adminPage.goto("/#/metadata-tables");
     await adminPage.locator("button[aria-label*='Notifications']").click();
     await expect(adminPage.locator("app-notification-panel")).toBeVisible({ timeout: 5000 });
 
@@ -94,7 +94,7 @@ test.describe("notification WebSocket UI", () => {
   });
 
   test("reconnect button is not shown when WebSocket is connected", async ({ adminPage }) => {
-    await adminPage.goto("/metadata-tables");
+    await adminPage.goto("/#/metadata-tables");
     await adminPage.locator("button[aria-label*='Notifications']").click();
     await expect(adminPage.locator("app-notification-panel")).toBeVisible({ timeout: 5000 });
     await expect(

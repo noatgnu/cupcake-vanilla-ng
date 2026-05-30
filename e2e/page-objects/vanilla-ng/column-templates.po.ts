@@ -7,7 +7,7 @@ export class ColumnTemplatesPage {
   constructor(private readonly page: Page) {}
 
   async goto(): Promise<void> {
-    await this.page.goto("/metadata-templates");
+    await this.page.goto("/#/metadata-templates");
   }
 
   async create(name: string, columnName = "characteristics[e2e test]"): Promise<void> {

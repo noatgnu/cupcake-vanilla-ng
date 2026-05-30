@@ -7,11 +7,11 @@ export class AdminPage {
   constructor(private readonly page: Page) {}
 
   async gotoSiteConfig(): Promise<void> {
-    await this.page.goto("/admin/site-config");
+    await this.page.goto("/#/admin/site-config");
   }
 
   async gotoUserManagement(): Promise<void> {
-    await this.page.goto("/admin/users");
+    await this.page.goto("/#/admin/users");
   }
 
   async createUser(username: string, email: string, password: string): Promise<void> {

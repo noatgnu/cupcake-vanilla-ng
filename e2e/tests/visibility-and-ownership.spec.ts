@@ -22,7 +22,7 @@ test.describe("object visibility and ownership", () => {
 
   test("public table created by testuser is visible to admin", async ({ userPage, adminPage }) => {
     const name = `E2E Public Table ${Date.now()}`;
-    await userPage.goto("/metadata-tables");
+    await userPage.goto("/#/metadata-tables");
     await userPage.getByRole("button", { name: /new|create|add table/i }).click();
     await userPage.getByLabel(/name/i).fill(name);
     const visibilitySelect = userPage.getByLabel(/visibility/i);
@@ -42,7 +42,7 @@ test.describe("object visibility and ownership", () => {
 
   test("private table created by testuser is not visible to admin", async ({ userPage, adminPage }) => {
     const name = `E2E Private Table ${Date.now()}`;
-    await userPage.goto("/metadata-tables");
+    await userPage.goto("/#/metadata-tables");
     await userPage.getByRole("button", { name: /new|create|add table/i }).click();
     await userPage.getByLabel(/name/i).fill(name);
     const visibilitySelect = userPage.getByLabel(/visibility/i);

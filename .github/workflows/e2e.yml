@@ -32,7 +32,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y \
             python3 python3-venv python3-dev libpq-dev \
-            postgresql postgresql-client redis-server
+            postgresql postgresql-client redis-server nginx
           sudo service redis-server start || true
 
       - name: Set up PostgreSQL
@@ -115,11 +115,10 @@ jobs:
           ENABLE_CUPCAKE_SALTED_CARAMEL: 'True'
           ENABLE_CUPCAKE_RED_VELVET: 'True'
           ALLOWED_HOSTS: '*'
-          CORS_ALLOW_ALL_ORIGINS: 'True'
         run: |
           cd /tmp/backend
           /tmp/venv/bin/gunicorn cupcake_vanilla.asgi:application \
-            --bind 0.0.0.0:8000 --workers 4 --timeout 300 \
+            --bind 127.0.0.1:8000 --workers 4 --timeout 300 \
             -k uvicorn.workers.UvicornWorker --log-level info &
 
       - name: Start RQ worker
@@ -173,14 +172,50 @@ jobs:
       - name: Build local libraries
         run: npm run build:libs
 
+      - name: Build Angular app
+        run: npx ng build --configuration=appliance --base-href /
+
+      - name: Configure nginx
+        run: |
+          DIST_DIR="$(pwd)/dist/cupcake-vanilla-ng/browser"
+          sudo tee /etc/nginx/sites-available/vanilla-ng.conf > /dev/null << EOF
+          server {
+              listen 4200 default_server;
+              root ${DIST_DIR};
+              index index.html;
+
+              location / {
+                  try_files \$uri \$uri/ /index.html;
+              }
+
+              location /api/ {
+                  proxy_pass http://127.0.0.1:8000;
+                  proxy_set_header Host \$host;
+                  proxy_set_header X-Real-IP \$remote_addr;
+                  proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+                  proxy_read_timeout 300;
+              }
+
+              location /ws/ {
+                  proxy_pass http://127.0.0.1:8000;
+                  proxy_http_version 1.1;
+                  proxy_set_header Upgrade \$http_upgrade;
+                  proxy_set_header Connection "upgrade";
+                  proxy_set_header Host \$host;
+                  proxy_read_timeout 3600;
+              }
+          }
+          EOF
+          sudo ln -sf /etc/nginx/sites-available/vanilla-ng.conf /etc/nginx/sites-enabled/vanilla-ng.conf
+          sudo rm -f /etc/nginx/sites-enabled/default
+          sudo nginx -t
+          sudo systemctl restart nginx
+
       - name: Install Playwright browsers
         run: npx playwright install chromium --with-deps
 
-      - name: Serve frontend
-        run: npx ng serve --port 4200 &
-
       - name: Wait for frontend
-        run: npx wait-on http://localhost:4200 --timeout 120000
+        run: npx wait-on http://localhost:4200 --timeout 60000
 
       - name: Run E2E tests
         run: npm run e2e:pw
