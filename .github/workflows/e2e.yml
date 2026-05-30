@@ -178,14 +178,18 @@ jobs:
       - name: Configure nginx
         run: |
           DIST_DIR="$(pwd)/dist/cupcake-vanilla-ng/browser"
-          echo "Nginx root: $DIST_DIR"
+          WEBROOT="/var/www/vanilla-ng"
+          echo "Copying build from $DIST_DIR to $WEBROOT"
           ls "$DIST_DIR/index.html"
+          sudo mkdir -p "$WEBROOT"
+          sudo cp -r "$DIST_DIR/." "$WEBROOT/"
+          sudo chown -R www-data:www-data "$WEBROOT"
 
           sudo rm -f /etc/nginx/sites-enabled/default
 
           NGINX_CONF="server {
               listen 4200 default_server;
-              root $DIST_DIR;
+              root $WEBROOT;
               index index.html;
               location / { try_files \$uri \$uri/ /index.html; }
               location /api/ {
@@ -206,8 +210,6 @@ jobs:
           }"
 
           echo "$NGINX_CONF" | sudo tee /etc/nginx/conf.d/e2e.conf
-          echo "=== Written nginx config ==="
-          cat /etc/nginx/conf.d/e2e.conf
           sudo nginx -t
           sudo nginx -s reload || sudo service nginx restart
           sleep 2
