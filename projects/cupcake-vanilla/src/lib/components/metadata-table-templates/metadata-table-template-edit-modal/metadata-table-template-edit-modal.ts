@@ -10,7 +10,7 @@ import { MetadataTableTemplate, MetadataColumn } from '../../../models';
 import { MetadataTableTemplateService } from '../../../services/metadata-table-template';
 import { MetadataColumnService } from '../../../services/metadata-column';
 import { ColumnEditModal } from '../column-edit-modal/column-edit-modal';
-import { ToastService } from '@noatgnu/cupcake-core';
+import { ToastService, ConfirmDialogService } from '@noatgnu/cupcake-core';
 
 @Component({
   selector: 'ccv-metadata-table-template-edit-modal',
@@ -72,7 +72,8 @@ export class MetadataTableTemplateEditModal implements OnInit {
     private modalService: NgbModal,
     private metadataTableTemplateService: MetadataTableTemplateService,
     private metadataColumnService: MetadataColumnService,
-    private toastService: ToastService
+    private toastService: ToastService,
+    private confirmDialog: ConfirmDialogService
   ) {
     this.editForm = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(3)]],
@@ -200,10 +201,8 @@ export class MetadataTableTemplateEditModal implements OnInit {
     this._templateColumns.set(updatedColumns);
   }
 
-  removeColumn(column: MetadataColumn) {
-    const confirmMessage = `Are you sure you want to remove the column "${column.name}"?`;
-
-    if (confirm(confirmMessage)) {
+  async removeColumn(column: MetadataColumn): Promise<void> {
+    if (await this.confirmDialog.confirm({ message: `Are you sure you want to remove the column "${column.name}"?` })) {
       const currentColumns = this._templateColumns();
       const updatedColumns = currentColumns.filter(col => col.id !== column.id);
       this.normalizeColumnPositions(updatedColumns);
@@ -264,7 +263,7 @@ export class MetadataTableTemplateEditModal implements OnInit {
     });
   }
 
-  bulkDeleteColumns(): void {
+  async bulkDeleteColumns(): Promise<void> {
     const selected = this.selectedColumnIds();
     if (selected.size === 0) {
       this.toastService.error('Please select columns first');
@@ -282,7 +281,7 @@ export class MetadataTableTemplateEditModal implements OnInit {
       .map(col => col.name)
       .join(', ');
 
-    if (!confirm(`Are you sure you want to delete ${columnIds.length} column(s)?\n\n${columnNames}`)) {
+    if (!await this.confirmDialog.confirm({ message: `Are you sure you want to delete ${columnIds.length} column(s)?\n\n${columnNames}` })) {
       return;
     }
 

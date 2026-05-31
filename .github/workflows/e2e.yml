@@ -211,7 +211,7 @@ jobs:
 
           echo "$NGINX_CONF" | sudo tee /etc/nginx/conf.d/e2e.conf
           sudo nginx -t
-          sudo nginx -s reload || sudo service nginx restart
+          sudo service nginx restart
           sleep 2
           sudo ss -tlnp | grep ':4200' || (echo "nginx not listening on 4200" && sudo nginx -T 2>&1 | head -60 && exit 1)
 

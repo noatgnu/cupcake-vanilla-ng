@@ -23,7 +23,7 @@ import {
   MetadataValueEditModal,
   MetadataValueEditConfig
 } from '../metadata-value-edit-modal/metadata-value-edit-modal';
-import { AuthService, User, LabGroupService, ToastService, LabGroup } from '@noatgnu/cupcake-core';
+import { AuthService, User, LabGroupService, ToastService, LabGroup, ConfirmDialogService } from '@noatgnu/cupcake-core';
 
 @Component({
   selector: 'ccv-favorite-management',
@@ -110,6 +110,7 @@ export class FavoriteManagement implements OnInit {
   private toastService = inject(ToastService);
   private modalService = inject(NgbModal);
   private authService = inject(AuthService);
+  private confirmDialog = inject(ConfirmDialogService);
 
   specialSyntaxType = signal<SyntaxType | null>(null);
   showSpecialInput = signal(false);
@@ -354,19 +355,16 @@ export class FavoriteManagement implements OnInit {
     });
   }
 
-  deleteFavorite(favorite: FavouriteMetadataOption): void {
+  async deleteFavorite(favorite: FavouriteMetadataOption): Promise<void> {
     if (!this.canDeleteFavorite(favorite)) return;
 
-    const confirmMessage = `Are you sure you want to delete the favorite "${favorite.displayValue || favorite.value}"?`;
-
-    if (confirm(confirmMessage)) {
+    if (await this.confirmDialog.confirm({ message: `Are you sure you want to delete the favorite "${favorite.displayValue || favorite.value}"?` })) {
       this.favouriteMetadataOptionService.deleteFavouriteMetadataOption(favorite.id!).subscribe({
         next: () => {
           this.toastService.success('Favorite deleted successfully!');
           this.loadFavorites();
         },
-        error: (error) => {
-          console.error('Error deleting favorite:', error);
+        error: () => {
           this.toastService.error('Failed to delete favorite');
         }
       });

@@ -13,7 +13,7 @@ import {
 } from '../../models';
 import { MetadataColumnTemplateService, GroupedColumnTemplateQueryParams, SchemaService } from '../../services';
 import { ResourceVisibility } from '@noatgnu/cupcake-core';
-import { LabGroupService, LabGroup, LabGroupQueryResponse } from '@noatgnu/cupcake-core';
+import { LabGroupService, LabGroup, LabGroupQueryResponse, ConfirmDialogService } from '@noatgnu/cupcake-core';
 
 @Component({
   selector: 'ccv-column-templates',
@@ -151,7 +151,8 @@ export class ColumnTemplates implements OnInit {
     private metadataColumnTemplateService: MetadataColumnTemplateService,
     private labGroupService: LabGroupService,
     private schemaService: SchemaService,
-    private modalService: NgbModal
+    private modalService: NgbModal,
+    private confirmDialog: ConfirmDialogService
   ) {
     this.searchForm = this.fb.group({
       search: [''],
@@ -495,35 +496,26 @@ export class ColumnTemplates implements OnInit {
       : this.metadataColumnTemplateService.createMetadataColumnTemplate(templateData as MetadataColumnTemplateCreateRequest);
 
     apiCall.subscribe({
-      next: (template) => {
+      next: () => {
         this.isLoading.set(false);
-        console.log(`Column template ${isEdit ? 'updated' : 'created'}:`, template);
         this.refreshTemplates();
       },
-      error: (error) => {
+      error: () => {
         this.isLoading.set(false);
-        console.error(`Error ${isEdit ? 'updating' : 'creating'} column template:`, error);
-        alert(`Failed to ${isEdit ? 'update' : 'create'} template. Please try again.`);
       }
     });
   }
 
-  deleteTemplate(template: MetadataColumnTemplate) {
-    // Enhanced delete confirmation with better UX
-    const confirmMessage = `Are you sure you want to delete the column template "${template.name}"?\n\nThis action cannot be undone.`;
-    
-    if (confirm(confirmMessage)) {
+  async deleteTemplate(template: MetadataColumnTemplate): Promise<void> {
+    if (await this.confirmDialog.confirm({ message: `Are you sure you want to delete the column template "${template.name}"?\n\nThis action cannot be undone.` })) {
       this.isLoading.set(true);
       this.metadataColumnTemplateService.deleteMetadataColumnTemplate(template.id!).subscribe({
         next: () => {
           this.isLoading.set(false);
-          console.log('Column template deleted successfully');
           this.refreshTemplates();
         },
-        error: (error) => {
+        error: () => {
           this.isLoading.set(false);
-          console.error('Error deleting column template:', error);
-          alert('Failed to delete template. Please try again.');
         }
       });
     }

@@ -40,7 +40,7 @@ import {
 import { SamplePoolDetailsModal } from '../sample-pool-details-modal/sample-pool-details-modal';
 import { SamplePoolEditModal } from '../sample-pool-edit-modal/sample-pool-edit-modal';
 import { SamplePoolCreateModal } from '../sample-pool-create-modal/sample-pool-create-modal';
-import { ToastService } from '@noatgnu/cupcake-core';
+import { ToastService, ConfirmDialogService } from '@noatgnu/cupcake-core';
 import { DualScrollDirective } from '../../directives/dual-scroll';
 
 @Component({
@@ -215,7 +215,8 @@ export class MetadataTableDetails implements OnInit, OnDestroy {
     private toastService: ToastService,
     private asyncTaskService: AsyncTaskUIService,
     private modalService: NgbModal,
-    private officialColumnCache: OfficialColumnCacheService
+    private officialColumnCache: OfficialColumnCacheService,
+    private confirmDialog: ConfirmDialogService
   ) {}
 
   ngOnInit(): void {
@@ -333,7 +334,7 @@ export class MetadataTableDetails implements OnInit, OnDestroy {
     this.excelInput.nativeElement.click();
   }
 
-  importSdrf(event: Event): void {
+  async importSdrf(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
     if (!input.files || input.files.length === 0) return;
 
@@ -347,7 +348,7 @@ export class MetadataTableDetails implements OnInit, OnDestroy {
       return;
     }
 
-    if (confirm(`Import SDRF data into table "${table.name}"?\n\nThis will add new columns and may modify existing data.`)) {
+    if (await this.confirmDialog.confirm({ message: `Import SDRF data into table "${table.name}"?\n\nThis will add new columns and may modify existing data.` })) {
       input.value = '';
       this.isLoading.set(true);
 
@@ -384,7 +385,7 @@ export class MetadataTableDetails implements OnInit, OnDestroy {
     }
   }
 
-  importExcel(event: Event): void {
+  async importExcel(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
     if (!input.files || input.files.length === 0) return;
 
@@ -392,26 +393,16 @@ export class MetadataTableDetails implements OnInit, OnDestroy {
     const table = this.table();
     if (!table) return;
 
-    // Validate file type
     if (!file.name.toLowerCase().endsWith('.xlsx') && !file.name.toLowerCase().endsWith('.xls')) {
       this.toastService.error('Please select a valid Excel file (.xlsx or .xls)');
-      input.value = ''; // Reset input
+      input.value = '';
       return;
     }
 
-    if (confirm(`Import Excel data into table "${table.name}"?\n\nThis will update existing columns and may modify data.`)) {
-      input.value = ''; // Reset input early
-
-      // Use chunked upload service for import with progress tracking
+    if (await this.confirmDialog.confirm({ message: `Import Excel data into table "${table.name}"?\n\nThis will update existing columns and may modify data.` })) {
+      input.value = '';
       this.isLoading.set(true);
 
-      console.log('Starting Excel import using chunked upload:', {
-        fileName: file.name,
-        fileSize: file.size,
-        metadataTableId: table.id
-      });
-
-      // Use chunked upload - it now triggers async import task on completion
       this.chunkedUploadService.uploadFileInChunks(
         file,
         1024 * 1024,
@@ -420,37 +411,27 @@ export class MetadataTableDetails implements OnInit, OnDestroy {
           createPools: true,
           replaceExisting: false,
           overrideSampleCount: this.overrideSampleCount(),
-          onProgress: (progress) => {
-            console.log(`Excel upload progress: ${Math.round(progress)}%`);
-          }
+          onProgress: (_progress) => {}
         }
       ).subscribe({
         next: (result) => {
           this.isLoading.set(false);
-          console.log('Excel chunked upload completed:', result);
-          
-          // If a taskId is returned, monitor the async import task
           if (result?.taskId) {
-            console.log('Starting async task monitoring for taskId:', result.taskId);
             this.toastService.success(`Excel import task queued successfully! Task ID: ${result.taskId}`);
-            
-            // Mark task for monitoring and start real-time updates (same pattern as export)
             this.asyncTaskService.monitorTask(result.taskId);
           } else {
-            // Fallback for immediate processing (backward compatibility)
             this.toastService.success('Excel file imported successfully!');
             this.loadTable(table.id);
           }
         },
         error: (error) => {
           this.isLoading.set(false);
-          console.error('Error importing Excel:', error);
           const errorMsg = error?.error?.detail || error?.error?.message || 'Failed to import Excel file';
           this.toastService.error(errorMsg);
         }
       });
     } else {
-      input.value = ''; // Reset input if cancelled
+      input.value = '';
     }
   }
 
@@ -549,13 +530,11 @@ export class MetadataTableDetails implements OnInit, OnDestroy {
     });
   }
 
-  deleteTable(): void {
+  async deleteTable(): Promise<void> {
     const table = this.table();
     if (!table) return;
 
-    const confirmMessage = `Are you sure you want to delete the table "${table.name}"?\n\nThis action cannot be undone.`;
-
-    if (confirm(confirmMessage)) {
+    if (await this.confirmDialog.confirm({ message: `Are you sure you want to delete the table "${table.name}"?\n\nThis action cannot be undone.` })) {
       this.isLoading.set(true);
       this.metadataTableService.deleteMetadataTable(table.id).subscribe({
         next: () => {
@@ -783,21 +762,17 @@ export class MetadataTableDetails implements OnInit, OnDestroy {
     });
   }
 
-  deletePool(pool: SamplePool): void {
+  async deletePool(pool: SamplePool): Promise<void> {
     const table = this.table();
     if (!table || !pool.id) return;
 
-    const confirmMessage = `Are you sure you want to delete the pool "${pool.poolName}"?\n\nThis action cannot be undone.`;
-
-    if (confirm(confirmMessage)) {
+    if (await this.confirmDialog.confirm({ message: `Are you sure you want to delete the pool "${pool.poolName}"?\n\nThis action cannot be undone.` })) {
       this.samplePoolService.deleteSamplePool(pool.id).subscribe({
         next: () => {
-          // Reload the entire table to sync all pool-related changes
           this.loadTable(table.id);
           this.toastService.success(`Pool "${pool.poolName}" deleted successfully!`);
         },
-        error: (error) => {
-          console.error('Error deleting pool:', error);
+        error: () => {
           this.toastService.error(`Failed to delete pool "${pool.poolName}"`);
         }
       });
@@ -1216,17 +1191,13 @@ export class MetadataTableDetails implements OnInit, OnDestroy {
   }
 
 
-  // Remove column method
-  removeColumn(column: MetadataColumn): void {
+  async removeColumn(column: MetadataColumn): Promise<void> {
     const table = this.table();
     if (!table || !table.canEdit || !column.id) return;
 
-    const confirmMessage = `Are you sure you want to remove the column "${column.name}"?\n\nThis action cannot be undone and will remove all data in this column.`;
-
-    if (confirm(confirmMessage)) {
+    if (await this.confirmDialog.confirm({ message: `Are you sure you want to remove the column "${column.name}"?\n\nThis action cannot be undone and will remove all data in this column.` })) {
       this.metadataColumnService.deleteMetadataColumn(column.id).subscribe({
         next: () => {
-          // Remove the column from the local table data
           const currentTable = this.table();
           if (currentTable && currentTable.columns) {
             const updatedColumns = currentTable.columns.filter(col => col.id !== column.id);
@@ -1234,8 +1205,7 @@ export class MetadataTableDetails implements OnInit, OnDestroy {
           }
           this.toastService.success(`Column "${column.name}" removed successfully!`);
         },
-        error: (error) => {
-          console.error('Error removing column:', error);
+        error: () => {
           this.toastService.error(`Failed to remove column "${column.name}"`);
         }
       });

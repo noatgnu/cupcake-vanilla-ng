@@ -17,7 +17,7 @@ import {
   MetadataTableTemplateCreateRequest
 } from '../../models';
 import { MetadataTableTemplateService } from '../../services/metadata-table-template';
-import { ToastService } from '@noatgnu/cupcake-core';
+import { ToastService, ConfirmDialogService } from '@noatgnu/cupcake-core';
 
 @Component({
   selector: 'ccv-metadata-table-templates',
@@ -76,8 +76,9 @@ export class MetadataTableTemplates implements OnInit {
     private labGroupService: LabGroupService,
     private modalService: NgbModal,
     private toastService: ToastService,
-    private asyncTaskService: AsyncTaskUIService
-  ) {
+    private asyncTaskService: AsyncTaskUIService,
+    private confirmDialog: ConfirmDialogService
+) {
     this.searchForm = this.fb.group({
       search: [''],
       labGroupId: [null],
@@ -230,22 +231,16 @@ export class MetadataTableTemplates implements OnInit {
     this.openTemplateModal(template, true);
   }
 
-  deleteTemplate(template: MetadataTableTemplate) {
-    // Enhanced delete confirmation with better UX
-    const confirmMessage = `Are you sure you want to delete the template "${template.name}"?\n\nThis action cannot be undone.`;
-
-    if (confirm(confirmMessage)) {
+  async deleteTemplate(template: MetadataTableTemplate): Promise<void> {
+    if (await this.confirmDialog.confirm({ message: `Are you sure you want to delete the template "${template.name}"?\n\nThis action cannot be undone.` })) {
       this.isLoading.set(true);
       this.metadataTableTemplateService.deleteMetadataTableTemplate(template.id!).subscribe({
         next: () => {
           this.isLoading.set(false);
-          console.log('Template deleted successfully');
           this.refreshTemplates();
         },
-        error: (error) => {
+        error: () => {
           this.isLoading.set(false);
-          console.error('Error deleting template:', error);
-          alert('Failed to delete template. Please try again.');
         }
       });
     }
@@ -501,10 +496,8 @@ export class MetadataTableTemplates implements OnInit {
    * Sync template columns from linked schemas.
    * Updates columns with latest ontology settings and adds new columns from schemas.
    */
-  syncTemplateFromSchemas(template: MetadataTableTemplate): void {
-    const confirmMessage = `Sync template "${template.name}" from linked schemas?\n\nThis will:\n- Update existing columns with latest ontology settings\n- Add any new columns from schemas\n\nContinue?`;
-
-    if (!confirm(confirmMessage)) {
+  async syncTemplateFromSchemas(template: MetadataTableTemplate): Promise<void> {
+    if (!await this.confirmDialog.confirm({ message: `Sync template "${template.name}" from linked schemas?\n\nThis will update existing columns with latest ontology settings and add any new columns from schemas.` })) {
       return;
     }
 

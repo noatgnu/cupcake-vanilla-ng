@@ -20,8 +20,8 @@ async function createTableWithImportedData(
     page.waitForEvent("filechooser"),
     page.getByRole("link", { name: /import sdrf file/i }).click(),
   ]);
-  page.once("dialog", dialog => dialog.accept());
   await fileChooser.setFiles(SDRF_FILE);
+  await page.getByRole("dialog").locator("button.btn-danger").click();
 
   const tasksBtn = page.locator("button[aria-label*='Background tasks']");
   await tasksBtn.click();
@@ -30,6 +30,7 @@ async function createTableWithImportedData(
   await expect(monitor.locator(".task-item").first()).toBeVisible({ timeout: 15000 });
   await monitor.getByRole("button", { name: /completed/i }).click();
   await expect(monitor.locator(".task-item").first()).toBeVisible({ timeout: 20000 });
+  await monitor.getByRole("button", { name: /^all/i }).click();
   await tasksBtn.click();
 }
 

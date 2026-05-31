@@ -16,8 +16,8 @@ async function createTableWithData(page: import("@playwright/test").Page, name: 
     page.waitForEvent("filechooser"),
     page.getByRole("link", { name: /import sdrf file/i }).click(),
   ]);
-  page.once("dialog", dialog => dialog.accept());
   await fileChooser.setFiles(path.join(FIXTURES_DIR, "PXD019185_PXD018883.sdrf.tsv"));
+  await page.getByRole("dialog").locator("button.btn-danger").click();
 
   const tasksBtn = page.locator("button[aria-label*='Background tasks']");
   await tasksBtn.click();
@@ -26,6 +26,7 @@ async function createTableWithData(page: import("@playwright/test").Page, name: 
   await expect(monitor.locator(".task-item").first()).toBeVisible({ timeout: 15000 });
   await monitor.getByRole("button", { name: /completed/i }).click();
   await expect(monitor.locator(".task-item").first()).toBeVisible({ timeout: 20000 });
+  await monitor.getByRole("button", { name: /^all/i }).click();
   await tasksBtn.click();
 }
 

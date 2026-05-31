@@ -6,7 +6,7 @@ import { NgbActiveModal, NgbModule, NgbModal } from '@ng-bootstrap/ng-bootstrap'
 import { map } from 'rxjs';
 import { MetadataTable, MetadataTableUpdateRequest, MetadataTableCreateRequest, SampleCountConfirmationError } from '../../models/metadata-table';
 import { MetadataTableService } from '../../services/metadata-table';
-import { LabGroupService, LabGroup } from '@noatgnu/cupcake-core';
+import { LabGroupService, LabGroup, ConfirmDialogService } from '@noatgnu/cupcake-core';
 
 @Component({
   selector: 'ccv-metadata-table-edit-modal',
@@ -32,7 +32,8 @@ export class MetadataTableEditModal implements OnInit {
     private activeModal: NgbActiveModal,
     private modalService: NgbModal,
     private metadataTableService: MetadataTableService,
-    private labGroupService: LabGroupService
+    private labGroupService: LabGroupService,
+    private confirmDialog: ConfirmDialogService
   ) {
     this.editForm = this.fb.group({
       name: ['', [Validators.required, Validators.maxLength(255)]],
@@ -136,28 +137,21 @@ export class MetadataTableEditModal implements OnInit {
       },
       error: (error) => {
         if (this.isSampleCountConfirmationError(error)) {
-          this.handleSampleCountConfirmation(error.error, updateData);
+          void this.handleSampleCountConfirmation(error.error, updateData);
         } else {
-          console.error('Error updating metadata table:', error);
           this.isLoading.set(false);
         }
       }
     });
   }
 
-  private handleSampleCountConfirmation(errorData: SampleCountConfirmationError, updateData: MetadataTableUpdateRequest): void {
+  private async handleSampleCountConfirmation(errorData: SampleCountConfirmationError, updateData: MetadataTableUpdateRequest): Promise<void> {
     this.isLoading.set(false);
     const details = errorData.sampleCountConfirmationDetails;
 
-    const message = `Reducing sample count from ${details.currentSampleCount} to ${details.newSampleCount} will remove data:
+    const message = `Reducing sample count from ${details.currentSampleCount} to ${details.newSampleCount} will remove data:\n\n${details.validationResult.warnings.join('\n')}\n\n${this.formatAffectedData(details.validationResult)}\n\nDo you want to continue?`;
 
-${details.validationResult.warnings.join('\n')}
-
-${this.formatAffectedData(details.validationResult)}
-
-Do you want to continue?`;
-
-    if (confirm(message)) {
+    if (await this.confirmDialog.confirm({ message })) {
       this.isLoading.set(true);
       this.performUpdate(updateData, true);
     }

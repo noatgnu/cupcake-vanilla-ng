@@ -35,8 +35,8 @@ test.describe("SDRF import with schema templates", () => {
       adminPage.waitForEvent("filechooser"),
       adminPage.getByRole("link", { name: /import sdrf file/i }).click(),
     ]);
-    adminPage.once("dialog", dialog => dialog.accept());
     await fileChooser.setFiles(path.join(FIXTURES_DIR, "PXD019185_PXD018883.sdrf.tsv"));
+    await adminPage.getByRole("dialog").locator("button.btn-danger").click();
 
     await adminPage.locator("button[aria-label*='Background tasks']").click();
     await expect(adminPage.locator("app-async-task-monitor")).toBeVisible({ timeout: 5000 });
@@ -51,8 +51,8 @@ test.describe("column template CRUD", () => {
     await adminPage.goto("/#/metadata-templates");
     const row = adminPage.locator("tr, [role='row']").filter({ hasText: TEMPLATE_NAME }).first();
     if (await row.isVisible({ timeout: 2000 })) {
-      adminPage.once("dialog", dialog => dialog.accept());
       await row.locator('[title="Delete template"]').click();
+      await adminPage.getByRole("dialog").locator("button.btn-danger").click();
     }
   });
 

@@ -8,8 +8,9 @@ test.describe("column templates", () => {
     for (const name of [TEMPLATE_NAME, TEMPLATE_NAME + " Renamed"]) {
       const row = adminPage.locator("tr, [role='row']").filter({ hasText: name }).first();
       if (await row.isVisible({ timeout: 2000 })) {
-        adminPage.once("dialog", dialog => dialog.accept());
         await row.locator('[title="Delete template"]').click();
+        await adminPage.getByRole("dialog").locator("button.btn-danger").click();
+        await expect(adminPage.locator("tr, [role='row']").filter({ hasText: name })).toHaveCount(0, { timeout: 5000 });
       }
     }
   });
@@ -79,8 +80,8 @@ test.describe("column templates", () => {
     await expect(adminPage.getByText(TEMPLATE_NAME).first()).toBeVisible({ timeout: 10000 });
 
     const row = adminPage.locator("tr, [role='row']").filter({ hasText: TEMPLATE_NAME }).first();
-    adminPage.once("dialog", dialog => dialog.accept());
     await row.locator('[title="Delete template"]').click();
+    await adminPage.getByRole("dialog").locator("button.btn-danger").click();
     await expect(adminPage.locator("tr, [role='row']").filter({ hasText: TEMPLATE_NAME })).toHaveCount(0, { timeout: 5000 });
   });
 

@@ -18,8 +18,8 @@ async function triggerSdrfImport(page: import("@playwright/test").Page, filePath
     page.waitForEvent("filechooser"),
     page.getByRole("link", { name: /import sdrf file/i }).click(),
   ]);
-  page.once("dialog", dialog => dialog.accept());
   await fileChooser.setFiles(filePath);
+  await page.getByRole("dialog").locator("button.btn-danger").click();
 }
 
 async function openTaskMonitor(page: import("@playwright/test").Page): Promise<void> {

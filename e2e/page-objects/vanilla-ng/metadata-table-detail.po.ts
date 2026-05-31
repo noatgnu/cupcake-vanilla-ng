@@ -29,14 +29,10 @@ export class MetadataTableDetailPage {
     await expect(modal).not.toBeVisible({ timeout: 10000 });
   }
 
-  /**
-   * Deletes a column via the table data view header remove button.
-   * Uses native window.confirm() — sets a one-time dialog accept handler.
-   */
   async deleteColumn(name: string): Promise<void> {
     await this.page.locator('[title="Table Data View"]').click();
-    this.page.once("dialog", dialog => dialog.accept());
     await this.page.getByRole("button", { name: new RegExp(`remove.*${name}`, "i") }).click();
+    await this.page.getByRole("dialog").locator("button.btn-danger").click();
     await this.page.locator('[title="Column List View"]').click();
     await expect(this.page.getByText(name)).not.toBeVisible({ timeout: 5000 });
   }

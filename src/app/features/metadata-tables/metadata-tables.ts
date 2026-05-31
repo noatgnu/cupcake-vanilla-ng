@@ -11,7 +11,7 @@ import {
   LabGroup,
   LabGroupQueryResponse
 } from '../../shared/models';
-import { User, LabGroupService, MetadataValidationConfig } from '@noatgnu/cupcake-core';
+import { User, LabGroupService, MetadataValidationConfig, ConfirmDialogService } from '@noatgnu/cupcake-core';
 import { MetadataTableService, MetadataTableQueryParams } from '@noatgnu/cupcake-vanilla';
 import { NavigationState } from '../../shared/services/navigation-state';
 import { ToastService } from '@noatgnu/cupcake-core';
@@ -38,6 +38,7 @@ export class MetadataTablesComponent implements OnInit, OnDestroy {
   private toastService = inject(ToastService);
   private modalService = inject(NgbModal);
   private authService = inject(AuthService);
+  private confirmDialog = inject(ConfirmDialogService);
 
   searchForm: FormGroup;
 
@@ -279,20 +280,16 @@ export class MetadataTablesComponent implements OnInit, OnDestroy {
     });
   }
 
-  deleteTable(table: MetadataTable) {
-    const confirmMessage = `Are you sure you want to delete the table "${table.name}"?\n\nThis action cannot be undone.`;
-
-    if (confirm(confirmMessage)) {
+  async deleteTable(table: MetadataTable): Promise<void> {
+    if (await this.confirmDialog.confirm({ message: `Are you sure you want to delete the table "${table.name}"?\n\nThis action cannot be undone.` })) {
       this.isLoading.set(true);
       this.metadataTableService.deleteMetadataTable(table.id!).subscribe({
         next: () => {
-          console.log('Metadata table deleted successfully');
           this.toastService.success(`Table "${table.name}" deleted successfully!`);
           this.refreshTables();
         },
         error: (error) => {
           this.isLoading.set(false);
-          console.error('Error deleting metadata table:', error);
           const errorMsg = error?.error?.detail || error?.message || 'Failed to delete table. Please try again.';
           this.toastService.error(errorMsg);
         }

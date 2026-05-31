@@ -23,6 +23,9 @@ export * from '../wifi-management/wifi-management';
 // Device token management
 export * from './device-token-management/device-token-management';
 
+// Confirm dialog
+export * from './confirm-dialog/confirm-dialog';
+
 // Plugin renderer components
 export * from '../plugin-renderer/plugin-page/plugin-page';
 export * from '../plugin-renderer/plugin-widget/plugin-widget';

@@ -14,6 +14,7 @@ import {
 } from '../../../models';
 import { LabGroupService } from '../../../services/lab-group';
 import { ToastService } from '../../../services/toast';
+import { ConfirmDialogService } from '../../../services/confirm-dialog';
 
 @Component({
   selector: 'ccc-lab-groups',
@@ -29,6 +30,7 @@ export class LabGroupsComponent implements OnInit {
   private readonly labGroupService = inject(LabGroupService);
   private readonly modalService = inject(NgbModal);
   private readonly toastService = inject(ToastService);
+  private readonly confirmDialog = inject(ConfirmDialogService);
 
   // Forms
   searchForm: FormGroup;
@@ -164,8 +166,8 @@ export class LabGroupsComponent implements OnInit {
     });
   }
 
-  rejectMyInvitation(invitationId: number): void {
-    if (confirm('Are you sure you want to reject this invitation?')) {
+  async rejectMyInvitation(invitationId: number): Promise<void> {
+    if (await this.confirmDialog.confirm({ message: 'Are you sure you want to reject this invitation?' })) {
       this.isLoading.set(true);
       this.labGroupService.rejectLabGroupInvitation(invitationId).subscribe({
         next: (response) => {
@@ -336,33 +338,28 @@ export class LabGroupsComponent implements OnInit {
     }
   }
 
-  removeMember(userId: number): void {
+  async removeMember(userId: number): Promise<void> {
     const group = this.selectedGroupForMembers();
     if (!group) return;
 
-    const confirmMessage = `Are you sure you want to remove this member from "${group.name}"?`;
-    
-    if (confirm(confirmMessage)) {
+    if (await this.confirmDialog.confirm({ message: `Are you sure you want to remove this member from "${group.name}"?` })) {
       this.labGroupService.removeMemberFromLabGroup(group.id, userId).subscribe({
-        next: (response: {message: string}) => {
+        next: () => {
           this.loadGroupMembers(group.id);
           this.toastService.success('Member removed successfully!');
         },
         error: (error) => {
           const errorMsg = error?.error?.detail || error?.message || 'Failed to remove member. Please try again.';
           this.toastService.error(errorMsg);
-          console.error('Error removing member:', error);
         }
       });
     }
   }
 
-  cancelInvitation(invitationId: number): void {
-    const confirmMessage = 'Are you sure you want to cancel this invitation?';
-    
-    if (confirm(confirmMessage)) {
+  async cancelInvitation(invitationId: number): Promise<void> {
+    if (await this.confirmDialog.confirm({ message: 'Are you sure you want to cancel this invitation?' })) {
       this.labGroupService.cancelLabGroupInvitation(invitationId).subscribe({
-        next: (response) => {
+        next: () => {
           const group = this.selectedGroupForMembers();
           if (group) {
             this.loadPendingInvitations(group.id);
@@ -372,18 +369,15 @@ export class LabGroupsComponent implements OnInit {
         error: (error) => {
           const errorMsg = error?.error?.detail || error?.message || 'Failed to cancel invitation. Please try again.';
           this.toastService.error(errorMsg);
-          console.error('Error cancelling invitation:', error);
         }
       });
     }
   }
 
-  leaveGroup(group: LabGroup): void {
-    const confirmMessage = `Are you sure you want to leave "${group.name}"?`;
-    
-    if (confirm(confirmMessage)) {
+  async leaveGroup(group: LabGroup): Promise<void> {
+    if (await this.confirmDialog.confirm({ message: `Are you sure you want to leave "${group.name}"?` })) {
       this.labGroupService.leaveLabGroup(group.id).subscribe({
-        next: (response) => {
+        next: () => {
           this.refreshLabGroups();
           this.selectedGroupForMembers.set(null);
           this.toastService.success(`Successfully left "${group.name}"!`);
@@ -391,16 +385,13 @@ export class LabGroupsComponent implements OnInit {
         error: (error) => {
           const errorMsg = error?.error?.detail || error?.message || 'Failed to leave group. Please try again.';
           this.toastService.error(errorMsg);
-          console.error('Error leaving group:', error);
         }
       });
     }
   }
 
-  deleteGroup(group: LabGroup): void {
-    const confirmMessage = `Are you sure you want to delete the lab group "${group.name}"?\n\nThis action cannot be undone.`;
-    
-    if (confirm(confirmMessage)) {
+  async deleteGroup(group: LabGroup): Promise<void> {
+    if (await this.confirmDialog.confirm({ message: `Are you sure you want to delete the lab group "${group.name}"?\n\nThis action cannot be undone.` })) {
       this.labGroupService.deleteLabGroup(group.id).subscribe({
         next: () => {
           this.refreshLabGroups();
@@ -410,7 +401,6 @@ export class LabGroupsComponent implements OnInit {
         error: (error) => {
           const errorMsg = error?.error?.detail || error?.message || 'Failed to delete lab group. Please try again.';
           this.toastService.error(errorMsg);
-          console.error('Error deleting group:', error);
         }
       });
     }

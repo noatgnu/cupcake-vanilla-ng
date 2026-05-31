@@ -5,6 +5,7 @@ import { NgbModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { debounceTime } from 'rxjs';
 import { AuthService } from '../../../services/auth';
 import { UserManagementService } from '../../../services/user-management';
+import { ConfirmDialogService } from '../../../services/confirm-dialog';
 import {
   User,
   UserCreateRequest,
@@ -25,6 +26,7 @@ export class UserManagementComponent implements OnInit {
   private userManagementService = inject(UserManagementService);
   private authService = inject(AuthService);
   private modalService = inject(NgbModal);
+  private confirmDialog = inject(ConfirmDialogService);
 
   // Data
   users = signal<User[]>([]);
@@ -204,10 +206,10 @@ export class UserManagementComponent implements OnInit {
     });
   }
 
-  deleteUser(user: User): void {
+  async deleteUser(user: User): Promise<void> {
     if (!user.id) return;
 
-    if (confirm(`Are you sure you want to delete user "${user.username}"? This action cannot be undone.`)) {
+    if (await this.confirmDialog.confirm({ message: `Are you sure you want to delete user "${user.username}"? This action cannot be undone.` })) {
       this.isDeletingUser.set(true);
       this.errorMessage.set('');
 
@@ -242,24 +244,24 @@ export class UserManagementComponent implements OnInit {
     });
   }
 
-  toggleUserStatus(user: User): void {
+  async toggleUserStatus(user: User): Promise<void> {
     if (!user.id) return;
 
     const newStatus = !user.isActive;
     const action = newStatus ? 'activate' : 'deactivate';
 
-    if (confirm(`Are you sure you want to ${action} user "${user.username}"?`)) {
+    if (await this.confirmDialog.confirm({ message: `Are you sure you want to ${action} user "${user.username}"?` })) {
       this.updateUser(user.id, { isActive: newStatus });
     }
   }
 
-  toggleStaffStatus(user: User): void {
+  async toggleStaffStatus(user: User): Promise<void> {
     if (!user.id) return;
 
     const newStatus = !user.isStaff;
     const action = newStatus ? 'grant staff privileges to' : 'revoke staff privileges from';
 
-    if (confirm(`Are you sure you want to ${action} user "${user.username}"?`)) {
+    if (await this.confirmDialog.confirm({ message: `Are you sure you want to ${action} user "${user.username}"?` })) {
       this.updateUser(user.id, { isStaff: newStatus });
     }
   }
