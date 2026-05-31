@@ -46,6 +46,6 @@ export class MetadataTableDetailPage {
   }
 
   async expectColumnsSection(): Promise<void> {
-    await expect(this.page.getByText(/columns/i)).toBeVisible({ timeout: 10000 });
+    await expect(this.page.getByText(/table columns/i).first()).toBeVisible({ timeout: 10000 });
   }
 }

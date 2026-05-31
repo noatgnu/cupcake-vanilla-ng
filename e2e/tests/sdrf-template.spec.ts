@@ -49,7 +49,7 @@ test.describe("column template CRUD", () => {
     const row = adminPage.locator("tr, [role='row']").filter({ hasText: TEMPLATE_NAME }).first();
     if (await row.isVisible({ timeout: 2000 })) {
       adminPage.once("dialog", dialog => dialog.accept());
-      await row.getByRole("button", { name: /delete/i }).click();
+      await row.locator('[title="Delete template"]').click();
     }
   });
 
@@ -73,6 +73,6 @@ test.describe("column template CRUD", () => {
     await expect(submitBtn).toBeEnabled({ timeout: 5000 });
     await submitBtn.click();
     await expect(adminPage.getByRole("dialog")).not.toBeVisible({ timeout: 5000 });
-    await expect(adminPage.getByText(TEMPLATE_NAME)).toBeVisible({ timeout: 10000 });
+    await expect(adminPage.getByText(TEMPLATE_NAME).first()).toBeVisible({ timeout: 10000 });
   });
 });

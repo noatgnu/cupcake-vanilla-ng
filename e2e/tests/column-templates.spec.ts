@@ -9,7 +9,7 @@ test.describe("column templates", () => {
       const row = adminPage.locator("tr, [role='row']").filter({ hasText: name }).first();
       if (await row.isVisible({ timeout: 2000 })) {
         adminPage.once("dialog", dialog => dialog.accept());
-        await row.getByRole("button", { name: /delete/i }).click();
+        await row.locator('[title="Delete template"]').click();
       }
     }
   });
@@ -42,7 +42,7 @@ test.describe("column templates", () => {
     await expect(submitBtn).toBeEnabled({ timeout: 5000 });
     await submitBtn.click();
     await expect(adminPage.getByRole("dialog")).not.toBeVisible({ timeout: 5000 });
-    await expect(adminPage.getByText(TEMPLATE_NAME)).toBeVisible({ timeout: 10000 });
+    await expect(adminPage.getByText(TEMPLATE_NAME).first()).toBeVisible({ timeout: 10000 });
   });
 
   test("rename template updates in list", async ({ adminPage }) => {
@@ -54,17 +54,17 @@ test.describe("column templates", () => {
     let submitBtn = adminPage.locator(".modal-footer .btn-primary");
     await expect(submitBtn).toBeEnabled({ timeout: 5000 });
     await submitBtn.click();
-    await expect(adminPage.getByText(TEMPLATE_NAME)).toBeVisible({ timeout: 10000 });
+    await expect(adminPage.getByText(TEMPLATE_NAME).first()).toBeVisible({ timeout: 10000 });
 
     const row = adminPage.locator("tr, [role='row']").filter({ hasText: TEMPLATE_NAME }).first();
-    await row.getByRole("button", { name: /edit/i }).click();
+    await row.locator('[title="Edit template"]').click();
     const nameInput = adminPage.locator("#templateName");
     await nameInput.clear();
     await nameInput.fill(TEMPLATE_NAME + " Renamed");
     submitBtn = adminPage.locator(".modal-footer .btn-primary");
     await expect(submitBtn).toBeEnabled({ timeout: 5000 });
     await submitBtn.click();
-    await expect(adminPage.getByText(TEMPLATE_NAME + " Renamed")).toBeVisible({ timeout: 10000 });
+    await expect(adminPage.getByText(TEMPLATE_NAME + " Renamed").first()).toBeVisible({ timeout: 10000 });
   });
 
   test("delete template removes it", async ({ adminPage }) => {
@@ -76,12 +76,12 @@ test.describe("column templates", () => {
     const submitBtn = adminPage.locator(".modal-footer .btn-primary");
     await expect(submitBtn).toBeEnabled({ timeout: 5000 });
     await submitBtn.click();
-    await expect(adminPage.getByText(TEMPLATE_NAME)).toBeVisible({ timeout: 10000 });
+    await expect(adminPage.getByText(TEMPLATE_NAME).first()).toBeVisible({ timeout: 10000 });
 
     const row = adminPage.locator("tr, [role='row']").filter({ hasText: TEMPLATE_NAME }).first();
     adminPage.once("dialog", dialog => dialog.accept());
-    await row.getByRole("button", { name: /delete/i }).click();
-    await expect(adminPage.getByText(TEMPLATE_NAME)).not.toBeVisible({ timeout: 5000 });
+    await row.locator('[title="Delete template"]').click();
+    await expect(adminPage.locator("tr, [role='row']").filter({ hasText: TEMPLATE_NAME })).toHaveCount(0, { timeout: 5000 });
   });
 
   test("schema filter buttons are visible", async ({ adminPage }) => {

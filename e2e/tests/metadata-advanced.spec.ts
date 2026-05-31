@@ -73,7 +73,7 @@ test.describe("metadata validation modal", () => {
     await expect(adminPage.getByRole("dialog")).toBeVisible({ timeout: 5000 });
     await expect(adminPage.getByText(/validate metadata table/i)).toBeVisible({ timeout: 3000 });
 
-    await adminPage.locator(".btn-close").click();
+    await adminPage.getByRole("dialog").locator(".btn-close").click();
     await list.deleteTable(tableName);
   });
 
@@ -89,7 +89,7 @@ test.describe("metadata validation modal", () => {
     await expect(adminPage.getByRole("dialog")).toBeVisible({ timeout: 5000 });
     await expect(adminPage.getByRole("button", { name: /select all/i })).toBeVisible({ timeout: 5000 });
 
-    await adminPage.locator(".btn-close").click();
+    await adminPage.getByRole("dialog").locator(".btn-close").click();
     await list.deleteTable(tableName);
   });
 
@@ -107,7 +107,7 @@ test.describe("metadata validation modal", () => {
     const validateBtn = adminPage.locator("button[type='submit']").filter({ hasText: /validate/i });
     await expect(validateBtn).toBeDisabled({ timeout: 3000 });
 
-    await adminPage.locator(".btn-close").click();
+    await adminPage.getByRole("dialog").locator(".btn-close").click();
     await list.deleteTable(tableName);
   });
 

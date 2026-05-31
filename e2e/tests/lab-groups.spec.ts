@@ -14,7 +14,7 @@ test.describe("lab groups", () => {
     const page = new LabGroupsPage(adminPage);
     await page.goto();
     await page.create(GROUP_NAME);
-    await expect(adminPage.getByText(GROUP_NAME)).toBeVisible({ timeout: 10000 });
+    await expect(adminPage.getByText(GROUP_NAME).first()).toBeVisible({ timeout: 10000 });
   });
 
   test("group members modal opens", async ({ adminPage }) => {

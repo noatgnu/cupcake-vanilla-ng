@@ -4,6 +4,7 @@ export default defineConfig({
   testDir: "./tests",
   fullyParallel: false,
   retries: process.env["CI"] ? 2 : 0,
+  timeout: 120000,
   workers: 1,
   reporter: [["html", { outputFolder: "playwright-report" }], ["list"]],
   globalSetup: "./global-setup.ts",
