@@ -224,6 +224,7 @@ export class AsyncTaskUIService implements OnDestroy {
         } else {
           const a = document.createElement('a');
           a.href = response.downloadUrl;
+          a.download = response.filename || '';
           a.style.display = 'none';
           const panel = document.body.querySelector('app-async-task-monitor') ?? document.body;
           panel.appendChild(a);

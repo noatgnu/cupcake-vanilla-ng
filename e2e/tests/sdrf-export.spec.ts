@@ -12,11 +12,8 @@ async function createTableWithData(page: import("@playwright/test").Page, name: 
   await expect(page).toHaveURL(/\/metadata-tables\/\d+/, { timeout: 10000 });
 
   await page.locator('[title="Import Data"]').click();
-  const [fileChooser] = await Promise.all([
-    page.waitForEvent("filechooser"),
-    page.getByRole("link", { name: /import sdrf file/i }).click(),
-  ]);
-  await fileChooser.setFiles(path.join(FIXTURES_DIR, "PXD019185_PXD018883.sdrf.tsv"));
+  const sdrfInput = page.locator('input[type="file"][accept=".txt,.tsv"]');
+  await sdrfInput.setInputFiles(path.join(FIXTURES_DIR, "PXD019185_PXD018883.sdrf.tsv"));
   await page.getByRole("dialog").locator("button.btn-danger").click();
 
   const tasksBtn = page.locator("button[aria-label*='Background tasks']");

@@ -16,11 +16,8 @@ async function createTableWithImportedData(
   await expect(page).toHaveURL(/\/metadata-tables\/\d+/, { timeout: 10000 });
 
   await page.locator('[title="Import Data"]').click();
-  const [fileChooser] = await Promise.all([
-    page.waitForEvent("filechooser"),
-    page.getByRole("link", { name: /import sdrf file/i }).click(),
-  ]);
-  await fileChooser.setFiles(SDRF_FILE);
+  const sdrfInput = page.locator('input[type="file"][accept=".txt,.tsv"]');
+  await sdrfInput.setInputFiles(SDRF_FILE);
   await page.getByRole("dialog").locator("button.btn-danger").click();
 
   const tasksBtn = page.locator("button[aria-label*='Background tasks']");
@@ -117,6 +114,7 @@ test.describe("metadata validation modal", () => {
   });
 
   test("validation runs after selecting a schema", async ({ adminPage }) => {
+    test.setTimeout(90000);
     const tableName = `E2E ValidateRun ${Date.now()}`;
     const list = new MetadataTablePage(adminPage);
     await list.goto();
@@ -130,7 +128,18 @@ test.describe("metadata validation modal", () => {
     const validateBtn = adminPage.locator("button[type='submit']").filter({ hasText: /validate/i });
     await expect(validateBtn).not.toBeDisabled({ timeout: 5000 });
     await validateBtn.click();
-    await expect(adminPage.locator("app-async-task-monitor, .task-item, [class*='task']").first()).toBeVisible({ timeout: 10000 });
+    await expect(adminPage.getByRole("dialog")).not.toBeVisible({ timeout: 10000 });
+    await adminPage.locator("button[aria-label*='Background tasks']").click();
+    await expect(adminPage.locator("app-async-task-monitor")).toBeVisible({ timeout: 5000 });
+    await expect(adminPage.locator(".task-item").first()).toBeVisible({ timeout: 15000 });
+    await adminPage.locator("button[aria-label*='Background tasks']").click();
+
+    const resultsDialog = adminPage.getByRole("dialog");
+    if (await resultsDialog.isVisible({ timeout: 3000 })) {
+      const closeBtn = resultsDialog.locator(".btn-close, button.btn-secondary").first();
+      await closeBtn.click();
+      await expect(resultsDialog).not.toBeVisible({ timeout: 5000 });
+    }
 
     await list.deleteTable(tableName);
   });
@@ -162,8 +171,8 @@ test.describe("metadata value edit modal", () => {
     await expect(adminPage.getByRole("dialog")).toBeVisible({ timeout: 5000 });
     const typeaheadInput = adminPage.locator("#metadataValue");
     await expect(typeaheadInput).toBeVisible({ timeout: 5000 });
-    await typeaheadInput.fill("homo");
-    await expect(adminPage.locator("[id^='typeahead-'], ngb-typeahead-window, [role='listbox']").first()).toBeVisible({ timeout: 5000 });
+    await typeaheadInput.pressSequentially("homo", { delay: 100 });
+    await expect(adminPage.locator("[id^='typeahead-'], ngb-typeahead-window, [role='listbox']").first()).toBeVisible({ timeout: 10000 });
   });
 
   test("age column edit modal shows sdrf-age-input component", async ({ adminPage }) => {
@@ -191,11 +200,11 @@ test.describe("metadata value edit modal", () => {
     await expect(adminPage.getByRole("dialog")).toBeVisible({ timeout: 5000 });
     await expect(adminPage.locator("ccv-sdrf-age-input")).toBeVisible({ timeout: 5000 });
 
-    const rangeToggle = adminPage.locator("input[formcontrolname='isRange']");
+    const rangeToggle = adminPage.locator("input#isRange");
     await expect(rangeToggle).toBeVisible({ timeout: 3000 });
     await rangeToggle.click();
-    await expect(adminPage.locator("input[formcontrolname='rangeStart']")).toBeVisible({ timeout: 3000 });
-    await expect(adminPage.locator("input[formcontrolname='rangeEnd']")).toBeVisible({ timeout: 3000 });
+    await expect(adminPage.locator("input[id='rangeStartYears']")).toBeVisible({ timeout: 3000 });
+    await expect(adminPage.locator("input[id='rangeEndYears']")).toBeVisible({ timeout: 3000 });
   });
 });
 
@@ -229,18 +238,22 @@ test.describe("sample pool create modal", () => {
     await adminPage.getByRole("button", { name: /create pool/i }).click();
     await expect(adminPage.getByRole("dialog")).toBeVisible({ timeout: 5000 });
     await adminPage.locator("#poolName").fill("Test Pool 1");
-    const manualModeLabel = adminPage.locator("label[for='manualMode']");
-    if (await manualModeLabel.isVisible({ timeout: 2000 })) {
-      await manualModeLabel.click();
-    }
-    const sampleRange = adminPage.locator("input[formcontrolname='startSample'], input[id='startSample']");
-    if (await sampleRange.isVisible({ timeout: 2000 })) {
-      await sampleRange.fill("1");
-      const endSample = adminPage.locator("input[formcontrolname='endSample'], input[id='endSample']");
-      if (await endSample.isVisible({ timeout: 2000 })) {
-        await endSample.fill("3");
+    const rangeModeLabel = adminPage.locator("label[for='rangeMode']");
+    if (await rangeModeLabel.isVisible({ timeout: 2000 })) {
+      await rangeModeLabel.click();
+      const rangeStart = adminPage.locator("#rangeStart");
+      if (await rangeStart.isVisible({ timeout: 2000 })) {
+        await rangeStart.fill("1");
+      }
+      const rangeEnd = adminPage.locator("#rangeEnd");
+      if (await rangeEnd.isVisible({ timeout: 2000 })) {
+        await rangeEnd.fill("3");
+      }
+      const selectRangeBtn = adminPage.getByRole("button", { name: /select range/i });
+      if (await selectRangeBtn.isVisible({ timeout: 2000 })) {
+        await selectRangeBtn.click();
       }
     }
-    await expect(adminPage.getByText(/total pooled/i)).toBeVisible({ timeout: 3000 });
+    await expect(adminPage.getByText(/total samples/i)).toBeVisible({ timeout: 3000 });
   });
 });

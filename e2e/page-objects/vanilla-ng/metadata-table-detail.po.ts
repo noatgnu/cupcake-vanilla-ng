@@ -15,6 +15,7 @@ export class MetadataTableDetailPage {
     const modal = this.page.getByRole("dialog");
     await expect(modal).toBeVisible({ timeout: 5000 });
     const searchInput = modal.getByPlaceholder(/search column templates/i);
+    await searchInput.click();
     await searchInput.pressSequentially(name, { delay: 50 });
     const templateSelect = modal.locator("select[size='5']");
     const firstOption = templateSelect.locator("option").filter({ hasText: new RegExp(name, "i") }).first();
@@ -30,8 +31,14 @@ export class MetadataTableDetailPage {
   }
 
   async deleteColumn(name: string): Promise<void> {
-    await this.page.locator('[title="Table Data View"]').click();
-    await this.page.getByRole("button", { name: new RegExp(`remove.*${name}`, "i") }).click();
+    const tableDataBtn = this.page.locator('[title="Table Data View"]');
+    await expect(tableDataBtn).toBeVisible({ timeout: 10000 });
+    await tableDataBtn.click();
+    const tableHeader = this.page.locator("thead.table-light");
+    await expect(tableHeader).toBeVisible({ timeout: 5000 });
+    const removeBtn = this.page.locator(`button[title*="${name}"][title*="Remove"]`);
+    await expect(removeBtn).toBeVisible({ timeout: 10000 });
+    await removeBtn.click();
     await this.page.getByRole("dialog").locator("button.btn-danger").click();
     await this.page.locator('[title="Column List View"]').click();
     await expect(this.page.getByText(name)).not.toBeVisible({ timeout: 5000 });

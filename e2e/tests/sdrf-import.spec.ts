@@ -14,11 +14,8 @@ async function createTableAndOpen(page: import("@playwright/test").Page, name: s
 
 async function triggerSdrfImport(page: import("@playwright/test").Page, filePath: string): Promise<void> {
   await page.locator('[title="Import Data"]').click();
-  const [fileChooser] = await Promise.all([
-    page.waitForEvent("filechooser"),
-    page.getByRole("link", { name: /import sdrf file/i }).click(),
-  ]);
-  await fileChooser.setFiles(filePath);
+  const sdrfInput = page.locator('input[type="file"][accept=".txt,.tsv"]');
+  await sdrfInput.setInputFiles(filePath);
   await page.getByRole("dialog").locator("button.btn-danger").click();
 }
 

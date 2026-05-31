@@ -33,16 +33,8 @@ test.describe("SDRF import with schema templates", () => {
     if (!await applySchemaToggle.isChecked()) {
       await applySchemaToggle.click();
     }
-    const importLink = adminPage.getByRole("link", { name: /import sdrf file/i });
-    if (!await importLink.isVisible()) {
-      await adminPage.locator('[title="Import Data"]').click();
-    }
-    await expect(importLink).toBeVisible({ timeout: 3000 });
-    const [fileChooser] = await Promise.all([
-      adminPage.waitForEvent("filechooser"),
-      importLink.click(),
-    ]);
-    await fileChooser.setFiles(path.join(FIXTURES_DIR, "PXD019185_PXD018883.sdrf.tsv"));
+    const sdrfInput = adminPage.locator('input[type="file"][accept=".txt,.tsv"]');
+    await sdrfInput.setInputFiles(path.join(FIXTURES_DIR, "PXD019185_PXD018883.sdrf.tsv"));
     await adminPage.getByRole("dialog").locator("button.btn-danger").click();
 
     await adminPage.locator("button[aria-label*='Background tasks']").click();

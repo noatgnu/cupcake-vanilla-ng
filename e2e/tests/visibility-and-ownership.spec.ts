@@ -30,8 +30,14 @@ test.describe("object visibility and ownership", () => {
     const adminList = new MetadataTablePage(adminPage);
     await adminList.goto();
     const adminViewToggle = adminPage.locator("#adminViewToggle");
-    if (await adminViewToggle.isVisible({ timeout: 3000 }) && !await adminViewToggle.isChecked()) {
-      await adminViewToggle.click();
+    try {
+      await expect(adminViewToggle).toBeVisible({ timeout: 10000 });
+      if (!await adminViewToggle.isChecked()) {
+        await adminViewToggle.click();
+        await adminPage.waitForTimeout(500);
+      }
+    } catch {
+      // toggle unavailable — admin view not supported for this user
     }
     await adminList.search(name);
     await adminList.expectTableInList(name);
