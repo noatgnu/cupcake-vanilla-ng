@@ -28,6 +28,7 @@ export interface MetadataTableQueryParams {
   isPublished?: boolean;
   isLocked?: boolean;
   showShared?: boolean;
+  adminView?: boolean;
   limit?: number;
   offset?: number;
   ordering?: string;

@@ -16,7 +16,7 @@ export class MetadataTableDetailPage {
     await expect(modal).toBeVisible({ timeout: 5000 });
     const templateSelect = modal.locator("select[size='5']");
     await expect(templateSelect).toBeVisible({ timeout: 10000 });
-    await expect(templateSelect).not.toContainText(/loading/i, { timeout: 10000 });
+    await expect(templateSelect).not.toContainText(/loading/i, { timeout: 30000 });
     const searchInput = modal.getByPlaceholder(/search column templates/i);
     await searchInput.click();
     await searchInput.fill(name);

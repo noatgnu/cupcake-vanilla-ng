@@ -222,6 +222,7 @@ export class MetadataTablesComponent implements OnInit, OnDestroy {
       isLocked: params.isLocked ?? undefined,
       isPublished: params.isPublished ?? undefined,
       showShared: params.showShared || false,
+      adminView: params.adminView || undefined,
       limit: params.limit,
       offset: params.offset,
       columnName: params.columnName || undefined,

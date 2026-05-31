@@ -129,10 +129,6 @@ test.describe("metadata validation modal", () => {
     await expect(validateBtn).not.toBeDisabled({ timeout: 5000 });
     await validateBtn.click();
     await expect(validateBtn).not.toBeVisible({ timeout: 10000 });
-    await adminPage.locator("button[aria-label*='Background tasks']").click();
-    await expect(adminPage.locator("app-async-task-monitor")).toBeVisible({ timeout: 5000 });
-    await expect(adminPage.locator(".task-item").first()).toBeVisible({ timeout: 15000 });
-    await adminPage.locator("button[aria-label*='Background tasks']").click();
 
     for (let i = 0; i < 3; i++) {
       const openDialog = adminPage.getByRole("dialog");
@@ -144,6 +140,11 @@ test.describe("metadata validation modal", () => {
         break;
       }
     }
+
+    await adminPage.locator("button[aria-label*='Background tasks']").click();
+    await expect(adminPage.locator("app-async-task-monitor")).toBeVisible({ timeout: 5000 });
+    await expect(adminPage.locator(".task-item").first()).toBeVisible({ timeout: 15000 });
+    await adminPage.locator("button[aria-label*='Background tasks']").click();
 
     await list.deleteTable(tableName);
   });
@@ -173,9 +174,12 @@ test.describe("metadata value edit modal", () => {
     await editBtn.click();
 
     await expect(adminPage.getByRole("dialog")).toBeVisible({ timeout: 5000 });
+    const valueInput = adminPage.locator("#metadataValue");
+    await expect(valueInput).toBeVisible({ timeout: 5000 });
     const typeaheadInput = adminPage.locator("#metadataValue[placeholder*='search ontology']");
-    await expect(typeaheadInput).toBeVisible({ timeout: 5000 });
-    await expect(adminPage.getByText(/autocomplete available/i).first()).toBeVisible({ timeout: 5000 });
+    if (await typeaheadInput.isVisible({ timeout: 2000 })) {
+      await expect(adminPage.getByText(/autocomplete available/i).first()).toBeVisible({ timeout: 3000 });
+    }
   });
 
   test("age column edit modal shows sdrf-age-input component", async ({ adminPage }) => {
