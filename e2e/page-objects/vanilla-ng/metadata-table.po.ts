@@ -13,7 +13,9 @@ export class MetadataTablePage {
   async create(name: string): Promise<void> {
     await this.page.getByRole("button", { name: "New Table" }).click();
     await this.page.locator("#tableName").fill(name);
-    await this.page.locator(".modal-footer .btn-primary").click({ force: true });
+    const submitBtn = this.page.locator(".modal-footer .btn-primary");
+    await expect(submitBtn).toBeEnabled({ timeout: 5000 });
+    await submitBtn.click();
     await expect(this.page.getByText(name)).toBeVisible({ timeout: 10000 });
   }
 

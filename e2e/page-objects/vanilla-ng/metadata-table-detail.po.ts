@@ -23,7 +23,9 @@ export class MetadataTableDetailPage {
     if (optionValue) {
       await templateSelect.selectOption(optionValue);
     }
-    await modal.locator(".modal-footer .btn-primary").click({ force: true });
+    const submitBtn = modal.locator(".modal-footer .btn-primary");
+    await expect(submitBtn).toBeEnabled({ timeout: 5000 });
+    await submitBtn.click();
     await expect(modal).not.toBeVisible({ timeout: 10000 });
   }
 

@@ -22,8 +22,8 @@ test.describe("lab groups", () => {
     await page.goto();
     await page.create(GROUP_NAME);
     await page.openMembersModal(GROUP_NAME);
-    await expect(adminPage.getByRole("dialog")).toBeVisible({ timeout: 5000 });
-    await adminPage.getByRole("button", { name: /close/i }).click();
+    await expect(adminPage.locator(".modal.fade.show")).toBeVisible({ timeout: 5000 });
+    await adminPage.locator(".modal-footer").getByRole("button", { name: /close/i }).click();
   });
 
   test("invite testuser to a lab group", async ({ adminPage }) => {
@@ -38,7 +38,9 @@ test.describe("lab groups", () => {
       const input = adminPage.locator("#inviteEmail");
       if (await input.isVisible({ timeout: 3000 })) {
         await input.fill("testuser@cupcake.local");
-        await adminPage.getByRole("button", { name: /send invite/i }).click({ force: true });
+        const sendInviteBtn = adminPage.getByRole("button", { name: /send invite/i });
+        await expect(sendInviteBtn).toBeEnabled({ timeout: 5000 });
+        await sendInviteBtn.click();
       }
     }
   });

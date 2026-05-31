@@ -38,7 +38,9 @@ test.describe("column templates", () => {
     await expect(adminPage.getByRole("dialog")).toBeVisible({ timeout: 5000 });
     await adminPage.locator("#templateName").fill(TEMPLATE_NAME);
     await adminPage.locator("#columnName").fill("biological_replicate");
-    await adminPage.locator(".modal-footer .btn-primary").click({ force: true });
+    const submitBtn = adminPage.locator(".modal-footer .btn-primary");
+    await expect(submitBtn).toBeEnabled({ timeout: 5000 });
+    await submitBtn.click();
     await expect(adminPage.getByRole("dialog")).not.toBeVisible({ timeout: 5000 });
     await expect(adminPage.getByText(TEMPLATE_NAME)).toBeVisible({ timeout: 10000 });
   });
@@ -49,7 +51,9 @@ test.describe("column templates", () => {
     await expect(adminPage.getByRole("dialog")).toBeVisible({ timeout: 5000 });
     await adminPage.locator("#templateName").fill(TEMPLATE_NAME);
     await adminPage.locator("#columnName").fill("biological_replicate");
-    await adminPage.locator(".modal-footer .btn-primary").click({ force: true });
+    let submitBtn = adminPage.locator(".modal-footer .btn-primary");
+    await expect(submitBtn).toBeEnabled({ timeout: 5000 });
+    await submitBtn.click();
     await expect(adminPage.getByText(TEMPLATE_NAME)).toBeVisible({ timeout: 10000 });
 
     const row = adminPage.locator("tr, [role='row']").filter({ hasText: TEMPLATE_NAME }).first();
@@ -57,7 +61,9 @@ test.describe("column templates", () => {
     const nameInput = adminPage.locator("#templateName");
     await nameInput.clear();
     await nameInput.fill(TEMPLATE_NAME + " Renamed");
-    await adminPage.locator(".modal-footer .btn-primary").click({ force: true });
+    submitBtn = adminPage.locator(".modal-footer .btn-primary");
+    await expect(submitBtn).toBeEnabled({ timeout: 5000 });
+    await submitBtn.click();
     await expect(adminPage.getByText(TEMPLATE_NAME + " Renamed")).toBeVisible({ timeout: 10000 });
   });
 
@@ -67,7 +73,9 @@ test.describe("column templates", () => {
     await expect(adminPage.getByRole("dialog")).toBeVisible({ timeout: 5000 });
     await adminPage.locator("#templateName").fill(TEMPLATE_NAME);
     await adminPage.locator("#columnName").fill("technical_replicate");
-    await adminPage.locator(".modal-footer .btn-primary").click({ force: true });
+    const submitBtn = adminPage.locator(".modal-footer .btn-primary");
+    await expect(submitBtn).toBeEnabled({ timeout: 5000 });
+    await submitBtn.click();
     await expect(adminPage.getByText(TEMPLATE_NAME)).toBeVisible({ timeout: 10000 });
 
     const row = adminPage.locator("tr, [role='row']").filter({ hasText: TEMPLATE_NAME }).first();
