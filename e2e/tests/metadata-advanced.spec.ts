@@ -15,17 +15,21 @@ async function createTableWithImportedData(
   await list.openTable(name);
   await expect(page).toHaveURL(/\/metadata-tables\/\d+/, { timeout: 10000 });
 
-  await page.getByRole("button", { name: /^import/i }).click();
+  await page.locator('[title="Import Data"]').click();
+  const [fileChooser] = await Promise.all([
+    page.waitForEvent("filechooser"),
+    page.getByRole("link", { name: /import sdrf file/i }).click(),
+  ]);
   page.once("dialog", dialog => dialog.accept());
-  const fileInput = page.locator("input[type='file'][accept='.txt,.tsv']");
-  await fileInput.setInputFiles(SDRF_FILE);
+  await fileChooser.setFiles(SDRF_FILE);
 
   const tasksBtn = page.locator("button[aria-label*='Background tasks']");
   await tasksBtn.click();
   const monitor = page.locator("app-async-task-monitor");
-  await expect(monitor.locator(".task-item").first()).toBeVisible({ timeout: 60000 });
+  await expect(monitor).toBeVisible({ timeout: 5000 });
+  await expect(monitor.locator(".task-item").first()).toBeVisible({ timeout: 15000 });
   await monitor.getByRole("button", { name: /completed/i }).click();
-  await expect(monitor.locator(".task-item").first()).toBeVisible({ timeout: 120000 });
+  await expect(monitor.locator(".task-item").first()).toBeVisible({ timeout: 20000 });
   await tasksBtn.click();
 }
 

@@ -68,14 +68,17 @@ test.describe("notification WebSocket UI", () => {
     await list.openTable(tableName);
     await expect(adminPage).toHaveURL(/\/metadata-tables\/\d+/, { timeout: 10000 });
 
-    await adminPage.getByRole("button", { name: /^import/i }).click();
+    await adminPage.locator('[title="Import Data"]').click();
+    const [fileChooser] = await Promise.all([
+      adminPage.waitForEvent("filechooser"),
+      adminPage.getByRole("link", { name: /import sdrf file/i }).click(),
+    ]);
     adminPage.once("dialog", dialog => dialog.accept());
-    const fileInput = adminPage.locator("input[type='file'][accept='.txt,.tsv']");
-    await fileInput.setInputFiles(path.join(FIXTURES_DIR, "PXD019185_PXD018883.sdrf.tsv"));
+    await fileChooser.setFiles(path.join(FIXTURES_DIR, "PXD019185_PXD018883.sdrf.tsv"));
 
     await adminPage.locator("button[aria-label*='Background tasks']").click();
     await expect(adminPage.locator("app-async-task-monitor")).toBeVisible({ timeout: 5000 });
-    await expect(adminPage.locator(".task-item").first()).toBeVisible({ timeout: 30000 });
+    await expect(adminPage.locator(".task-item").first()).toBeVisible({ timeout: 15000 });
   });
 
   test("mark all notifications as read via UI", async ({ adminPage }) => {

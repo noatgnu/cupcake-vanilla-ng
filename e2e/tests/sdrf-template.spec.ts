@@ -13,7 +13,7 @@ test.describe("SDRF import with schema templates", () => {
     await list.openTable(tableName);
     await expect(adminPage).toHaveURL(/\/metadata-tables\/\d+/, { timeout: 10000 });
 
-    await adminPage.getByRole("button", { name: /^import/i }).click();
+    await adminPage.locator('[title="Import Data"]').click();
     await expect(adminPage.locator("#applySchemaTemplatesToggle")).toBeVisible({ timeout: 3000 });
     await expect(adminPage.locator("#overrideSampleCountToggle")).toBeVisible({ timeout: 3000 });
   });
@@ -26,18 +26,21 @@ test.describe("SDRF import with schema templates", () => {
     await list.openTable(tableName);
     await expect(adminPage).toHaveURL(/\/metadata-tables\/\d+/, { timeout: 10000 });
 
-    await adminPage.getByRole("button", { name: /^import/i }).click();
+    await adminPage.locator('[title="Import Data"]').click();
     const applySchemaToggle = adminPage.locator("#applySchemaTemplatesToggle");
     if (!await applySchemaToggle.isChecked()) {
       await applySchemaToggle.click();
     }
+    const [fileChooser] = await Promise.all([
+      adminPage.waitForEvent("filechooser"),
+      adminPage.getByRole("link", { name: /import sdrf file/i }).click(),
+    ]);
     adminPage.once("dialog", dialog => dialog.accept());
-    const fileInput = adminPage.locator("input[type='file'][accept='.txt,.tsv']");
-    await fileInput.setInputFiles(path.join(FIXTURES_DIR, "PXD019185_PXD018883.sdrf.tsv"));
+    await fileChooser.setFiles(path.join(FIXTURES_DIR, "PXD019185_PXD018883.sdrf.tsv"));
 
     await adminPage.locator("button[aria-label*='Background tasks']").click();
     await expect(adminPage.locator("app-async-task-monitor")).toBeVisible({ timeout: 5000 });
-    await expect(adminPage.locator(".task-item").first()).toBeVisible({ timeout: 30000 });
+    await expect(adminPage.locator(".task-item").first()).toBeVisible({ timeout: 15000 });
   });
 });
 

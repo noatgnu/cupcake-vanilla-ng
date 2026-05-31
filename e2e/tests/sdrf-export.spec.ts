@@ -11,17 +11,21 @@ async function createTableWithData(page: import("@playwright/test").Page, name: 
   await list.openTable(name);
   await expect(page).toHaveURL(/\/metadata-tables\/\d+/, { timeout: 10000 });
 
-  await page.getByRole("button", { name: /^import/i }).click();
+  await page.locator('[title="Import Data"]').click();
+  const [fileChooser] = await Promise.all([
+    page.waitForEvent("filechooser"),
+    page.getByRole("link", { name: /import sdrf file/i }).click(),
+  ]);
   page.once("dialog", dialog => dialog.accept());
-  const fileInput = page.locator("input[type='file'][accept='.txt,.tsv']");
-  await fileInput.setInputFiles(path.join(FIXTURES_DIR, "PXD019185_PXD018883.sdrf.tsv"));
+  await fileChooser.setFiles(path.join(FIXTURES_DIR, "PXD019185_PXD018883.sdrf.tsv"));
 
   const tasksBtn = page.locator("button[aria-label*='Background tasks']");
   await tasksBtn.click();
   const monitor = page.locator("app-async-task-monitor");
-  await expect(monitor.locator(".task-item").first()).toBeVisible({ timeout: 60000 });
+  await expect(monitor).toBeVisible({ timeout: 5000 });
+  await expect(monitor.locator(".task-item").first()).toBeVisible({ timeout: 15000 });
   await monitor.getByRole("button", { name: /completed/i }).click();
-  await expect(monitor.locator(".task-item").first()).toBeVisible({ timeout: 120000 });
+  await expect(monitor.locator(".task-item").first()).toBeVisible({ timeout: 20000 });
   await tasksBtn.click();
 }
 
@@ -29,13 +33,13 @@ test.describe("SDRF export", () => {
   test("Export dropdown is visible on table detail page", async ({ adminPage }) => {
     const tableName = `E2E Export Visible ${Date.now()}`;
     await createTableWithData(adminPage, tableName);
-    await expect(adminPage.getByRole("button", { name: /^export/i })).toBeVisible({ timeout: 5000 });
+    await expect(adminPage.locator('[title="Export Table"]')).toBeVisible({ timeout: 5000 });
   });
 
   test("Export dropdown shows SDRF and Excel options", async ({ adminPage }) => {
     const tableName = `E2E Export Options ${Date.now()}`;
     await createTableWithData(adminPage, tableName);
-    await adminPage.getByRole("button", { name: /^export/i }).click();
+    await adminPage.locator('[title="Export Table"]').click();
     await expect(adminPage.getByRole("link", { name: /export as sdrf/i })).toBeVisible({ timeout: 3000 });
     await expect(adminPage.getByRole("link", { name: /export as excel/i })).toBeVisible({ timeout: 3000 });
   });
@@ -44,28 +48,28 @@ test.describe("SDRF export", () => {
     const tableName = `E2E Export SDRF ${Date.now()}`;
     await createTableWithData(adminPage, tableName);
 
-    await adminPage.getByRole("button", { name: /^export/i }).click();
+    await adminPage.locator('[title="Export Table"]').click();
     await adminPage.getByRole("link", { name: /export as sdrf/i }).click();
 
     const tasksBtn = adminPage.locator("button[aria-label*='Background tasks']");
     await tasksBtn.click();
     await expect(adminPage.locator("app-async-task-monitor")).toBeVisible({ timeout: 5000 });
-    await expect(adminPage.locator(".task-item").first()).toBeVisible({ timeout: 30000 });
+    await expect(adminPage.locator(".task-item").first()).toBeVisible({ timeout: 15000 });
   });
 
   test("completed SDRF export task shows download button", async ({ adminPage }) => {
     const tableName = `E2E Export Download ${Date.now()}`;
     await createTableWithData(adminPage, tableName);
 
-    await adminPage.getByRole("button", { name: /^export/i }).click();
+    await adminPage.locator('[title="Export Table"]').click();
     await adminPage.getByRole("link", { name: /export as sdrf/i }).click();
 
     const tasksBtn = adminPage.locator("button[aria-label*='Background tasks']");
     await tasksBtn.click();
     const monitor = adminPage.locator("app-async-task-monitor");
-    await expect(monitor.locator(".task-item").first()).toBeVisible({ timeout: 30000 });
+    await expect(monitor.locator(".task-item").first()).toBeVisible({ timeout: 15000 });
     await monitor.getByRole("button", { name: /completed/i }).click();
-    await expect(monitor.locator(".task-item").first()).toBeVisible({ timeout: 60000 });
+    await expect(monitor.locator(".task-item").first()).toBeVisible({ timeout: 20000 });
     await expect(
       monitor.locator(".task-item .btn-outline-primary[title*='Download']").first()
     ).toBeVisible({ timeout: 5000 });
