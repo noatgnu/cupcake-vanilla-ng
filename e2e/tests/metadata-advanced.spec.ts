@@ -142,7 +142,7 @@ test.describe("metadata value edit modal", () => {
     const tableName = `E2E EditValue ${Date.now()}`;
     await createTableWithImportedData(adminPage, tableName);
 
-    const editBtn = adminPage.getByRole("button", { name: /edit default value for organism/i }).first();
+    const editBtn = adminPage.getByRole("button", { name: /edit default value for characteristics\[organism\]/i }).first();
     await expect(editBtn).toBeVisible({ timeout: 10000 });
     await editBtn.click();
 
@@ -155,7 +155,7 @@ test.describe("metadata value edit modal", () => {
     const tableName = `E2E Typeahead ${Date.now()}`;
     await createTableWithImportedData(adminPage, tableName);
 
-    const editBtn = adminPage.getByRole("button", { name: /edit default value for organism/i }).first();
+    const editBtn = adminPage.getByRole("button", { name: /edit default value for characteristics\[organism\]/i }).first();
     await expect(editBtn).toBeVisible({ timeout: 10000 });
     await editBtn.click();
 
@@ -171,7 +171,7 @@ test.describe("metadata value edit modal", () => {
     const tableName = `E2E AgeInput ${Date.now()}`;
     await createTableWithImportedData(adminPage, tableName);
 
-    const editBtn = adminPage.getByRole("button", { name: /edit default value for age/i }).first();
+    const editBtn = adminPage.getByRole("button", { name: /edit default value for characteristics\[age\]/i }).first();
     await expect(editBtn).toBeVisible({ timeout: 10000 });
     await editBtn.click();
 
@@ -184,7 +184,7 @@ test.describe("metadata value edit modal", () => {
     const tableName = `E2E AgeRange ${Date.now()}`;
     await createTableWithImportedData(adminPage, tableName);
 
-    const editBtn = adminPage.getByRole("button", { name: /edit default value for age/i }).first();
+    const editBtn = adminPage.getByRole("button", { name: /edit default value for characteristics\[age\]/i }).first();
     await expect(editBtn).toBeVisible({ timeout: 10000 });
     await editBtn.click();
 
@@ -229,9 +229,9 @@ test.describe("sample pool create modal", () => {
     await adminPage.getByRole("button", { name: /create pool/i }).click();
     await expect(adminPage.getByRole("dialog")).toBeVisible({ timeout: 5000 });
     await adminPage.locator("#poolName").fill("Test Pool 1");
-    const manualModeBtn = adminPage.locator("input[id='manualMode']");
-    if (await manualModeBtn.isVisible({ timeout: 2000 })) {
-      await manualModeBtn.click();
+    const manualModeLabel = adminPage.locator("label[for='manualMode']");
+    if (await manualModeLabel.isVisible({ timeout: 2000 })) {
+      await manualModeLabel.click();
     }
     const sampleRange = adminPage.locator("input[formcontrolname='startSample'], input[id='startSample']");
     if (await sampleRange.isVisible({ timeout: 2000 })) {

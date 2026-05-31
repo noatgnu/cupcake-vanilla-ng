@@ -19,6 +19,7 @@ test.describe("SDRF import with schema templates", () => {
   });
 
   test("import SDRF with Apply schema enabled creates task", async ({ adminPage }) => {
+    test.setTimeout(120000);
     const tableName = `E2E Apply Schema ${Date.now()}`;
     const list = new MetadataTablePage(adminPage);
     await list.goto();
@@ -28,12 +29,18 @@ test.describe("SDRF import with schema templates", () => {
 
     await adminPage.locator('[title="Import Data"]').click();
     const applySchemaToggle = adminPage.locator("#applySchemaTemplatesToggle");
+    await expect(applySchemaToggle).toBeVisible({ timeout: 3000 });
     if (!await applySchemaToggle.isChecked()) {
       await applySchemaToggle.click();
     }
+    const importLink = adminPage.getByRole("link", { name: /import sdrf file/i });
+    if (!await importLink.isVisible()) {
+      await adminPage.locator('[title="Import Data"]').click();
+    }
+    await expect(importLink).toBeVisible({ timeout: 3000 });
     const [fileChooser] = await Promise.all([
       adminPage.waitForEvent("filechooser"),
-      adminPage.getByRole("link", { name: /import sdrf file/i }).click(),
+      importLink.click(),
     ]);
     await fileChooser.setFiles(path.join(FIXTURES_DIR, "PXD019185_PXD018883.sdrf.tsv"));
     await adminPage.getByRole("dialog").locator("button.btn-danger").click();

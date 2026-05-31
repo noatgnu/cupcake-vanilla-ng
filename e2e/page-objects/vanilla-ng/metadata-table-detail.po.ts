@@ -15,7 +15,7 @@ export class MetadataTableDetailPage {
     const modal = this.page.getByRole("dialog");
     await expect(modal).toBeVisible({ timeout: 5000 });
     const searchInput = modal.getByPlaceholder(/search column templates/i);
-    await searchInput.fill(name);
+    await searchInput.pressSequentially(name, { delay: 50 });
     const templateSelect = modal.locator("select[size='5']");
     const firstOption = templateSelect.locator("option").filter({ hasText: new RegExp(name, "i") }).first();
     await expect(firstOption).toBeVisible({ timeout: 15000 });

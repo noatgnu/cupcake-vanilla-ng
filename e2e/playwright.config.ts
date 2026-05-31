@@ -11,7 +11,7 @@ export default defineConfig({
   globalTeardown: "./global-teardown.ts",
   use: {
     ...devices["Desktop Chrome"],
-    baseURL: process.env["VANILLA_NG_URL"] || "http://localhost:4200",
+    baseURL: process.env["VANILLA_NG_URL"] || "https://localhost:8099",
     ignoreHTTPSErrors: true,
     launchOptions: {
       args: [

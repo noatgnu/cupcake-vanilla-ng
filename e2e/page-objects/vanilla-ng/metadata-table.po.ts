@@ -26,8 +26,9 @@ export class MetadataTablePage {
   }
 
   async deleteTable(name: string): Promise<void> {
+    await this.page.goto("/#/metadata-tables");
     const row = this.page.locator("tr, mat-row, [role='row']").filter({ hasText: name }).first();
-    await row.locator('[title="Delete table"]').click({ timeout: 5000 });
+    await row.locator('[title="Delete table"]').click({ timeout: 15000 });
     await this.page.getByRole("dialog").locator("button.btn-danger").click();
     await expect(this.page.locator("tr, [role='row']").filter({ hasText: name })).toHaveCount(0, { timeout: 10000 });
   }
