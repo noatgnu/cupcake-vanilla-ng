@@ -104,7 +104,10 @@
       </div>
     } @else {
       @for (task of filteredTasks() | slice:0:maxTasks; track trackByTaskId($index, task)) {
-        <div class="task-item" [class.active]="task.status === 'QUEUED' || task.status === 'STARTED'">
+        <div class="task-item"
+             [class.task-active]="task.status === 'QUEUED' || task.status === 'STARTED'"
+             [class.task-completed]="task.status === 'SUCCESS'"
+             [class.task-failed]="task.status === 'FAILURE'">
           <div class="d-flex p-3">
             <!-- Status Indicator & Icon -->
             <div class="flex-shrink-0 me-3 position-relative">
@@ -208,19 +211,19 @@
             </div>
 
             <!-- Actions -->
-            <div class="flex-shrink-0 ms-2">
-              <div class="item-actions">
-                @if (canDownloadResult(task)) {
-                  <button 
-                    type="button"
-                    class="btn btn-sm btn-outline-primary"
-                    (click)="downloadResult(task); $event.stopPropagation()"
-                    title="Download result">
-                    <i class="bi bi-download"></i>
-                  </button>
-                }
+            <div class="flex-shrink-0 ms-2 d-flex flex-column gap-1 align-items-end">
+              @if (canDownloadResult(task)) {
+                <button
+                  type="button"
+                  class="btn btn-sm btn-primary"
+                  (click)="downloadResult(task); $event.stopPropagation()"
+                  title="Download result">
+                  <i class="bi bi-download me-1"></i>Download
+                </button>
+              }
+              <div class="item-actions d-flex gap-1">
                 @if (canCancelTask(task)) {
-                  <button 
+                  <button
                     type="button"
                     class="btn btn-sm btn-outline-danger"
                     (click)="cancelTask(task.id); $event.stopPropagation()"

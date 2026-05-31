@@ -213,30 +213,24 @@ export class AsyncTaskUIService implements OnDestroy {
   downloadTaskResult(taskId: string): void {
     this.libraryAsyncTaskService.getDownloadUrl(taskId).subscribe({
       next: (response) => {
-        console.log('Download task result - checking Desktop service:', {
-          isDesktop: this.desktopService.isDesktop,
-          runtime: this.desktopService.runtime,
-          downloadUrl: response.downloadUrl
-        });
-
         if (this.desktopService.isDesktop) {
-          console.log('Using desktop download for:', response.downloadUrl);
           this.desktopService.downloadFile(response.downloadUrl)
             .then((filePath: string) => {
-              console.log('Desktop download successful:', filePath);
               this.toastService.success(`File downloaded to: ${filePath}`);
             })
-            .catch((error: any) => {
-              console.error('Error downloading file:', error);
+            .catch(() => {
               this.toastService.error('Failed to download file');
             });
         } else {
-          console.log('Using browser fallback for:', response.downloadUrl);
-          window.open(response.downloadUrl, '_blank');
+          const a = document.createElement('a');
+          a.href = response.downloadUrl;
+          a.style.display = 'none';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
         }
       },
-      error: (error) => {
-        console.error('Error getting download URL:', error);
+      error: () => {
         this.toastService.error('Failed to get download URL');
       }
     });
@@ -377,14 +371,11 @@ export class AsyncTaskUIService implements OnDestroy {
   }
 
   private handleExportTaskCompletion(task: AsyncTaskStatus): void {
-    console.log('AsyncTaskUIService: handleExportTaskCompletion called for task:', task.id, 'type:', task.taskType);
     const taskName = this.getTaskDisplayName(task.taskType);
     const tableName = task.metadataTableName ? ` for "${task.metadataTableName}"` : '';
 
     if (task.taskType === TaskType.EXPORT_SDRF || task.taskType === TaskType.EXPORT_EXCEL) {
-      console.log('AsyncTaskUIService: Single export task - starting download in 1500ms');
       setTimeout(() => {
-        console.log('AsyncTaskUIService: Calling downloadTaskResult for task:', task.id);
         this.downloadTaskResult(task.id);
       }, 1500);
 
@@ -393,7 +384,6 @@ export class AsyncTaskUIService implements OnDestroy {
         4000
       );
     } else {
-      console.log('AsyncTaskUIService: Bulk export task - no auto-download');
       this.toastService.success(
         `${taskName}${tableName} completed! Check your downloads.`,
         6000
@@ -452,13 +442,7 @@ export class AsyncTaskUIService implements OnDestroy {
 
     modalRef.componentInstance.results = validationResults;
 
-    modalRef.result.then((result) => {
-      if (result === 'edit') {
-        console.log('User wants to edit table to fix validation issues');
-      }
-    }).catch(() => {
-      // Modal dismissed
-    });
+    modalRef.result.catch(() => {});
   }
 
   private handleImportTaskCompletion(task: AsyncTaskStatus): void {

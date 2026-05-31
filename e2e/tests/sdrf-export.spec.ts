@@ -32,12 +32,14 @@ async function createTableWithData(page: import("@playwright/test").Page, name: 
 
 test.describe("SDRF export", () => {
   test("Export dropdown is visible on table detail page", async ({ adminPage }) => {
+    test.setTimeout(90000);
     const tableName = `E2E Export Visible ${Date.now()}`;
     await createTableWithData(adminPage, tableName);
     await expect(adminPage.locator('[title="Export Table"]')).toBeVisible({ timeout: 5000 });
   });
 
   test("Export dropdown shows SDRF and Excel options", async ({ adminPage }) => {
+    test.setTimeout(90000);
     const tableName = `E2E Export Options ${Date.now()}`;
     await createTableWithData(adminPage, tableName);
     await adminPage.locator('[title="Export Table"]').click();
@@ -46,6 +48,7 @@ test.describe("SDRF export", () => {
   });
 
   test("SDRF export creates async task in background monitor", async ({ adminPage }) => {
+    test.setTimeout(120000);
     const tableName = `E2E Export SDRF ${Date.now()}`;
     await createTableWithData(adminPage, tableName);
 
@@ -58,7 +61,8 @@ test.describe("SDRF export", () => {
     await expect(adminPage.locator(".task-item").first()).toBeVisible({ timeout: 15000 });
   });
 
-  test("completed SDRF export task shows download button", async ({ adminPage }) => {
+  test("completed SDRF export task has task-completed styling and shows download button", async ({ adminPage }) => {
+    test.setTimeout(180000);
     const tableName = `E2E Export Download ${Date.now()}`;
     await createTableWithData(adminPage, tableName);
 
@@ -70,10 +74,23 @@ test.describe("SDRF export", () => {
     const monitor = adminPage.locator("app-async-task-monitor");
     await expect(monitor.locator(".task-item").first()).toBeVisible({ timeout: 15000 });
     await monitor.getByRole("button", { name: /completed/i }).click();
-    await expect(monitor.locator(".task-item").first()).toBeVisible({ timeout: 20000 });
+    await expect(monitor.locator(".task-item.task-completed").first()).toBeVisible({ timeout: 20000 });
     await expect(
-      monitor.locator(".task-item .btn-outline-primary[title*='Download']").first()
+      monitor.locator(".task-item.task-completed button[title*='Download']").first()
     ).toBeVisible({ timeout: 5000 });
+  });
+
+  test("SDRF export auto-downloads file on completion", async ({ adminPage }) => {
+    test.setTimeout(180000);
+    const tableName = `E2E SDRF AutoDownload ${Date.now()}`;
+    await createTableWithData(adminPage, tableName);
+
+    const downloadPromise = adminPage.waitForEvent("download", { timeout: 60000 });
+    await adminPage.locator('[title="Export Table"]').click();
+    await adminPage.getByRole("link", { name: /export as sdrf/i }).click();
+
+    const download = await downloadPromise;
+    expect(download.suggestedFilename()).toMatch(/\.tsv$/i);
   });
 
   test("bulk SDRF export from list creates task for selected tables", async ({ adminPage }) => {

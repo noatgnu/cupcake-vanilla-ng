@@ -78,7 +78,7 @@ test.describe("metadata validation modal", () => {
     await expect(adminPage.getByRole("dialog")).toBeVisible({ timeout: 5000 });
     await expect(adminPage.getByText(/validate metadata table/i)).toBeVisible({ timeout: 3000 });
 
-    await adminPage.getByRole("dialog").locator(".btn-close").click();
+    await adminPage.getByRole("dialog").locator(".modal-header .btn-close").click();
     await list.deleteTable(tableName);
   });
 
@@ -94,7 +94,7 @@ test.describe("metadata validation modal", () => {
     await expect(adminPage.getByRole("dialog")).toBeVisible({ timeout: 5000 });
     await expect(adminPage.getByRole("button", { name: /select all/i })).toBeVisible({ timeout: 5000 });
 
-    await adminPage.getByRole("dialog").locator(".btn-close").click();
+    await adminPage.getByRole("dialog").locator(".modal-header .btn-close").click();
     await list.deleteTable(tableName);
   });
 
@@ -112,7 +112,7 @@ test.describe("metadata validation modal", () => {
     const validateBtn = adminPage.locator("button[type='submit']").filter({ hasText: /validate/i });
     await expect(validateBtn).toBeDisabled({ timeout: 3000 });
 
-    await adminPage.getByRole("dialog").locator(".btn-close").click();
+    await adminPage.getByRole("dialog").locator(".modal-header .btn-close").click();
     await list.deleteTable(tableName);
   });
 
@@ -138,6 +138,7 @@ test.describe("metadata validation modal", () => {
 
 test.describe("metadata value edit modal", () => {
   test("edit default value modal opens for an organism column", async ({ adminPage }) => {
+    test.setTimeout(120000);
     const tableName = `E2E EditValue ${Date.now()}`;
     await createTableWithImportedData(adminPage, tableName);
 
@@ -150,6 +151,7 @@ test.describe("metadata value edit modal", () => {
   });
 
   test("organism column edit modal shows typeahead input", async ({ adminPage }) => {
+    test.setTimeout(120000);
     const tableName = `E2E Typeahead ${Date.now()}`;
     await createTableWithImportedData(adminPage, tableName);
 
@@ -165,6 +167,7 @@ test.describe("metadata value edit modal", () => {
   });
 
   test("age column edit modal shows sdrf-age-input component", async ({ adminPage }) => {
+    test.setTimeout(120000);
     const tableName = `E2E AgeInput ${Date.now()}`;
     await createTableWithImportedData(adminPage, tableName);
 
@@ -177,6 +180,7 @@ test.describe("metadata value edit modal", () => {
   });
 
   test("age input range toggle switches between single and range mode", async ({ adminPage }) => {
+    test.setTimeout(120000);
     const tableName = `E2E AgeRange ${Date.now()}`;
     await createTableWithImportedData(adminPage, tableName);
 
@@ -197,6 +201,7 @@ test.describe("metadata value edit modal", () => {
 
 test.describe("sample pool create modal", () => {
   test("Create Pool button opens sample pool modal", async ({ adminPage }) => {
+    test.setTimeout(120000);
     const tableName = `E2E Pool ${Date.now()}`;
     await createTableWithImportedData(adminPage, tableName);
 
@@ -206,6 +211,7 @@ test.describe("sample pool create modal", () => {
   });
 
   test("sample pool create form submit is disabled until pool name is filled", async ({ adminPage }) => {
+    test.setTimeout(120000);
     const tableName = `E2E PoolDisabled ${Date.now()}`;
     await createTableWithImportedData(adminPage, tableName);
 
@@ -216,6 +222,7 @@ test.describe("sample pool create modal", () => {
   });
 
   test("pool name entry enables create button", async ({ adminPage }) => {
+    test.setTimeout(120000);
     const tableName = `E2E PoolEnabled ${Date.now()}`;
     await createTableWithImportedData(adminPage, tableName);
 

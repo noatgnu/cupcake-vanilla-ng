@@ -16,7 +16,7 @@ export class LabGroupsPage {
     const createBtn = this.page.getByRole("button", { name: "Create Group" });
     await expect(createBtn).toBeEnabled({ timeout: 5000 });
     await createBtn.click();
-    await expect(this.page.getByText(name).first()).toBeVisible({ timeout: 10000 });
+    await expect(this.page.getByText(name, { exact: true }).first()).toBeVisible({ timeout: 10000 });
   }
 
   async openMembersModal(name: string): Promise<void> {

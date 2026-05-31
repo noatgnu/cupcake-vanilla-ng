@@ -39,22 +39,41 @@
     overflow-y: auto;
     
     .task-item {
-      transition: all 0.2s ease;
+      transition: background-color 0.2s ease;
       border-bottom: 1px solid var(--bs-border-color);
-      
+
       &:hover {
         background-color: rgba(var(--bs-primary-rgb), 0.05);
       }
-      
-      &.active {
+
+      &.task-active {
         background-color: rgba(var(--bs-info-rgb), 0.05);
         border-left: 3px solid var(--bs-primary);
-        
+
         .task-title {
           font-weight: 600;
         }
       }
-      
+
+      &.task-completed {
+        background-color: rgba(var(--bs-success-rgb), 0.08);
+        border-left: 4px solid var(--bs-success);
+        border-top: 1px solid rgba(var(--bs-success-rgb), 0.3);
+        border-bottom: 1px solid rgba(var(--bs-success-rgb), 0.3);
+        border-right: 1px solid rgba(var(--bs-success-rgb), 0.2);
+        border-radius: 0 0.375rem 0.375rem 0;
+        margin-bottom: 2px;
+
+        .task-title {
+          color: var(--bs-success-text-emphasis);
+        }
+      }
+
+      &.task-failed {
+        background-color: rgba(var(--bs-danger-rgb), 0.06);
+        border-left: 4px solid var(--bs-danger);
+      }
+
       &:last-child {
         border-bottom: none;
       }

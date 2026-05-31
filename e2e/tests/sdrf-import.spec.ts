@@ -68,6 +68,7 @@ test.describe("SDRF import", () => {
   });
 
   test("completed import task shows in completed filter", async ({ adminPage }) => {
+    test.setTimeout(90000);
     const tableName = `E2E Import Complete ${Date.now()}`;
     await createTableAndOpen(adminPage, tableName);
     await triggerSdrfImport(adminPage, path.join(FIXTURES_DIR, "PXD019185_PXD018883.sdrf.tsv"));

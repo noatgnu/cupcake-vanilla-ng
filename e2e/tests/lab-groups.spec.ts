@@ -1,7 +1,20 @@
 import { test, expect } from "../fixtures/auth";
 import { LabGroupsPage } from "../page-objects/vanilla-ng/lab-groups.po";
 
-const GROUP_NAME = `E2E Lab ${Date.now()}`;
+async function createGroup(adminPage: import("@playwright/test").Page, name: string): Promise<void> {
+  const page = new LabGroupsPage(adminPage);
+  await page.goto();
+  await page.create(name);
+}
+
+async function deleteGroupIfExists(adminPage: import("@playwright/test").Page, name: string): Promise<void> {
+  const row = adminPage.locator("tr, [role='row']").filter({ hasText: name }).first();
+  if (await row.isVisible({ timeout: 2000 })) {
+    await row.locator('[title="Delete group"]').click({ timeout: 3000 });
+    await adminPage.getByRole("dialog").locator("button.btn-danger").click();
+    await expect(adminPage.locator("tr, [role='row']").filter({ hasText: name })).toHaveCount(0, { timeout: 10000 });
+  }
+}
 
 test.describe("lab groups", () => {
   test("lab groups page loads", async ({ adminPage }) => {
@@ -11,27 +24,32 @@ test.describe("lab groups", () => {
   });
 
   test("create new lab group appears in list", async ({ adminPage }) => {
+    const groupName = `E2E Lab Create ${Date.now()}`;
+    await createGroup(adminPage, groupName);
+    await expect(adminPage.getByText(groupName, { exact: true }).first()).toBeVisible({ timeout: 10000 });
+
     const page = new LabGroupsPage(adminPage);
     await page.goto();
-    await page.create(GROUP_NAME);
-    await expect(adminPage.getByText(GROUP_NAME).first()).toBeVisible({ timeout: 10000 });
+    await deleteGroupIfExists(adminPage, groupName);
   });
 
   test("group members modal opens", async ({ adminPage }) => {
+    const groupName = `E2E Lab Members ${Date.now()}`;
+    await createGroup(adminPage, groupName);
     const page = new LabGroupsPage(adminPage);
-    await page.goto();
-    await page.create(GROUP_NAME);
-    await page.openMembersModal(GROUP_NAME);
+    await page.openMembersModal(groupName);
     await expect(adminPage.locator(".modal.fade.show")).toBeVisible({ timeout: 5000 });
     await adminPage.locator(".modal-footer").getByRole("button", { name: /close/i }).click();
+
+    await page.goto();
+    await deleteGroupIfExists(adminPage, groupName);
   });
 
   test("invite testuser to a lab group", async ({ adminPage }) => {
-    const page = new LabGroupsPage(adminPage);
-    await page.goto();
-    await page.create(GROUP_NAME);
-    const row = adminPage.locator("tr, [role='row']").filter({ hasText: GROUP_NAME }).first();
-    await row.getByRole("button", { name: new RegExp(`view members of ${GROUP_NAME}`, "i") }).click();
+    const groupName = `E2E Lab Invite ${Date.now()}`;
+    await createGroup(adminPage, groupName);
+    const row = adminPage.locator("tr, [role='row']").filter({ hasText: groupName }).first();
+    await row.getByRole("button", { name: new RegExp(`view members of ${groupName}`, "i") }).click();
     const inviteBtn = adminPage.getByRole("button", { name: /^invite$/i });
     if (await inviteBtn.isVisible({ timeout: 3000 })) {
       await inviteBtn.click();
@@ -43,5 +61,9 @@ test.describe("lab groups", () => {
         await sendInviteBtn.click();
       }
     }
+
+    const page = new LabGroupsPage(adminPage);
+    await page.goto();
+    await deleteGroupIfExists(adminPage, groupName);
   });
 });
