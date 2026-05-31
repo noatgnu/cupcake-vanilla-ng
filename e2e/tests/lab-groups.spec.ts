@@ -11,7 +11,7 @@ async function deleteGroupIfExists(adminPage: import("@playwright/test").Page, n
   const row = adminPage.locator("tr, [role='row']").filter({ hasText: name }).first();
   if (await row.isVisible({ timeout: 2000 })) {
     await row.locator('[title="Delete group"]').click({ timeout: 3000 });
-    await adminPage.getByRole("dialog").locator("button.btn-danger").click();
+    await adminPage.locator("button.btn-danger").click({ timeout: 5000 });
     await expect(adminPage.locator("tr, [role='row']").filter({ hasText: name })).toHaveCount(0, { timeout: 10000 });
   }
 }
@@ -61,6 +61,9 @@ test.describe("lab groups", () => {
         await sendInviteBtn.click();
       }
     }
+
+    await adminPage.locator(".modal-footer").getByRole("button", { name: /close/i }).click();
+    await expect(adminPage.locator(".modal.fade.show")).not.toBeVisible({ timeout: 5000 });
 
     const page = new LabGroupsPage(adminPage);
     await page.goto();

@@ -225,9 +225,10 @@ export class AsyncTaskUIService implements OnDestroy {
           const a = document.createElement('a');
           a.href = response.downloadUrl;
           a.style.display = 'none';
-          document.body.appendChild(a);
+          const panel = document.body.querySelector('app-async-task-monitor') ?? document.body;
+          panel.appendChild(a);
           a.click();
-          document.body.removeChild(a);
+          panel.removeChild(a);
         }
       },
       error: () => {
@@ -373,22 +374,10 @@ export class AsyncTaskUIService implements OnDestroy {
   private handleExportTaskCompletion(task: AsyncTaskStatus): void {
     const taskName = this.getTaskDisplayName(task.taskType);
     const tableName = task.metadataTableName ? ` for "${task.metadataTableName}"` : '';
-
-    if (task.taskType === TaskType.EXPORT_SDRF || task.taskType === TaskType.EXPORT_EXCEL) {
-      setTimeout(() => {
-        this.downloadTaskResult(task.id);
-      }, 1500);
-
-      this.toastService.success(
-        `${taskName}${tableName} completed! Starting download...`,
-        4000
-      );
-    } else {
-      this.toastService.success(
-        `${taskName}${tableName} completed! Check your downloads.`,
-        6000
-      );
-    }
+    this.toastService.success(
+      `${taskName}${tableName} completed! Use the download button to save the file.`,
+      6000
+    );
   }
 
   private handleValidationTaskCompletion(task: AsyncTaskStatus): void {

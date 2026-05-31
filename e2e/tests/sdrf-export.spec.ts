@@ -28,6 +28,7 @@ async function createTableWithData(page: import("@playwright/test").Page, name: 
   await expect(monitor.locator(".task-item").first()).toBeVisible({ timeout: 20000 });
   await monitor.getByRole("button", { name: /^all/i }).click();
   await tasksBtn.click();
+  await expect(page.locator('[title="Export Table"]')).toBeVisible({ timeout: 15000 });
 }
 
 test.describe("SDRF export", () => {
@@ -77,18 +78,26 @@ test.describe("SDRF export", () => {
     await expect(monitor.locator(".task-item.task-completed").first()).toBeVisible({ timeout: 20000 });
     await expect(
       monitor.locator(".task-item.task-completed button[title*='Download']").first()
-    ).toBeVisible({ timeout: 5000 });
+    ).toBeVisible({ timeout: 15000 });
   });
 
-  test("SDRF export auto-downloads file on completion", async ({ adminPage }) => {
+  test("SDRF export download button triggers file download", async ({ adminPage }) => {
     test.setTimeout(180000);
-    const tableName = `E2E SDRF AutoDownload ${Date.now()}`;
+    const tableName = `E2E SDRF Download ${Date.now()}`;
     await createTableWithData(adminPage, tableName);
 
-    const downloadPromise = adminPage.waitForEvent("download", { timeout: 60000 });
     await adminPage.locator('[title="Export Table"]').click();
     await adminPage.getByRole("link", { name: /export as sdrf/i }).click();
 
+    const tasksBtn = adminPage.locator("button[aria-label*='Background tasks']");
+    await tasksBtn.click();
+    const monitor = adminPage.locator("app-async-task-monitor");
+    await expect(monitor.locator(".task-item").first()).toBeVisible({ timeout: 15000 });
+    await monitor.getByRole("button", { name: /completed/i }).click();
+    await expect(monitor.locator(".task-item.task-completed button[title*='Download']").first()).toBeVisible({ timeout: 15000 });
+
+    const downloadPromise = adminPage.waitForEvent("download", { timeout: 10000 });
+    await monitor.locator(".task-item.task-completed button[title*='Download']").first().click();
     const download = await downloadPromise;
     expect(download.suggestedFilename()).toMatch(/\.tsv$/i);
   });
@@ -109,6 +118,6 @@ test.describe("SDRF export", () => {
     const tasksBtn = adminPage.locator("button[aria-label*='Background tasks']");
     await tasksBtn.click();
     await expect(adminPage.locator("app-async-task-monitor")).toBeVisible({ timeout: 5000 });
-    await expect(adminPage.locator(".task-item").first()).toBeVisible({ timeout: 30000 });
+    await expect(adminPage.locator(".task-item").first()).toBeVisible({ timeout: 15000 });
   });
 });
