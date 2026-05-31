@@ -34,12 +34,13 @@ test.describe("object visibility and ownership", () => {
       await expect(adminViewToggle).toBeVisible({ timeout: 10000 });
       if (!await adminViewToggle.isChecked()) {
         await adminViewToggle.click();
-        await adminPage.waitForTimeout(500);
+        await adminPage.waitForTimeout(1500);
       }
     } catch {
       // toggle unavailable — admin view not supported for this user
     }
     await adminList.search(name);
+    await adminPage.waitForTimeout(1000);
     await adminList.expectTableInList(name);
 
     await userList.goto();

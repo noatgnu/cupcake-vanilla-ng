@@ -14,16 +14,15 @@ export class MetadataTableDetailPage {
     await this.page.getByRole("button", { name: /add column/i }).click();
     const modal = this.page.getByRole("dialog");
     await expect(modal).toBeVisible({ timeout: 5000 });
+    const templateSelect = modal.locator("select[size='5']");
+    await expect(templateSelect).toBeVisible({ timeout: 10000 });
+    await expect(templateSelect).not.toContainText(/loading/i, { timeout: 10000 });
     const searchInput = modal.getByPlaceholder(/search column templates/i);
     await searchInput.click();
-    await searchInput.pressSequentially(name, { delay: 50 });
-    const templateSelect = modal.locator("select[size='5']");
-    const firstOption = templateSelect.locator("option").filter({ hasText: new RegExp(name, "i") }).first();
-    await expect(firstOption).toBeVisible({ timeout: 15000 });
-    const optionValue = await firstOption.getAttribute("value");
-    if (optionValue) {
-      await templateSelect.selectOption(optionValue);
-    }
+    await searchInput.fill(name);
+    await searchInput.dispatchEvent("input");
+    await expect(templateSelect).toContainText(new RegExp(name, "i"), { timeout: 15000 });
+    await templateSelect.selectOption({ label: new RegExp(name, "i") });
     const submitBtn = modal.locator(".modal-footer .btn-primary");
     await expect(submitBtn).toBeEnabled({ timeout: 5000 });
     await submitBtn.click();

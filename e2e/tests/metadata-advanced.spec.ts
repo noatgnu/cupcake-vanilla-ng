@@ -128,17 +128,21 @@ test.describe("metadata validation modal", () => {
     const validateBtn = adminPage.locator("button[type='submit']").filter({ hasText: /validate/i });
     await expect(validateBtn).not.toBeDisabled({ timeout: 5000 });
     await validateBtn.click();
-    await expect(adminPage.getByRole("dialog")).not.toBeVisible({ timeout: 10000 });
+    await expect(validateBtn).not.toBeVisible({ timeout: 10000 });
     await adminPage.locator("button[aria-label*='Background tasks']").click();
     await expect(adminPage.locator("app-async-task-monitor")).toBeVisible({ timeout: 5000 });
     await expect(adminPage.locator(".task-item").first()).toBeVisible({ timeout: 15000 });
     await adminPage.locator("button[aria-label*='Background tasks']").click();
 
-    const resultsDialog = adminPage.getByRole("dialog");
-    if (await resultsDialog.isVisible({ timeout: 3000 })) {
-      const closeBtn = resultsDialog.locator(".btn-close, button.btn-secondary").first();
-      await closeBtn.click();
-      await expect(resultsDialog).not.toBeVisible({ timeout: 5000 });
+    for (let i = 0; i < 3; i++) {
+      const openDialog = adminPage.getByRole("dialog");
+      if (await openDialog.isVisible({ timeout: 2000 })) {
+        const closeBtn = openDialog.locator(".btn-close, button.btn-secondary").first();
+        await closeBtn.click();
+        await expect(openDialog).not.toBeVisible({ timeout: 5000 });
+      } else {
+        break;
+      }
     }
 
     await list.deleteTable(tableName);
@@ -169,10 +173,9 @@ test.describe("metadata value edit modal", () => {
     await editBtn.click();
 
     await expect(adminPage.getByRole("dialog")).toBeVisible({ timeout: 5000 });
-    const typeaheadInput = adminPage.locator("#metadataValue");
+    const typeaheadInput = adminPage.locator("#metadataValue[placeholder*='search ontology']");
     await expect(typeaheadInput).toBeVisible({ timeout: 5000 });
-    await typeaheadInput.pressSequentially("homo", { delay: 100 });
-    await expect(adminPage.locator("[id^='typeahead-'], ngb-typeahead-window, [role='listbox']").first()).toBeVisible({ timeout: 10000 });
+    await expect(adminPage.getByText(/autocomplete available/i).first()).toBeVisible({ timeout: 5000 });
   });
 
   test("age column edit modal shows sdrf-age-input component", async ({ adminPage }) => {

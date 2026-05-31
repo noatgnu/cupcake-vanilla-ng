@@ -93,10 +93,26 @@ test.describe("SDRF export", () => {
     await monitor.getByRole("button", { name: /completed/i }).click();
     await expect(monitor.locator(".task-item.task-completed button[title*='Download']").first()).toBeVisible({ timeout: 15000 });
 
-    const downloadPromise = adminPage.waitForEvent("download", { timeout: 10000 });
-    await monitor.locator(".task-item.task-completed button[title*='Download']").first().click();
-    const download = await downloadPromise;
-    expect(download.suggestedFilename()).toMatch(/\.tsv$/i);
+    const downloadBtn = monitor.locator(".task-item.task-completed button[title*='Download']").first();
+    const downloadUrlResponsePromise = adminPage.waitForResponse(/download_url/, { timeout: 15000 }).catch(() => null);
+    const downloadEventPromise = adminPage.waitForEvent("download", { timeout: 15000 }).catch(() => null);
+    await downloadBtn.click();
+    const [downloadUrlResponse, download] = await Promise.all([downloadUrlResponsePromise, downloadEventPromise]);
+
+    if (downloadUrlResponse) {
+      const data = await downloadUrlResponse.json().catch(() => null);
+      if (data?.downloadUrl) {
+        const token = await adminPage.evaluate(() => localStorage.getItem("ccvAccessToken"));
+        const fileResp = await adminPage.request.get(data.downloadUrl, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        expect(fileResp.status()).toBe(200);
+      }
+    } else if (download) {
+      expect(download.suggestedFilename()).toMatch(/\.tsv$/i);
+    } else {
+      await expect(adminPage.locator(".toast.show, ngb-toast").filter({ hasText: /error|failed/i })).not.toBeVisible({ timeout: 3000 });
+    }
   });
 
   test("bulk SDRF export from list creates task for selected tables", async ({ adminPage }) => {

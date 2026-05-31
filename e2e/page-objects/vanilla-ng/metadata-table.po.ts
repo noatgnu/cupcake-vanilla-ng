@@ -35,7 +35,7 @@ export class MetadataTablePage {
 
   async search(term: string): Promise<void> {
     await this.page.locator("#tableSearch").fill(term);
-    await this.page.keyboard.press("Enter");
+    await this.page.waitForTimeout(500);
   }
 
   async expectTableInList(name: string): Promise<void> {
