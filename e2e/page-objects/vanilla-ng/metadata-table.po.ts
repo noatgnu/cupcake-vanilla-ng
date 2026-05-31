@@ -11,7 +11,7 @@ export class MetadataTablePage {
   }
 
   async create(name: string): Promise<void> {
-    await this.page.getByRole("button", { name: "New Table" }).click();
+    await this.page.locator('[title="New Table"]').click();
     await this.page.locator("#tableName").fill(name);
     const submitBtn = this.page.locator(".modal-footer .btn-primary");
     await expect(submitBtn).toBeEnabled({ timeout: 5000 });
@@ -20,7 +20,7 @@ export class MetadataTablePage {
   }
 
   async openTable(name: string): Promise<void> {
-    const viewBtn = this.page.locator("tr").filter({ hasText: name }).getByRole("button", { name: /view/i });
+    const viewBtn = this.page.locator("tr").filter({ hasText: name }).locator('[title="View table"]');
     await viewBtn.click();
     await expect(this.page).toHaveURL(/\/metadata-tables\/\d+/, { timeout: 10000 });
   }
