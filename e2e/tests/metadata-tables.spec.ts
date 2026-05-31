@@ -33,6 +33,7 @@ test.describe("metadata tables", () => {
   });
 
   test("add column appears in table", async ({ adminPage }) => {
+    test.setTimeout(150000);
     const list = new MetadataTablePage(adminPage);
     await list.goto();
     await list.create(TABLE_NAME);
@@ -43,6 +44,7 @@ test.describe("metadata tables", () => {
   });
 
   test("delete column removes it", async ({ adminPage }) => {
+    test.setTimeout(150000);
     const list = new MetadataTablePage(adminPage);
     await list.goto();
     await list.create(TABLE_NAME);

@@ -137,54 +137,23 @@ export class ColumnEditModal implements OnInit {
       return index >= 0 ? index : 0;
     }
 
-    console.log('[Column] Looking for ontology match:', {
-      ontologyType,
-      customFilters,
-      keys: Object.keys(customFilters)
-    });
-
-    // Handle both wrapped and unwrapped formats
-    // Also handle camelCase from API vs snake_case in config
-    // API returns: {"msUniqueVocabularies": {"termType": "cell line"}}
-    // Config has: {"ms_unique_vocabularies": {"term_type": "cell line"}}
-
-    // Convert ontologyType to camelCase to match API format
     const camelOntologyType = ontologyType.replace(/_([a-z])/g, (g) => g[1].toUpperCase());
 
     let actualFilters = customFilters[ontologyType] || customFilters[camelOntologyType] || customFilters;
-
-    console.log('[Column] Actual filters after unwrapping:', actualFilters);
 
     const matchingIndex = this.ontologyTypes.findIndex(opt => {
       if (opt.value !== ontologyType) return false;
 
       if (!opt.customFilters) return false;
 
-      // Get the filter value from config (wrapped with snake_case key)
       const optFilterValue = opt.customFilters[ontologyType];
       if (!optFilterValue) return false;
 
-      // Compare term_type values (handle both snake_case and camelCase)
       const optTermType = optFilterValue['term_type'];
       const actualTermType = actualFilters['term_type'] || actualFilters['termType'];
 
-      const matches = optTermType === actualTermType;
-
-      console.log('[Column] Comparing:', {
-        label: opt.label,
-        optTermType,
-        actualTermType,
-        matches
-      });
-
-      return matches;
+      return optTermType === actualTermType;
     });
-
-    if (matchingIndex >= 0) {
-      console.log('[Column] Found match at index:', matchingIndex, this.ontologyTypes[matchingIndex].label);
-    } else {
-      console.warn('[Column] No match found for:', { ontologyType, customFilters });
-    }
 
     return matchingIndex >= 0 ? matchingIndex : 0;
   }
@@ -209,13 +178,6 @@ export class ColumnEditModal implements OnInit {
       // Extract custom filters from the selected ontology config
       const customOntologyFilters = selectedOntology?.customFilters || {};
 
-      console.log('[Column Edit] Submitting column:', {
-        ontologyTypeIndex,
-        selectedOntology,
-        ontologyTypeValue,
-        customOntologyFilters
-      });
-
       const columnData: Partial<MetadataColumn> = {
         name: formValue.name,
         type: formValue.type,
@@ -230,8 +192,6 @@ export class ColumnEditModal implements OnInit {
         notAvailable: formValue.notAvailable || false,
         staffOnly: formValue.staffOnly || false
       };
-
-      console.log('[Column Edit] Final columnData:', columnData);
 
       this.columnSaved.emit(columnData);
     } else {
@@ -365,8 +325,7 @@ export class ColumnEditModal implements OnInit {
         this.totalTemplatePages = Math.ceil(this.totalTemplates / this.templatePageSize);
         this.isLoadingTemplates = false;
       },
-      error: (error: any) => {
-        console.error('Error loading column templates:', error);
+      error: () => {
         this.isLoadingTemplates = false;
       }
     });
@@ -377,9 +336,8 @@ export class ColumnEditModal implements OnInit {
       next: (schemas: Schema[]) => {
         this.availableSchemas = schemas;
       },
-      error: (error: any) => {
-        console.error('Error loading schemas:', error);
-      }
+      error: () => {}
+
     });
   }
 
