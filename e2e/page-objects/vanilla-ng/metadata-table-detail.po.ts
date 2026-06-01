@@ -22,7 +22,9 @@ export class MetadataTableDetailPage {
     await searchInput.dispatchEvent("input");
     await expect(templateSelect).not.toContainText(/loading/i, { timeout: 90000 });
     await expect(templateSelect).toContainText(new RegExp(name, "i"), { timeout: 5000 });
-    await templateSelect.selectOption({ label: new RegExp(name, "i") });
+    const matchingOption = templateSelect.locator("option").filter({ hasText: new RegExp(name, "i") }).first();
+    const optionValue = await matchingOption.getAttribute("value");
+    await templateSelect.selectOption({ value: optionValue! });
     const submitBtn = modal.locator(".modal-footer .btn-primary");
     await expect(submitBtn).toBeEnabled({ timeout: 5000 });
     await submitBtn.click();
