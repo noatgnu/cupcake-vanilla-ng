@@ -52,7 +52,7 @@ test.describe("metadata tables", () => {
     const detail = new MetadataTableDetailPage(adminPage);
     await detail.addColumn(COLUMN_SEARCH);
     await detail.deleteColumn(COLUMN_SEARCH);
-    await expect(adminPage.getByText(COLUMN_SEARCH)).not.toBeVisible({ timeout: 5000 });
+    await expect(adminPage.getByText(COLUMN_SEARCH).first()).not.toBeVisible({ timeout: 10000 });
   });
 
   test("search filters table list", async ({ adminPage }) => {

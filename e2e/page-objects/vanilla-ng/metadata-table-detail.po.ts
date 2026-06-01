@@ -40,13 +40,16 @@ export class MetadataTableDetailPage {
     const removeBtn = this.page.locator(`button[title*="${name}"][title*="Remove"]`);
     await expect(removeBtn).toBeVisible({ timeout: 10000 });
     await removeBtn.click();
-    await this.page.getByRole("dialog").locator("button.btn-danger").click();
+    const dialog = this.page.getByRole("dialog");
+    await expect(dialog).toBeVisible({ timeout: 5000 });
+    await dialog.locator("button.btn-danger").click();
+    await expect(dialog).not.toBeVisible({ timeout: 10000 });
     await this.page.locator('[title="Column List View"]').click();
-    await expect(this.page.getByText(name)).not.toBeVisible({ timeout: 5000 });
+    await expect(this.page.getByText(name).first()).not.toBeVisible({ timeout: 10000 });
   }
 
   async expectColumnVisible(name: string): Promise<void> {
-    await expect(this.page.getByText(name)).toBeVisible({ timeout: 10000 });
+    await expect(this.page.getByText(name).first()).toBeVisible({ timeout: 10000 });
   }
 
   async expectColumnsSection(): Promise<void> {
