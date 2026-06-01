@@ -45,8 +45,8 @@
               <select
                 class="form-select mb-3"
                 size="4"
-                [disabled]="isLoadingTemplates">
-                @if (isLoadingTemplates) {
+                [disabled]="isLoadingTemplates()">
+                @if (isLoadingTemplates()) {
                   <option value="" disabled>Loading templates...</option>
                 } @else if (templateFilter.length > 0 && templateFilter.length < 3) {
                   <option value="" disabled>Type at least 3 characters to search...</option>
@@ -191,12 +191,14 @@
           [(ngModel)]="selectedTemplateId"
           [ngModelOptions]="{standalone: true}"
           (change)="onTemplateSelectionChange()"
-          [disabled]="isLoadingTemplates">
+          [disabled]="isLoadingTemplates()">
           <option value="">-- Select a template --</option>
-          @if (isLoadingTemplates) {
+          @if (isLoadingTemplates()) {
             <option value="" disabled>Loading templates...</option>
           } @else if (templateFilter.length > 0 && templateFilter.length < 3) {
             <option value="" disabled>Type at least 3 characters to search...</option>
+          } @else if (templates.length === 0 && templateFilter.length === 0) {
+            <option value="" disabled>Search above to find column templates...</option>
           } @else if (templates.length === 0 && templateFilter.length >= 3) {
             <option value="" disabled>No templates found matching "{{ templateFilter }}"</option>
           } @else {

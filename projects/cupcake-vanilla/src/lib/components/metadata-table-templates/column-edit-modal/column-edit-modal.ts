@@ -41,7 +41,7 @@ export class ColumnEditModal implements OnInit {
   selectedTemplateId: number | string = '';
   selectedTemplate: MetadataColumnTemplate | null = null;
   templates: MetadataColumnTemplate[] = [];
-  isLoadingTemplates = false;
+  isLoadingTemplates = signal(false);
 
   // Pagination
   currentTemplatePage = 1;
@@ -100,7 +100,6 @@ export class ColumnEditModal implements OnInit {
     }
 
     if (!this.isEdit) {
-      this.loadColumnTemplates();
       this.loadAvailableSchemas();
     }
   }
@@ -303,11 +302,11 @@ export class ColumnEditModal implements OnInit {
       this.templates = [];
       this.totalTemplates = 0;
       this.totalTemplatePages = 0;
-      this.isLoadingTemplates = false;
+      this.isLoadingTemplates.set(false);
       return;
     }
 
-    this.isLoadingTemplates = true;
+    this.isLoadingTemplates.set(true);
     const offset = (this.currentTemplatePage - 1) * this.templatePageSize;
     const params: MetadataColumnTemplateQueryParams = {
       limit: this.templatePageSize,
@@ -323,10 +322,10 @@ export class ColumnEditModal implements OnInit {
         this.templates = response.results || [];
         this.totalTemplates = response.count || 0;
         this.totalTemplatePages = Math.ceil(this.totalTemplates / this.templatePageSize);
-        this.isLoadingTemplates = false;
+        this.isLoadingTemplates.set(false);
       },
       error: () => {
-        this.isLoadingTemplates = false;
+        this.isLoadingTemplates.set(false);
       }
     });
   }

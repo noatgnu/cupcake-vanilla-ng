@@ -16,12 +16,12 @@ export class MetadataTableDetailPage {
     await expect(modal).toBeVisible({ timeout: 5000 });
     const templateSelect = modal.locator("select[size='5']");
     await expect(templateSelect).toBeVisible({ timeout: 10000 });
-    await expect(templateSelect).not.toContainText(/loading/i, { timeout: 60000 });
     const searchInput = modal.getByPlaceholder(/search column templates/i);
     await searchInput.click();
     await searchInput.fill(name);
     await searchInput.dispatchEvent("input");
-    await expect(templateSelect).toContainText(new RegExp(name, "i"), { timeout: 15000 });
+    await expect(templateSelect).not.toContainText(/loading/i, { timeout: 90000 });
+    await expect(templateSelect).toContainText(new RegExp(name, "i"), { timeout: 5000 });
     await templateSelect.selectOption({ label: new RegExp(name, "i") });
     const submitBtn = modal.locator(".modal-footer .btn-primary");
     await expect(submitBtn).toBeEnabled({ timeout: 5000 });
