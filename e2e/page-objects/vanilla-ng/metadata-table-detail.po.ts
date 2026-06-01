@@ -44,8 +44,7 @@ export class MetadataTableDetailPage {
     await expect(dialog).toBeVisible({ timeout: 5000 });
     await dialog.locator("button.btn-danger").click();
     await expect(dialog).not.toBeVisible({ timeout: 10000 });
-    await this.page.locator('[title="Column List View"]').click();
-    await expect(this.page.getByText(name).first()).not.toBeVisible({ timeout: 10000 });
+    await expect(this.page.locator(`th[title="${name}"]`)).not.toBeVisible({ timeout: 10000 });
   }
 
   async expectColumnVisible(name: string): Promise<void> {
