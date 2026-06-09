@@ -153,6 +153,9 @@ jobs:
           mkdir -p cupcake-vanilla-wails/mainapp/dist/browser
           cp -r dist/cupcake-vanilla-ng/browser/* cupcake-vanilla-wails/mainapp/dist/browser/
 
+      - name: Run Go tests
+        run: go test -v ./... -count=1
+
       - name: Build application (Linux/macOS)
         if: matrix.platform != 'windows'
         shell: bash
