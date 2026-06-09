@@ -156,9 +156,9 @@ func (b *BackupManager) RestoreDatabase(backendDir, pythonPath string, outputCal
 	b.log(fmt.Sprintf("Restoring from: %s", latestBackup), "info")
 	var args []string
 	if strings.HasSuffix(latestBackup, ".gz") {
-		args = []string{"--noinput", "--uncompress", "--input-filename", latestBackup}
+		args = []string{"--noinput", "--uncompress", "--input-filename", filepath.Base(latestBackup)}
 	} else {
-		args = []string{"--noinput", "--input-filename", latestBackup}
+		args = []string{"--noinput", "--input-filename", filepath.Base(latestBackup)}
 	}
 	err = b.backendManager.RunManagementCommand(backendDir, pythonPath, "dbrestore", args, outputCallback)
 	if err != nil {
@@ -182,9 +182,9 @@ func (b *BackupManager) RestoreMedia(backendDir, pythonPath string, outputCallba
 	b.log(fmt.Sprintf("Restoring from: %s", latestBackup), "info")
 	var args []string
 	if strings.HasSuffix(latestBackup, ".gz") {
-		args = []string{"--noinput", "--uncompress", "--input-filename", latestBackup}
+		args = []string{"--noinput", "--uncompress", "--input-filename", filepath.Base(latestBackup)}
 	} else {
-		args = []string{"--noinput", "--input-filename", latestBackup}
+		args = []string{"--noinput", "--input-filename", filepath.Base(latestBackup)}
 	}
 	err = b.backendManager.RunManagementCommand(backendDir, pythonPath, "mediarestore", args, outputCallback)
 	if err != nil {
