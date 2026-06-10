@@ -161,6 +161,10 @@ jobs:
         shell: bash
         run: |
           export PATH="$HOME/go/bin:$PATH"
+          if [ "${{ matrix.platform }}" = "darwin" ] && [ "${{ matrix.arch }}" = "amd64" ]; then
+            export CGO_CFLAGS="-arch x86_64"
+            export CGO_LDFLAGS="-arch x86_64"
+          fi
           GOOS=${{ matrix.platform }} GOARCH=${{ matrix.arch }} CGO_ENABLED=1 go build \
             -ldflags="-s -w" \
             -o build/bin/${{ matrix.platform }}-${{ matrix.arch }}/cupcake-vanilla
