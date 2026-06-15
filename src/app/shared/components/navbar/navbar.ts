@@ -1,7 +1,7 @@
 import { Component, inject, OnInit, OnDestroy, signal, ChangeDetectionStrategy, effect, untracked, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
-import { NgbDropdownModule } from '@ng-bootstrap/ng-bootstrap';
+import { NgbCollapse, NgbDropdownModule } from '@ng-bootstrap/ng-bootstrap';
 import { AuthService, User, SiteConfigService, UserManagementService, ThemeService, DemoModeService, PluginService, Plugin } from '@noatgnu/cupcake-core';
 import { AsyncTaskUIService, NotificationService, Websocket } from '@noatgnu/cupcake-vanilla';
 import { NotificationPanel } from '../notification-panel/notification-panel';
@@ -15,7 +15,7 @@ import { EnvironmentService } from '../../services/environment';
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  imports: [CommonModule, RouterModule, NgbDropdownModule, NotificationPanel, AsyncTaskMonitorComponent],
+  imports: [CommonModule, RouterModule, NgbDropdownModule, NgbCollapse, NotificationPanel, AsyncTaskMonitorComponent],
   templateUrl: './navbar.html',
   styleUrl: './navbar.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -48,6 +48,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
 
   unreadCount = this.notificationService.unreadCount;
   isDemoMode = computed(() => this.demoModeService.demoMode().isActive);
+  isMenuCollapsed = signal(true);
   activePlugins = signal<Plugin[]>([]);
   pluginsWithNav = computed(() => this.activePlugins().filter(p => p.manifestCache?.nav?.length));
 
@@ -60,11 +61,9 @@ export class NavbarComponent implements OnInit, OnDestroy {
         if (isAuthenticated && this.webSocketService.shouldConnect()) {
           const currentState = this.webSocketService.connectionState$();
           if (currentState === 'disconnected' || currentState === 'error') {
-            console.log('Navbar: Initiating WebSocket connection');
             this.webSocketService.connect();
           }
         } else if (!isAuthenticated) {
-          console.log('Navbar: User not authenticated, disconnecting WebSocket');
           this.webSocketService.disconnect();
         }
       });
@@ -88,17 +87,11 @@ export class NavbarComponent implements OnInit, OnDestroy {
   }
 
   logout(): void {
-    console.log('NavbarComponent: logout() called');
     this.authService.logout().subscribe({
-      next: (response) => {
-        console.log('NavbarComponent: logout success response:', response);
-      },
-      error: (error) => {
-        console.error('NavbarComponent: logout error:', error);
+      error: () => {
         this.router.navigate(['/login']);
       },
       complete: () => {
-        console.log('NavbarComponent: logout completed, navigating to login');
         this.router.navigate(['/login']);
       }
     });
