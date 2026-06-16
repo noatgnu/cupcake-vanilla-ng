@@ -3,8 +3,8 @@
   <div class="container-fluid">
     <!-- Brand -->
     @if (siteConfig(); as config) {
-      <a class="navbar-brand" routerLink="/">
-        <i class="bi bi-flask me-2"></i>
+      <a class="navbar-brand d-flex align-items-center gap-2" routerLink="/">
+        <img src="cupcake_logo.png" alt="Cupcake" style="height: 28px;">
         {{ config.siteName }}
         @if (isDemoMode()) {
           <span class="badge bg-danger ms-2">
