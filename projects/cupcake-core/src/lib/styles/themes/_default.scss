@@ -147,4 +147,9 @@
   --cupcake-danger-rgb: 220, 53, 69;
   --cupcake-info: #17a2b8;
   --cupcake-info-rgb: 23, 162, 184;
+
+  .form-switch .form-check-input:checked {
+    --bs-form-switch-bg: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23000000'/%3e%3c%2fsvg%3e");
+    background-position: right center;
+  }
 }
