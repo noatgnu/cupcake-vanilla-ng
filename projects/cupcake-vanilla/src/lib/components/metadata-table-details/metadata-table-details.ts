@@ -138,26 +138,6 @@ export class MetadataTableDetails implements OnInit, OnDestroy {
     return [...pools].sort((a, b) => a.poolName.localeCompare(b.poolName));
   });
 
-  tableRows = computed(() => {
-    const table = this.table();
-    if (!table || !this.hasColumns()) return [];
-
-    const rows: any[] = [];
-    for (let i = 0; i < table.sampleCount; i++) {
-      const sampleIndex = i + 1;
-      const row: any = { _sampleIndex: sampleIndex };
-
-      this.sortedColumns().forEach(column => {
-        const value = this.getSampleColumnValue(column, sampleIndex);
-        row[`col_${column.id}`] = value;
-      });
-
-      rows.push(row);
-    }
-
-    return rows;
-  });
-
   poolTableRows = computed(() => {
     const table = this.table();
     if (!table || !this.hasPools() || !this.hasColumns()) return [];
@@ -190,18 +170,31 @@ export class MetadataTableDetails implements OnInit, OnDestroy {
   });
 
   paginatedRows = computed(() => {
-    const rows = this.tableRows();
+    const table = this.table();
+    if (!table || !this.hasColumns()) return [];
+
+    const columns = this.sortedColumns();
     const page = this.currentPage();
     const size = this.pageSize();
     const start = (page - 1) * size;
-    const end = start + size;
-    return rows.slice(start, end);
+    const end = Math.min(start + size, table.sampleCount);
+
+    const rows: any[] = [];
+    for (let i = start; i < end; i++) {
+      const sampleIndex = i + 1;
+      const row: any = { _sampleIndex: sampleIndex };
+      columns.forEach(column => {
+        row[`col_${column.id}`] = this.getSampleColumnValue(column, sampleIndex);
+      });
+      rows.push(row);
+    }
+    return rows;
   });
 
   totalPages = computed(() => {
-    const rows = this.tableRows();
-    const size = this.pageSize();
-    return Math.ceil(rows.length / size);
+    const table = this.table();
+    if (!table) return 0;
+    return Math.ceil(table.sampleCount / this.pageSize());
   });
 
   constructor(
@@ -784,12 +777,14 @@ export class MetadataTableDetails implements OnInit, OnDestroy {
     const table = this.table();
     if (!table || !table.canEdit || !column.id) return;
 
-    // Prepare sample data for multi-sample editing
-    const sampleData = this.tableRows().map(row => ({
-      index: row._sampleIndex,
-      value: row[`col_${column.id}`] || column.value || '',
-      sourceName: row.sourceName || `Sample ${row._sampleIndex}`
-    }));
+    const sampleData = Array.from({ length: table.sampleCount }, (_, i) => {
+      const index = i + 1;
+      return {
+        index,
+        value: this.getSampleColumnValue(column, index),
+        sourceName: `Sample ${index}`
+      };
+    });
 
     const columnConfig = this.officialColumnCache.getMergedColumnConfig(column.name);
 

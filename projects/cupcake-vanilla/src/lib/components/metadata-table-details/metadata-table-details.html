@@ -419,7 +419,7 @@
                   <small class="text-muted">Import SDRF to add columns</small>
                 }
               } @else {
-                <span class="badge bg-info">{{ tableRows().length }} samples</span>
+                <span class="badge bg-info">{{ table()!.sampleCount }} samples</span>
                 @if (hasPools()) {
                   <span class="badge bg-warning">{{ sortedPools().length }} pools</span>
                 }
@@ -688,7 +688,7 @@
                     </select>
                   </div>
                   <ngb-pagination
-                    [collectionSize]="tableRows().length"
+                    [collectionSize]="table()!.sampleCount"
                     [page]="currentPage()"
                     [pageSize]="pageSize()"
                     [maxSize]="5"
@@ -698,8 +698,8 @@
                     class="pagination-sm mb-0">
                   </ngb-pagination>
                   <span class="text-muted">
-                    Showing {{ (currentPage() - 1) * pageSize() + 1 }}-{{ Math.min(currentPage() * pageSize(), tableRows().length) }}
-                    of {{ tableRows().length }} samples
+                    Showing {{ (currentPage() - 1) * pageSize() + 1 }}-{{ Math.min(currentPage() * pageSize(), table()!.sampleCount) }}
+                    of {{ table()!.sampleCount }} samples
                   </span>
                 </div>
               }
