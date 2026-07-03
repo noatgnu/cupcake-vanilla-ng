@@ -172,7 +172,7 @@
               </span>
             }
           </button>
-          <div class="dropdown-menu dropdown-menu-end p-0" ngbDropdownMenu style="width: 450px; max-height: 600px;">
+          <div class="dropdown-menu dropdown-menu-end p-0 task-monitor-dropdown" ngbDropdownMenu>
             <app-async-task-monitor [maxTasks]="10" [autoRefresh]="true"></app-async-task-monitor>
           </div>
         </li>
@@ -193,7 +193,7 @@
               </span>
             }
           </button>
-          <div class="dropdown-menu dropdown-menu-end p-0" ngbDropdownMenu style="width: 400px; max-height: 500px;">
+          <div class="dropdown-menu dropdown-menu-end p-0 notification-dropdown" ngbDropdownMenu>
             <app-notification-panel></app-notification-panel>
           </div>
         </li>
