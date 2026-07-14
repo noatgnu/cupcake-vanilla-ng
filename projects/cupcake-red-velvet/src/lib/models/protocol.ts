@@ -101,6 +101,7 @@ export interface StepReagent extends BaseTimestampedModel {
 export interface StepVariation extends BaseTimestampedModel, RemoteSystemModel {
   id: number;
   step: number;
+  session?: number;
   stepDescription?: string;
   variationDescription?: string;
   variationDuration?: number;

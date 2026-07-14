@@ -9,6 +9,7 @@ import {
 
 export interface StepVariationQueryParams {
   step?: number;
+  session?: number;
   minDuration?: number;
   maxDuration?: number;
   limit?: number;
@@ -18,12 +19,14 @@ export interface StepVariationQueryParams {
 
 export interface StepVariationCreateRequest {
   step: number;
+  session?: number;
   stepDescription?: string;
   variationDescription?: string;
   variationDuration?: number;
 }
 
 export interface StepVariationUpdateRequest {
+  session?: number;
   stepDescription?: string;
   variationDescription?: string;
   variationDuration?: number;
@@ -90,5 +93,19 @@ export class StepVariationService extends BaseApiService {
    */
   getVariationsByStep(stepId: number): Observable<PaginatedResponse<StepVariation>> {
     return this.getStepVariations({ step: stepId });
+  }
+
+  /**
+   * Get variations scoped to a specific session
+   */
+  getVariationsBySession(sessionId: number): Observable<PaginatedResponse<StepVariation>> {
+    return this.getStepVariations({ session: sessionId });
+  }
+
+  /**
+   * Get variations for a specific step, scoped to one session
+   */
+  getVariationsByStepAndSession(stepId: number, sessionId: number): Observable<PaginatedResponse<StepVariation>> {
+    return this.getStepVariations({ step: stepId, session: sessionId });
   }
 }
