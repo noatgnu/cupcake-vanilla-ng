@@ -375,10 +375,16 @@ export class AsyncTaskUIService implements OnDestroy {
   private handleExportTaskCompletion(task: AsyncTaskStatus): void {
     const taskName = this.getTaskDisplayName(task.taskType);
     const tableName = task.metadataTableName ? ` for "${task.metadataTableName}"` : '';
-    this.toastService.success(
-      `${taskName}${tableName} completed! Use the download button to save the file.`,
-      6000
-    );
+
+    if (task.taskType === TaskType.EXPORT_SDRF || task.taskType === TaskType.EXPORT_EXCEL) {
+      setTimeout(() => {
+        this.downloadTaskResult(task.id);
+      }, 1500);
+
+      this.toastService.success(`${taskName}${tableName} completed! Starting download...`, 4000);
+    } else {
+      this.toastService.success(`${taskName}${tableName} completed! Use the download button to save the file.`, 6000);
+    }
   }
 
   private handleValidationTaskCompletion(task: AsyncTaskStatus): void {
