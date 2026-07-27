@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withXhr } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { CUPCAKE_CORE_CONFIG } from '@noatgnu/cupcake-core';
 import { ImportedTablePanel } from './imported-table-panel';
@@ -14,7 +14,7 @@ describe('ImportedTablePanel', () => {
       imports: [ImportedTablePanel],
       providers: [
         provideRouter([]),
-        provideHttpClient(),
+        provideHttpClient(withXhr()),
         provideHttpClientTesting(),
         { provide: CUPCAKE_CORE_CONFIG, useValue: { apiUrl: 'http://localhost' } },
       ]

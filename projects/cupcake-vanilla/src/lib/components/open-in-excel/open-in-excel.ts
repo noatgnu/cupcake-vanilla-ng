@@ -1,4 +1,4 @@
-import { Component, inject, signal, input, output } from '@angular/core';
+import { Component, inject, signal, input, output, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ExcelLaunchService } from '../../services/excel-launch';
 import { ExcelLaunchCode } from '../../models';
@@ -8,6 +8,7 @@ import { ExcelLaunchCode } from '../../models';
   standalone: true,
   imports: [CommonModule],
   templateUrl: './open-in-excel.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './open-in-excel.scss'
 })
 export class OpenInExcel {

@@ -1,4 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideHttpClient, withXhr } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideRouter } from '@angular/router';
+import { CUPCAKE_CORE_CONFIG } from '@noatgnu/cupcake-core';
 
 import { MetadataSelector } from './metadata-selector';
 
@@ -8,7 +12,13 @@ describe('MetadataSelector', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [MetadataSelector]
+      imports: [MetadataSelector],
+      providers: [
+        provideHttpClient(withXhr()),
+        provideHttpClientTesting(),
+        provideRouter([]),
+        { provide: CUPCAKE_CORE_CONFIG, useValue: { apiUrl: 'http://localhost:8000/api' } }
+      ]
     })
     .compileComponents();
 

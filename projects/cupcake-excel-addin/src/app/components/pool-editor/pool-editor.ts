@@ -1,4 +1,4 @@
-import { Component, inject, signal, input, output, OnInit } from '@angular/core';
+import { Component, inject, signal, input, output, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MetadataTable, SamplePool, SamplePoolService } from '@noatgnu/cupcake-vanilla';
 import { ToastService } from '../../core/services/toast.service';
@@ -15,6 +15,7 @@ interface PoolForm {
   selector: 'app-pool-editor',
   imports: [FormsModule],
   templateUrl: './pool-editor.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './pool-editor.scss',
 })
 export class PoolEditor implements OnInit {

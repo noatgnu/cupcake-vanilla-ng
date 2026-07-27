@@ -1,10 +1,11 @@
-import { Component, input, output, signal, computed, effect } from '@angular/core';
+import { Component, input, output, signal, computed, effect, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-number-with-unit-input',
   imports: [FormsModule],
   templateUrl: './number-with-unit-input.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './number-with-unit-input.scss',
 })
 export class NumberWithUnitInput {

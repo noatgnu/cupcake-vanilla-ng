@@ -1,4 +1,4 @@
-import { Component, inject, signal, output, OnInit } from '@angular/core';
+import { Component, inject, signal, output, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { switchMap } from 'rxjs';
 import { AuthService } from '@noatgnu/cupcake-core';
@@ -14,6 +14,7 @@ type LoginMode = 'credentials' | 'launchCode';
   selector: 'app-compact-login',
   imports: [FormsModule],
   templateUrl: './compact-login.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './compact-login.scss',
 })
 export class CompactLogin implements OnInit {

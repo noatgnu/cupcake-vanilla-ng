@@ -1,7 +1,7 @@
 import { NgModule, ModuleWithProviders, InjectionToken } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule } from '@angular/forms';
-import { HttpClientModule, provideHttpClient, withInterceptors } from '@angular/common/http';
+import { HttpClientModule, provideHttpClient, withInterceptors, withXhr } from '@angular/common/http';
 import { RouterModule } from '@angular/router';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 
@@ -39,7 +39,7 @@ export class CupcakeCoreModule {
       ngModule: CupcakeCoreModule,
       providers: [
         { provide: CUPCAKE_CORE_CONFIG, useValue: config },
-        provideHttpClient(
+        provideHttpClient(withXhr(), 
           withInterceptors([authInterceptor])
         )
       ]

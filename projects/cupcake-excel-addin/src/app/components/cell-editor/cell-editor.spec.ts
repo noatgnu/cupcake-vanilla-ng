@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideZonelessChangeDetection } from '@angular/core';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withXhr } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { CellEditor } from './cell-editor';
 import { ExcelService } from '../../core/services/excel.service';
@@ -79,7 +79,7 @@ describe('CellEditor', () => {
       imports: [CellEditor],
       providers: [
         provideZonelessChangeDetection(),
-        provideHttpClient(),
+        provideHttpClient(withXhr()),
         provideHttpClientTesting(),
         SdrfSyntaxService,
         OntologySearchService,

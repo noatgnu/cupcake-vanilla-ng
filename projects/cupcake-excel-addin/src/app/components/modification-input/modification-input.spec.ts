@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideZonelessChangeDetection } from '@angular/core';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withXhr } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { ModificationInput } from './modification-input';
 import { SdrfSyntaxService, OntologySearchService, OntologySuggestion, OntologyType, UnimodFullData } from '@noatgnu/cupcake-vanilla';
@@ -16,7 +16,7 @@ describe('ModificationInput', () => {
       imports: [ModificationInput],
       providers: [
         provideZonelessChangeDetection(),
-        provideHttpClient(),
+        provideHttpClient(withXhr()),
         provideHttpClientTesting(),
         SdrfSyntaxService,
         OntologySearchService,

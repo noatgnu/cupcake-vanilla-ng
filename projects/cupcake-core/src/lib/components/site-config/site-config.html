@@ -436,7 +436,7 @@
             <div class="preview-nav">
               <span class="preview-brand">
                 @if (configForm.get('logoUrl')?.value) {
-                  <img [src]="configForm.get('logoUrl')?.value" alt="Logo" style="height: 20px; width: auto;" class="me-2">
+                  <img [src]="$safeNavigationMigration(configForm.get('logoUrl')?.value)" alt="Logo" style="height: 20px; width: auto;" class="me-2">
                 } @else {
                   <i class="bi bi-flask me-2"></i>
                 }
@@ -448,7 +448,7 @@
           <div class="preview-login-card">
             <h6 class="text-center mb-3">
               @if (configForm.get('logoUrl')?.value) {
-                <img [src]="configForm.get('logoUrl')?.value" alt="Logo" style="height: 24px; width: auto;" class="me-2">
+                <img [src]="$safeNavigationMigration(configForm.get('logoUrl')?.value)" alt="Logo" style="height: 24px; width: auto;" class="me-2">
               } @else {
                 <i class="bi bi-flask me-2"></i>
               }

@@ -1,7 +1,7 @@
-import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
-import { provideHttpClient } from '@angular/common/http';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideHttpClient, withXhr } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { of, throwError } from 'rxjs';
+import { of, throwError, Subject } from 'rxjs';
 import { OpenInExcel } from './open-in-excel';
 import { ExcelLaunchService } from '../../services/excel-launch';
 import { ExcelLaunchCode } from '../../models';
@@ -24,7 +24,7 @@ describe('OpenInExcel', () => {
     await TestBed.configureTestingModule({
       imports: [OpenInExcel],
       providers: [
-        provideHttpClient(),
+        provideHttpClient(withXhr()),
         provideHttpClientTesting(),
         { provide: ExcelLaunchService, useValue: launchServiceSpy }
       ]
@@ -42,11 +42,10 @@ describe('OpenInExcel', () => {
   });
 
   describe('createLaunchCode', () => {
-    it('should create launch code and show modal', fakeAsync(() => {
+    it('should create launch code and show modal', () => {
       launchService.createLaunchCode.and.returnValue(of(mockLaunchCode));
 
       component.createLaunchCode();
-      tick();
 
       expect(launchService.createLaunchCode).toHaveBeenCalledWith({
         tableId: 123,
@@ -55,49 +54,50 @@ describe('OpenInExcel', () => {
       expect(component.launchCode()).toEqual(mockLaunchCode);
       expect(component.showModal()).toBeTrue();
       expect(component.isLoading()).toBeFalse();
-    }));
+    });
 
-    it('should emit launched event on success', fakeAsync(() => {
+    it('should emit launched event on success', () => {
       launchService.createLaunchCode.and.returnValue(of(mockLaunchCode));
       const launchedSpy = jasmine.createSpy('launched');
       component.launched.subscribe(launchedSpy);
 
       component.createLaunchCode();
-      tick();
 
       expect(launchedSpy).toHaveBeenCalledWith(mockLaunchCode);
-    }));
+    });
 
     it('should set loading state while creating', () => {
-      launchService.createLaunchCode.and.returnValue(of(mockLaunchCode));
+      const pending = new Subject<ExcelLaunchCode>();
+      launchService.createLaunchCode.and.returnValue(pending);
 
       component.createLaunchCode();
       expect(component.isLoading()).toBeTrue();
+
+      pending.next(mockLaunchCode);
+      pending.complete();
     });
 
-    it('should emit error on failure', fakeAsync(() => {
+    it('should emit error on failure', () => {
       const errorResponse = { error: { detail: 'Table not found' } };
       launchService.createLaunchCode.and.returnValue(throwError(() => errorResponse));
       const errorSpy = jasmine.createSpy('error');
       component.error.subscribe(errorSpy);
 
       component.createLaunchCode();
-      tick();
 
       expect(errorSpy).toHaveBeenCalledWith('Table not found');
       expect(component.isLoading()).toBeFalse();
-    }));
+    });
 
-    it('should use default error message when detail not provided', fakeAsync(() => {
+    it('should use default error message when detail not provided', () => {
       launchService.createLaunchCode.and.returnValue(throwError(() => ({ error: {} })));
       const errorSpy = jasmine.createSpy('error');
       component.error.subscribe(errorSpy);
 
       component.createLaunchCode();
-      tick();
 
       expect(errorSpy).toHaveBeenCalledWith('Failed to create launch code');
-    }));
+    });
   });
 
   describe('copyCode', () => {
@@ -105,21 +105,26 @@ describe('OpenInExcel', () => {
       component.launchCode.set(mockLaunchCode);
     });
 
-    it('should copy code to clipboard', fakeAsync(() => {
+    it('should copy code to clipboard', async () => {
       const mockClipboard = {
         writeText: jasmine.createSpy('writeText').and.returnValue(Promise.resolve())
       };
       Object.defineProperty(navigator, 'clipboard', { value: mockClipboard, configurable: true });
 
-      component.copyCode();
-      tick();
+      jasmine.clock().install();
+      try {
+        component.copyCode();
+        await Promise.resolve();
 
-      expect(mockClipboard.writeText).toHaveBeenCalledWith('ABC123XYZ');
-      expect(component.copySuccess()).toBeTrue();
+        expect(mockClipboard.writeText).toHaveBeenCalledWith('ABC123XYZ');
+        expect(component.copySuccess()).toBeTrue();
 
-      tick(2000);
-      expect(component.copySuccess()).toBeFalse();
-    }));
+        jasmine.clock().tick(2000);
+        expect(component.copySuccess()).toBeFalse();
+      } finally {
+        jasmine.clock().uninstall();
+      }
+    });
 
     it('should not copy if no launch code', () => {
       component.launchCode.set(null);
@@ -186,17 +191,16 @@ describe('OpenInExcel', () => {
       expect(component.buttonText()).toBe('Export to Excel');
     });
 
-    it('should pass table name to service', fakeAsync(() => {
+    it('should pass table name to service', () => {
       fixture.componentRef.setInput('tableName', 'My Table');
       launchService.createLaunchCode.and.returnValue(of(mockLaunchCode));
 
       component.createLaunchCode();
-      tick();
 
       expect(launchService.createLaunchCode).toHaveBeenCalledWith({
         tableId: 123,
         tableName: 'My Table'
       });
-    }));
+    });
   });
 });

@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withXhr } from '@angular/common/http';
+import { CUPCAKE_CORE_CONFIG } from '@noatgnu/cupcake-core';
 import { ExcelLaunchService } from './excel-launch';
 import { ExcelLaunchCode, ExcelLaunchClaimResponse } from '../models';
 
@@ -11,8 +12,9 @@ describe('ExcelLaunchService', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [
-        provideHttpClient(),
+        provideHttpClient(withXhr()),
         provideHttpClientTesting(),
+        { provide: CUPCAKE_CORE_CONFIG, useValue: { apiUrl: 'http://localhost:8000/api' } },
         ExcelLaunchService
       ]
     });
@@ -41,7 +43,7 @@ describe('ExcelLaunchService', () => {
 
       const req = httpMock.expectOne(req => req.url.includes('/excel-launch/'));
       expect(req.request.method).toBe('POST');
-      expect(req.request.body).toEqual({ tableId: 123, tableName: 'Test Table' });
+      expect(req.request.body).toEqual({ table_id: 123, table_name: 'Test Table' });
       req.flush(mockResponse);
     });
 

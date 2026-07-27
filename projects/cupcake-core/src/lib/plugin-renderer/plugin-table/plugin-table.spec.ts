@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withXhr } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { PluginTable } from './plugin-table';
@@ -17,7 +17,7 @@ describe('PluginTable', () => {
     await TestBed.configureTestingModule({
       imports: [PluginTable],
       providers: [
-        provideHttpClient(),
+        provideHttpClient(withXhr()),
         provideHttpClientTesting(),
         { provide: CUPCAKE_CORE_CONFIG, useValue: { apiUrl: 'http://api.test', siteName: 'Test' } },
       ],
@@ -28,6 +28,7 @@ describe('PluginTable', () => {
     fixture.componentRef.setInput('definition', definition);
     fixture.componentRef.setInput('baseUrl', 'http://plugin.local');
     httpMock = TestBed.inject(HttpTestingController);
+    fixture.detectChanges();
   });
 
   afterEach(() => httpMock.verify());

@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withXhr } from '@angular/common/http';
 import jsSHA from 'jssha';
 import { CUPCAKE_CORE_CONFIG, SiteConfigService } from '@noatgnu/cupcake-core';
 import { firstValueFrom } from 'rxjs';
@@ -42,7 +42,7 @@ describe('AnnotationChunkedUploadService', () => {
     TestBed.configureTestingModule({
       providers: [
         AnnotationChunkedUploadService,
-        provideHttpClient(),
+        provideHttpClient(withXhr()),
         provideHttpClientTesting(),
         { provide: CUPCAKE_CORE_CONFIG, useValue: { apiUrl: '/api' } },
         { provide: SiteConfigService, useValue: mockSiteConfigService }

@@ -1,4 +1,4 @@
-import { Component, inject, signal, input, output, OnDestroy } from '@angular/core';
+import { Component, inject, signal, input, output, OnDestroy, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
   MetadataTable,
@@ -10,6 +10,7 @@ import { ToastService } from '../../core/services/toast.service';
   selector: 'app-import-panel',
   imports: [FormsModule],
   templateUrl: './import-panel.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './import-panel.scss',
 })
 export class ImportPanel implements OnDestroy {

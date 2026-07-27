@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withXhr } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { PluginCard } from './plugin-card';
@@ -17,7 +17,7 @@ describe('PluginCard', () => {
     await TestBed.configureTestingModule({
       imports: [PluginCard],
       providers: [
-        provideHttpClient(),
+        provideHttpClient(withXhr()),
         provideHttpClientTesting(),
         { provide: CUPCAKE_CORE_CONFIG, useValue: { apiUrl: 'http://api.test', siteName: 'Test' } },
       ],
@@ -33,16 +33,19 @@ describe('PluginCard', () => {
   afterEach(() => httpMock.verify());
 
   it('should create', () => {
+    fixture.detectChanges();
     httpMock.expectOne('http://plugin.local/api/status').flush({});
     expect(component).toBeTruthy();
   });
 
   it('should start in loading state', () => {
+    fixture.detectChanges();
     expect(component.loading()).toBeTrue();
     httpMock.expectOne('http://plugin.local/api/status').flush({});
   });
 
   it('should fetch endpoint on init and populate data', async () => {
+    fixture.detectChanges();
     const mockData = { health: 'ok', count: 5 };
     httpMock.expectOne('http://plugin.local/api/status').flush(mockData);
     await fixture.whenStable();
@@ -51,6 +54,7 @@ describe('PluginCard', () => {
   });
 
   it('should set error on HTTP failure', async () => {
+    fixture.detectChanges();
     httpMock.expectOne('http://plugin.local/api/status').flush({}, { status: 500, statusText: 'Error' });
     await fixture.whenStable();
     expect(component.error()).toBeTruthy();

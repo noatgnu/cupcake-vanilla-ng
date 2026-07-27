@@ -2,7 +2,7 @@ export * from './models';
 export * from './services';
 export * from './components';
 
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 
 @Component({
   selector: 'ccv-cupcake-vanilla',
@@ -12,6 +12,7 @@ import { Component } from '@angular/core';
       cupcake-vanilla works!
     </p>
   `,
+  changeDetection: ChangeDetectionStrategy.Eager,
   styles: ``
 })
 export class CupcakeVanilla {

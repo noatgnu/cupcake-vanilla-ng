@@ -188,7 +188,7 @@
             </h6>
             <small class="mb-0">
               The following custom filters will be automatically applied for this ontology type:
-              <code class="ms-1">{{ editForm.get('customOntologyFilters')?.value | json }}</code>
+              <code class="ms-1">{{ $safeNavigationMigration(editForm.get('customOntologyFilters')?.value) | json }}</code>
             </small>
           </div>
         </div>

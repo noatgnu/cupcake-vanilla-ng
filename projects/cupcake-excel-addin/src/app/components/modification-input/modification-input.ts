@@ -1,4 +1,4 @@
-import { Component, signal, input, output, OnInit, inject } from '@angular/core';
+import { Component, signal, input, output, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
   SdrfSyntaxService,
@@ -17,6 +17,7 @@ import { Subject, debounceTime, distinctUntilChanged, switchMap, of } from 'rxjs
   selector: 'app-modification-input',
   imports: [FormsModule],
   templateUrl: './modification-input.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './modification-input.scss',
 })
 export class ModificationInput implements OnInit {

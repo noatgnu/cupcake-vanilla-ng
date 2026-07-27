@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideZonelessChangeDetection } from '@angular/core';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withXhr } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { AgeInput } from './age-input';
 import { SdrfSyntaxService } from '@noatgnu/cupcake-vanilla';
@@ -14,7 +14,7 @@ describe('AgeInput', () => {
       imports: [AgeInput],
       providers: [
         provideZonelessChangeDetection(),
-        provideHttpClient(),
+        provideHttpClient(withXhr()),
         provideHttpClientTesting(),
         SdrfSyntaxService
       ]

@@ -170,7 +170,7 @@
                   </span>
                 }
 
-                @if ($any(notification.data?.['progress_percentage']) > 0 && notification.type === NotificationType.ASYNC_TASK) {
+                @if ($any($safeNavigationMigration(notification.data?.['progress_percentage'])) > 0 && notification.type === NotificationType.ASYNC_TASK) {
                   <span class="badge bg-primary me-1">
                     <i class="bi bi-bar-chart me-1"></i>{{ notification.data?.['progress_percentage'] }}%
                   </span>

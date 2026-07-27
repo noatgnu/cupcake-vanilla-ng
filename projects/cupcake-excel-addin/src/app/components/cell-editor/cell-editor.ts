@@ -1,4 +1,4 @@
-import { Component, signal, input, output, OnInit, inject, computed } from '@angular/core';
+import { Component, signal, input, output, OnInit, inject, computed, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
   MetadataColumn,
@@ -24,6 +24,7 @@ import { Subject, debounceTime, distinctUntilChanged, switchMap, of, catchError 
   selector: 'app-cell-editor',
   imports: [FormsModule, AgeInput, ModificationInput, CleavageInput, SdrfNumberWithUnitInput],
   templateUrl: './cell-editor.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './cell-editor.scss',
 })
 export class CellEditor implements OnInit {

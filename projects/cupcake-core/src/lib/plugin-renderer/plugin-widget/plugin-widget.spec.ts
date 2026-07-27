@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withXhr } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 
 import { PluginWidget } from './plugin-widget';
@@ -22,7 +22,7 @@ describe('PluginWidget', () => {
     await TestBed.configureTestingModule({
       imports: [PluginWidget],
       providers: [
-        provideHttpClient(),
+        provideHttpClient(withXhr()),
         provideHttpClientTesting(),
         { provide: CUPCAKE_CORE_CONFIG, useValue: { apiUrl: 'http://api.test', siteName: 'Test' } },
       ],
@@ -41,12 +41,14 @@ describe('PluginWidget', () => {
 
   it('should create', () => {
     fixture.componentRef.setInput('definition', makeDefinition('card'));
+    fixture.detectChanges();
     httpMock.expectOne('http://plugin.local/api/data').flush({});
     expect(component).toBeTruthy();
   });
 
   it('should render ccc-plugin-card for type card', () => {
     fixture.componentRef.setInput('definition', makeDefinition('card'));
+    fixture.detectChanges();
     httpMock.expectOne('http://plugin.local/api/data').flush({});
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('ccc-plugin-card')).toBeTruthy();
@@ -54,6 +56,7 @@ describe('PluginWidget', () => {
 
   it('should render ccc-plugin-list for type list', () => {
     fixture.componentRef.setInput('definition', makeDefinition('list'));
+    fixture.detectChanges();
     httpMock.expectOne('http://plugin.local/api/data').flush([]);
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('ccc-plugin-list')).toBeTruthy();
@@ -61,6 +64,7 @@ describe('PluginWidget', () => {
 
   it('should render ccc-plugin-table for type table', () => {
     fixture.componentRef.setInput('definition', makeDefinition('table'));
+    fixture.detectChanges();
     httpMock.expectOne('http://plugin.local/api/data').flush([]);
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('ccc-plugin-table')).toBeTruthy();
@@ -80,6 +84,7 @@ describe('PluginWidget', () => {
 
   it('should render ccc-plugin-chart for type chart', () => {
     fixture.componentRef.setInput('definition', makeDefinition('chart'));
+    fixture.detectChanges();
     httpMock.expectOne('http://plugin.local/api/data').flush({});
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('ccc-plugin-chart')).toBeTruthy();

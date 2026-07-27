@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit, OnDestroy, computed, effect, untracked } from '@angular/core';
+import { Component, inject, signal, OnInit, OnDestroy, computed, effect, untracked, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AsyncValidationService } from '@noatgnu/cupcake-vanilla';
 import { TaskStatus, AsyncTaskMonitorService, SdrfValidationSchemaResult } from '@noatgnu/cupcake-core';
@@ -20,6 +20,7 @@ interface ValidationError {
   selector: 'app-validation-panel',
   imports: [FormsModule],
   templateUrl: './validation-panel.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './validation-panel.scss',
 })
 export class ValidationPanel implements OnInit, OnDestroy {

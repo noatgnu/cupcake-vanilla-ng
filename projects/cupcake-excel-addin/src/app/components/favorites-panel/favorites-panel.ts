@@ -1,4 +1,4 @@
-import { Component, inject, signal, input, effect, OnInit } from '@angular/core';
+import { Component, inject, signal, input, effect, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { AuthService, LabGroupService } from '@noatgnu/cupcake-core';
 import {
   FavouriteMetadataOption,
@@ -14,6 +14,7 @@ type FavoriteTab = 'user' | 'labGroup' | 'global';
   selector: 'app-favorites-panel',
   imports: [],
   templateUrl: './favorites-panel.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './favorites-panel.scss',
 })
 export class FavoritesPanel implements OnInit {

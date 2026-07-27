@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideZonelessChangeDetection } from '@angular/core';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withXhr } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { of, throwError } from 'rxjs';
 import { CompactLogin } from './compact-login';
@@ -54,7 +54,7 @@ describe('CompactLogin', () => {
       imports: [CompactLogin],
       providers: [
         provideZonelessChangeDetection(),
-        provideHttpClient(),
+        provideHttpClient(withXhr()),
         provideHttpClientTesting(),
         { provide: AuthService, useValue: authServiceSpy },
         { provide: ExcelLaunchService, useValue: launchServiceSpy },

@@ -1,4 +1,4 @@
-import { Component, inject, signal, input, output, OnInit } from '@angular/core';
+import { Component, inject, signal, input, output, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
   MetadataTable,
@@ -26,6 +26,7 @@ interface VariationConfig {
   selector: 'app-autofill-panel',
   imports: [FormsModule],
   templateUrl: './autofill-panel.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './autofill-panel.scss',
 })
 export class AutofillPanel implements OnInit {

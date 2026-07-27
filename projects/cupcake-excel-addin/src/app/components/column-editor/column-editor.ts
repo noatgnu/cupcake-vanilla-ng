@@ -1,4 +1,4 @@
-import { Component, inject, signal, input, output, OnInit } from '@angular/core';
+import { Component, inject, signal, input, output, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
   MetadataTable,
@@ -26,6 +26,7 @@ interface ColumnForm {
   selector: 'app-column-editor',
   imports: [FormsModule],
   templateUrl: './column-editor.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './column-editor.scss',
 })
 export class ColumnEditor implements OnInit {

@@ -1,4 +1,4 @@
-import { Component, inject, effect, untracked } from '@angular/core';
+import { Component, inject, effect, untracked, ChangeDetectionStrategy } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { AuthService, AsyncTaskMonitorService } from '@noatgnu/cupcake-core';
 import { ToastContainer } from './components/toast/toast';
@@ -9,6 +9,7 @@ import { SchemaContext } from './core/services/schema-context';
   selector: 'app-root',
   imports: [RouterOutlet, ToastContainer],
   template: `<app-toast /><router-outlet />`,
+  changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
     :host {
       display: flex;

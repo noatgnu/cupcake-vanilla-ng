@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideZonelessChangeDetection } from '@angular/core';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withXhr } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { ConnectionPanel } from './connection-panel';
 import { ConnectionService, OFFICIAL_CLOUD_URL } from '../../core/services/connection.service';
@@ -22,7 +22,7 @@ describe('ConnectionPanel', () => {
       imports: [ConnectionPanel],
       providers: [
         provideZonelessChangeDetection(),
-        provideHttpClient(),
+        provideHttpClient(withXhr()),
         provideHttpClientTesting(),
         ConnectionService,
         { provide: ToastService, useValue: toastServiceSpy }

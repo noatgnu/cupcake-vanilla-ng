@@ -1,4 +1,4 @@
-import { Component, inject, signal, input, output, OnInit, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, inject, signal, input, output, OnInit, OnChanges, SimpleChanges, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MetadataTable, MetadataColumn, MetadataTableService, MetadataColumnService, SdrfSyntaxService } from '@noatgnu/cupcake-vanilla';
 import { ToastService } from '../../core/services/toast.service';
@@ -12,6 +12,7 @@ type ViewMode = 'list' | 'column-editor' | 'cell-editor';
   selector: 'app-column-list',
   imports: [FormsModule, ColumnEditor, CellEditor],
   templateUrl: './column-list.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './column-list.scss',
 })
 export class ColumnList implements OnInit, OnChanges {

@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withXhr } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { WifiManagement } from './wifi-management';
 import { CUPCAKE_CORE_CONFIG } from '../services/auth';
@@ -12,7 +12,7 @@ describe('WifiManagement', () => {
     await TestBed.configureTestingModule({
       imports: [WifiManagement],
       providers: [
-        provideHttpClient(),
+        provideHttpClient(withXhr()),
         provideHttpClientTesting(),
         { provide: CUPCAKE_CORE_CONFIG, useValue: { apiUrl: 'http://localhost' } }
       ]

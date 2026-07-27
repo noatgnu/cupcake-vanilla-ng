@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withXhr } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { PluginService } from './plugin';
@@ -26,6 +26,9 @@ const mockPlugin: Plugin = {
   manifestCache: mockManifest,
   baseUrl: 'http://plugin.local',
   isActive: true,
+  lifecycleStatus: 'running',
+  progressMessage: '',
+  progressData: {},
   registeredAt: '2026-01-01T00:00:00Z',
   updatedAt: '2026-01-01T00:00:00Z',
 };
@@ -37,7 +40,7 @@ describe('PluginService', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [
-        provideHttpClient(),
+        provideHttpClient(withXhr()),
         provideHttpClientTesting(),
         PluginService,
         { provide: CUPCAKE_CORE_CONFIG, useValue: mockConfig },
@@ -95,7 +98,7 @@ describe('PluginService', () => {
   describe('register', () => {
     it('should POST /plugins/register/ with snake_case body', (done) => {
       const snake = { id: 2, name: 'new-plugin', display_name: 'New Plugin', version: '1.0.0', description: '', manifest_cache: {}, base_url: '', is_active: true, registered_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' };
-      service.register({ name: 'new-plugin', version: '1.0.0' }).subscribe(plugin => {
+      service.register({ name: 'new-plugin', version: '1.0.0', manifest: mockManifest }).subscribe(plugin => {
         expect(plugin.id).toBe(2);
         done();
       });

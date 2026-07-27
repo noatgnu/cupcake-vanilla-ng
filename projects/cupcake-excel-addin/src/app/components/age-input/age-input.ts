@@ -1,4 +1,4 @@
-import { Component, signal, input, output, OnInit, inject, effect } from '@angular/core';
+import { Component, signal, input, output, OnInit, inject, effect, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { SdrfSyntaxService, AgeFormat } from '@noatgnu/cupcake-vanilla';
 
@@ -6,6 +6,7 @@ import { SdrfSyntaxService, AgeFormat } from '@noatgnu/cupcake-vanilla';
   selector: 'app-age-input',
   imports: [FormsModule],
   templateUrl: './age-input.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './age-input.scss',
 })
 export class AgeInput implements OnInit {

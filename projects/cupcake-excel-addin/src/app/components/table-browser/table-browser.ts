@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MetadataTableService, MetadataTable, MetadataTableQueryParams } from '@noatgnu/cupcake-vanilla';
 import { LabGroupService, LabGroup } from '@noatgnu/cupcake-core';
@@ -12,6 +12,7 @@ const STORAGE_KEY_TABLE = 'cupcake-excel-selected-table';
   selector: 'app-table-browser',
   imports: [FormsModule, SyncPanel],
   templateUrl: './table-browser.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './table-browser.scss',
 })
 export class TableBrowser implements OnInit {

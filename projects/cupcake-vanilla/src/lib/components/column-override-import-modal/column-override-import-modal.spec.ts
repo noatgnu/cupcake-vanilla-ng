@@ -2,8 +2,6 @@ import { ColumnOverrideImportOptions, ColumnOverridePreviewResult, ColumnOverrid
 
 describe('ColumnOverrideImportModal logic', () => {
   const defaultOptions: ColumnOverrideImportOptions = {
-    matchBy: 'name',
-    addUnmatched: false,
     updateValue: true,
     updateModifiers: true,
     normalizeOntology: true,
@@ -24,7 +22,6 @@ describe('ColumnOverrideImportModal logic', () => {
       },
     ],
     columnsToAdd: [],
-    columnsUnmatched: [{ fileHeader: 'comment[data file]', fileColIndex: 3 }],
     warnings: [],
     sampleCountMismatch: false,
     fileRowCount: 5,
@@ -34,22 +31,17 @@ describe('ColumnOverrideImportModal logic', () => {
     message: 'Column override applied',
     columnsUpdated: 1,
     columnsAdded: 0,
-    columnsSkipped: 1,
     warnings: [],
     updatedColumns: [{ id: 1, name: 'characteristics[organism]' }],
   };
 
-  it('should have default options with matchBy name', () => {
-    expect(defaultOptions.matchBy).toBe('name');
+  it('should default updateValue and updateModifiers to true', () => {
+    expect(defaultOptions.updateValue).toBe(true);
+    expect(defaultOptions.updateModifiers).toBe(true);
   });
 
-  it('should default addUnmatched to false', () => {
-    expect(defaultOptions.addUnmatched).toBe(false);
-  });
-
-  it('preview result should list matched and unmatched columns', () => {
+  it('preview result should list matched columns', () => {
     expect(mockPreview.columnsMatched.length).toBe(1);
-    expect(mockPreview.columnsUnmatched.length).toBe(1);
   });
 
   it('preview should detect value change', () => {
@@ -59,7 +51,6 @@ describe('ColumnOverrideImportModal logic', () => {
 
   it('commit result should report updated count', () => {
     expect(mockCommit.columnsUpdated).toBe(1);
-    expect(mockCommit.columnsSkipped).toBe(1);
   });
 
   it('sampleCountMismatch should be false when rows match sample count', () => {

@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { Router } from '@angular/router';
 import { CompactLogin } from '../compact-login/compact-login';
 import { ConnectionPanel } from '../connection-panel/connection-panel';
@@ -9,6 +9,7 @@ const PENDING_TABLE_KEY = 'cupcake-excel-pending-table-nav';
   selector: 'app-login-panel',
   imports: [CompactLogin, ConnectionPanel],
   templateUrl: './login-panel.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './login-panel.scss',
 })
 export class LoginPanel {

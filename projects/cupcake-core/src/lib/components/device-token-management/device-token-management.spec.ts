@@ -1,6 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideHttpClient, withXhr } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { DeviceTokenManagement } from './device-token-management';
+import { CUPCAKE_CORE_CONFIG } from '../../services/auth';
 
 describe('DeviceTokenManagement', () => {
   let component: DeviceTokenManagement;
@@ -8,7 +11,12 @@ describe('DeviceTokenManagement', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [DeviceTokenManagement]
+      imports: [DeviceTokenManagement],
+      providers: [
+        provideHttpClient(withXhr()),
+        provideHttpClientTesting(),
+        { provide: CUPCAKE_CORE_CONFIG, useValue: { apiUrl: 'http://api.test', siteName: 'Test' } },
+      ],
     })
     .compileComponents();
 

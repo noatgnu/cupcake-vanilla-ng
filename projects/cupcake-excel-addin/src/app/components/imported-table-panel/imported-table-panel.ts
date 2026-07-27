@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '@noatgnu/cupcake-core';
 import { ExcelService } from '../../core/services/excel.service';
@@ -11,6 +11,7 @@ const TABLE_BROWSER_KEY = 'cupcake-excel-selected-table';
   selector: 'app-imported-table-panel',
   imports: [TableBrowser],
   templateUrl: './imported-table-panel.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './imported-table-panel.scss',
 })
 export class ImportedTablePanel implements OnInit {

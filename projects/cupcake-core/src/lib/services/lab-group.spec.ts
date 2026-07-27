@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withXhr } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { LabGroupService } from './lab-group';
 import { CUPCAKE_CORE_CONFIG } from './auth';
@@ -15,7 +15,7 @@ describe('LabGroupService', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [
-        provideHttpClient(),
+        provideHttpClient(withXhr()),
         provideHttpClientTesting(),
         LabGroupService,
         { provide: CUPCAKE_CORE_CONFIG, useValue: mockConfig }

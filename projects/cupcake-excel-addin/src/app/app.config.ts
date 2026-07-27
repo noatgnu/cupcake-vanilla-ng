@@ -1,6 +1,6 @@
 import { ApplicationConfig, provideZonelessChangeDetection, Injectable, APP_INITIALIZER } from '@angular/core';
 import { provideRouter } from '@angular/router';
-import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { provideHttpClient, withInterceptors, withXhr } from '@angular/common/http';
 import { LocationStrategy, HashLocationStrategy } from '@angular/common';
 import { routes } from './app.routes';
 import { CUPCAKE_CORE_CONFIG, CupcakeCoreConfig, authInterceptor } from '@noatgnu/cupcake-core';
@@ -45,7 +45,7 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideZonelessChangeDetection(),
     provideRouter(routes),
-    provideHttpClient(withInterceptors([authInterceptor])),
+    provideHttpClient(withXhr(), withInterceptors([authInterceptor])),
     { provide: LocationStrategy, useClass: SafeHashLocationStrategy },
     {
       provide: CUPCAKE_CORE_CONFIG,

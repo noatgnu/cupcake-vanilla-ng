@@ -1,10 +1,11 @@
-import { Component, input, computed, inject } from '@angular/core';
+import { Component, input, computed, inject, ChangeDetectionStrategy } from '@angular/core';
 import { MetadataColumn, SdrfSyntaxService, SyntaxType, OntologyTypeLabels, OntologyType } from '@noatgnu/cupcake-vanilla';
 
 @Component({
   selector: 'app-column-info',
   imports: [],
   templateUrl: './column-info.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './column-info.scss',
 })
 export class ColumnInfo {

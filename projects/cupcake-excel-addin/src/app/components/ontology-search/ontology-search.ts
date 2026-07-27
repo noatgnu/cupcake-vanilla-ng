@@ -1,4 +1,4 @@
-import { Component, inject, signal, output, input, effect, DestroyRef } from '@angular/core';
+import { Component, inject, signal, output, input, effect, DestroyRef, ChangeDetectionStrategy } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import {
@@ -20,6 +20,7 @@ type SearchMatchType = 'contains' | 'startswith';
   selector: 'app-ontology-search',
   imports: [FormsModule],
   templateUrl: './ontology-search.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './ontology-search.scss',
 })
 export class OntologySearch {

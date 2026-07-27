@@ -1,4 +1,4 @@
-import { Component, signal, input, output, OnInit, inject } from '@angular/core';
+import { Component, signal, input, output, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
   SdrfSyntaxService,
@@ -13,6 +13,7 @@ import { Subject, debounceTime, distinctUntilChanged, switchMap, of, catchError 
   selector: 'app-cleavage-input',
   imports: [FormsModule],
   templateUrl: './cleavage-input.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './cleavage-input.scss',
 })
 export class CleavageInput implements OnInit {

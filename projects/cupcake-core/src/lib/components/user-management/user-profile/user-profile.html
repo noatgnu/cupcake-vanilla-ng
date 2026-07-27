@@ -269,7 +269,7 @@
                         type="email"
                         class="form-control"
                         id="currentEmail"
-                        [value]="currentUser()?.email"
+                        [value]="$safeNavigationMigration(currentUser()?.email)"
                         readonly>
                     </div>
                     <div class="mb-3">

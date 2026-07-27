@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 
 @Component({
   selector: 'ccm-cupcake-macaron',
@@ -8,6 +8,7 @@ import { Component } from '@angular/core';
       cupcake-macaron works!
     </p>
   `,
+  changeDetection: ChangeDetectionStrategy.Eager,
   styles: ``
 })
 export class CupcakeMacaron {

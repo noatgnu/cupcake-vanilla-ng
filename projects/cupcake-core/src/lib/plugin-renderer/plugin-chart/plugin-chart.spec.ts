@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withXhr } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { PluginChart } from './plugin-chart';
@@ -17,7 +17,7 @@ describe('PluginChart', () => {
     await TestBed.configureTestingModule({
       imports: [PluginChart],
       providers: [
-        provideHttpClient(),
+        provideHttpClient(withXhr()),
         provideHttpClientTesting(),
         { provide: CUPCAKE_CORE_CONFIG, useValue: { apiUrl: 'http://api.test', siteName: 'Test' } },
       ],
@@ -33,11 +33,13 @@ describe('PluginChart', () => {
   afterEach(() => httpMock.verify());
 
   it('should create', () => {
+    fixture.detectChanges();
     httpMock.expectOne('http://plugin.local/api/chart-data').flush({});
     expect(component).toBeTruthy();
   });
 
   it('should fetch data on init', async () => {
+    fixture.detectChanges();
     const chartData = { labels: ['A', 'B'], values: [1, 2] };
     httpMock.expectOne('http://plugin.local/api/chart-data').flush(chartData);
     await fixture.whenStable();
@@ -46,6 +48,7 @@ describe('PluginChart', () => {
   });
 
   it('should set error on failure', async () => {
+    fixture.detectChanges();
     httpMock.expectOne('http://plugin.local/api/chart-data').flush({}, { status: 500, statusText: 'Error' });
     await fixture.whenStable();
     expect(component.error()).toBeTruthy();

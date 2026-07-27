@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withXhr } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { AuthService, CUPCAKE_CORE_CONFIG } from './auth';
 import { Router } from '@angular/router';
@@ -21,7 +21,7 @@ function makeValidJwt(): string {
 function createService(): { service: AuthService; httpMock: HttpTestingController } {
   TestBed.configureTestingModule({
     providers: [
-      provideHttpClient(),
+      provideHttpClient(withXhr()),
       provideHttpClientTesting(),
       AuthService,
       { provide: CUPCAKE_CORE_CONFIG, useValue: MOCK_CONFIG },
@@ -44,7 +44,7 @@ describe('AuthService', () => {
     const spy = jasmine.createSpyObj('Router', ['navigate']);
     TestBed.configureTestingModule({
       providers: [
-        provideHttpClient(),
+        provideHttpClient(withXhr()),
         provideHttpClientTesting(),
         AuthService,
         { provide: CUPCAKE_CORE_CONFIG, useValue: MOCK_CONFIG },

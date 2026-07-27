@@ -1,4 +1,4 @@
-import { Component, inject, signal, input, output, OnDestroy } from '@angular/core';
+import { Component, inject, signal, input, output, OnDestroy, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
   MetadataTable,
@@ -14,6 +14,7 @@ type ExportFormat = 'sdrf' | 'excel';
   selector: 'app-export-panel',
   imports: [FormsModule],
   templateUrl: './export-panel.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './export-panel.scss',
 })
 export class ExportPanel implements OnDestroy {

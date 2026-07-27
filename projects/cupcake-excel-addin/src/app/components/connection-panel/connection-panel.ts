@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed } from '@angular/core';
+import { Component, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ConnectionService, ConnectionMode, OFFICIAL_CLOUD_URL } from '../../core/services/connection.service';
 import { ToastService } from '../../core/services/toast.service';
@@ -7,6 +7,7 @@ import { ToastService } from '../../core/services/toast.service';
   selector: 'app-connection-panel',
   imports: [FormsModule],
   templateUrl: './connection-panel.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './connection-panel.scss',
 })
 export class ConnectionPanel {

@@ -17,5 +17,13 @@
     "src/integration-tests/**/*",
     "**/*.integration.spec.ts",
     "test-service-coverage.ts"
-  ]
+  ],
+  "angularCompilerOptions": {
+    "extendedDiagnostics": {
+      "checks": {
+        "nullishCoalescingNotNullable": "suppress",
+        "optionalChainNotNullable": "suppress"
+      }
+    }
+  }
 }

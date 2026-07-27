@@ -1,4 +1,4 @@
-import { Component, inject, signal, input, output, computed, OnInit, OnDestroy } from '@angular/core';
+import { Component, inject, signal, input, output, computed, OnInit, OnDestroy, ChangeDetectionStrategy } from '@angular/core';
 import { MetadataTableService, MetadataTable } from '@noatgnu/cupcake-vanilla';
 import { ExcelService } from '../../core/services/excel.service';
 import { SyncService, CellChange } from '../../core/services/sync.service';
@@ -17,6 +17,7 @@ type PanelView = 'main' | 'columns' | 'export' | 'import' | 'pools' | 'autofill'
   selector: 'app-sync-panel',
   imports: [ColumnList, ExportPanel, ImportPanel, PoolManager, AutofillPanel],
   templateUrl: './sync-panel.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './sync-panel.scss',
 })
 export class SyncPanel implements OnInit, OnDestroy {

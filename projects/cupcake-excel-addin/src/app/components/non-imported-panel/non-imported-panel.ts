@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, OnInit, OnDestroy, effect, untracked } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, OnDestroy, effect, untracked, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { LowerCasePipe } from '@angular/common';
 import { Router } from '@angular/router';
@@ -38,6 +38,7 @@ type TabType = 'ontology' | 'validate' | 'info';
     NumberWithUnitInput
   ],
   templateUrl: './non-imported-panel.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './non-imported-panel.scss',
 })
 export class NonImportedPanel implements OnInit, OnDestroy {
