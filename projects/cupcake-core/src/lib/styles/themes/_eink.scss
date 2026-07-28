@@ -286,6 +286,10 @@ html.theme-eink {
     background-color: var(--cupcake-text);
     border-color: var(--cupcake-text);
     color: var(--cupcake-bg);
+
+    .text-muted {
+      color: var(--cupcake-bg) !important;
+    }
   }
 
   .page-item.active .page-link {
