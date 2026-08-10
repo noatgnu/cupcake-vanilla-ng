@@ -39,8 +39,13 @@ export interface SpikedCompound {
 }
 
 export interface PooledSample {
-  value: 'not pooled' | 'pooled' | string; // string for SN=sample1,sample2 format
-  sourceNames?: string[]; // parsed source names when SN= format is used
+  value: 'not pooled' | 'pooled' | string;
+  sourceNames?: string[];
+}
+
+export interface MzRange {
+  low: number;
+  high: number;
 }
 
 export interface SyntheticPeptide {
@@ -53,7 +58,7 @@ export interface ValidationResult {
   warnings?: string[];
 }
 
-export type SyntaxType = 'age' | 'modification' | 'cleavage' | 'spiked_compound' | 'pooled_sample' | 'synthetic_peptide';
+export type SyntaxType = 'age' | 'modification' | 'cleavage' | 'spiked_compound' | 'pooled_sample' | 'synthetic_peptide' | 'mz_range';
 
 @Injectable({
   providedIn: 'root'
@@ -66,7 +71,8 @@ export class SdrfSyntaxService {
     cleavage: /^comment\[cleavage agent details\]$/i,
     spiked_compound: /^characteristics\[spiked compound\]$/i,
     pooled_sample: /^characteristics\[pooled sample\]$/i,
-    synthetic_peptide: /^characteristics\[synthetic peptide\]$/i
+    synthetic_peptide: /^characteristics\[synthetic peptide\]$/i,
+    mz_range: /^comment\[ms\d?\s*scan\s*range\]$/i,
   };
 
   private readonly MODIFICATION_KEYS = ['NT', 'AC', 'CF', 'MT', 'PP', 'TA', 'MM', 'TS'];
@@ -98,6 +104,14 @@ export class SdrfSyntaxService {
       return 'spiked_compound';
     }
 
+    if (this.SPECIAL_COLUMN_PATTERNS.pooled_sample.test(name) || this.SPECIAL_COLUMN_PATTERNS.pooled_sample.test(type)) {
+      return 'pooled_sample';
+    }
+
+    if (this.SPECIAL_COLUMN_PATTERNS.mz_range.test(name) || this.SPECIAL_COLUMN_PATTERNS.mz_range.test(type)) {
+      return 'mz_range';
+    }
+
     return null;
   }
 
@@ -119,11 +133,16 @@ export class SdrfSyntaxService {
           return this.parseKeyValuePairs(value, this.CLEAVAGE_KEYS);
         case 'spiked_compound':
           return this.parseKeyValuePairs(value, this.SPIKED_COMPOUND_KEYS);
+        case 'pooled_sample':
+          return this.parsePooledSample(value);
+        case 'mz_range':
+          return this.parseMzRange(value);
+        case 'synthetic_peptide':
+          return { value } as SyntheticPeptide;
         default:
           throw new Error(`Unknown syntax type: ${syntaxType}`);
       }
     } catch (error) {
-      console.error(`Error parsing ${syntaxType} value:`, error);
       return null;
     }
   }
@@ -144,11 +163,16 @@ export class SdrfSyntaxService {
         case 'cleavage':
         case 'spiked_compound':
           return this.formatKeyValuePairs(data);
+        case 'pooled_sample':
+          return this.formatPooledSample(data as PooledSample);
+        case 'mz_range':
+          return this.formatMzRange(data as MzRange);
+        case 'synthetic_peptide':
+          return (data as SyntheticPeptide).value;
         default:
           throw new Error(`Unknown syntax type: ${syntaxType}`);
       }
     } catch (error) {
-      console.error(`Error formatting ${syntaxType} value:`, error);
       return '';
     }
   }
@@ -179,6 +203,12 @@ export class SdrfSyntaxService {
           return this.validateCleavageAgentDetails(data as CleavageAgentDetails);
         case 'spiked_compound':
           return this.validateSpikedCompound(data as SpikedCompound);
+        case 'pooled_sample':
+          return this.validatePooledSample(data as PooledSample);
+        case 'mz_range':
+          return this.validateMzRange(data as MzRange);
+        case 'synthetic_peptide':
+          return this.validateSyntheticPeptide(data as SyntheticPeptide);
         default:
           result.isValid = false;
           result.errors.push(`Unknown syntax type: ${syntaxType}`);
@@ -374,6 +404,84 @@ export class SdrfSyntaxService {
       result.warnings?.push('QY (quantity) format may not be standard - consider using standard units');
     }
 
+    return result;
+  }
+
+  private parsePooledSample(value: string): PooledSample {
+    const trimmed = value.trim();
+    if (trimmed === 'not pooled' || trimmed === 'pooled') {
+      return { value: trimmed };
+    }
+    if (trimmed.startsWith('SN=')) {
+      const rest = trimmed.slice(3);
+      const sourceNames = rest.includes(';SN=')
+        ? rest.split(';SN=').map(n => n.trim())
+        : rest.split(',').map(n => n.trim());
+      return { value: trimmed, sourceNames };
+    }
+    return { value: trimmed };
+  }
+
+  private formatPooledSample(data: PooledSample): string {
+    if (data.value === 'not pooled' || data.value === 'pooled') {
+      return data.value;
+    }
+    if (data.sourceNames && data.sourceNames.length > 0) {
+      return 'SN=' + data.sourceNames.join(';SN=');
+    }
+    return data.value;
+  }
+
+  private validatePooledSample(data: PooledSample): ValidationResult {
+    const result: ValidationResult = { isValid: true, errors: [] };
+    if (!data.value) {
+      result.isValid = false;
+      result.errors.push('Pooled sample value is required');
+      return result;
+    }
+    if (data.value !== 'not pooled' && data.value !== 'pooled' && !data.value.startsWith('SN=')) {
+      result.isValid = false;
+      result.errors.push('Value must be "not pooled", "pooled", or start with "SN="');
+    }
+    return result;
+  }
+
+  private parseMzRange(value: string): MzRange {
+    const match = value.match(/^(\d+(?:\.\d+)?)\s*m\/z\s*-\s*(\d+(?:\.\d+)?)\s*m\/z$/i);
+    if (!match) {
+      throw new Error(`Invalid m/z range format: ${value}`);
+    }
+    return { low: parseFloat(match[1]), high: parseFloat(match[2]) };
+  }
+
+  private formatMzRange(data: MzRange): string {
+    return `${data.low}m/z-${data.high}m/z`;
+  }
+
+  private validateMzRange(data: MzRange): ValidationResult {
+    const result: ValidationResult = { isValid: true, errors: [] };
+    if (data.low === undefined || data.high === undefined) {
+      result.isValid = false;
+      result.errors.push('Both low and high m/z values are required');
+      return result;
+    }
+    if (data.low < 0 || data.high < 0) {
+      result.isValid = false;
+      result.errors.push('m/z values must be non-negative');
+    }
+    if (data.low >= data.high) {
+      result.isValid = false;
+      result.errors.push('Low m/z must be less than high m/z');
+    }
+    return result;
+  }
+
+  private validateSyntheticPeptide(data: SyntheticPeptide): ValidationResult {
+    const result: ValidationResult = { isValid: true, errors: [] };
+    if (!['synthetic', 'not synthetic'].includes(data.value)) {
+      result.isValid = false;
+      result.errors.push('Value must be "synthetic" or "not synthetic"');
+    }
     return result;
   }
 

@@ -189,7 +189,7 @@
       </div>
 
       <!-- Quick-select buttons for standard values -->
-      @if (config.allowNotApplicable || config.allowNotAvailable) {
+      @if (config.allowNotApplicable || config.allowNotAvailable || specialSyntaxType() === 'pooled_sample' || specialSyntaxType() === 'synthetic_peptide') {
         <div class="mb-2">
           <small class="text-muted d-block mb-1">Quick Select:</small>
           <div class="btn-group btn-group-sm" role="group">
@@ -207,6 +207,34 @@
                 class="btn btn-outline-secondary"
                 (click)="setValue('not available')">
                 <i class="bi bi-question-circle me-1"></i>Not Available
+              </button>
+            }
+            @if (specialSyntaxType() === 'pooled_sample') {
+              <button
+                type="button"
+                class="btn btn-outline-secondary"
+                (click)="setValue('not pooled')">
+                Not Pooled
+              </button>
+              <button
+                type="button"
+                class="btn btn-outline-secondary"
+                (click)="setValue('pooled')">
+                Pooled
+              </button>
+            }
+            @if (specialSyntaxType() === 'synthetic_peptide') {
+              <button
+                type="button"
+                class="btn btn-outline-secondary"
+                (click)="setValue('synthetic')">
+                Synthetic
+              </button>
+              <button
+                type="button"
+                class="btn btn-outline-secondary"
+                (click)="setValue('not synthetic')">
+                Not Synthetic
               </button>
             }
           </div>
@@ -297,6 +325,12 @@
                 [value]="specialInputValue()"
                 (valueChange)="onSpecialInputChange($event)">
               </ccv-sdrf-spiked-compound-input>
+            }
+            @case ('mz_range') {
+              <ccv-sdrf-mz-range-input
+                [value]="specialInputValue()"
+                (valueChange)="onSpecialInputChange($event)">
+              </ccv-sdrf-mz-range-input>
             }
           }
 

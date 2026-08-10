@@ -1,0 +1,24 @@
+<div class="mz-range-input">
+  <form [formGroup]="form">
+    <div class="input-group input-group-sm">
+      <input
+        type="number"
+        class="form-control"
+        formControlName="low"
+        placeholder="Low"
+        step="any"
+        min="0">
+      <span class="input-group-text">m/z</span>
+      <span class="input-group-text">-</span>
+      <input
+        type="number"
+        class="form-control"
+        formControlName="high"
+        placeholder="High"
+        step="any"
+        min="0">
+      <span class="input-group-text">m/z</span>
+    </div>
+  </form>
+  <small class="text-muted d-block mt-1">e.g. 400m/z-1250m/z</small>
+</div>

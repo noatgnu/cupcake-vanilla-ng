@@ -8,7 +8,7 @@ import { MetadataColumn, OntologySuggestion, FavouriteMetadataOption, FavouriteM
 import { FavouriteMetadataOptionService, MetadataColumnService, MetadataColumnTemplateService, OntologySearchService } from '../../services';
 import { AuthService, User, LabGroupService } from '@noatgnu/cupcake-core';
 import { SdrfSyntaxService, SyntaxType } from '../../services/sdrf-syntax';
-import { SdrfAgeInput, SdrfModificationInput, SdrfCleavageInput, SdrfSpikedCompoundInput, SdrfNumberWithUnitInput, SdrfSelectInput } from '../';
+import { SdrfAgeInput, SdrfCleavageInput, SdrfModificationInput, SdrfMzRangeInput, SdrfNumberWithUnitInput, SdrfSelectInput, SdrfSpikedCompoundInput } from '../';
 
 
 export interface MetadataValueEditConfig {
@@ -47,7 +47,8 @@ export interface MetadataValueEditConfig {
     SdrfCleavageInput,
     SdrfSpikedCompoundInput,
     SdrfNumberWithUnitInput,
-    SdrfSelectInput
+    SdrfSelectInput,
+    SdrfMzRangeInput
   ],
   templateUrl: './metadata-value-edit-modal.html',
   styleUrl: './metadata-value-edit-modal.scss',
@@ -116,10 +117,12 @@ export class MetadataValueEditModal implements OnInit {
       this.config.columnType
     );
 
-    if (syntaxType && !this.validatorInputType()) {
+    if (syntaxType) {
       this.specialSyntaxType.set(syntaxType);
-      this.showSpecialInput.set(true);
-      this.specialInputValue.set(this.config?.currentValue || '');
+      if (syntaxType !== 'pooled_sample' && syntaxType !== 'synthetic_peptide' && !this.validatorInputType()) {
+        this.showSpecialInput.set(true);
+        this.specialInputValue.set(this.config?.currentValue || '');
+      }
     }
 
     if (this.config?.currentValue) {
@@ -139,13 +142,6 @@ export class MetadataValueEditModal implements OnInit {
 
     if (this.config?.enableMultiSampleEdit && this.config?.sampleData) {
       this.showSamplePanel.set(true);
-      console.log('Multi-sample editing enabled with', this.config.sampleData.length, 'samples');
-    } else {
-      console.log('Multi-sample editing not enabled:', {
-        enableMultiSampleEdit: this.config?.enableMultiSampleEdit,
-        hasSampleData: !!this.config?.sampleData,
-        sampleDataLength: this.config?.sampleData?.length
-      });
     }
 
     this.editForm.get('value')?.valueChanges.subscribe((newValue) => {
@@ -256,7 +252,6 @@ export class MetadataValueEditModal implements OnInit {
           }).pipe(
             map(response => response.suggestions || []),
             catchError(error => {
-              console.error('Error getting ontology suggestions:', error);
               return of([]);
             }),
             tap(() => this.isLoadingSuggestions.set(false))
@@ -272,7 +267,6 @@ export class MetadataValueEditModal implements OnInit {
           }).pipe(
             map(response => response.suggestions || []),
             catchError(error => {
-              console.error('Error getting ontology suggestions:', error);
               return of([]);
             }),
             tap(() => this.isLoadingSuggestions.set(false))
@@ -427,9 +421,6 @@ export class MetadataValueEditModal implements OnInit {
       this.config.templateId = favorite.columnTemplate;
     }
 
-    if (this.hasCustomDisplayValue(favorite)) {
-      console.log(`Selected "${favorite.displayValue}" (value: ${favorite.value})`);
-    }
   }
 
   onFavoriteSelected(event: Event, favoritesList: FavouriteMetadataOption[]): void {
@@ -487,9 +478,7 @@ export class MetadataValueEditModal implements OnInit {
           this.globalFavorites.set([...this.globalFavorites(), created]);
         }
       },
-      error: (error) => {
-        console.error('Error adding to favorites:', error);
-      }
+      error: () => {}
     });
   }
 
@@ -542,8 +531,7 @@ export class MetadataValueEditModal implements OnInit {
         const labGroupIds = response.results.map(group => group.id!);
         this.userLabGroups.set(labGroupIds);
       },
-      error: (error) => {
-        console.error('Error loading user lab groups:', error);
+      error: () => {
         this.userLabGroups.set([]);
       }
     });
@@ -571,6 +559,7 @@ export class MetadataValueEditModal implements OnInit {
       case 'modification': return 'Modification Parameters Editor';
       case 'cleavage': return 'Cleavage Agent Editor';
       case 'spiked_compound': return 'Spiked Compound Editor';
+      case 'mz_range': return 'Scan Range Editor';
       default: return 'Special Format Editor';
     }
   }
