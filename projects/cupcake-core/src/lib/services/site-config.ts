@@ -1,4 +1,4 @@
-import { Injectable, signal, inject } from '@angular/core';
+import { Injectable, signal, computed, inject } from '@angular/core';
 import { Observable, interval } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { BaseApiService } from './base-api';
@@ -39,6 +39,7 @@ export class SiteConfigService extends BaseApiService {
 
   private _siteConfig = signal<SiteConfig>(this.defaultConfig);
   public siteConfig = this._siteConfig.asReadonly();
+  readonly primaryColor = computed(() => this._siteConfig().primaryColor || '#1976d2');
 
   private demoModeService = inject(DemoModeService);
 

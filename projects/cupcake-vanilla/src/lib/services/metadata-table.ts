@@ -19,6 +19,7 @@ import {
   ColumnOverrideSuggestResult,
   ColumnOverridePreviewResult,
   ColumnOverrideCommitResult,
+  ShareTokenResponse,
 } from '../models';
 
 export interface MetadataTableQueryParams {
@@ -298,5 +299,26 @@ export class MetadataTableService extends BaseApiService {
     formData.append('update_modifiers', String(options.updateModifiers));
     formData.append('normalize_ontology', String(options.normalizeOntology ?? true));
     return this.post<ColumnOverrideCommitResult>(`${this.apiUrl}/metadata-tables/${tableId}/commit_column_override/`, formData);
+  }
+
+  /**
+   * Generate a new share token for a metadata table (owner only)
+   */
+  generateShareToken(tableId: number): Observable<ShareTokenResponse> {
+    return this.post<ShareTokenResponse>(`${this.apiUrl}/metadata-tables/${tableId}/generate_share_token/`, {});
+  }
+
+  /**
+   * Revoke the share token for a metadata table (owner only)
+   */
+  revokeShareToken(tableId: number): Observable<void> {
+    return this.delete<void>(`${this.apiUrl}/metadata-tables/${tableId}/revoke_share_token/`);
+  }
+
+  /**
+   * Retrieve a shared table by its public token (no authentication required)
+   */
+  getSharedTable(token: string): Observable<MetadataTable> {
+    return this.get<MetadataTable>(`${this.apiUrl}/shared-tables/${token}/`);
   }
 }

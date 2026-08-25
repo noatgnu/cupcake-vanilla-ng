@@ -37,7 +37,7 @@ export class ThemeService {
     effect(() => {
       const isDark = this.isDark();
       const palette = this._palette();
-      const primaryColor = this.siteConfigService.getPrimaryColor();
+      const primaryColor = this.siteConfigService.primaryColor();
       untracked(() => this.applyTheme(isDark, palette, primaryColor));
     });
   }
@@ -84,15 +84,18 @@ export class ThemeService {
   private applyTheme(
     isDark = this.isDark(),
     palette = this._palette(),
-    primaryColor = this.siteConfigService.getPrimaryColor()
+    primaryColor = this.siteConfigService.primaryColor()
   ): void {
     const root = document.documentElement;
 
     root.setAttribute('data-bs-theme', isDark ? 'dark' : 'light');
     root.classList.toggle('dark-mode', isDark);
 
-    root.classList.remove('theme-default', 'theme-eink');
-    root.classList.add(`theme-${palette}`);
+    const targetClass = `theme-${palette}`;
+    if (!root.classList.contains(targetClass)) {
+      root.classList.remove('theme-default', 'theme-eink');
+      root.classList.add(targetClass);
+    }
 
     if (palette !== 'default') {
       this.removePrimaryVars(root);

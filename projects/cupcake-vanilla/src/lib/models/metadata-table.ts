@@ -182,3 +182,7 @@ export interface ColumnOverrideCommitResult {
   warnings: string[];
   updatedColumns: { id: number; name: string }[];
 }
+
+export interface ShareTokenResponse {
+  shareToken: string;
+}

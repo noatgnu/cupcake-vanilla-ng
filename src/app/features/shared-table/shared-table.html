@@ -1,0 +1,19 @@
+@if (loading()) {
+  <div class="d-flex justify-content-center align-items-center" style="height: 400px;">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+} @else if (error()) {
+  <div class="d-flex justify-content-center align-items-center" style="height: 400px;">
+    <div class="text-center text-muted">
+      <i class="bi bi-exclamation-triangle display-4 mb-3 text-warning"></i>
+      <p>{{ error() }}</p>
+    </div>
+  </div>
+} @else if (table()) {
+  <ccv-metadata-table-details
+    [preloadedTable]="table()"
+    [readonlyMode]="true">
+  </ccv-metadata-table-details>
+}

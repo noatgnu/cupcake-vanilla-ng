@@ -9,7 +9,8 @@ import { UserDevicesPage } from './features/user-devices/user-devices-page/user-
 import { PluginPageWrapper } from './features/plugins/plugin-page-wrapper/plugin-page-wrapper';
 import { MetadataTablesComponent} from './features/metadata-tables/metadata-tables';
 import { MetadataTableTemplates, ColumnTemplates, FavoriteManagement, MetadataTableDetails } from '@noatgnu/cupcake-vanilla';
-import {MetadataSelector} from './features/metadata-selector/metadata-selector';
+import { MetadataSelector } from './features/metadata-selector/metadata-selector';
+import { SharedTableComponent } from './features/shared-table/shared-table';
 import { EnvironmentService } from './shared/services/environment';
 
 const applianceGuard = () => {
@@ -129,6 +130,10 @@ export const routes: Routes = [
     path: 'plugins/:pluginId',
     component: PluginPageWrapper,
     canActivate: [authGuard]
+  },
+  {
+    path: 'shared/:token',
+    component: SharedTableComponent,
   },
   {
     path: '**',

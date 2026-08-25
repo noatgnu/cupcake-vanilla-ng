@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, signal, computed, ViewChild, ElementRef, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, computed, ViewChild, ElementRef, ChangeDetectionStrategy, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { NgbModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
@@ -101,6 +101,16 @@ export class MetadataTableDetails implements OnInit, OnDestroy {
     return this.sortField() === field;
   }
 
+  @Input() readonlyMode = false;
+  @Input() set preloadedTable(value: MetadataTable | null) {
+    if (value) {
+      this.table.set(value);
+      this.isLoading.set(false);
+      const naturalOrder = [...(value.columns || [])].sort((a, b) => (a.columnPosition || 0) - (b.columnPosition || 0));
+      this.dragColumnsForList.set(naturalOrder);
+    }
+  }
+
   isLoading = signal(false);
   overrideSampleCount = signal(false);
   applySchemaTemplates = signal(false);
@@ -113,6 +123,8 @@ export class MetadataTableDetails implements OnInit, OnDestroy {
 
   sortField = signal<string>('');
   sortDirection = signal<'asc' | 'desc'>('asc');
+  effectiveCanEdit = computed(() => !this.readonlyMode && (this.table()?.canEdit ?? false));
+
   hasColumns = computed(() => {
     const table = this.table();
     return table?.columns && table.columns.length > 0;
@@ -213,9 +225,12 @@ export class MetadataTableDetails implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
+    if (this.table()) {
+      return;
+    }
     this.route.params.subscribe(params => {
       const id = Number(params['id']);
-      const mode = params['mode'] as 'list' | 'table' || 'list';
+      const mode = params['mode'] as 'list' | 'table' || 'table';
 
       if (id && !isNaN(id)) {
         this.tableId.set(id);
@@ -239,7 +254,6 @@ export class MetadataTableDetails implements OnInit, OnDestroy {
       takeUntil(this.destroy$)
     ).subscribe((refreshedTableId: number) => {
       if (refreshedTableId === tableId) {
-        console.log(`Import task completed for table ${refreshedTableId}, refreshing table details`);
         this.toastService.info('Refreshing table data after successful import');
         this.loadTable(tableId);
       }
@@ -258,7 +272,6 @@ export class MetadataTableDetails implements OnInit, OnDestroy {
       },
       error: (error) => {
         this.isLoading.set(false);
-        console.error('Error loading metadata table:', error);
         const errorMsg = error?.error?.detail || 'Table not found';
         this.toastService.error(errorMsg);
         if (error.status === 404) {
@@ -318,12 +331,10 @@ export class MetadataTableDetails implements OnInit, OnDestroy {
   }
 
   triggerFileInput(): void {
-    console.log('triggerFileInput called');
     this.fileInput.nativeElement.click();
   }
 
   triggerExcelInput(): void {
-    console.log('triggerExcelInput called');
     this.excelInput.nativeElement.click();
   }
 
@@ -478,7 +489,6 @@ export class MetadataTableDetails implements OnInit, OnDestroy {
         this.toastService.success(`Excel export queued successfully! Task ID: ${response.taskId}`);
       },
       error: (error) => {
-        console.error('Error queuing Excel export:', error);
         const errorMsg = error?.error?.detail || error?.error?.message || 'Failed to queue Excel export';
         this.toastService.error(errorMsg);
       }
@@ -499,7 +509,6 @@ export class MetadataTableDetails implements OnInit, OnDestroy {
         this.toastService.success(`SDRF export queued successfully! Task ID: ${response.taskId}`);
       },
       error: (error) => {
-        console.error('Error queuing SDRF export:', error);
         const errorMsg = error?.error?.detail || error?.error?.message || 'Failed to queue SDRF export';
         this.toastService.error(errorMsg);
       }
@@ -516,7 +525,6 @@ export class MetadataTableDetails implements OnInit, OnDestroy {
       },
       error: (error: any) => {
         this.isLoading.set(false);
-        console.error('Error exporting table:', error);
         const errorMsg = error?.error?.detail || 'Failed to export table';
         this.toastService.error(errorMsg);
       }
@@ -536,7 +544,6 @@ export class MetadataTableDetails implements OnInit, OnDestroy {
         },
         error: (error) => {
           this.isLoading.set(false);
-          console.error('Error deleting metadata table:', error);
           const errorMsg = error?.error?.detail || error?.message || 'Failed to delete table. Please try again.';
           this.toastService.error(errorMsg);
         }
@@ -850,7 +857,6 @@ export class MetadataTableDetails implements OnInit, OnDestroy {
           modalRef.componentInstance.onClose();
         },
         error: (error) => {
-          console.error('Error updating column value:', error);
           this.toastService.error('Failed to update column value');
         }
       });
@@ -880,7 +886,6 @@ export class MetadataTableDetails implements OnInit, OnDestroy {
         this.toastService.success(`Column "${column.name}" visibility updated successfully!`);
       },
       error: (error) => {
-        console.error('Error updating column hidden property:', error);
         this.toastService.error('Failed to update column visibility');
       }
     });
@@ -921,13 +926,9 @@ export class MetadataTableDetails implements OnInit, OnDestroy {
               this.toastService.warning(
                 `Auto-filled ${response.updatedCount} sample(s), ${response.failedCount} failed for "${column.name}"`
               );
-              if (response.failedUpdates) {
-                console.error('Failed updates:', response.failedUpdates);
-              }
             }
           },
           error: (error) => {
-            console.error('Error auto-filling column values:', error);
             this.toastService.error('Failed to auto-fill column values');
           }
         });
@@ -1040,7 +1041,6 @@ export class MetadataTableDetails implements OnInit, OnDestroy {
         this.loadTable(currentTable!.id);
       },
       error: (error) => {
-        console.error('Error updating column settings:', error);
         this.toastService.error('Failed to update column settings');
       }
     });
@@ -1147,7 +1147,6 @@ export class MetadataTableDetails implements OnInit, OnDestroy {
           modalRef.componentInstance.onClose();
         },
         error: (error) => {
-          console.error('Error updating sample value:', error);
           this.toastService.error(`Failed to update sample ${sampleIndex} value`);
         }
       });
@@ -1261,7 +1260,6 @@ export class MetadataTableDetails implements OnInit, OnDestroy {
         this.loadTable(currentTable.id);
       },
       error: (error: any) => {
-        console.error('Error adding column:', error);
         this.toastService.error('Failed to add column');
       },
       complete: () => {
@@ -1305,7 +1303,6 @@ export class MetadataTableDetails implements OnInit, OnDestroy {
 
     this.metadataTableService.reorderColumnsBySchemaAsync(tableId, schemaIds).subscribe({
       next: (response) => {
-        console.log('Column reorder task started:', response);
         this.toastService.success(`Column reorder task queued successfully! Task ID: ${response.taskId}`);
         
         // Mark task for monitoring and start real-time updates (same pattern as imports)
@@ -1314,7 +1311,6 @@ export class MetadataTableDetails implements OnInit, OnDestroy {
         this.isLoading.set(false);
       },
       error: (error) => {
-        console.error('Error starting column reorder:', error);
         this.toastService.error('Failed to start column reordering');
         this.isLoading.set(false);
       }
@@ -1350,8 +1346,6 @@ export class MetadataTableDetails implements OnInit, OnDestroy {
 
     const draggedColumn = dragColumns[event.currentIndex];
     const newPosition = event.currentIndex;
-    
-    console.log(`Moving column "${draggedColumn.name}" to position ${newPosition}`);
 
     this.metadataTableService.reorderColumn(currentTable.id, draggedColumn.id, newPosition).subscribe({
       next: () => {

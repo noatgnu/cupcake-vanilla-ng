@@ -208,6 +208,9 @@ html.theme-eink {
     --bs-btn-active-color: var(--cupcake-primary-contrast);
     --bs-btn-active-bg: var(--cupcake-primary-dark);
     --bs-btn-active-border-color: var(--cupcake-primary-dark);
+    --bs-btn-disabled-color: var(--cupcake-primary-contrast);
+    --bs-btn-disabled-bg: var(--cupcake-primary);
+    --bs-btn-disabled-border-color: var(--cupcake-primary);
   }
 
   .btn-outline-success,
@@ -222,6 +225,22 @@ html.theme-eink {
     --bs-btn-active-color: var(--cupcake-primary-contrast);
     --bs-btn-active-bg: var(--cupcake-primary);
     --bs-btn-active-border-color: var(--cupcake-primary);
+    --bs-btn-disabled-color: var(--cupcake-primary);
+    --bs-btn-disabled-bg: transparent;
+    --bs-btn-disabled-border-color: var(--cupcake-primary);
+  }
+
+  .btn-secondary,
+  .btn-outline-secondary {
+    --bs-btn-disabled-color: var(--cupcake-secondary);
+    --bs-btn-disabled-bg: transparent;
+    --bs-btn-disabled-border-color: var(--cupcake-secondary);
+  }
+
+  .btn-link {
+    --bs-btn-color: var(--cupcake-text);
+    --bs-btn-hover-color: var(--cupcake-text-muted);
+    --bs-btn-disabled-color: var(--cupcake-text-muted);
   }
 
   .text-success,

@@ -1,6 +1,6 @@
-import { Injectable, signal, computed, inject, InjectionToken, Optional, effect, untracked } from '@angular/core';
-import { BehaviorSubject, Subject, Observable, timer, EMPTY } from 'rxjs';
-import { takeUntil, switchMap, retry, tap } from 'rxjs/operators';
+import { Injectable, signal, computed, inject, InjectionToken, effect, untracked } from '@angular/core';
+import { Subject, Observable, timer, EMPTY } from 'rxjs';
+import { takeUntil, switchMap, tap } from 'rxjs/operators';
 import { AuthService, CUPCAKE_CORE_CONFIG } from './auth';
 
 export const WEBSOCKET_ENDPOINT = new InjectionToken<string>('WEBSOCKET_ENDPOINT', {
@@ -67,7 +67,6 @@ export class WebSocketService {
       const isAuthenticated = this.authService.authenticated();
       if (!isAuthenticated && this.ws) {
         untracked(() => {
-          console.log('User logged out - disconnecting WebSocket');
           this.disconnect();
         });
       }
@@ -92,9 +91,7 @@ export class WebSocketService {
       const host = url.host;
 
       return `${protocol}//${host}/ws/${endpoint}/`;
-    } catch (error) {
-      console.error('Invalid API URL in cupcake config:', apiUrl);
-
+    } catch {
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
       const host = window.location.host;
       return `${protocol}//${host}/ws/${endpoint}/`;
@@ -102,29 +99,21 @@ export class WebSocketService {
   }
 
   connect(): void {
-    console.log('🔌 WebSocket connect() called');
-    console.log('🔌 Current connection state:', this.connectionState());
-    console.log('🔌 WebSocket URL:', this.config.url);
-
     if (this.isConnecting) {
-      console.log('WebSocket connection already in progress');
       return;
     }
 
     if (this.ws?.readyState === WebSocket.OPEN) {
-      console.log('WebSocket already connected');
       return;
     }
 
     if (this.ws && this.ws.readyState !== WebSocket.CLOSED) {
-      console.log('Closing existing WebSocket connection');
       this.ws.close();
       this.ws = null;
     }
 
     const token = this.authService.getAccessToken();
     if (!token) {
-      console.error('❌ Cannot connect WebSocket - no authentication token');
       this.lastError.set('Authentication required');
       this.connectionState.set('error');
       return;
@@ -136,18 +125,14 @@ export class WebSocketService {
 
     try {
       const wsUrl = `${this.config.url}?token=${encodeURIComponent(token)}`;
-      console.log('Connecting to WebSocket:', wsUrl.replace(token, '[TOKEN_HIDDEN]'));
-
       this.ws = new WebSocket(wsUrl);
 
-      this.ws.onopen = this.onOpen.bind(this);
       this.ws.onmessage = this.onMessage.bind(this);
       this.ws.onerror = this.onError.bind(this);
       this.ws.onclose = this.onClose.bind(this);
 
       const connectionTimeout = setTimeout(() => {
         if (this.ws?.readyState === WebSocket.CONNECTING) {
-          console.warn('WebSocket connection timeout - closing');
           this.ws.close();
           this.lastError.set('Connection timeout');
           this.connectionState.set('error');
@@ -161,7 +146,6 @@ export class WebSocketService {
       };
 
     } catch (error) {
-      console.error('WebSocket connection error:', error);
       this.connectionState.set('error');
       this.lastError.set('Connection failed');
       this.isConnecting = false;
@@ -185,8 +169,6 @@ export class WebSocketService {
   send(message: Record<string, unknown>): void {
     if (this.ws?.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(message));
-    } else {
-      console.warn('WebSocket not connected, cannot send message:', message);
     }
   }
 
@@ -198,8 +180,7 @@ export class WebSocketService {
     });
   }
 
-  protected onOpen(event: Event): void {
-    console.log('WebSocket connected');
+  protected onOpen(_event: Event): void {
     this.isConnecting = false;
     this.connectionState.set('connected');
     this._connected.set(true);
@@ -210,33 +191,28 @@ export class WebSocketService {
   protected onMessage(event: MessageEvent): void {
     try {
       const data: WebSocketMessage = JSON.parse(event.data);
-      console.log('WebSocket message received:', data);
       this.messageSubject.next(data);
-    } catch (error) {
-      console.error('Error parsing WebSocket message:', error);
+    } catch {
+      // silently discard malformed messages
     }
   }
 
-  protected onError(event: Event): void {
-    console.error('WebSocket error:', event);
+  protected onError(_event: Event): void {
     this.isConnecting = false;
     this.connectionState.set('error');
     this.lastError.set('Connection error occurred');
   }
 
   protected onClose(event: CloseEvent): void {
-    console.log(`WebSocket closed: ${event.code} ${event.reason}`);
     this.isConnecting = false;
     this.connectionState.set('disconnected');
     this._connected.set(false);
 
     if (event.code === 4001) {
       this.lastError.set('Authentication failed');
-      console.error('WebSocket authentication failed');
       return;
     } else if (event.code === 4003) {
       this.lastError.set('Insufficient permissions');
-      console.error('WebSocket permission denied');
       return;
     }
 
@@ -249,15 +225,12 @@ export class WebSocketService {
     this.reconnectAttempts++;
     const delay = this.config.reconnectInterval || 5000;
 
-    console.log(`WebSocket reconnection attempt ${this.reconnectAttempts} in ${delay}ms`);
-
     timer(delay).pipe(
       takeUntil(this.destroy$),
       tap(() => {
         if (this.reconnectAttempts <= (this.config.maxReconnectAttempts || 5)) {
           this.connect();
         } else {
-          console.error('Max WebSocket reconnection attempts reached');
           this.lastError.set('Connection failed - max attempts reached');
         }
       })
@@ -266,7 +239,6 @@ export class WebSocketService {
 
   filterMessages<T extends WebSocketMessage>(type: string): Observable<T> {
     return this.messages$.pipe(
-      tap(msg => console.log('Filtering message:', msg.type, 'looking for:', type)),
       switchMap(message => message.type === type ? [message as T] : EMPTY)
     );
   }
@@ -281,7 +253,6 @@ export class WebSocketService {
 
   reconnectWithNewToken(): void {
     if (this.ws?.readyState === WebSocket.OPEN) {
-      console.log('Reconnecting WebSocket with new token');
       this.disconnect();
       setTimeout(() => this.connect(), 100);
     }
@@ -293,7 +264,6 @@ export class WebSocketService {
 
   updateConfig(): void {
     this.config.url = this.getWebSocketUrl();
-    console.log('WebSocket URL updated to:', this.config.url);
   }
 
   ngOnDestroy(): void {
@@ -326,7 +296,7 @@ export class WebSocketService {
       }
 
       return 10;
-    } catch (error) {
+    } catch {
       return 10;
     }
   }
@@ -340,19 +310,17 @@ export class WebSocketService {
 
         const memoryUsageRatio = usedMB / totalMB;
         if (memoryUsageRatio > 0.9) {
-          console.warn('High memory usage detected, delaying WebSocket connection');
           return false;
         }
       }
 
       const tabCount = this.estimateTabCount();
       if (tabCount > 30) {
-        console.warn('Too many tabs detected, may affect WebSocket reliability');
         return false;
       }
 
       return true;
-    } catch (error) {
+    } catch {
       return true;
     }
   }
@@ -361,13 +329,7 @@ export class WebSocketService {
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible') {
         if (this.shouldConnect() && this.connectionState() === 'disconnected') {
-          console.log('Tab became active - attempting WebSocket reconnection');
           setTimeout(() => this.connect(), 1000);
-        }
-      } else {
-        const tabCount = this.estimateTabCount();
-        if (tabCount > 15 && this.ws?.readyState === WebSocket.OPEN) {
-          console.log('Tab inactive with high tab count - maintaining connection with reduced activity');
         }
       }
     });

@@ -7,11 +7,13 @@
           <!-- Breadcrumb Navigation -->
           <nav aria-label="breadcrumb" class="me-3">
             <ol class="breadcrumb mb-0">
-              <li class="breadcrumb-item">
-                <a routerLink="/metadata-tables" class="text-decoration-none">
-                  <i class="bi bi-table me-1"></i>Metadata Tables
-                </a>
-              </li>
+              @if (!readonlyMode) {
+                <li class="breadcrumb-item">
+                  <a routerLink="/metadata-tables" class="text-decoration-none">
+                    <i class="bi bi-table me-1"></i>Metadata Tables
+                  </a>
+                </li>
+              }
               <li class="breadcrumb-item active" aria-current="page">
                 @if (table()) {
                   {{ table()!.name }}
@@ -21,6 +23,11 @@
               </li>
             </ol>
           </nav>
+          @if (readonlyMode) {
+            <span class="badge bg-secondary ms-2">
+              <i class="bi bi-eye me-1"></i>Read-only
+            </span>
+          }
 
           <!-- Table Status Badge -->
           @if (table()) {
@@ -32,13 +39,15 @@
 
         <!-- Action Buttons -->
         <div class="d-flex gap-2 flex-wrap">
-          <button
-            type="button"
-            class="btn btn-outline-secondary btn-sm"
-            (click)="navigateBack()"
-            title="Back to Tables">
-            <i class="bi bi-arrow-left me-1"></i>Back
-          </button>
+          @if (!readonlyMode) {
+            <button
+              type="button"
+              class="btn btn-outline-secondary btn-sm"
+              (click)="navigateBack()"
+              title="Back to Tables">
+              <i class="bi bi-arrow-left me-1"></i>Back
+            </button>
+          }
 
           <!-- View Mode Toggle -->
           @if (hasColumns()) {
@@ -62,7 +71,7 @@
             </div>
           }
           <!-- Import Dropdown -->
-          @if (table() && table()!.canEdit) {
+          @if (table() && effectiveCanEdit()) {
             <div class="btn-group" ngbDropdown>
               <!-- Hidden file inputs -->
               <input
@@ -147,7 +156,7 @@
           }
 
           <!-- Edit Button -->
-          @if (table() && table()!.canEdit) {
+          @if (table() && effectiveCanEdit()) {
             <button
               type="button"
               class="btn btn-outline-primary btn-sm"
@@ -159,7 +168,7 @@
           }
 
           <!-- Reorder Columns Button -->
-          @if (table() && table()!.canEdit && hasColumns()) {
+          @if (table() && effectiveCanEdit() && hasColumns()) {
             <button
               type="button"
               class="btn btn-outline-warning btn-sm"
@@ -171,7 +180,7 @@
           }
 
           <!-- Create Pool Button -->
-          @if (table() && table()!.canEdit && hasColumns()) {
+          @if (table() && effectiveCanEdit() && hasColumns()) {
             <button
               type="button"
               class="btn btn-success btn-sm"
@@ -183,7 +192,7 @@
           }
 
           <!-- More Actions Dropdown -->
-          @if (table() && table()!.canEdit) {
+          @if (table() && effectiveCanEdit()) {
             <div class="btn-group" ngbDropdown>
               <button
                 type="button"
@@ -310,7 +319,7 @@
                       <th scope="col" [class]="getColumnHeaderClass(column)" [title]="column.name">
                         <div class="header-cell d-flex justify-content-between align-items-center">
                           <span>{{ getShortColumnName(column) }}</span>
-                          @if (table()!.canEdit) {
+                          @if (effectiveCanEdit()) {
                             <div class="header-actions">
                               <button
                                 type="button"
@@ -328,13 +337,13 @@
                 </thead>
                 <tbody>
                   @for (poolRow of poolTableRows(); track poolRow._poolId) {
-                    <tr class="pool-row" [class.editable]="table()!.canEdit">
+                    <tr class="pool-row" [class.editable]="effectiveCanEdit()">
                       <td class="text-muted fw-semibold" 
-                          [class.clickable]="table()!.canEdit"
-                          (click)="table()!.canEdit ? editPool(poolRow._poolData) : null"
-                          [title]="table()!.canEdit ? 'Click to edit pool: ' + poolRow._poolName : poolRow._poolName">
+                          [class.clickable]="effectiveCanEdit()"
+                          (click)="effectiveCanEdit() ? editPool(poolRow._poolData) : null"
+                          [title]="effectiveCanEdit() ? 'Click to edit pool: ' + poolRow._poolName : poolRow._poolName">
                         <i class="bi bi-layers me-2"></i>{{ poolRow._poolName }}
-                        @if (table()!.canEdit) {
+                        @if (effectiveCanEdit()) {
                           <i class="bi bi-pencil-square ms-1 text-primary" style="font-size: 0.8em;"></i>
                         }
                       </td>
@@ -344,8 +353,8 @@
                           [class.opacity-50]="column.hidden"
                           [attr.data-pool-id]="poolRow._poolId"
                           [attr.data-column-id]="column.id"
-                          (click)="table()!.canEdit ? editPoolColumnValue(poolRow._poolData, column) : null"
-                          [title]="table()!.canEdit ? 'Click to edit ' + column.name + ' for pool ' + poolRow._poolName : ''">
+                          (click)="effectiveCanEdit() ? editPoolColumnValue(poolRow._poolData, column) : null"
+                          [title]="effectiveCanEdit() ? 'Click to edit ' + column.name + ' for pool ' + poolRow._poolName : ''">
                           {{ poolRow['col_' + column.id] || '-' }}
                         </td>
                       }
@@ -405,7 +414,7 @@
             <div class="d-flex gap-2 align-items-center">
               @if (viewMode() === 'list') {
                 <span class="badge bg-primary">{{ sortedColumns().length }} columns</span>
-                @if (table() && table()!.canEdit) {
+                @if (table() && effectiveCanEdit()) {
                   <button
                     type="button"
                     class="btn btn-success btn-sm"
@@ -415,7 +424,7 @@
                     <i class="bi bi-plus-circle me-1"></i>Add Column
                   </button>
                 }
-                @if (table() && table()!.canEdit && sortedColumns().length === 0) {
+                @if (table() && effectiveCanEdit() && sortedColumns().length === 0) {
                   <small class="text-muted">Import SDRF to add columns</small>
                 }
               } @else {
@@ -424,7 +433,7 @@
                   <span class="badge bg-warning">{{ sortedPools().length }} pools</span>
                 }
                 <span class="badge bg-primary">{{ sortedColumns().length }} columns</span>
-                @if (table() && table()!.canEdit) {
+                @if (table() && effectiveCanEdit()) {
                   <button
                     type="button"
                     class="btn btn-success btn-sm"
@@ -447,7 +456,7 @@
                 <thead>
                   <tr>
                     <th scope="col" style="width: 40px;">
-                      @if (table()!.canEdit) {
+                      @if (effectiveCanEdit()) {
                         <i class="bi bi-arrows-move text-muted" title="Drag to reorder"></i>
                       }
                     </th>
@@ -493,9 +502,9 @@
                 </thead>
                 <tbody cdkDropList (cdkDropListDropped)="onColumnDrop($event)" [cdkDropListData]="dragColumnsForList()">
                   @for (column of dragColumnsForList(); track column.id) {
-                    <tr cdkDrag [cdkDragData]="column" [cdkDragDisabled]="!table()!.canEdit">
+                    <tr cdkDrag [cdkDragData]="column" [cdkDragDisabled]="!effectiveCanEdit()">
                       <td class="text-center">
-                        @if (table()!.canEdit) {
+                        @if (effectiveCanEdit()) {
                           <i class="bi bi-grip-vertical drag-handle" cdkDragHandle></i>
                         }
                       </td>
@@ -559,7 +568,7 @@
                                   [attr.aria-label]="'View details for ' + column.name">
                             <i class="bi bi-info-circle" aria-hidden="true"></i>
                           </button>
-                          @if (table()!.canEdit) {
+                          @if (effectiveCanEdit()) {
                             <button type="button"
                                     class="btn"
                                     [class]="column.hidden ? 'btn-outline-warning' : 'btn-outline-success'"
@@ -614,7 +623,7 @@
                         <th scope="col" [class]="getColumnHeaderClass(column)" [title]="column.name">
                           <div class="header-cell d-flex justify-content-between align-items-center">
                             <span>{{ getShortColumnName(column) }}</span>
-                            @if (table()!.canEdit) {
+                            @if (effectiveCanEdit()) {
                               <div class="header-actions">
                                 <button
                                   type="button"
@@ -654,7 +663,7 @@
                   </thead>
                   <tbody>
                     @for (row of paginatedRows(); track row._sampleIndex) {
-                      <tr class="sample-row" [class.editable]="table()!.canEdit">
+                      <tr class="sample-row" [class.editable]="effectiveCanEdit()">
                         <td class="text-muted fw-semibold">{{ row._sampleIndex }}</td>
                         @for (column of sortedColumns(); track column.id) {
                           <td
@@ -662,8 +671,8 @@
                             [class.opacity-50]="column.hidden"
                             [attr.data-sample-index]="row._sampleIndex"
                             [attr.data-column-id]="column.id"
-                            (click)="table()!.canEdit ? editSampleColumnValue(column, row._sampleIndex) : null"
-                            [title]="table()!.canEdit ? 'Click to edit ' + column.name + ' for sample ' + row._sampleIndex : ''">
+                            (click)="effectiveCanEdit() ? editSampleColumnValue(column, row._sampleIndex) : null"
+                            [title]="effectiveCanEdit() ? 'Click to edit ' + column.name + ' for sample ' + row._sampleIndex : ''">
                             {{ row['col_' + column.id] || '-' }}
                           </td>
                         }
@@ -711,7 +720,7 @@
               <i class="bi bi-inbox display-1 mb-3"></i>
               <h5>No Columns Found</h5>
               <p>This table doesn't have any columns defined yet.</p>
-              @if (table()!.canEdit) {
+              @if (effectiveCanEdit()) {
                 <button type="button" class="btn btn-primary" (click)="openAddColumnModal()">
                   <i class="bi bi-plus me-1"></i>Add First Column
                 </button>
