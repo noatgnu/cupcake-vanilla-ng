@@ -124,6 +124,11 @@ export class MetadataTableDetails implements OnInit, OnDestroy {
   sortField = signal<string>('');
   sortDirection = signal<'asc' | 'desc'>('asc');
   effectiveCanEdit = computed(() => !this.readonlyMode && (this.table()?.canEdit ?? false));
+  shareUrl = computed(() => {
+    const token = this.table()?.shareToken;
+    if (!token) return null;
+    return `${window.location.origin}${window.location.pathname}#/shared/${token}`;
+  });
 
   hasColumns = computed(() => {
     const table = this.table();
@@ -306,6 +311,41 @@ export class MetadataTableDetails implements OnInit, OnDestroy {
   onPageSizeChange(size: number): void {
     this.pageSize.set(size);
     this.currentPage.set(1); // Reset to first page when changing page size
+  }
+
+  generateShareLink(): void {
+    const table = this.table();
+    if (!table) return;
+    this.metadataTableService.generateShareToken(table.id).subscribe({
+      next: (response) => {
+        this.table.set({ ...table, shareToken: response.shareToken });
+        this.toastService.success('Share link generated.');
+      },
+      error: () => this.toastService.error('Failed to generate share link.')
+    });
+  }
+
+  async revokeShareLink(): Promise<void> {
+    const table = this.table();
+    if (!table) return;
+    if (await this.confirmDialog.confirm({ message: 'Revoke the share link? Anyone with the current link will lose access.' })) {
+      this.metadataTableService.revokeShareToken(table.id).subscribe({
+        next: () => {
+          this.table.set({ ...table, shareToken: null });
+          this.toastService.success('Share link revoked.');
+        },
+        error: () => this.toastService.error('Failed to revoke share link.')
+      });
+    }
+  }
+
+  copyShareLink(): void {
+    const url = this.shareUrl();
+    if (!url) return;
+    navigator.clipboard.writeText(url).then(
+      () => this.toastService.success('Link copied to clipboard.'),
+      () => this.toastService.error('Could not copy to clipboard.')
+    );
   }
 
   editTable(): void {

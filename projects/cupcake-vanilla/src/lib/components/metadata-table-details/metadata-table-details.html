@@ -155,6 +155,54 @@
             </div>
           }
 
+          <!-- Share Link Dropdown -->
+          @if (table() && effectiveCanEdit()) {
+            <div class="btn-group" ngbDropdown>
+              <button
+                type="button"
+                class="btn btn-sm dropdown-toggle"
+                [class]="shareUrl() ? 'btn-success' : 'btn-outline-secondary'"
+                ngbDropdownToggle
+                title="Share Table">
+                <i class="bi bi-share me-1"></i>Share
+              </button>
+              <div class="dropdown-menu dropdown-menu-end p-2" ngbDropdownMenu style="min-width: 320px;">
+                @if (shareUrl()) {
+                  <div class="mb-2">
+                    <label class="form-label small fw-semibold mb-1">Share link</label>
+                    <div class="input-group input-group-sm">
+                      <input type="text" class="form-control form-control-sm font-monospace"
+                             [value]="shareUrl()" readonly>
+                      <button class="btn btn-outline-secondary btn-sm" type="button"
+                              (click)="copyShareLink()"
+                              title="Copy link">
+                        <i class="bi bi-clipboard"></i>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="d-flex gap-2">
+                    <button class="btn btn-outline-primary btn-sm flex-fill"
+                            (click)="generateShareLink()"
+                            title="Regenerate link (invalidates current link)">
+                      <i class="bi bi-arrow-clockwise me-1"></i>Regenerate
+                    </button>
+                    <button class="btn btn-outline-danger btn-sm flex-fill"
+                            (click)="revokeShareLink()"
+                            title="Revoke link">
+                      <i class="bi bi-x-circle me-1"></i>Revoke
+                    </button>
+                  </div>
+                } @else {
+                  <p class="text-muted small mb-2">No share link. Generate one to let anyone view this table without logging in.</p>
+                  <button class="btn btn-primary btn-sm w-100"
+                          (click)="generateShareLink()">
+                    <i class="bi bi-link-45deg me-1"></i>Generate Share Link
+                  </button>
+                }
+              </div>
+            </div>
+          }
+
           <!-- Edit Button -->
           @if (table() && effectiveCanEdit()) {
             <button

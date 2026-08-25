@@ -23,6 +23,7 @@ export interface MetadataTable extends BaseTimestampedModel {
   sampleRange?: string;
   canEdit?: boolean;
   sourceApp?: string;
+  shareToken?: string | null;
 }
 
 export interface MetadataTableCreateRequest {
