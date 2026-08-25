@@ -294,6 +294,8 @@ export class MetadataTableDetails implements OnInit, OnDestroy {
     const tableId = this.tableId();
     if (tableId) {
       this.router.navigate(['/metadata-tables', tableId, 'list']);
+    } else {
+      this.viewMode.set('list');
     }
   }
 
@@ -301,6 +303,8 @@ export class MetadataTableDetails implements OnInit, OnDestroy {
     const tableId = this.tableId();
     if (tableId) {
       this.router.navigate(['/metadata-tables', tableId, 'table']);
+    } else {
+      this.viewMode.set('table');
     }
   }
 
