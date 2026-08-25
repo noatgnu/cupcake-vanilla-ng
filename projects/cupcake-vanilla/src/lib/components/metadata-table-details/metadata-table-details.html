@@ -134,7 +134,7 @@
           }
 
           <!-- Export Dropdown -->
-          @if (table() && hasColumns()) {
+          @if (table() && hasColumns() && !readonlyMode) {
             <div class="btn-group" ngbDropdown>
               <button
                 type="button"

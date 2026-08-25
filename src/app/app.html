@@ -1,19 +1,18 @@
 @if (appInitialized()) {
-  <!-- Authentication-aware navbar -->
-  <app-navbar></app-navbar>
+  @if (!isSharedRoute()) {
+    <app-navbar></app-navbar>
+  }
 
   <main class="container-fluid" style="padding-top: 0px; min-height: calc(100vh - 56px); padding-bottom: 20px;">
     <router-outlet />
   </main>
 
-
-  <!-- Toast notifications -->
   <ccc-toast-container></ccc-toast-container>
 
-  <!-- Compact hover-reveal footer -->
-  <ccc-powered-by-footer></ccc-powered-by-footer>
+  @if (!isSharedRoute()) {
+    <ccc-powered-by-footer></ccc-powered-by-footer>
+  }
 } @else {
-  <!-- Loading screen while app initializes -->
   <div class="d-flex justify-content-center align-items-center" style="min-height: 100vh;">
     <div class="text-center">
       <div class="spinner-border text-primary mb-3" role="status">

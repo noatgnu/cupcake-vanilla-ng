@@ -1,5 +1,5 @@
-import { Component, signal, inject, OnInit, OnDestroy, effect, ChangeDetectionStrategy, untracked } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { Component, signal, inject, OnInit, OnDestroy, effect, ChangeDetectionStrategy, untracked, computed } from '@angular/core';
+import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { CommonModule } from '@angular/common';
 import { NavbarComponent } from './shared/components/navbar/navbar';
@@ -7,6 +7,8 @@ import { DesktopService } from '@noatgnu/cupcake-vanilla';
 import { AsyncTaskMonitorService, AuthService, WebSocketService } from '@noatgnu/cupcake-core';
 import { ToastService, ToastContainerComponent, PoweredByFooterComponent } from '@noatgnu/cupcake-core';
 import { environment } from '../environments/environment';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { filter, map, startWith } from 'rxjs/operators';
 
 @Component({
   selector: 'app-root',
@@ -25,9 +27,21 @@ export class App implements OnInit, OnDestroy {
   private desktopService = inject(DesktopService);
   private authService = inject(AuthService);
   private websocket = inject(WebSocketService);
+  private router = inject(Router);
 
   private _appInitialized = signal<boolean>(false);
   public appInitialized = this._appInitialized.asReadonly();
+
+  private currentUrl = toSignal(
+    this.router.events.pipe(
+      filter(e => e instanceof NavigationEnd),
+      map(e => (e as NavigationEnd).urlAfterRedirects),
+      startWith(this.router.url)
+    ),
+    { initialValue: this.router.url }
+  );
+
+  readonly isSharedRoute = computed(() => this.currentUrl().startsWith('/shared/'));
 
   private authEffect = effect(() => {
     const user = this.authService.currentUser();
