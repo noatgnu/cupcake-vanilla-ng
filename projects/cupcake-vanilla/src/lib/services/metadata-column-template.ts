@@ -139,6 +139,7 @@ export class MetadataColumnTemplateService extends BaseApiService {
     count: number;
     customFilters: any;
     hasMore: boolean;
+    remotePending?: boolean;
   }> {
     const httpParams = this.buildHttpParams({
       template_id: params?.templateId,
@@ -155,6 +156,7 @@ export class MetadataColumnTemplateService extends BaseApiService {
       count: number;
       customFilters: any;
       hasMore: boolean;
+      remotePending?: boolean;
     }>(`${this.apiUrl}/column-templates/ontology_suggestions/`, { params: httpParams });
   }
 

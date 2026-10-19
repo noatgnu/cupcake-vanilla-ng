@@ -13,7 +13,9 @@ export enum OntologyType {
   MS_UNIQUE_VOCABULARIES = 'ms_unique_vocabularies',
   PSI_MS = 'psi_ms',
   BTO = 'bto',
-  DOID = 'doid'
+  DOID = 'doid',
+  PROTOCOLS_IO_REAGENT = 'protocols_io_reagent',
+  PROTOCOLS_IO_UNIT = 'protocols_io_unit'
 }
 
 export const OntologyTypeLabels: Record<OntologyType, string> = {
@@ -31,7 +33,9 @@ export const OntologyTypeLabels: Record<OntologyType, string> = {
   [OntologyType.MS_UNIQUE_VOCABULARIES]: 'MS Unique Vocabularies',
   [OntologyType.PSI_MS]: 'PSI-MS Controlled Vocabulary',
   [OntologyType.BTO]: 'BTO Tissue',
-  [OntologyType.DOID]: 'Disease Ontology (DOID)'
+  [OntologyType.DOID]: 'Disease Ontology (DOID)',
+  [OntologyType.PROTOCOLS_IO_REAGENT]: 'protocols.io Reagent',
+  [OntologyType.PROTOCOLS_IO_UNIT]: 'protocols.io Unit'
 };
 
 export enum TemplatePermissionLevel {

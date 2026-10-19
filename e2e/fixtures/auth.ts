@@ -14,7 +14,7 @@ async function createAuthPage(browser: Browser, stateFile: string): Promise<Page
   return ctx.newPage();
 }
 
-export const test = base.extend<{ adminPage: Page; userPage: Page }>({
+export const test = base.extend<{ adminPage: Page; userPage: Page; guestPage: Page }>({
   adminPage: async ({ browser }, use) => {
     const page = await createAuthPage(browser, AUTH_STATES.admin);
     await use(page);
@@ -24,6 +24,12 @@ export const test = base.extend<{ adminPage: Page; userPage: Page }>({
     const page = await createAuthPage(browser, AUTH_STATES.user);
     await use(page);
     await page.context().close();
+  },
+  guestPage: async ({ browser }, use) => {
+    const ctx = await browser.newContext();
+    const page = await ctx.newPage();
+    await use(page);
+    await ctx.close();
   },
 });
 

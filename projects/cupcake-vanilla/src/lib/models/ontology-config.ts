@@ -54,6 +54,8 @@ export const ONTOLOGY_TYPE_CONFIGS: OntologyTypeConfig[] = [
   { value: OntologyType.PSI_MS, label: 'PSI-MS', customFilters: undefined },
   { value: OntologyType.BTO, label: 'BTO Tissue (BRENDA)', customFilters: undefined },
   { value: OntologyType.DOID, label: 'Disease Ontology (DOID)', customFilters: undefined },
+  { value: OntologyType.PROTOCOLS_IO_REAGENT, label: 'Reagent (protocols.io)', customFilters: undefined },
+  { value: OntologyType.PROTOCOLS_IO_UNIT, label: 'Unit (protocols.io)', customFilters: undefined },
 
   // MS Unique Vocabularies with specific term_type filters
   {

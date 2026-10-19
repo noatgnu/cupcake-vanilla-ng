@@ -102,6 +102,7 @@ export class MetadataColumnService extends BaseApiService {
     count: number;
     customFilters: any;
     hasMore: boolean;
+    remotePending?: boolean;
   }> {
     const httpParams = this.buildHttpParams(params);
     return this.get(`${this.apiUrl}/metadata-columns/ontology_suggestions/`, { params: httpParams });

@@ -10,7 +10,10 @@ import {
   ProtocolSection,
   ProtocolStep,
   PaginatedResponse,
-  ProtocolQueryParams
+  ProtocolQueryParams,
+  ProtocolsIOExportQueued,
+  ProtocolsIOExportRequest,
+  ProtocolsIOImportRequest
 } from '../models';
 
 @Injectable({
@@ -179,6 +182,26 @@ export class ProtocolService extends BaseApiService {
    */
   importFromProtocolsIO(url: string): Observable<ProtocolModel> {
     return this.post<ProtocolModel>(`${this.apiUrl}/protocols/import_from_protocols_io/`, { url });
+  }
+
+  /**
+   * Import a protocol from protocols.io with the current user's own account
+   * @param protocol Address, URI or id of a protocols.io protocol the user can open
+   * @returns Observable with the created protocol
+   */
+  importFromProtocolsIOAccount(protocol: string): Observable<ProtocolModel> {
+    const request: ProtocolsIOImportRequest = { protocol };
+    return this.post<ProtocolModel>(`${this.apiUrl}/protocols/import_from_protocols_io_account/`, request);
+  }
+
+  /**
+   * Queue an export of a protocol into an existing protocols.io protocol with the current user's account
+   * @param id Protocol ID
+   * @param request Address, URI, id or GUID of the protocols.io protocol, and an optional scaling factor
+   * @returns Observable with the ID of the task tracking the export
+   */
+  exportToProtocolsIO(id: number, request: ProtocolsIOExportRequest): Observable<ProtocolsIOExportQueued> {
+    return this.post<ProtocolsIOExportQueued>(`${this.apiUrl}/protocols/${id}/export_to_protocols_io/`, request);
   }
 
   /**

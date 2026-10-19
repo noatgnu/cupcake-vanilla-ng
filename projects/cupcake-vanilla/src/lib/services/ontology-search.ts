@@ -1,8 +1,9 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { BaseApiService } from '@noatgnu/cupcake-core';
+import { BaseApiService, WebSocketService } from '@noatgnu/cupcake-core';
 
 import {
+  ExternalVocabularyUpdatedMessage,
   OntologySuggestion
 } from '../models';
 
@@ -23,12 +24,14 @@ export interface OntologySuggestResponse {
   count: number;
   customFilters?: Record<string, any>;
   hasMore: boolean;
+  remotePending?: boolean;
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class OntologySearchService extends BaseApiService {
+  private websocket = inject(WebSocketService);
 
   /**
    * Get ontology suggestions across all sources for SDRF validation
@@ -102,5 +105,13 @@ export class OntologySearchService extends BaseApiService {
       type: ontologyType,
       limit
     });
+  }
+
+  /**
+   * Notifications that results from an external platform, such as protocols.io, were added to
+   * the local vocabulary after a search answered with remotePending.
+   */
+  vocabularyUpdates(): Observable<ExternalVocabularyUpdatedMessage> {
+    return this.websocket.filterMessages<ExternalVocabularyUpdatedMessage>('external_vocabulary.updated');
   }
 }

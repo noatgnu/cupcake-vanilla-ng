@@ -1,4 +1,9 @@
-import { of } from 'rxjs';
+import { TestBed } from '@angular/core/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideHttpClient, withXhr } from '@angular/common/http';
+import { CUPCAKE_CORE_CONFIG, WebSocketService } from '@noatgnu/cupcake-core';
+import { Subject, of } from 'rxjs';
+import { ExternalVocabularyUpdatedMessage } from '../models';
 import { OntologySearchService, OntologySuggestResponse } from './ontology-search';
 import { OntologyType, OntologyTypeLabels } from '../models/enums';
 import { ONTOLOGY_TYPE_CONFIGS } from '../models/ontology-config';
@@ -169,5 +174,72 @@ describe('OntologyType BTO and DOID', () => {
     const doidConfig = ONTOLOGY_TYPE_CONFIGS.find(c => c.value === OntologyType.DOID);
     expect(doidConfig).toBeDefined();
     expect(doidConfig?.label).toBe('Disease Ontology (DOID)');
+  });
+});
+
+describe('OntologyType protocols.io vocabularies', () => {
+  it('should match the backend type keys', () => {
+    expect(OntologyType.PROTOCOLS_IO_REAGENT).toBe('protocols_io_reagent');
+    expect(OntologyType.PROTOCOLS_IO_UNIT).toBe('protocols_io_unit');
+  });
+
+  it('should have labels in OntologyTypeLabels', () => {
+    expect(OntologyTypeLabels[OntologyType.PROTOCOLS_IO_REAGENT]).toBe('protocols.io Reagent');
+    expect(OntologyTypeLabels[OntologyType.PROTOCOLS_IO_UNIT]).toBe('protocols.io Unit');
+  });
+
+  it('should be selectable in ONTOLOGY_TYPE_CONFIGS', () => {
+    const reagent = ONTOLOGY_TYPE_CONFIGS.find(c => c.value === OntologyType.PROTOCOLS_IO_REAGENT);
+    const unit = ONTOLOGY_TYPE_CONFIGS.find(c => c.value === OntologyType.PROTOCOLS_IO_UNIT);
+    expect(reagent?.label).toBe('Reagent (protocols.io)');
+    expect(unit?.label).toBe('Unit (protocols.io)');
+  });
+});
+
+describe('OntologySearchService external vocabulary updates', () => {
+  let service: OntologySearchService;
+  let httpMock: HttpTestingController;
+  let messages: Subject<ExternalVocabularyUpdatedMessage>;
+  let websocket: jasmine.SpyObj<WebSocketService>;
+
+  beforeEach(() => {
+    messages = new Subject<ExternalVocabularyUpdatedMessage>();
+    websocket = jasmine.createSpyObj('WebSocketService', ['filterMessages']);
+    websocket.filterMessages.and.returnValue(messages.asObservable() as any);
+    TestBed.configureTestingModule({
+      providers: [
+        provideHttpClient(withXhr()),
+        provideHttpClientTesting(),
+        { provide: CUPCAKE_CORE_CONFIG, useValue: { apiUrl: 'http://localhost:8000/api' } },
+        { provide: WebSocketService, useValue: websocket },
+        OntologySearchService
+      ]
+    });
+    service = TestBed.inject(OntologySearchService);
+    httpMock = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => {
+    httpMock.verify();
+  });
+
+  it('should listen for external vocabulary updates on the websocket', () => {
+    const received: ExternalVocabularyUpdatedMessage[] = [];
+    service.vocabularyUpdates().subscribe(message => received.push(message));
+    messages.next({ type: 'external_vocabulary.updated', ontology_type: 'protocols_io_reagent', search_term: 'RIPA', stored: 2 });
+
+    expect(websocket.filterMessages).toHaveBeenCalledWith('external_vocabulary.updated');
+    expect(received.map(message => message.stored)).toEqual([2]);
+  });
+
+  it('should expose remotePending from the suggest response', () => {
+    let response: OntologySuggestResponse | undefined;
+    service.suggest({ q: 'ripa', type: 'protocols_io_reagent' }).subscribe(result => response = result);
+
+    const request = httpMock.expectOne(req => req.url === 'http://localhost:8000/api/ontology/search/suggest/');
+    expect(request.request.params.get('type')).toBe('protocols_io_reagent');
+    request.flush({ ontology_type: 'protocols_io_reagent', suggestions: [], remote_pending: true, has_more: false });
+
+    expect(response?.remotePending).toBeTrue();
   });
 });

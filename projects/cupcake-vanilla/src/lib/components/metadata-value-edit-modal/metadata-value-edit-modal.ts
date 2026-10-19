@@ -3,7 +3,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgbActiveModal, NgbModule, NgbNavModule } from '@ng-bootstrap/ng-bootstrap';
-import { Observable, of, catchError, debounceTime, distinctUntilChanged, tap, switchMap, map } from 'rxjs';
+import { Observable, of, catchError, debounceTime, distinctUntilChanged, tap, switchMap, map, merge, filter } from 'rxjs';
 import { MetadataColumn, OntologySuggestion, FavouriteMetadataOption, FavouriteMetadataOptionCreateRequest, OntologyType, ColumnInputType, ColumnValidator } from '../../models';
 import { FavouriteMetadataOptionService, MetadataColumnService, MetadataColumnTemplateService, OntologySearchService } from '../../services';
 import { AuthService, User, LabGroupService } from '@noatgnu/cupcake-core';
@@ -62,6 +62,7 @@ export class MetadataValueEditModal implements OnInit {
   editFormInvalid!: Signal<boolean>;
   isLoading = signal(false);
   isLoadingSuggestions = signal(false);
+  private lastSearchTerm = '';
   searchType = signal<'icontains' | 'istartswith'>('icontains');
 
   isLoadingFavorites = signal(false);
@@ -222,10 +223,19 @@ export class MetadataValueEditModal implements OnInit {
 
   // Ontology autocomplete methods
   searchOntology = (text$: Observable<string>): Observable<OntologySuggestion[]> => {
-    return text$.pipe(
-      debounceTime(200),
-      distinctUntilChanged(),
-      tap(() => this.isLoadingSuggestions.set(true)),
+    const typed$ = text$.pipe(debounceTime(200), distinctUntilChanged());
+    const refreshed$ = this.ontologySearchService.vocabularyUpdates().pipe(
+      filter(update =>
+        update.ontology_type === this.config?.ontologyType &&
+        update.search_term.toLowerCase() === this.lastSearchTerm.trim().toLowerCase()
+      ),
+      map(() => this.lastSearchTerm)
+    );
+    return merge(typed$, refreshed$).pipe(
+      tap(term => {
+        this.lastSearchTerm = term;
+        this.isLoadingSuggestions.set(true);
+      }),
       switchMap(term => {
         if (term.length < 2 || !this.hasOntologyType) {
           this.isLoadingSuggestions.set(false);

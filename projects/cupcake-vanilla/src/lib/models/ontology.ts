@@ -1,3 +1,5 @@
+import { WebSocketMessage } from '@noatgnu/cupcake-core';
+
 export interface Species {
   code: string;
   taxon: string;
@@ -148,4 +150,12 @@ export interface OntologySuggestion {
   description?: string;
   ontologyType: string;
   fullData?: any;
+}
+
+export interface ExternalVocabularyUpdatedMessage extends WebSocketMessage {
+  type: 'external_vocabulary.updated';
+  ontology_type: string;
+  search_term: string;
+  stored: number;
+  user_id?: number;
 }

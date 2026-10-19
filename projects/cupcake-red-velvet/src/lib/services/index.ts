@@ -15,3 +15,5 @@ export * from './notification-websocket';
 export * from './annotation-chunked-upload';
 export * from './instrument-usage-session-annotation';
 export * from './instrument-usage-step-annotation';
+export * from './protocols-io-account';
+export * from './protocols-io-browse';
