@@ -436,6 +436,33 @@
           }
         }
       }
+    },
+    "@noatgnu/cupcake-protocols-io": {
+      "projectType": "library",
+      "root": "projects/cupcake-protocols-io",
+      "sourceRoot": "projects/cupcake-protocols-io/src",
+      "prefix": "lib",
+      "architect": {
+        "build": {
+          "builder": "@angular/build:ng-packagr",
+          "configurations": {
+            "production": {
+              "tsConfig": "projects/cupcake-protocols-io/tsconfig.lib.prod.json"
+            },
+            "development": {
+              "tsConfig": "projects/cupcake-protocols-io/tsconfig.lib.json"
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "test": {
+          "builder": "@angular/build:karma",
+          "options": {
+            "tsConfig": "projects/cupcake-protocols-io/tsconfig.spec.json",
+            "polyfills": []
+          }
+        }
+      }
     }
   },
   "cli": {

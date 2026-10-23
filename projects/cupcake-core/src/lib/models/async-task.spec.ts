@@ -3,6 +3,7 @@ import { TaskType, TASK_TYPE_LABELS } from './async-task';
 describe('TaskType', () => {
   it('should match the backend task type for protocols.io exports', () => {
     expect(TaskType.EXPORT_PROTOCOLS_IO).toBe('EXPORT_PROTOCOLS_IO');
+    expect(TaskType.EXPORT_RUN_PROTOCOLS_IO).toBe('EXPORT_RUN_PROTOCOLS_IO');
   });
 
   it('should label every task type', () => {

@@ -46,6 +46,15 @@ else
     exit 1
 fi
 
+echo "Building cupcake-protocols-io library..."
+ng build @noatgnu/cupcake-protocols-io
+if [ $? -eq 0 ]; then
+    echo "cupcake-protocols-io built successfully"
+else
+    echo "cupcake-protocols-io build failed"
+    exit 1
+fi
+
 echo "Building cupcake-salted-caramel library..."
 ng build @noatgnu/cupcake-salted-caramel
 if [ $? -eq 0 ]; then

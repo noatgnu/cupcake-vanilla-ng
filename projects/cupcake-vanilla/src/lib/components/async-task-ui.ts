@@ -323,6 +323,7 @@ export class AsyncTaskUIService implements OnDestroy {
       [TaskType.TRANSCRIBE_VIDEO]: 'Video transcription',
       [TaskType.VALIDATE_SDRF_FILE]: 'SDRF file validation',
       [TaskType.EXPORT_PROTOCOLS_IO]: 'protocols.io export',
+      [TaskType.EXPORT_RUN_PROTOCOLS_IO]: 'protocols.io session export',
     };
     return typeMap[taskType] || taskType;
   }

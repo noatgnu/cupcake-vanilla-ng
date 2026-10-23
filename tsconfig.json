@@ -16,6 +16,10 @@
         "./dist/cupcake-mint-chocolate",
         "./projects/cupcake-mint-chocolate/src/public-api.ts"
       ],
+      "@noatgnu/cupcake-protocols-io": [
+        "./dist/cupcake-protocols-io",
+        "./projects/cupcake-protocols-io/src/public-api.ts"
+      ],
       "@noatgnu/cupcake-red-velvet": [
         "./dist/cupcake-red-velvet",
         "./projects/cupcake-red-velvet/src/public-api.ts"
@@ -97,6 +101,12 @@
     },
     {
       "path": "./projects/cupcake-excel-addin/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/cupcake-protocols-io/tsconfig.lib.json"
+    },
+    {
+      "path": "./projects/cupcake-protocols-io/tsconfig.spec.json"
     }
   ]
 }

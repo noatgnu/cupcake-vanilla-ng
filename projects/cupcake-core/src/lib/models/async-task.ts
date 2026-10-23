@@ -19,7 +19,8 @@ export enum TaskType {
   TRANSCRIBE_AUDIO = 'TRANSCRIBE_AUDIO',
   TRANSCRIBE_VIDEO = 'TRANSCRIBE_VIDEO',
   VALIDATE_SDRF_FILE = 'VALIDATE_SDRF_FILE',
-  EXPORT_PROTOCOLS_IO = 'EXPORT_PROTOCOLS_IO'
+  EXPORT_PROTOCOLS_IO = 'EXPORT_PROTOCOLS_IO',
+  EXPORT_RUN_PROTOCOLS_IO = 'EXPORT_RUN_PROTOCOLS_IO'
 }
 
 export interface TaskParameters {
@@ -229,6 +230,7 @@ export const TASK_TYPE_LABELS: Record<TaskType, string> = {
   [TaskType.TRANSCRIBE_VIDEO]: 'Transcribe Video',
   [TaskType.VALIDATE_SDRF_FILE]: 'Validate SDRF File',
   [TaskType.EXPORT_PROTOCOLS_IO]: 'Export to protocols.io',
+  [TaskType.EXPORT_RUN_PROTOCOLS_IO]: 'Export session to protocols.io',
 };
 
 export const TASK_STATUS_LABELS: Record<TaskStatus, string> = {
