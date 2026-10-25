@@ -2,6 +2,7 @@
  * Page object for the metadata tables list page (/metadata-tables).
  */
 import { Page, expect } from "@playwright/test";
+import { fillReliably } from "../common/fill";
 
 export class MetadataTablePage {
   constructor(private readonly page: Page) {}
@@ -12,7 +13,7 @@ export class MetadataTablePage {
 
   async create(name: string): Promise<void> {
     await this.page.locator('[title="New Table"]').click();
-    await this.page.locator("#tableName").fill(name);
+    await fillReliably(this.page.locator("#tableName"), name);
     const submitBtn = this.page.locator(".modal-footer .btn-primary");
     await expect(submitBtn).toBeEnabled({ timeout: 5000 });
     await submitBtn.click();

@@ -1,4 +1,5 @@
 import { test, expect } from "../fixtures/auth";
+import { fillReliably } from "../page-objects/common/fill";
 
 const TEMPLATE_NAME = `E2E Template ${Date.now()}`;
 
@@ -37,12 +38,13 @@ test.describe("column templates", () => {
     await adminPage.goto("/#/metadata-templates");
     await adminPage.getByRole("button", { name: /new template/i }).click();
     await expect(adminPage.getByRole("dialog")).toBeVisible({ timeout: 5000 });
-    await adminPage.locator("#templateName").fill(TEMPLATE_NAME);
-    await adminPage.locator("#columnName").fill("biological_replicate");
+    await fillReliably(adminPage.locator("#templateName"), TEMPLATE_NAME);
+    await fillReliably(adminPage.locator("#columnName"), "biological_replicate");
     const submitBtn = adminPage.locator(".modal-footer .btn-primary");
     await expect(submitBtn).toBeEnabled({ timeout: 5000 });
     await submitBtn.click();
     await expect(adminPage.getByRole("dialog")).not.toBeVisible({ timeout: 5000 });
+    await fillReliably(adminPage.locator("#templateSearch"), TEMPLATE_NAME);
     await expect(adminPage.getByText(TEMPLATE_NAME).first()).toBeVisible({ timeout: 10000 });
   });
 
@@ -50,18 +52,18 @@ test.describe("column templates", () => {
     await adminPage.goto("/#/metadata-templates");
     await adminPage.getByRole("button", { name: /new template/i }).click();
     await expect(adminPage.getByRole("dialog")).toBeVisible({ timeout: 5000 });
-    await adminPage.locator("#templateName").fill(TEMPLATE_NAME);
-    await adminPage.locator("#columnName").fill("biological_replicate");
+    await fillReliably(adminPage.locator("#templateName"), TEMPLATE_NAME);
+    await fillReliably(adminPage.locator("#columnName"), "biological_replicate");
     let submitBtn = adminPage.locator(".modal-footer .btn-primary");
     await expect(submitBtn).toBeEnabled({ timeout: 5000 });
     await submitBtn.click();
+    await fillReliably(adminPage.locator("#templateSearch"), TEMPLATE_NAME);
     await expect(adminPage.getByText(TEMPLATE_NAME).first()).toBeVisible({ timeout: 10000 });
 
     const row = adminPage.locator("tr, [role='row']").filter({ hasText: TEMPLATE_NAME }).first();
     await row.locator('[title="Edit template"]').click();
     const nameInput = adminPage.locator("#templateName");
-    await nameInput.clear();
-    await nameInput.fill(TEMPLATE_NAME + " Renamed");
+    await fillReliably(nameInput, TEMPLATE_NAME + " Renamed");
     submitBtn = adminPage.locator(".modal-footer .btn-primary");
     await expect(submitBtn).toBeEnabled({ timeout: 5000 });
     await submitBtn.click();
@@ -72,11 +74,12 @@ test.describe("column templates", () => {
     await adminPage.goto("/#/metadata-templates");
     await adminPage.getByRole("button", { name: /new template/i }).click();
     await expect(adminPage.getByRole("dialog")).toBeVisible({ timeout: 5000 });
-    await adminPage.locator("#templateName").fill(TEMPLATE_NAME);
-    await adminPage.locator("#columnName").fill("technical_replicate");
+    await fillReliably(adminPage.locator("#templateName"), TEMPLATE_NAME);
+    await fillReliably(adminPage.locator("#columnName"), "technical_replicate");
     const submitBtn = adminPage.locator(".modal-footer .btn-primary");
     await expect(submitBtn).toBeEnabled({ timeout: 5000 });
     await submitBtn.click();
+    await fillReliably(adminPage.locator("#templateSearch"), TEMPLATE_NAME);
     await expect(adminPage.getByText(TEMPLATE_NAME).first()).toBeVisible({ timeout: 10000 });
 
     const row = adminPage.locator("tr, [role='row']").filter({ hasText: TEMPLATE_NAME }).first();

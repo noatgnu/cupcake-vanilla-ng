@@ -117,3 +117,7 @@ html.theme-eink body {
 .dark-mode body {
   background: linear-gradient(135deg, var(--cupcake-bg) 0%, var(--cupcake-bg-secondary) 100%);
 }
+
+.pagination {
+  flex-wrap: wrap;
+}

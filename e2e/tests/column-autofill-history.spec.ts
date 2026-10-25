@@ -1,6 +1,7 @@
 import * as path from "path";
 import { test, expect } from "../fixtures/auth";
 import { MetadataTablePage } from "../page-objects/vanilla-ng/metadata-table.po";
+import { MetadataTableDetailPage } from "../page-objects/vanilla-ng/metadata-table-detail.po";
 
 const FIXTURES_DIR = process.env["E2E_FIXTURES_DIR"] || path.join(__dirname, "../fixtures/sdrf");
 const SDRF_FILE = path.join(FIXTURES_DIR, "PXD019185_PXD018883.sdrf.tsv");
@@ -29,6 +30,7 @@ async function createTableWithImportedData(
   await expect(monitor.locator(".task-item").first()).toBeVisible({ timeout: 20000 });
   await monitor.getByRole("button", { name: /^all/i }).click();
   await tasksBtn.click();
+  await new MetadataTableDetailPage(page).openListView();
 }
 
 test.describe("metadata column autofill modal", () => {

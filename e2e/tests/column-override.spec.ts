@@ -67,8 +67,8 @@ test.describe("column override import modal", () => {
     await adminPage.locator('[title="Import Data"]').click();
     await adminPage.getByText(/import.*override columns/i).first().click();
     await expect(adminPage.getByRole("dialog")).toBeVisible({ timeout: 5000 });
-    await expect(adminPage.locator('input[type="file"]').last()).toBeVisible({ timeout: 3000 });
-    await expect(adminPage.locator("select")).toBeVisible({ timeout: 3000 });
+    await expect(adminPage.getByRole("dialog").locator('input[type="file"]')).toBeVisible({ timeout: 3000 });
+    await expect(adminPage.getByRole("dialog").locator('select[formcontrolname="algorithm"]')).toBeVisible({ timeout: 3000 });
     await adminPage.getByRole("dialog").locator(".btn-close").click();
     const list = new MetadataTablePage(adminPage);
     await list.goto();
@@ -98,14 +98,13 @@ test.describe("column override import modal", () => {
     await adminPage.getByText(/import.*override columns/i).first().click();
     await expect(adminPage.getByRole("dialog")).toBeVisible({ timeout: 5000 });
 
-    const fileInput = adminPage.locator('input[type="file"]').last();
+    const fileInput = adminPage.getByRole("dialog").locator('input[type="file"]');
     await fileInput.setInputFiles(SDRF_FILE);
 
     const nextBtn = adminPage.getByRole("dialog").locator("button").filter({ hasText: /next|suggest|continue/i }).first();
-    if (await nextBtn.isVisible({ timeout: 3000 })) {
-      await nextBtn.click();
-      await expect(adminPage.getByText(/map|mapping|column.*mapping/i).first()).toBeVisible({ timeout: 10000 });
-    }
+    await expect(nextBtn).toBeEnabled({ timeout: 10000 });
+    await nextBtn.click();
+    await expect(adminPage.getByRole("dialog").getByText(/map|mapping|column.*mapping/i).first()).toBeVisible({ timeout: 10000 });
     await adminPage.getByRole("dialog").locator(".btn-close").click();
     const list = new MetadataTablePage(adminPage);
     await list.goto();

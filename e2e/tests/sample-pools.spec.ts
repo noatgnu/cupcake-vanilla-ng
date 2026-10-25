@@ -1,6 +1,7 @@
 import * as path from "path";
 import { test, expect } from "../fixtures/auth";
 import { MetadataTablePage } from "../page-objects/vanilla-ng/metadata-table.po";
+import { fillReliably } from "../page-objects/common/fill";
 
 const FIXTURES_DIR = process.env["E2E_FIXTURES_DIR"] || path.join(__dirname, "../fixtures/sdrf");
 const SDRF_FILE = path.join(FIXTURES_DIR, "PXD019185_PXD018883.sdrf.tsv");
@@ -34,7 +35,10 @@ async function createTableWithImportedData(
 async function createPool(page: import("@playwright/test").Page, poolName: string): Promise<void> {
   await page.getByRole("button", { name: /create pool/i }).click();
   await expect(page.getByRole("dialog")).toBeVisible({ timeout: 5000 });
-  await page.locator("#poolName").fill(poolName);
+  await fillReliably(page.locator("#poolName"), poolName);
+  const dialog = page.getByRole("dialog");
+  await dialog.locator('tbody input[type="checkbox"]:not([disabled])').first().check();
+  await dialog.locator("button.btn-outline-primary").filter({ hasText: /pooled only/i }).click();
   const submitBtn = page.locator(".modal-footer button.btn-primary, button[type='submit']").filter({ hasText: /create/i });
   await expect(submitBtn).not.toBeDisabled({ timeout: 3000 });
   await submitBtn.click();
@@ -95,13 +99,7 @@ test.describe("sample pool edit modal", () => {
     const poolRow = adminPage.locator(".pool-row, tr").filter({ hasText: "Edit Me Pool" }).first();
     await expect(poolRow).toBeVisible({ timeout: 10000 });
 
-    const editBtn = poolRow.locator("button[title*='Edit'], button").filter({ hasText: /edit/i }).first();
-    const altEditBtn = adminPage.locator("button").filter({ hasText: /edit.*pool/i }).first();
-    if (await editBtn.isVisible({ timeout: 2000 })) {
-      await editBtn.click();
-    } else {
-      await altEditBtn.click();
-    }
+    await poolRow.locator('td[title^="Click to edit pool"]').click();
     await expect(adminPage.getByRole("dialog")).toBeVisible({ timeout: 5000 });
     await expect(adminPage.locator("#poolName")).toBeVisible({ timeout: 3000 });
     await adminPage.getByRole("dialog").locator(".btn-close").click();
@@ -115,13 +113,10 @@ test.describe("sample pool edit modal", () => {
     const poolRow = adminPage.locator(".pool-row, tr").filter({ hasText: "Prefill Pool" }).first();
     await expect(poolRow).toBeVisible({ timeout: 10000 });
 
-    const editBtn = poolRow.locator("button[title*='Edit'], button").filter({ hasText: /edit/i }).first();
-    if (await editBtn.isVisible({ timeout: 2000 })) {
-      await editBtn.click();
-      await expect(adminPage.getByRole("dialog")).toBeVisible({ timeout: 5000 });
-      await expect(adminPage.locator("#poolName")).toHaveValue("Prefill Pool", { timeout: 3000 });
-      await adminPage.getByRole("dialog").locator(".btn-close").click();
-    }
+    await poolRow.locator('td[title^="Click to edit pool"]').click();
+    await expect(adminPage.getByRole("dialog")).toBeVisible({ timeout: 5000 });
+    await expect(adminPage.locator("#poolName")).toHaveValue("Prefill Pool", { timeout: 3000 });
+    await adminPage.getByRole("dialog").locator(".btn-close").click();
   });
 
   test("pool edit modal has description field", async ({ adminPage }) => {
@@ -132,12 +127,9 @@ test.describe("sample pool edit modal", () => {
     const poolRow = adminPage.locator(".pool-row, tr").filter({ hasText: "Desc Pool" }).first();
     await expect(poolRow).toBeVisible({ timeout: 10000 });
 
-    const editBtn = poolRow.locator("button[title*='Edit'], button").filter({ hasText: /edit/i }).first();
-    if (await editBtn.isVisible({ timeout: 2000 })) {
-      await editBtn.click();
-      await expect(adminPage.getByRole("dialog")).toBeVisible({ timeout: 5000 });
-      await expect(adminPage.locator("#poolDescription")).toBeVisible({ timeout: 3000 });
-      await adminPage.getByRole("dialog").locator(".btn-close").click();
-    }
+    await poolRow.locator('td[title^="Click to edit pool"]').click();
+    await expect(adminPage.getByRole("dialog")).toBeVisible({ timeout: 5000 });
+    await expect(adminPage.locator("#poolDescription")).toBeVisible({ timeout: 3000 });
+    await adminPage.getByRole("dialog").locator(".btn-close").click();
   });
 });

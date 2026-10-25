@@ -1,6 +1,7 @@
 import * as path from "path";
 import { test, expect } from "../fixtures/auth";
 import { MetadataTablePage } from "../page-objects/vanilla-ng/metadata-table.po";
+import { fillReliably } from "../page-objects/common/fill";
 
 const FIXTURES_DIR = process.env["E2E_FIXTURES_DIR"] || path.join(__dirname, "../fixtures/sdrf");
 
@@ -69,12 +70,13 @@ test.describe("column template CRUD", () => {
     await adminPage.goto("/#/metadata-templates");
     await adminPage.getByRole("button", { name: /new template/i }).click();
     await expect(adminPage.getByRole("dialog")).toBeVisible({ timeout: 5000 });
-    await adminPage.locator("#templateName").fill(TEMPLATE_NAME);
-    await adminPage.locator("#columnName").fill("biological_replicate");
+    await fillReliably(adminPage.locator("#templateName"), TEMPLATE_NAME);
+    await fillReliably(adminPage.locator("#columnName"), "biological_replicate");
     const submitBtn = adminPage.locator(".modal-footer .btn-primary");
     await expect(submitBtn).toBeEnabled({ timeout: 5000 });
     await submitBtn.click();
     await expect(adminPage.getByRole("dialog")).not.toBeVisible({ timeout: 5000 });
+    await fillReliably(adminPage.locator("#templateSearch"), TEMPLATE_NAME);
     await expect(adminPage.getByText(TEMPLATE_NAME).first()).toBeVisible({ timeout: 10000 });
   });
 });

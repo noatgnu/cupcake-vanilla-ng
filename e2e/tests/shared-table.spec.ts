@@ -31,7 +31,7 @@ async function createTableWithData(page: import("@playwright/test").Page, name: 
 
 async function generateShareToken(page: import("@playwright/test").Page): Promise<string> {
   await page.locator('[title="Share Table"]').click();
-  const dropdown = page.locator(".dropdown-menu");
+  const dropdown = page.locator(".dropdown-menu.show");
   await expect(dropdown).toBeVisible({ timeout: 5000 });
 
   const generateBtn = dropdown.locator("button", { hasText: /generate share link/i });
@@ -64,7 +64,7 @@ test.describe("Share table — owner UI", () => {
     await list.openTable(tableName);
 
     await adminPage.locator('[title="Share Table"]').click();
-    const dropdown = adminPage.locator(".dropdown-menu");
+    const dropdown = adminPage.locator(".dropdown-menu.show");
     await expect(dropdown).toBeVisible({ timeout: 5000 });
     await expect(dropdown.getByText(/generate share link/i)).toBeVisible({ timeout: 3000 });
   });
@@ -75,7 +75,7 @@ test.describe("Share table — owner UI", () => {
     await createTableWithData(adminPage, tableName);
 
     await adminPage.locator('[title="Share Table"]').click();
-    const dropdown = adminPage.locator(".dropdown-menu");
+    const dropdown = adminPage.locator(".dropdown-menu.show");
     await dropdown.locator("button", { hasText: /generate share link/i }).click();
 
     await expect(dropdown.locator('input[type="text"]')).toBeVisible({ timeout: 5000 });
@@ -91,7 +91,7 @@ test.describe("Share table — owner UI", () => {
 
     const shareBtn = adminPage.locator('[title="Share Table"]');
     await shareBtn.click();
-    const dropdown = adminPage.locator(".dropdown-menu");
+    const dropdown = adminPage.locator(".dropdown-menu.show");
     await dropdown.locator("button", { hasText: /generate share link/i }).click();
     await expect(dropdown.locator('input[type="text"]')).toBeVisible({ timeout: 5000 });
 
@@ -104,17 +104,15 @@ test.describe("Share table — owner UI", () => {
     await createTableWithData(adminPage, tableName);
 
     await adminPage.locator('[title="Share Table"]').click();
-    const dropdown = adminPage.locator(".dropdown-menu");
+    const dropdown = adminPage.locator(".dropdown-menu.show");
     await dropdown.locator("button", { hasText: /generate share link/i }).click();
     const urlInput = dropdown.locator('input[type="text"]');
     await expect(urlInput).toBeVisible({ timeout: 5000 });
     const firstUrl = await urlInput.inputValue();
 
     await dropdown.locator("button", { hasText: /regenerate/i }).click();
-    await expect(urlInput).toBeVisible({ timeout: 5000 });
-    const secondUrl = await urlInput.inputValue();
-
-    expect(firstUrl).not.toBe(secondUrl);
+    await expect(urlInput).not.toHaveValue(firstUrl, { timeout: 5000 });
+    await expect(urlInput).toHaveValue(/\/shared\/[0-9a-f-]+/);
   });
 
   test("Revoking the link clears it and shows generate prompt again", async ({ adminPage }) => {
@@ -123,7 +121,7 @@ test.describe("Share table — owner UI", () => {
     await createTableWithData(adminPage, tableName);
 
     await adminPage.locator('[title="Share Table"]').click();
-    const dropdown = adminPage.locator(".dropdown-menu");
+    const dropdown = adminPage.locator(".dropdown-menu.show");
     await dropdown.locator("button", { hasText: /generate share link/i }).click();
     await expect(dropdown.locator('input[type="text"]')).toBeVisible({ timeout: 5000 });
 
@@ -221,12 +219,13 @@ test.describe("Share table — public access", () => {
 
     const token = await generateShareToken(adminPage);
 
-    await adminPage.locator('[title="Share Table"]').click();
-    const dropdown = adminPage.locator(".dropdown-menu");
+    const dropdown = adminPage.locator(".dropdown-menu.show");
     await dropdown.locator("button", { hasText: /revoke/i }).click();
     const dialog = adminPage.getByRole("dialog");
     await expect(dialog).toBeVisible({ timeout: 5000 });
     await dialog.locator("button.btn-danger").click();
+    await expect(dialog).not.toBeVisible({ timeout: 5000 });
+    await adminPage.locator('[title="Share Table"]').click();
     await expect(dropdown.getByText(/generate share link/i)).toBeVisible({ timeout: 5000 });
 
     const shared = new SharedTablePage(guestPage);

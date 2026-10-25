@@ -52,6 +52,16 @@ export class MetadataTableDetailPage {
   }
 
   async expectColumnsSection(): Promise<void> {
-    await expect(this.page.getByText(/table columns/i).first()).toBeVisible({ timeout: 10000 });
+    await expect(this.page.getByRole("heading", { name: /table (columns|data)/i }).first()).toBeVisible({ timeout: 10000 });
+  }
+
+  /**
+   * Switches a table with columns to the column list view, where the per-column buttons are.
+   */
+  async openListView(): Promise<void> {
+    const listBtn = this.page.locator('[title="Column List View"]');
+    await expect(listBtn).toBeVisible({ timeout: 15000 });
+    await listBtn.click();
+    await expect(this.page.getByRole("heading", { name: /table columns/i })).toBeVisible({ timeout: 10000 });
   }
 }

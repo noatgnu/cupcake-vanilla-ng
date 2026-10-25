@@ -53,15 +53,10 @@ test.describe("validation results modal", () => {
     await expect(monitor.locator(".task-item").first()).toBeVisible({ timeout: 30000 });
     await adminPage.locator("button[aria-label*='Background tasks']").click();
 
-    const resultsModal = adminPage.getByRole("dialog");
-    if (await resultsModal.isVisible({ timeout: 5000 }).catch(() => false)) {
-      const hasPass = await resultsModal.getByText(/validation passed|validation successful/i).isVisible({ timeout: 3000 }).catch(() => false);
-      const hasFail = await resultsModal.getByText(/validation failed/i).isVisible({ timeout: 3000 }).catch(() => false);
-      const hasTitle = await resultsModal.locator(".modal-title").isVisible({ timeout: 3000 }).catch(() => false);
-      expect(hasPass || hasFail || hasTitle).toBeTruthy();
-      const closeBtn = resultsModal.locator(".btn-close, button").filter({ hasText: /close/i }).first();
-      await closeBtn.click();
-    }
+    const resultsModal = adminPage.getByRole("dialog").filter({ has: adminPage.getByRole("heading", { name: /validation (passed|failed)/i }) });
+    await expect(resultsModal).toBeVisible({ timeout: 60000 });
+    await resultsModal.getByRole("button", { name: "Close" }).last().click();
+    await expect(resultsModal).not.toBeVisible({ timeout: 5000 });
 
     const list = new MetadataTablePage(adminPage);
     await list.goto();
@@ -87,14 +82,10 @@ test.describe("validation results modal", () => {
     await expect(monitor.locator(".task-item").first()).toBeVisible({ timeout: 30000 });
     await adminPage.locator("button[aria-label*='Background tasks']").click();
 
-    const resultsModal = adminPage.getByRole("dialog");
-    if (await resultsModal.isVisible({ timeout: 5000 }).catch(() => false)) {
-      const title = resultsModal.locator(".modal-title");
-      const titleText = await title.textContent({ timeout: 3000 }).catch(() => "");
-      expect(/validation passed|validation failed/i.test(titleText || "")).toBeTruthy();
-      const closeBtn = resultsModal.locator(".btn-close, button").filter({ hasText: /close/i }).first();
-      await closeBtn.click();
-    }
+    const resultsModal = adminPage.getByRole("dialog").filter({ has: adminPage.getByRole("heading", { name: /validation (passed|failed)/i }) });
+    await expect(resultsModal).toBeVisible({ timeout: 60000 });
+    await resultsModal.getByRole("button", { name: "Close" }).last().click();
+    await expect(resultsModal).not.toBeVisible({ timeout: 5000 });
 
     const list = new MetadataTablePage(adminPage);
     await list.goto();

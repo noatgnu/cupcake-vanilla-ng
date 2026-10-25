@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, OnDestroy, signal, ChangeDetectionStrategy, effect, untracked, computed } from '@angular/core';
+import { Component, inject, OnDestroy, signal, ChangeDetectionStrategy, effect, untracked, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { NgbCollapse, NgbDropdownModule } from '@ng-bootstrap/ng-bootstrap';
@@ -20,7 +20,7 @@ import { EnvironmentService } from '../../services/environment';
   styleUrl: './navbar.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class NavbarComponent implements OnInit, OnDestroy {
+export class NavbarComponent implements OnDestroy {
   private authService = inject(AuthService);
   private router = inject(Router);
   private siteConfigService = inject(SiteConfigService);
@@ -58,6 +58,11 @@ export class NavbarComponent implements OnInit, OnDestroy {
     effect(() => {
       const isAuthenticated = this.authService.authenticated();
       untracked(() => {
+        if (isAuthenticated) {
+          this.loadPlugins();
+        } else {
+          this.activePlugins.set([]);
+        }
         if (isAuthenticated && this.webSocketService.shouldConnect()) {
           const currentState = this.webSocketService.connectionState$();
           if (currentState === 'disconnected' || currentState === 'error') {
@@ -68,10 +73,6 @@ export class NavbarComponent implements OnInit, OnDestroy {
         }
       });
     });
-  }
-
-  ngOnInit(): void {
-    this.loadPlugins();
   }
 
   private loadPlugins(): void {

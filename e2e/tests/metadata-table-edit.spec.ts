@@ -1,5 +1,7 @@
 import { test, expect } from "../fixtures/auth";
 import { MetadataTablePage } from "../page-objects/vanilla-ng/metadata-table.po";
+import { fillReliably } from "../page-objects/common/fill";
+import { MetadataTableDetailPage } from "../page-objects/vanilla-ng/metadata-table-detail.po";
 
 async function createAndOpenTable(page: import("@playwright/test").Page, name: string): Promise<void> {
   const list = new MetadataTablePage(page);
@@ -77,8 +79,8 @@ test.describe("metadata table edit modal", () => {
     await createAndOpenTable(adminPage, name);
     await adminPage.locator('[title="Edit Table"]').click();
     await expect(adminPage.getByRole("dialog")).toBeVisible({ timeout: 5000 });
-    await adminPage.locator("#tableName").fill(newName);
-    const submitBtn = adminPage.getByRole("dialog").locator("button[type='submit'], .modal-footer .btn-primary").first();
+    await fillReliably(adminPage.locator("#tableName"), newName);
+    const submitBtn = adminPage.getByRole("dialog").locator(".modal-footer .btn-primary");
     await submitBtn.click();
     await expect(adminPage.getByRole("dialog")).not.toBeVisible({ timeout: 5000 });
     await expect(adminPage.getByText(newName).first()).toBeVisible({ timeout: 5000 });
@@ -94,6 +96,7 @@ test.describe("reorder columns by schema", () => {
   test("Reorder Columns button opens schema selection modal", async ({ adminPage }) => {
     const name = `E2E Reorder Open ${Date.now()}`;
     await createAndOpenTable(adminPage, name);
+    await new MetadataTableDetailPage(adminPage).addColumn("organism");
 
     await adminPage.locator('[title="Reorder Columns by Schema"]').click();
     await expect(adminPage.getByRole("dialog")).toBeVisible({ timeout: 5000 });
@@ -107,6 +110,7 @@ test.describe("reorder columns by schema", () => {
   test("schema selection modal has search and select all controls", async ({ adminPage }) => {
     const name = `E2E Reorder Controls ${Date.now()}`;
     await createAndOpenTable(adminPage, name);
+    await new MetadataTableDetailPage(adminPage).addColumn("organism");
 
     await adminPage.locator('[title="Reorder Columns by Schema"]').click();
     await expect(adminPage.getByRole("dialog")).toBeVisible({ timeout: 5000 });
@@ -121,6 +125,7 @@ test.describe("reorder columns by schema", () => {
   test("schema selection modal shows available schemas", async ({ adminPage }) => {
     const name = `E2E Reorder Schemas ${Date.now()}`;
     await createAndOpenTable(adminPage, name);
+    await new MetadataTableDetailPage(adminPage).addColumn("organism");
 
     await adminPage.locator('[title="Reorder Columns by Schema"]').click();
     await expect(adminPage.getByRole("dialog")).toBeVisible({ timeout: 5000 });

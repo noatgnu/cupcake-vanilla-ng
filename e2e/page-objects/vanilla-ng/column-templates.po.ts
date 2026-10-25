@@ -2,6 +2,7 @@
  * Page object for column templates (/metadata-templates).
  */
 import { Page, expect } from "@playwright/test";
+import { fillReliably } from "../common/fill";
 
 export class ColumnTemplatesPage {
   constructor(private readonly page: Page) {}
@@ -12,10 +13,15 @@ export class ColumnTemplatesPage {
 
   async create(name: string, columnName = "characteristics[e2e test]"): Promise<void> {
     await this.page.getByRole("button", { name: /new template/i }).click();
-    await this.page.locator("#templateName").fill(name);
-    await this.page.locator("#columnName").fill(columnName);
+    await fillReliably(this.page.locator("#templateName"), name);
+    await fillReliably(this.page.locator("#columnName"), columnName);
     await this.page.getByRole("button", { name: /save|create|submit/i }).click();
+    await this.search(name);
     await expect(this.page.getByText(name)).toBeVisible({ timeout: 10000 });
+  }
+
+  async search(text: string): Promise<void> {
+    await fillReliably(this.page.locator("#templateSearch"), text);
   }
 
   async delete(name: string): Promise<void> {
@@ -29,8 +35,7 @@ export class ColumnTemplatesPage {
     const row = this.page.locator("tr, [role='row']").filter({ hasText: oldName });
     await row.getByRole("button", { name: /edit/i }).click();
     const nameInput = this.page.locator("#templateName");
-    await nameInput.clear();
-    await nameInput.fill(newName);
+    await fillReliably(nameInput, newName);
     await this.page.getByRole("button", { name: /save|confirm|submit/i }).click();
     await expect(this.page.getByText(newName)).toBeVisible({ timeout: 10000 });
   }

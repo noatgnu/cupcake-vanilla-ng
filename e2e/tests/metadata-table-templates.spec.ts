@@ -4,7 +4,7 @@ test.describe("metadata table templates page", () => {
   test("navigating to /metadata-table-templates loads the templates page", async ({ adminPage }) => {
     await adminPage.goto("/#/metadata-table-templates");
     await expect(adminPage).toHaveURL(/\/metadata-table-templates/, { timeout: 10000 });
-    await expect(adminPage.getByText(/table templates/i).first()).toBeVisible({ timeout: 10000 });
+    await expect(adminPage.getByRole("heading", { name: /table templates/i }).first()).toBeVisible({ timeout: 10000 });
   });
 
   test("templates page shows New Template button", async ({ adminPage }) => {
@@ -20,7 +20,7 @@ test.describe("metadata table templates page", () => {
   test("New Template dropdown has Create from Schemas and Manual options", async ({ adminPage }) => {
     await adminPage.goto("/#/metadata-table-templates");
     await adminPage.getByRole("button", { name: /new template/i }).click();
-    const dropdown = adminPage.locator(".dropdown-menu");
+    const dropdown = adminPage.locator(".dropdown-menu.show");
     await expect(dropdown).toBeVisible({ timeout: 5000 });
     await expect(dropdown.getByText(/create from schemas/i)).toBeVisible({ timeout: 3000 });
     await expect(dropdown.getByText(/manual configuration/i)).toBeVisible({ timeout: 3000 });
@@ -30,7 +30,7 @@ test.describe("metadata table templates page", () => {
   test("clicking Create from Schemas opens schema selection modal", async ({ adminPage }) => {
     await adminPage.goto("/#/metadata-table-templates");
     await adminPage.getByRole("button", { name: /new template/i }).click();
-    const dropdown = adminPage.locator(".dropdown-menu");
+    const dropdown = adminPage.locator(".dropdown-menu.show");
     await expect(dropdown).toBeVisible({ timeout: 5000 });
     await dropdown.getByText(/create from schemas/i).click();
     await expect(adminPage.getByRole("dialog")).toBeVisible({ timeout: 5000 });
@@ -56,6 +56,6 @@ test.describe("metadata table templates page", () => {
   test("templates page is accessible to regular user", async ({ userPage }) => {
     await userPage.goto("/#/metadata-table-templates");
     await expect(userPage).toHaveURL(/\/metadata-table-templates/, { timeout: 10000 });
-    await expect(userPage.getByText(/table templates/i).first()).toBeVisible({ timeout: 10000 });
+    await expect(userPage.getByRole("heading", { name: /table templates/i }).first()).toBeVisible({ timeout: 10000 });
   });
 });

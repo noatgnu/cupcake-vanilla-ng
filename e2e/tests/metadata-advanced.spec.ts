@@ -1,6 +1,7 @@
 import * as path from "path";
 import { test, expect } from "../fixtures/auth";
 import { MetadataTablePage } from "../page-objects/vanilla-ng/metadata-table.po";
+import { MetadataTableDetailPage } from "../page-objects/vanilla-ng/metadata-table-detail.po";
 
 const FIXTURES_DIR = process.env["E2E_FIXTURES_DIR"] || path.join(__dirname, "../fixtures/sdrf");
 const SDRF_FILE = path.join(FIXTURES_DIR, "PXD019185_PXD018883.sdrf.tsv");
@@ -73,7 +74,7 @@ test.describe("metadata validation modal", () => {
     const row = adminPage.locator("tr").filter({ hasText: tableName });
     await row.getByRole("button", { name: /validate/i }).click();
     await expect(adminPage.getByRole("dialog")).toBeVisible({ timeout: 5000 });
-    await expect(adminPage.getByText(/validate metadata table/i)).toBeVisible({ timeout: 3000 });
+    await expect(adminPage.getByRole("dialog").getByRole("heading", { name: /validate metadata table/i })).toBeVisible({ timeout: 3000 });
 
     await adminPage.getByRole("dialog").locator(".modal-header .btn-close").click();
     await list.deleteTable(tableName);
@@ -155,6 +156,7 @@ test.describe("metadata value edit modal", () => {
     test.setTimeout(120000);
     const tableName = `E2E EditValue ${Date.now()}`;
     await createTableWithImportedData(adminPage, tableName);
+    await new MetadataTableDetailPage(adminPage).openListView();
 
     const editBtn = adminPage.getByRole("button", { name: /edit default value for characteristics\[organism\]/i }).first();
     await expect(editBtn).toBeVisible({ timeout: 10000 });
@@ -168,6 +170,7 @@ test.describe("metadata value edit modal", () => {
     test.setTimeout(120000);
     const tableName = `E2E Typeahead ${Date.now()}`;
     await createTableWithImportedData(adminPage, tableName);
+    await new MetadataTableDetailPage(adminPage).openListView();
 
     const editBtn = adminPage.getByRole("button", { name: /edit default value for characteristics\[organism\]/i }).first();
     await expect(editBtn).toBeVisible({ timeout: 10000 });
@@ -186,6 +189,7 @@ test.describe("metadata value edit modal", () => {
     test.setTimeout(120000);
     const tableName = `E2E AgeInput ${Date.now()}`;
     await createTableWithImportedData(adminPage, tableName);
+    await new MetadataTableDetailPage(adminPage).openListView();
 
     const editBtn = adminPage.getByRole("button", { name: /edit default value for characteristics\[age\]/i }).first();
     await expect(editBtn).toBeVisible({ timeout: 10000 });
@@ -199,6 +203,7 @@ test.describe("metadata value edit modal", () => {
     test.setTimeout(120000);
     const tableName = `E2E AgeRange ${Date.now()}`;
     await createTableWithImportedData(adminPage, tableName);
+    await new MetadataTableDetailPage(adminPage).openListView();
 
     const editBtn = adminPage.getByRole("button", { name: /edit default value for characteristics\[age\]/i }).first();
     await expect(editBtn).toBeVisible({ timeout: 10000 });

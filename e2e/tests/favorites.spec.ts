@@ -1,4 +1,5 @@
 import { test, expect } from "../fixtures/auth";
+import { fillReliably } from "../page-objects/common/fill";
 
 test.describe("favorite management — full coverage", () => {
   test("favorites route is accessible to regular user", async ({ userPage }) => {
@@ -39,7 +40,8 @@ test.describe("favorite management — full coverage", () => {
     await adminPage.getByRole("button", { name: /add favorite/i }).click();
     const dialog = adminPage.getByRole("dialog");
     await expect(dialog).toBeVisible({ timeout: 5000 });
-    await dialog.locator("#favName").fill("Test Favorite Value");
+    await fillReliably(dialog.locator("#favName"), "Test Favorite Value");
+    await fillReliably(dialog.locator("#favType"), "characteristics[organism]");
     const submitBtn = dialog.locator("button[type='submit'], .modal-footer .btn-primary").first();
     await expect(submitBtn).not.toBeDisabled({ timeout: 3000 });
     await dialog.locator(".btn-close").click();
@@ -65,7 +67,8 @@ test.describe("favorite management — full coverage", () => {
     await adminPage.getByRole("button", { name: /add favorite/i }).click();
     const dialog = adminPage.getByRole("dialog");
     await expect(dialog).toBeVisible({ timeout: 5000 });
-    await dialog.locator("#favName").fill(favName);
+    await fillReliably(dialog.locator("#favName"), favName);
+    await fillReliably(dialog.locator("#favType"), "characteristics[organism]");
     const submitBtn = dialog.locator("button[type='submit'], .modal-footer .btn-primary").first();
     await expect(submitBtn).not.toBeDisabled({ timeout: 3000 });
     await submitBtn.click();
