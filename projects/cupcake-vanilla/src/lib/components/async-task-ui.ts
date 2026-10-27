@@ -214,7 +214,7 @@ export class AsyncTaskUIService implements OnDestroy {
     this.libraryAsyncTaskService.getDownloadUrl(taskId).subscribe({
       next: (response) => {
         if (this.desktopService.isDesktop) {
-          this.desktopService.downloadFile(response.downloadUrl)
+          this.desktopService.downloadFile(response.downloadUrl, response.filename)
             .then((filePath: string) => {
               this.toastService.success(`File downloaded to: ${filePath}`);
             })

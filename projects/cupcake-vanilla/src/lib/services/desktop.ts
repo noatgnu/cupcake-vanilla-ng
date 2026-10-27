@@ -23,11 +23,12 @@ export class DesktopService {
   private backendStatusSubject = new Subject<any>();
   private windowStateSubject = new Subject<'maximized' | 'unmaximized'>();
   private wailsRuntime: WailsRuntime | null = null;
+  private wailsRuntimeReady: Promise<WailsRuntime | null> = Promise.resolve(null);
 
   constructor() {
     if (this.hasWails()) {
       this._runtime = 'wails';
-      this.loadWailsRuntime();
+      this.wailsRuntimeReady = this.loadWailsRuntime();
     } else if (this.hasElectron()) {
       this._runtime = 'electron';
     } else {
@@ -35,8 +36,8 @@ export class DesktopService {
     }
   }
 
-  private async loadWailsRuntime(): Promise<void> {
-    if (this.wailsRuntime) return;
+  private async loadWailsRuntime(): Promise<WailsRuntime | null> {
+    if (this.wailsRuntime) return this.wailsRuntime;
     try {
       const wails = await import('@wailsio/runtime');
       this.wailsRuntime = { Call: wails.Call, Events: wails.Events };
@@ -44,6 +45,7 @@ export class DesktopService {
     } catch {
       this.wailsRuntime = null;
     }
+    return this.wailsRuntime;
   }
 
   private hasElectron(): boolean {
@@ -52,8 +54,16 @@ export class DesktopService {
            window.electronAPI.isElectron === true;
   }
 
+  /**
+   * Wails only injects `window._wails` once the page has finished loading, which is after
+   * this service is constructed, so the asset-server origin is checked as well: the `wails:`
+   * scheme on Linux/macOS and the `wails.localhost` host on Windows.
+   */
   private hasWails(): boolean {
-    return typeof window !== 'undefined' && '_wails' in window;
+    if (typeof window === 'undefined') return false;
+    return '_wails' in window ||
+           window.location.protocol === 'wails:' ||
+           window.location.hostname === 'wails.localhost';
   }
 
   get runtime(): DesktopRuntime {
@@ -93,8 +103,9 @@ export class DesktopService {
     if (this._runtime === 'electron' && window.electronAPI) {
       return window.electronAPI.getAppVersion();
     }
-    if (this._runtime === 'wails' && this.wailsRuntime) {
-      return this.wailsRuntime.Call.ByName('main.App.GetAppVersion');
+    const wails = this._runtime === 'wails' ? await this.wailsRuntimeReady : null;
+    if (wails) {
+      return wails.Call.ByName('main.App.GetAppVersion');
     }
     return '0.0.0';
   }
@@ -141,8 +152,9 @@ export class DesktopService {
     if (this._runtime === 'electron' && window.electronAPI) {
       return window.electronAPI.showOpenDialog(options);
     }
-    if (this._runtime === 'wails' && this.wailsRuntime) {
-      return this.wailsRuntime.Call.ByName('main.App.OpenFile', options?.title || 'Select File');
+    const wails = this._runtime === 'wails' ? await this.wailsRuntimeReady : null;
+    if (wails) {
+      return wails.Call.ByName('main.App.OpenFile', options?.title || 'Select File');
     }
     throw new Error('Not running in desktop environment');
   }
@@ -161,9 +173,16 @@ export class DesktopService {
     throw new Error('Not running in desktop environment');
   }
 
+  /**
+   * Saves a backend download link to the user's Downloads folder and resolves with the saved path.
+   */
   async downloadFile(url: string, filename?: string): Promise<string> {
     if (this._runtime === 'electron' && window.electronAPI) {
       return window.electronAPI.downloadFile(url, filename);
+    }
+    const wails = this._runtime === 'wails' ? await this.wailsRuntimeReady : null;
+    if (wails) {
+      return wails.Call.ByName('main.App.DownloadFile', url, filename ?? '');
     }
     throw new Error('Not running in desktop environment');
   }
@@ -172,8 +191,9 @@ export class DesktopService {
     if (this._runtime === 'electron' && window.electronAPI) {
       return window.electronAPI.getBackendPort();
     }
-    if (this._runtime === 'wails' && this.wailsRuntime) {
-      return this.wailsRuntime.Call.ByName('main.App.GetBackendPort');
+    const wails = this._runtime === 'wails' ? await this.wailsRuntimeReady : null;
+    if (wails) {
+      return wails.Call.ByName('main.App.GetBackendPort');
     }
     return 8000;
   }
@@ -182,8 +202,9 @@ export class DesktopService {
     if (this._runtime === 'electron' && window.electronAPI) {
       return window.electronAPI.isBackendReady();
     }
-    if (this._runtime === 'wails' && this.wailsRuntime) {
-      return this.wailsRuntime.Call.ByName('main.App.IsBackendReady');
+    const wails = this._runtime === 'wails' ? await this.wailsRuntimeReady : null;
+    if (wails) {
+      return wails.Call.ByName('main.App.IsBackendReady');
     }
     return false;
   }
@@ -216,8 +237,9 @@ export class DesktopService {
   }
 
   async logToFile(message: string): Promise<void> {
-    if (this._runtime === 'wails' && this.wailsRuntime) {
-      return this.wailsRuntime.Call.ByName('main.App.LogToFile', message);
+    const wails = this._runtime === 'wails' ? await this.wailsRuntimeReady : null;
+    if (wails) {
+      return wails.Call.ByName('main.App.LogToFile', message);
     }
   }
 }

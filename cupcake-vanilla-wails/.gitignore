@@ -24,6 +24,7 @@ frontend/dist/
 frontend/.angular/
 frontend/test-results/
 frontend/playwright-report/
+frontend/playwright-report-ui/
 
 # Main app build output
 mainapp/dist/
