@@ -78,8 +78,14 @@ build_mainapp() {
         cd "$SCRIPT_DIR"
     fi
 
-    log_info "Building main app with Wails configuration..."
     cd "$MAINAPP_SOURCE"
+
+    if [ -f "angular.json" ]; then
+        log_info "Building @noatgnu/cupcake-core library..."
+        npx ng build @noatgnu/cupcake-core
+    fi
+
+    log_info "Building main app with Wails configuration..."
 
     if [ -f "angular.json" ]; then
         npx ng build --configuration=wails 2>/dev/null || npx ng build --configuration=production
