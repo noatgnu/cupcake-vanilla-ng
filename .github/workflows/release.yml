@@ -26,6 +26,12 @@ jobs:
             arch: amd64
             artifact_name: cupcake-vanilla
             asset_name: cupcake-vanilla-linux-amd64
+          - os: ubuntu-22.04
+            platform: linux
+            arch: amd64
+            artifact_name: cupcake-vanilla
+            asset_name: cupcake-vanilla-linux-amd64-gtk3
+            gtk3: true
           - os: windows-latest
             platform: windows
             arch: amd64
@@ -62,7 +68,11 @@ jobs:
         if: matrix.platform == 'linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libgtk-4-dev libwebkitgtk-6.0-dev
+          if [ "${{ matrix.gtk3 }}" = "true" ]; then
+            sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev
+          else
+            sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libgtk-4-dev libwebkitgtk-6.0-dev
+          fi
 
       - name: Install Wails CLI
         run: go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0
@@ -76,7 +86,11 @@ jobs:
         shell: bash
         run: |
           export PATH="$HOME/go/bin:$PATH"
-          wails3 generate bindings -ts -d frontend/bindings
+          if [ "${{ matrix.gtk3 }}" = "true" ]; then
+            wails3 generate bindings -ts -f "-tags gtk3" -d frontend/bindings
+          else
+            wails3 generate bindings -ts -d frontend/bindings
+          fi
 
       - name: Build frontend
         run: |
@@ -94,7 +108,7 @@ jobs:
           cp -r dist/cupcake-vanilla-ng/browser/* cupcake-vanilla-wails/mainapp/dist/browser/
 
       - name: Run Go tests
-        run: go test -v ./... -count=1
+        run: go test -tags "${{ matrix.gtk3 && 'gtk3' || '' }}" -v ./... -count=1
 
       - name: Build release (Linux/macOS)
         if: matrix.platform != 'windows'
@@ -107,6 +121,7 @@ jobs:
             export CGO_LDFLAGS="-arch x86_64"
           fi
           GOOS=${{ matrix.platform }} GOARCH=${{ matrix.arch }} CGO_ENABLED=1 go build \
+            -tags "${{ matrix.gtk3 && 'gtk3' || '' }}" \
             -ldflags="-s -w" \
             -o build/bin/${{ matrix.platform }}-${{ matrix.arch }}/${{ matrix.artifact_name }}
 

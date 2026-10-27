@@ -7,6 +7,10 @@ on:
       - 'projects/**'
       - 'src/**'
       - 'e2e/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'angular.json'
+      - 'tsconfig*.json'
       - '.github/workflows/e2e.yml'
   pull_request:
     branches: [main, master]
@@ -14,6 +18,10 @@ on:
       - 'projects/**'
       - 'src/**'
       - 'e2e/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'angular.json'
+      - 'tsconfig*.json'
       - '.github/workflows/e2e.yml'
 
 env:
