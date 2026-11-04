@@ -188,13 +188,13 @@ export class InstrumentJobService extends BaseApiService {
    */
   getAutocompleteFields(): Observable<{
     funders: string[];
-    cost_centers: string[];
-    search_engines: { [key: string]: string[] };
+    costCenters: string[];
+    searchEngines: { [key: string]: string[] };
   }> {
     return this.get<{
       funders: string[];
-      cost_centers: string[];
-      search_engines: { [key: string]: string[] };
+      costCenters: string[];
+      searchEngines: { [key: string]: string[] };
     }>(`${this.apiUrl}/instrument-jobs/autocomplete_fields/`);
   }
 }

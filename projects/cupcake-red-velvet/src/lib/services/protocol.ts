@@ -180,9 +180,9 @@ export class ProtocolService extends BaseApiService {
    * @param sessionId Optional session ID to include session-specific annotations
    * @returns Observable with download URL containing signed token
    */
-  getExportUrl(id: number, sessionId?: number): Observable<{download_url: string}> {
+  getExportUrl(id: number, sessionId?: number): Observable<{downloadUrl: string}> {
     const params = sessionId ? {session: sessionId.toString()} : {};
     const httpParams = this.buildHttpParams(params);
-    return this.get<{download_url: string}>(`${this.apiUrl}/protocols/${id}/get_export_url/`, { params: httpParams });
+    return this.get<{downloadUrl: string}>(`${this.apiUrl}/protocols/${id}/get_export_url/`, { params: httpParams });
   }
 }

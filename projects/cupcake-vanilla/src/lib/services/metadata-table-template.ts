@@ -10,6 +10,16 @@ import {
   MetadataTableTemplateSyncRequest,
   MetadataTableTemplateSyncResponse,
   MetadataTable,
+  TableFromSchemasRequest,
+  TableFromTemplateRequest,
+  TemplateAddColumnRequest,
+  TemplateApplyResponse,
+  TemplateColumnResponse,
+  TemplateColumnsWithFieldMasks,
+  TemplateDuplicateColumnRequest,
+  TemplateFieldMask,
+  TemplateFieldMaskUpdateResponse,
+  TemplateFromSchemaRequest,
   MetadataColumn,
   Schema,
   PaginatedResponse
@@ -77,21 +87,21 @@ export class MetadataTableTemplateService extends BaseApiService {
   /**
    * Add a column to the template
    */
-  addColumn(id: number, request: { column_data: any; position?: number }): Observable<{ message: string; column: MetadataColumn }> {
-    return this.post<{ message: string; column: MetadataColumn }>(`${this.apiUrl}/metadata-table-templates/${id}/add_column/`, request);
+  addColumn(id: number, request: TemplateAddColumnRequest): Observable<TemplateColumnResponse> {
+    return this.post<TemplateColumnResponse>(`${this.apiUrl}/metadata-table-templates/${id}/add_column/`, request);
   }
 
   /**
    * Remove a column from the template
    */
-  removeColumn(id: number, request: { column_id: number }): Observable<{ message: string }> {
+  removeColumn(id: number, request: { columnId: number }): Observable<{ message: string }> {
     return this.post<{ message: string }>(`${this.apiUrl}/metadata-table-templates/${id}/remove_column/`, request);
   }
 
   /**
    * Reorder a column within the template
    */
-  reorderColumn(id: number, request: { column_id: number; new_position: number }): Observable<{ message: string }> {
+  reorderColumn(id: number, request: { columnId: number; newPosition: number }): Observable<{ message: string }> {
     return this.post<{ message: string }>(`${this.apiUrl}/metadata-table-templates/${id}/reorder_column/`, request);
   }
 
@@ -105,8 +115,8 @@ export class MetadataTableTemplateService extends BaseApiService {
   /**
    * Duplicate a column within the template
    */
-  duplicateColumn(id: number, request: { column_id: number }): Observable<{ message: string; duplicated_column: MetadataColumn }> {
-    return this.post<{ message: string; duplicated_column: MetadataColumn }>(`${this.apiUrl}/metadata-table-templates/${id}/duplicate_column/`, request);
+  duplicateColumn(id: number, request: TemplateDuplicateColumnRequest): Observable<TemplateColumnResponse> {
+    return this.post<TemplateColumnResponse>(`${this.apiUrl}/metadata-table-templates/${id}/duplicate_column/`, request);
   }
 
   /**
@@ -138,29 +148,31 @@ export class MetadataTableTemplateService extends BaseApiService {
   /**
    * Apply this template to a metadata table
    */
-  applyToMetadataTable(id: number, request: { metadata_table_id: number }): Observable<{ message: string; applied_columns: MetadataColumn[] }> {
-    return this.post<{ message: string; applied_columns: MetadataColumn[] }>(`${this.apiUrl}/metadata-table-templates/${id}/apply_to_metadata_table/`, request);
+  applyToMetadataTable(id: number, request: { metadataTableId: number }): Observable<TemplateApplyResponse> {
+    return this.post<TemplateApplyResponse>(`${this.apiUrl}/metadata-table-templates/${id}/apply_to_metadata_table/`, request);
   }
 
   /**
    * Update field mask for template
    */
-  updateFieldMask(id: number, request: { field_mask: any }): Observable<{ message: string; field_mask: any }> {
-    return this.post<{ message: string; field_mask: any }>(`${this.apiUrl}/metadata-table-templates/${id}/update_field_mask/`, request);
+  updateFieldMask(id: number, fieldMaskMapping: Record<string, string>): Observable<TemplateFieldMaskUpdateResponse> {
+    return this.post<TemplateFieldMaskUpdateResponse>(`${this.apiUrl}/metadata-table-templates/${id}/update_field_mask/`, {
+      fieldMaskMapping
+    });
   }
 
   /**
    * Get field mask for template
    */
-  getFieldMask(id: number): Observable<{ field_mask: any }> {
-    return this.get<{ field_mask: any }>(`${this.apiUrl}/metadata-table-templates/${id}/get_field_mask/`);
+  getFieldMask(id: number): Observable<TemplateFieldMask> {
+    return this.get<TemplateFieldMask>(`${this.apiUrl}/metadata-table-templates/${id}/get_field_mask/`);
   }
 
   /**
    * Get columns with field masks
    */
-  getColumnsWithFieldMasks(id: number): Observable<{ columns: any[] }> {
-    return this.get<{ columns: any[] }>(`${this.apiUrl}/metadata-table-templates/${id}/get_columns_with_field_masks/`);
+  getColumnsWithFieldMasks(id: number): Observable<TemplateColumnsWithFieldMasks> {
+    return this.get<TemplateColumnsWithFieldMasks>(`${this.apiUrl}/metadata-table-templates/${id}/get_columns_with_field_masks/`);
   }
 
   /**
@@ -173,34 +185,21 @@ export class MetadataTableTemplateService extends BaseApiService {
   /**
    * Create a new template from schema definitions
    */
-  createFromSchema(request: {
-    schemaIds: number[];
-    name: string;
-    description?: string;
-    labGroup?: number | null;
-    visibility?: string;
-    isDefault?: boolean;
-  }): Observable<{ message: string; template: MetadataTableTemplate }> {
-    return this.post<{ message: string; template: MetadataTableTemplate }>(`${this.apiUrl}/metadata-table-templates/create_from_schema/`, request);
+  createFromSchema(request: TemplateFromSchemaRequest): Observable<MetadataTableTemplate> {
+    return this.post<MetadataTableTemplate>(`${this.apiUrl}/metadata-table-templates/create_from_schema/`, request);
   }
 
   /**
    * Create a new metadata table from an existing template
    */
-  createTableFromTemplate(request: {
-    templateId: number;
-    name: string;
-    description?: string;
-    sampleCount: number;
-    labGroup?: number;
-  }): Observable<MetadataTable> {
+  createTableFromTemplate(request: TableFromTemplateRequest): Observable<MetadataTable> {
     return this.post<MetadataTable>(`${this.apiUrl}/metadata-table-templates/create_table_from_template/`, request);
   }
 
   /**
    * Create a new metadata table directly from schema definitions
    */
-  createTableFromSchemas(request: { schemaIds: number[]; name: string; description?: string; sampleCount: number }): Observable<MetadataTable> {
+  createTableFromSchemas(request: TableFromSchemasRequest): Observable<MetadataTable> {
     return this.post<MetadataTable>(`${this.apiUrl}/metadata-table-templates/create_table_from_schemas/`, request);
   }
 

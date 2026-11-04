@@ -28,42 +28,42 @@ export class ProtocolRatingService extends BaseApiService {
    */
   getProtocolRatings(params?: ProtocolRatingQueryParams): Observable<PaginatedResponse<ProtocolRating>> {
     const httpParams = this.buildHttpParams(params);
-    return this.get<PaginatedResponse<ProtocolRating>>(`${this.apiUrl}/protocol-ratings/`, { params: httpParams });
+    return this.get<PaginatedResponse<ProtocolRating>>(`${this.apiUrl}/ratings/`, { params: httpParams });
   }
 
   /**
    * Get a single protocol rating by ID
    */
   getProtocolRating(id: number): Observable<ProtocolRating> {
-    return this.get<ProtocolRating>(`${this.apiUrl}/protocol-ratings/${id}/`);
+    return this.get<ProtocolRating>(`${this.apiUrl}/ratings/${id}/`);
   }
 
   /**
    * Create a new protocol rating
    */
   createProtocolRating(rating: ProtocolRatingRequest): Observable<ProtocolRating> {
-    return this.post<ProtocolRating>(`${this.apiUrl}/protocol-ratings/`, rating);
+    return this.post<ProtocolRating>(`${this.apiUrl}/ratings/`, rating);
   }
 
   /**
    * Update an existing protocol rating
    */
   updateProtocolRating(id: number, rating: ProtocolRatingRequest): Observable<ProtocolRating> {
-    return this.put<ProtocolRating>(`${this.apiUrl}/protocol-ratings/${id}/`, rating);
+    return this.put<ProtocolRating>(`${this.apiUrl}/ratings/${id}/`, rating);
   }
 
   /**
    * Partially update a protocol rating
    */
   patchProtocolRating(id: number, rating: Partial<ProtocolRatingRequest>): Observable<ProtocolRating> {
-    return this.patch<ProtocolRating>(`${this.apiUrl}/protocol-ratings/${id}/`, rating);
+    return this.patch<ProtocolRating>(`${this.apiUrl}/ratings/${id}/`, rating);
   }
 
   /**
    * Delete a protocol rating
    */
   deleteProtocolRating(id: number): Observable<void> {
-    return this.delete<void>(`${this.apiUrl}/protocol-ratings/${id}/`);
+    return this.delete<void>(`${this.apiUrl}/ratings/${id}/`);
   }
 
   /**

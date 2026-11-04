@@ -125,3 +125,28 @@ export interface GroupedColumnTemplate {
   templateIds: number[];
   sampleTemplate?: MetadataColumnTemplate;
 }
+
+export type ColumnTemplatePermissionLevel = 'view' | 'use' | 'edit';
+
+export interface ColumnFromTemplateRequest {
+  metadataTableId: number;
+  position?: number;
+}
+
+export interface ColumnFromTemplateResponse {
+  message: string;
+  columnId: number;
+  templateUsageCount: number;
+}
+
+export interface ShareColumnTemplateRequest {
+  userId: number;
+  permissionLevel?: ColumnTemplatePermissionLevel;
+}
+
+export interface ShareColumnTemplateResponse {
+  message: string;
+  shareId: number;
+  user: string;
+  permissionLevel: ColumnTemplatePermissionLevel;
+}

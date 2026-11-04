@@ -20,6 +20,9 @@ import {
   ColumnOverridePreviewResult,
   ColumnOverrideCommitResult,
   ShareTokenResponse,
+  CombineTablesRequest,
+  CombineTablesRowwiseRequest,
+  CombineTablesResponse,
 } from '../models';
 
 export interface MetadataTableQueryParams {
@@ -195,15 +198,15 @@ export class MetadataTableService extends BaseApiService {
   /**
    * Combine columns column-wise
    */
-  combineColumnwise(request: { columnIds: number[] }): Observable<{ message: string; combinedColumn: any }> {
-    return this.post<{ message: string; combinedColumn: any }>(`${this.apiUrl}/metadata-tables/combine_columnwise/`, request);
+  combineColumnwise(request: CombineTablesRequest): Observable<CombineTablesResponse> {
+    return this.post<CombineTablesResponse>(`${this.apiUrl}/metadata-tables/combine_columnwise/`, request);
   }
 
   /**
    * Combine columns row-wise
    */
-  combineRowwise(request: { columnIds: number[] }): Observable<{ message: string; combinedColumn: any }> {
-    return this.post<{ message: string; combinedColumn: any }>(`${this.apiUrl}/metadata-tables/combine_rowwise/`, request);
+  combineRowwise(request: CombineTablesRowwiseRequest): Observable<CombineTablesResponse> {
+    return this.post<CombineTablesResponse>(`${this.apiUrl}/metadata-tables/combine_rowwise/`, request);
   }
 
   validateSampleCountChange(id: number, request: SampleCountValidationRequest): Observable<SampleCountValidationResponse> {

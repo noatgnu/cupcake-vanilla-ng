@@ -1,9 +1,17 @@
 import { Component, EventEmitter, Input, Output, signal, computed, ChangeDetectionStrategy, OnInit, effect } from '@angular/core';
 import { CommonModule, SlicePipe } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { AbstractControl, ReactiveFormsModule, FormBuilder, FormGroup, ValidationErrors, Validators } from '@angular/forms';
 import { NgbActiveModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { ResourceVisibility } from '@noatgnu/cupcake-core';
 import { Schema, SchemaLayer } from '../../../models';
+
+/**
+ * Requires a lab group when visibility is set to lab group.
+ */
+export function labGroupRequiredForGroupVisibility(form: AbstractControl): ValidationErrors | null {
+  const { visibility, labGroup } = form.value;
+  return visibility === ResourceVisibility.GROUP && !labGroup ? { labGroupRequired: true } : null;
+}
 
 export interface TemplateSchemaSelectionResult {
   name: string;
@@ -41,6 +49,12 @@ export class TemplateSchemaSelectionModal implements OnInit {
   }
 
   @Input() labGroups: any[] = [];
+
+  readonly visibilityOptions = [
+    { value: ResourceVisibility.PRIVATE, label: 'Only me' },
+    { value: ResourceVisibility.GROUP, label: 'Lab group' },
+    { value: ResourceVisibility.PUBLIC, label: 'Everyone' }
+  ];
   @Output() templateCreated = new EventEmitter<TemplateSchemaSelectionResult>();
 
   templateForm: FormGroup;
@@ -92,7 +106,7 @@ export class TemplateSchemaSelectionModal implements OnInit {
       labGroup: [null],
       visibility: [ResourceVisibility.PRIVATE],
       isDefault: [false]
-    });
+    }, { validators: labGroupRequiredForGroupVisibility });
 
     // Effect to automatically regroup schemas when availableSchemas signal changes
     effect(() => {

@@ -356,25 +356,22 @@ export class MetadataTableTemplates implements OnInit {
   private handleSchemaTemplateCreation(result: TemplateSchemaSelectionResult) {
     this.isLoading.set(true);
 
-    const templateData = {
+    this.metadataTableTemplateService.createFromSchema({
       name: result.name,
       schemaIds: result.schemaIds,
       description: result.description,
-      labGroup: result.labGroup,
+      labGroupId: result.labGroup,
       visibility: result.visibility,
       isDefault: result.isDefault
-    };
-
-    this.metadataTableTemplateService.createFromSchema(templateData).subscribe({
-      next: (response) => {
+    }).subscribe({
+      next: (template: MetadataTableTemplate) => {
         this.isLoading.set(false);
-        console.log('Template created from schemas:', response);
+        this.toastService.success(`Template "${template.name}" created`);
         this.refreshTemplates();
       },
-      error: (error) => {
+      error: (error: { error?: { error?: string } }) => {
         this.isLoading.set(false);
-        console.error('Error creating template from schemas:', error);
-        alert('Failed to create template from schemas. Please try again.');
+        this.toastService.error(error?.error?.error || 'Failed to create template from schemas. Please try again.');
       }
     });
   }
@@ -412,11 +409,10 @@ export class MetadataTableTemplates implements OnInit {
       name: data.name,
       description: data.description,
       sampleCount: data.sampleCount || 1,
-      labGroup: data.labGroup
+      labGroupId: data.labGroup
     }).subscribe({
       next: (response: MetadataTable) => {
         this.isLoading.set(false);
-        console.log('Metadata table created from template:', response);
 
         // Close modal and show success message
         if (modalRef) {
@@ -425,17 +421,16 @@ export class MetadataTableTemplates implements OnInit {
 
         this.toastService.success(`Table "${response.name}" created successfully!`);
       },
-      error: (error: { error?: { detail?: string; message?: string }; message?: string }) => {
+      error: (error: { error?: { error?: string; detail?: string; message?: string }; message?: string }) => {
         this.isLoading.set(false);
-        console.error('Error creating table from template:', error);
 
         // Reset creating state on modal if provided and show error
         if (modalRef?.componentInstance) {
           modalRef.componentInstance.setCreatingState(false);
-          const errorMsg = error?.error?.detail || error?.error?.message || error?.message || 'Failed to create table from template. Please try again.';
+          const errorMsg = error?.error?.error || error?.error?.detail || error?.error?.message || error?.message || 'Failed to create table from template. Please try again.';
           modalRef.componentInstance.setErrorMessage(errorMsg);
         } else {
-          const errorMsg = error?.error?.detail || error?.error?.message || error?.message || 'Failed to create table from template. Please try again.';
+          const errorMsg = error?.error?.error || error?.error?.detail || error?.error?.message || error?.message || 'Failed to create table from template. Please try again.';
           this.toastService.error(errorMsg);
         }
       }

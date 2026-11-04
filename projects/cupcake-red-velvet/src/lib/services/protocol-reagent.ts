@@ -35,6 +35,11 @@ export interface BulkAddReagentsRequest {
   }>;
 }
 
+export interface BulkAddReagentsResponse {
+  message: string;
+  reagents: ProtocolReagent[];
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -86,8 +91,8 @@ export class ProtocolReagentService extends BaseApiService {
   /**
    * Add multiple reagents to a protocol at once
    */
-  bulkAddReagents(request: BulkAddReagentsRequest): Observable<ProtocolReagent[]> {
-    return this.post<ProtocolReagent[]>(`${this.apiUrl}/protocol-reagents/bulk_add_reagents/`, request);
+  bulkAddReagents(request: BulkAddReagentsRequest): Observable<BulkAddReagentsResponse> {
+    return this.post<BulkAddReagentsResponse>(`${this.apiUrl}/protocol-reagents/bulk_add_reagents/`, request);
   }
 
   /**

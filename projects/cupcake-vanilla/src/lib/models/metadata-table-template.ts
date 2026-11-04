@@ -1,4 +1,6 @@
+import { ResourceVisibility } from '@noatgnu/cupcake-core';
 import { BaseTimestampedModel } from './base';
+import { MetadataColumn } from './metadata-column';
 
 export interface MetadataTableTemplate extends BaseTimestampedModel {
   id: number;
@@ -54,4 +56,75 @@ export interface MetadataTableTemplateSyncResponse {
   removed: number;
   errors: string[];
   schemas: string[];
+}
+
+export interface TemplateAddColumnRequest {
+  columnData: Partial<MetadataColumn>;
+  position?: number;
+}
+
+export interface TemplateColumnResponse {
+  message: string;
+  column: MetadataColumn;
+}
+
+export interface TemplateDuplicateColumnRequest {
+  columnId: number;
+  newName?: string;
+}
+
+export interface TemplateApplyResponse {
+  message: string;
+  createdColumns: MetadataColumn[];
+}
+
+export interface TemplateFieldMaskUpdateResponse {
+  message: string;
+  fieldMaskMapping: Record<string, string>;
+}
+
+export interface TemplateFieldMask {
+  fieldMaskMapping: Record<string, string>;
+  templateName: string;
+  templateId: number;
+}
+
+export interface TemplateMaskedColumn {
+  id: number;
+  name: string;
+  type: string;
+  displayName: string;
+  hasFieldMask: boolean;
+  columnPosition: number | null;
+  mandatory: boolean;
+  hidden: boolean;
+}
+
+export interface TemplateColumnsWithFieldMasks extends TemplateFieldMask {
+  columns: TemplateMaskedColumn[];
+}
+
+export interface TemplateFromSchemaRequest {
+  name: string;
+  schemaIds: number[];
+  description?: string;
+  labGroupId?: number | null;
+  visibility?: ResourceVisibility;
+  isDefault?: boolean;
+}
+
+export interface TableFromTemplateRequest {
+  templateId: number;
+  name: string;
+  description?: string;
+  sampleCount: number;
+  labGroupId?: number | null;
+}
+
+export interface TableFromSchemasRequest {
+  schemaIds: number[];
+  name: string;
+  description?: string;
+  sampleCount: number;
+  labGroupId?: number | null;
 }

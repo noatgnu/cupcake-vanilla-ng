@@ -3,12 +3,14 @@ import { Observable } from 'rxjs';
 import { BaseApiService } from '@noatgnu/cupcake-core';
 
 import {
+  BillingApprovalResponse,
   BillingRecord,
   BillingRecordCreateRequest,
   BillingRecordUpdateRequest,
   BillingRecordSummary,
   BillingApprovalRequest,
   BillingStatus,
+  CostCenterTotal,
   PaginatedResponse
 } from '../models';
 
@@ -17,10 +19,10 @@ export interface BillingRecordQueryParams {
   status?: BillingStatus;
   currency?: string;
   costCenter?: string;
-  user?: number;
+  userId?: number;
   serviceTier?: number;
-  dateFrom?: string;
-  dateTo?: string;
+  startDate?: string;
+  endDate?: string;
   limit?: number;
   offset?: number;
   ordering?: string;
@@ -77,20 +79,19 @@ export class BillingRecordService extends BaseApiService {
   /**
    * Approve a billing record
    */
-  approveBillingRecord(id: string, request: BillingApprovalRequest): Observable<BillingRecord> {
-    return this.post<BillingRecord>(`${this.apiUrl}/billing-records/${id}/approve/`, request);
+  approveBillingRecord(id: string, request: BillingApprovalRequest): Observable<BillingApprovalResponse> {
+    return this.post<BillingApprovalResponse>(`${this.apiUrl}/billing-records/${id}/approve/`, request);
   }
 
 
   /**
    * Get billing summary statistics (Django custom action)
    */
-  getSummary(params?: { 
-    dateFrom?: string; 
-    dateTo?: string; 
+  getSummary(params?: {
+    startDate?: string;
+    endDate?: string;
     currency?: string;
     costCenter?: string;
-    serviceTier?: number;
   }): Observable<BillingRecordSummary> {
     const httpParams = this.buildHttpParams(params);
     return this.get<BillingRecordSummary>(`${this.apiUrl}/billing-records/summary/`, { params: httpParams });
@@ -99,22 +100,22 @@ export class BillingRecordService extends BaseApiService {
   /**
    * Get billing records pending approval (Django custom action)
    */
-  getPendingApproval(): Observable<PaginatedResponse<BillingRecord>> {
-    return this.get<PaginatedResponse<BillingRecord>>(`${this.apiUrl}/billing-records/pending_approval/`);
+  getPendingApproval(): Observable<BillingRecord[]> {
+    return this.get<BillingRecord[]>(`${this.apiUrl}/billing-records/pending_approval/`);
   }
 
   /**
    * Get billing records grouped by cost center (Django custom action)
    */
-  getByCostCenter(): Observable<{ [key: string]: BillingRecord[] }> {
-    return this.get<{ [key: string]: BillingRecord[] }>(`${this.apiUrl}/billing-records/by_cost_center/`);
+  getByCostCenter(): Observable<CostCenterTotal[]> {
+    return this.get<CostCenterTotal[]>(`${this.apiUrl}/billing-records/by_cost_center/`);
   }
 
   /**
    * Get user billing records
    */
   getUserBillingRecords(userId: number): Observable<PaginatedResponse<BillingRecord>> {
-    return this.getBillingRecords({ user: userId });
+    return this.getBillingRecords({ userId });
   }
 
   /**
@@ -204,8 +205,8 @@ export class BillingRecordService extends BaseApiService {
   /**
    * Get billing records for date range
    */
-  getBillingRecordsByDateRange(dateFrom: string, dateTo: string): Observable<PaginatedResponse<BillingRecord>> {
-    return this.getBillingRecords({ dateFrom, dateTo });
+  getBillingRecordsByDateRange(startDate: string, endDate: string): Observable<PaginatedResponse<BillingRecord>> {
+    return this.getBillingRecords({ startDate, endDate });
   }
 
 }

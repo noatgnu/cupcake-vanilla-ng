@@ -1,4 +1,7 @@
 import { signal, WritableSignal } from '@angular/core';
+import { FormControl, FormGroup } from '@angular/forms';
+import { ResourceVisibility } from '@noatgnu/cupcake-core';
+import { labGroupRequiredForGroupVisibility } from './schema-selection-modal';
 
 interface Schema {
   id: number;
@@ -55,5 +58,23 @@ describe('TemplateSchemaSelectionModal', () => {
     expect(isLoading()).toBe(false);
     isLoading.set(true);
     expect(isLoading()).toBe(true);
+  });
+});
+
+describe('labGroupRequiredForGroupVisibility', () => {
+  const form = (visibility: ResourceVisibility, labGroup: number | null) =>
+    new FormGroup({ visibility: new FormControl(visibility), labGroup: new FormControl(labGroup) });
+
+  it('rejects lab group visibility without a lab group', () => {
+    expect(labGroupRequiredForGroupVisibility(form(ResourceVisibility.GROUP, null))).toEqual({ labGroupRequired: true });
+  });
+
+  it('accepts lab group visibility with a lab group', () => {
+    expect(labGroupRequiredForGroupVisibility(form(ResourceVisibility.GROUP, 3))).toBeNull();
+  });
+
+  it('accepts private and public visibility without a lab group', () => {
+    expect(labGroupRequiredForGroupVisibility(form(ResourceVisibility.PRIVATE, null))).toBeNull();
+    expect(labGroupRequiredForGroupVisibility(form(ResourceVisibility.PUBLIC, null))).toBeNull();
   });
 });

@@ -150,7 +150,7 @@
       </div>
       <div class="card-body">
         <div class="row">
-          <div class="col-md-6 mb-3">
+          <div class="col-md-4 mb-3">
             <div class="form-floating">
               <select
                 class="form-select"
@@ -164,7 +164,22 @@
               <label for="labGroup">Lab Group</label>
             </div>
           </div>
-          <div class="col-md-6">
+          <div class="col-md-4 mb-3">
+            <div class="form-floating">
+              <select
+                class="form-select"
+                id="visibility"
+                formControlName="visibility"
+                [class.is-invalid]="templateForm.hasError('labGroupRequired')">
+                @for (option of visibilityOptions; track option.value) {
+                  <option [ngValue]="option.value">{{ option.label }}</option>
+                }
+              </select>
+              <label for="visibility">Visible to</label>
+              <div class="invalid-feedback">Choose a lab group to share with</div>
+            </div>
+          </div>
+          <div class="col-md-4">
             <div class="form-check form-switch mb-3">
               <input
                 class="form-check-input"

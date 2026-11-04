@@ -187,3 +187,19 @@ export interface ColumnOverrideCommitResult {
 export interface ShareTokenResponse {
   shareToken: string;
 }
+
+export interface CombineTablesRequest {
+  sourceTableIds: number[];
+  targetName: string;
+  description?: string;
+  applySchemaReordering?: boolean;
+}
+
+export interface CombineTablesRowwiseRequest extends CombineTablesRequest {
+  mergeStrategy?: 'union' | 'intersection';
+}
+
+export interface CombineTablesResponse {
+  message: string;
+  combinedTable: MetadataTable;
+}

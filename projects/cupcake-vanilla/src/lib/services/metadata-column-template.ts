@@ -7,10 +7,13 @@ import {
   MetadataColumnTemplate,
   MetadataColumnTemplateCreateRequest,
   MetadataColumnTemplateUpdateRequest,
-  MetadataColumn,
   OntologySuggestion,
   PaginatedResponse,
-  GroupedColumnTemplate
+  GroupedColumnTemplate,
+  ColumnFromTemplateRequest,
+  ColumnFromTemplateResponse,
+  ShareColumnTemplateRequest,
+  ShareColumnTemplateResponse
 } from '../models';
 
 export interface MetadataColumnTemplateQueryParams {
@@ -90,22 +93,24 @@ export class MetadataColumnTemplateService extends BaseApiService {
   /**
    * Create a MetadataColumn from this template
    */
-  createMetadataColumn(id: number, request: { metadataTableId: number; columnPosition?: number }): Observable<{ message: string; column: MetadataColumn }> {
-    return this.post<{ message: string; column: MetadataColumn }>(`${this.apiUrl}/column-templates/${id}/create_metadata_column/`, request);
+  createMetadataColumn(id: number, request: ColumnFromTemplateRequest): Observable<ColumnFromTemplateResponse> {
+    return this.post<ColumnFromTemplateResponse>(`${this.apiUrl}/column-templates/${id}/create_metadata_column/`, request);
   }
 
   /**
    * Share this template with another user
    */
-  shareTemplate(id: number, request: { userId: number; canEdit?: boolean }): Observable<{ message: string }> {
-    return this.post<{ message: string }>(`${this.apiUrl}/column-templates/${id}/share_template/`, request);
+  shareTemplate(id: number, request: ShareColumnTemplateRequest): Observable<ShareColumnTemplateResponse> {
+    return this.post<ShareColumnTemplateResponse>(`${this.apiUrl}/column-templates/${id}/share_template/`, request);
   }
 
   /**
    * Remove template sharing for a user
    */
   unshareTemplate(id: number, request: { userId: number }): Observable<{ message: string }> {
-    return this.delete<{ message: string }>(`${this.apiUrl}/column-templates/${id}/unshare_template/`, { body: request });
+    return this.delete<{ message: string }>(`${this.apiUrl}/column-templates/${id}/unshare_template/`, {
+      body: this.transformToSnakeCase(request)
+    });
   }
 
   /**

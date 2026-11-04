@@ -99,7 +99,7 @@ export class InstrumentJobAnnotationService extends BaseApiService {
    * Retrigger transcription and translation for audio/video annotation
    * Only available to staff/admin users
    */
-  retriggerTranscription(id: number): Observable<{ message: string; annotation_id: number }> {
-    return this.post<{ message: string; annotation_id: number }>(`${this.apiUrl}/instrument-job-annotations/${id}/retrigger_transcription/`, {});
+  retriggerTranscription(id: number): Observable<{ message: string; annotationId: number }> {
+    return this.post<{ message: string; annotationId: number }>(`${this.apiUrl}/instrument-job-annotations/${id}/retrigger_transcription/`, {});
   }
 }

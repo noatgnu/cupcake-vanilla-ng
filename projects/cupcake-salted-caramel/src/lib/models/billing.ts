@@ -89,13 +89,30 @@ export interface BillingRecord extends BaseTimestampedModel {
 }
 
 export interface CostBreakdown {
+  servicePriceId: number;
+  billableItemType: string;
+  serviceTier: string;
+  billingUnit: string;
+  quantityRequested: number;
+  quantityBillable: number;
   unitPrice: number;
   subtotal: number;
   setupFee: number;
   bulkDiscount: number;
-  taxAmount: number;
+  taxAmount?: number;
   total: number;
   currency: string;
+}
+
+export interface BillingApprovalResponse {
+  message: string;
+  billingRecord: BillingRecord;
+}
+
+export interface CostCenterTotal {
+  costCenter: string;
+  recordCount: number;
+  totalAmount: number;
 }
 
 export interface ServiceTierCreateRequest {
