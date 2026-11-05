@@ -5,6 +5,8 @@ import { CUPCAKE_CORE_CONFIG } from '@noatgnu/cupcake-core';
 import { InstrumentJobService } from './instrument-job';
 import { InstrumentJobAnnotationService } from './instrument-job-annotation';
 import { ReagentSubscriptionService } from './reagent-subscription';
+import { ReagentActionService } from './reagent-action';
+import { ActionType } from '../models';
 
 const API = 'http://localhost:8000/api/v1';
 
@@ -47,5 +49,26 @@ describe('Requests sent to the CUPCAKE Macaron backend', () => {
     const req = httpMock.expectOne(`${API}/reagent-subscriptions/`);
     expect(req.request.body).toEqual({ stored_reagent: 4, notify_on_low_stock: true });
     req.flush({ id: 1 });
+  });
+
+  it('books a stored reagent for a step reagent in snake_case', () => {
+    TestBed.inject(ReagentActionService).createReagentAction({
+      actionType: ActionType.RESERVE,
+      reagent: 4,
+      quantity: 2,
+      session: 1,
+      step: 6,
+      stepReagent: 9
+    }).subscribe(result => expect(result.stepReagent).toBe(9));
+    const request = httpMock.expectOne(`${API}/reagent-actions/`);
+    expect(request.request.body).toEqual({
+      action_type: 'reserve',
+      reagent: 4,
+      quantity: 2,
+      session: 1,
+      step: 6,
+      step_reagent: 9
+    });
+    request.flush({ id: 1, action_type: 'reserve', reagent: 4, quantity: 2, step_reagent: 9 });
   });
 });

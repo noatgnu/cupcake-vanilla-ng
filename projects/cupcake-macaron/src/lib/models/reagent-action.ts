@@ -19,6 +19,7 @@ export interface ReagentAction extends BaseTimestampedModel {
   sessionName?: string;
   step?: number;
   stepDescription?: string;
+  stepReagent?: number;
   isWithinDeletionWindow?: boolean;
   isDeletable?: boolean;
 }
@@ -30,6 +31,7 @@ export interface ReagentActionCreateRequest {
   notes?: string;
   session?: number;
   step?: number;
+  stepReagent?: number;
 }
 
 export interface ReagentActionUpdateRequest {

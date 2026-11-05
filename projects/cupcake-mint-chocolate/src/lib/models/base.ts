@@ -26,8 +26,6 @@ export interface ApiResponse<T = any> {
 }
 
 export interface NotificationQueryParams {
-  page?: number;
-  pageSize?: number;
   search?: string;
   ordering?: string;
   notificationType?: string;

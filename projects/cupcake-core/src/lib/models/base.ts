@@ -40,8 +40,8 @@ export interface ApiResponse<T = unknown> {
 }
 
 export interface ResourceQueryParams {
-  page?: number;
-  pageSize?: number;
+  limit?: number;
+  offset?: number;
   search?: string;
   ordering?: string;
   visibility?: ResourceVisibility;

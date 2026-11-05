@@ -70,10 +70,9 @@ export class LabGroupService extends BaseApiService {
     return this.delete<void>(`${this.apiUrl}/lab-groups/${id}/`);
   }
 
-  getLabGroupMembers(id: number, params?: { directOnly?: boolean; pageSize?: number; limit?: number; offset?: number }): Observable<{count: number; next: string | null; previous: string | null; results: LabGroupMember[]}> {
+  getLabGroupMembers(id: number, params?: { directOnly?: boolean; limit?: number; offset?: number }): Observable<{count: number; next: string | null; previous: string | null; results: LabGroupMember[]}> {
     const httpParams = this.buildHttpParams({
       direct_only: params?.directOnly?.toString(),
-      page_size: params?.pageSize?.toString(),
       limit: params?.limit?.toString(),
       offset: params?.offset?.toString()
     });

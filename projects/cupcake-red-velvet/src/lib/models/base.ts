@@ -44,8 +44,6 @@ export interface ApiResponse<T = any> {
 }
 
 export interface ProtocolQueryParams {
-  page?: number;
-  pageSize?: number;
   search?: string;
   ordering?: string;
   enabled?: boolean;

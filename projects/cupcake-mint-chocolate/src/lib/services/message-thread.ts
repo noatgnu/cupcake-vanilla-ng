@@ -101,8 +101,8 @@ export class MessageThreadService extends BaseApiService {
   /**
    * Mark thread as read for current user
    */
-  markThreadAsRead(id: string): Observable<{ success: boolean; message: string }> {
-    return this.post<{ success: boolean; message: string }>(`${this.apiUrl}/threads/${id}/mark_read/`, {});
+  markThreadAsRead(id: string): Observable<{ message: string; lastReadAt: string }> {
+    return this.post<{ message: string; lastReadAt: string }>(`${this.apiUrl}/threads/${id}/mark_read/`, {});
   }
 
 
