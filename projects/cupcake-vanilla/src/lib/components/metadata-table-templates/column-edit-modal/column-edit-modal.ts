@@ -10,6 +10,7 @@ import { MetadataColumnTemplateService, MetadataColumnTemplateQueryParams } from
 import { SchemaService } from '../../../services/schema';
 import { SdrfSyntaxService } from '../../../services/sdrf-syntax';
 import { OfficialColumnCacheService } from '../../../services/official-column-cache';
+import { VocabularyService } from '../../../services/vocabulary';
 
 @Component({
   selector: 'ccv-column-edit-modal',
@@ -34,7 +35,8 @@ export class ColumnEditModal implements OnInit {
 
   // Available options for dropdowns from library
   columnTypes: ColumnTypeConfig[] = COLUMN_TYPE_CONFIGS;
-  ontologyTypes: OntologyTypeConfig[] = ONTOLOGY_TYPE_CONFIGS;
+  ontologyTypes = signal<OntologyTypeConfig[]>([ONTOLOGY_TYPE_CONFIGS[0]]);
+  private vocabularyService = inject(VocabularyService);
 
   // Template selection properties
   templateFilter = '';
@@ -102,6 +104,15 @@ export class ColumnEditModal implements OnInit {
     if (!this.isEdit) {
       this.loadAvailableSchemas();
     }
+
+    this.vocabularyService.getOntologyTypeChoices(this.column?.metadataTable ?? undefined).subscribe(choices => {
+      this.ontologyTypes.set(choices);
+      if (this.column && this.isEdit) {
+        const index = this.getOntologyTypeIndex(this.column.ontologyType, this.column.customOntologyFilters || undefined);
+        this.editForm.patchValue({ ontologyType: index.toString() });
+        this.selectedOntologyConfig = index > 0 ? choices[index] : null;
+      }
+    });
   }
 
   private populateForm() {
@@ -132,7 +143,7 @@ export class ColumnEditModal implements OnInit {
     if (!ontologyType) return 0;
 
     if (!customFilters || Object.keys(customFilters).length === 0) {
-      const index = this.ontologyTypes.findIndex(o => o.value === ontologyType && (!o.customFilters || Object.keys(o.customFilters).length === 0));
+      const index = this.ontologyTypes().findIndex(o => o.value === ontologyType && (!o.customFilters || Object.keys(o.customFilters).length === 0));
       return index >= 0 ? index : 0;
     }
 
@@ -140,7 +151,7 @@ export class ColumnEditModal implements OnInit {
 
     let actualFilters = customFilters[ontologyType] || customFilters[camelOntologyType] || customFilters;
 
-    const matchingIndex = this.ontologyTypes.findIndex(opt => {
+    const matchingIndex = this.ontologyTypes().findIndex(opt => {
       if (opt.value !== ontologyType) return false;
 
       if (!opt.customFilters) return false;
@@ -171,7 +182,7 @@ export class ColumnEditModal implements OnInit {
       const formValue = this.editForm.getRawValue();
 
       const ontologyTypeIndex = parseInt(formValue.ontologyType);
-      const selectedOntology = ontologyTypeIndex > 0 ? this.ontologyTypes[ontologyTypeIndex] : null;
+      const selectedOntology = ontologyTypeIndex > 0 ? this.ontologyTypes()[ontologyTypeIndex] : null;
       const ontologyTypeValue = selectedOntology?.value as OntologyType | undefined;
 
       // Extract custom filters from the selected ontology config
@@ -242,8 +253,8 @@ export class ColumnEditModal implements OnInit {
     const enableTypeahead = this.editForm.get('enableTypeahead')?.value || false;
 
     let ontologyType = '';
-    if (ontologyTypeIndex > 0 && ontologyTypeIndex < this.ontologyTypes.length) {
-      ontologyType = this.ontologyTypes[ontologyTypeIndex].value;
+    if (ontologyTypeIndex > 0 && ontologyTypeIndex < this.ontologyTypes().length) {
+      ontologyType = this.ontologyTypes()[ontologyTypeIndex].value;
     }
 
     const config: MetadataValueEditConfig = {
@@ -433,7 +444,7 @@ export class ColumnEditModal implements OnInit {
   }
 
   getOntologyTypeLabel(ontologyType: string): string {
-    const ontology = this.ontologyTypes.find(o => o.value === ontologyType);
+    const ontology = this.ontologyTypes().find(o => o.value === ontologyType);
     return ontology ? ontology.label : ontologyType;
   }
 
@@ -503,7 +514,7 @@ export class ColumnEditModal implements OnInit {
   onOntologyTypeChange(event: Event): void {
     const selectElement = event.target as HTMLSelectElement;
     const selectedIndex = parseInt(selectElement.value);
-    this.selectedOntologyConfig = this.ontologyTypes[selectedIndex] || null;
+    this.selectedOntologyConfig = this.ontologyTypes()[selectedIndex] || null;
   }
 
   private getCorrectedColumnType(columnName: string, columnType: string): string {
@@ -534,7 +545,7 @@ export class ColumnEditModal implements OnInit {
     const ontologyType = template.ontologyType;
     const customFilters = template.customOntologyFilters;
 
-    const index = this.ontologyTypes.findIndex(config => {
+    const index = this.ontologyTypes().findIndex(config => {
       if (config.value !== ontologyType) return false;
       if (!customFilters || Object.keys(customFilters).length === 0) {
         return !config.customFilters || Object.keys(config.customFilters).length === 0;

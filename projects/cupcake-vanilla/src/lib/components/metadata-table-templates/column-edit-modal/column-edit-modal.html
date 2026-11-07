@@ -341,7 +341,7 @@
           id="ontologyType"
           formControlName="ontologyType"
           (change)="onOntologyTypeChange($event)">
-          @for (ontology of ontologyTypes; track $index) {
+          @for (ontology of ontologyTypes(); track $index) {
             <option [value]="$index">{{ ontology.label }}</option>
           }
         </select>

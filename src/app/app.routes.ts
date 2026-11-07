@@ -11,6 +11,7 @@ import { MetadataTablesComponent} from './features/metadata-tables/metadata-tabl
 import { MetadataTableTemplates, ColumnTemplates, FavoriteManagement, MetadataTableDetails } from '@noatgnu/cupcake-vanilla';
 import { MetadataSelector } from './features/metadata-selector/metadata-selector';
 import { SharedTableComponent } from './features/shared-table/shared-table';
+import { VocabulariesPage } from './features/vocabularies/vocabularies-page/vocabularies-page';
 import { EnvironmentService } from './shared/services/environment';
 
 const applianceGuard = () => {
@@ -64,6 +65,11 @@ export const routes: Routes = [
   {
     path: 'metadata-table-templates',
     component: MetadataTableTemplates,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'vocabularies',
+    component: VocabulariesPage,
     canActivate: [authGuard]
   },
   {

@@ -1,0 +1,81 @@
+<div class="modal-header py-2">
+  <h6 class="modal-title mb-0">{{ vocabulary.label }} <span class="text-muted small">{{ vocabulary.key }}</span></h6>
+  <button type="button" class="btn-close" (click)="close()"></button>
+</div>
+<div class="modal-body small">
+  <div class="d-flex gap-2 align-items-center mb-2">
+    <input type="search" class="form-control form-control-sm" placeholder="Search name, id, synonym or description"
+           [ngModel]="search()" (ngModelChange)="onSearch($event)">
+    <div class="form-check form-switch text-nowrap mb-0">
+      <input id="includeObsolete" class="form-check-input" type="checkbox" [checked]="includeObsolete()" (change)="toggleObsolete($any($event.target).checked)">
+      <label class="form-check-label" for="includeObsolete">Obsolete</label>
+    </div>
+    <button type="button" class="btn btn-sm btn-outline-primary text-nowrap" [disabled]="!vocabulary.canManage || adding()"
+            [title]="vocabulary.canManage ? 'Add a term' : 'Only the vocabulary\'s managers can add terms'" (click)="startAdding()">
+      Add term
+    </button>
+  </div>
+
+  @if (adding()) {
+    <div class="row g-1 mb-2 align-items-end">
+      <div class="col-2"><input class="form-control form-control-sm" placeholder="Id" [ngModel]="draft().externalId" (ngModelChange)="setDraft('externalId', $event)"></div>
+      <div class="col-3"><input class="form-control form-control-sm" placeholder="Name" [ngModel]="draft().name" (ngModelChange)="setDraft('name', $event)"></div>
+      <div class="col-3"><input class="form-control form-control-sm" placeholder="Synonyms; separated" [ngModel]="draft().synonyms" (ngModelChange)="setDraft('synonyms', $event)"></div>
+      <div class="col-2"><input class="form-control form-control-sm" placeholder="Description" [ngModel]="draft().description" (ngModelChange)="setDraft('description', $event)"></div>
+      <div class="col-2 d-flex gap-1">
+        <button type="button" class="btn btn-sm btn-primary" [disabled]="!draft().name" (click)="saveDraft()">Save</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" (click)="cancelEditing()">Cancel</button>
+      </div>
+    </div>
+  }
+
+  <table class="table table-sm table-hover align-middle mb-2">
+    <thead>
+      <tr><th>Id</th><th>Name</th><th>Synonyms</th><th>Description</th><th class="text-end"></th></tr>
+    </thead>
+    <tbody>
+      @for (term of terms(); track term.id) {
+        @if (editingId() === term.id) {
+          <tr>
+            <td class="text-muted">{{ term.externalId }}</td>
+            <td><input class="form-control form-control-sm" [ngModel]="draft().name" (ngModelChange)="setDraft('name', $event)"></td>
+            <td><input class="form-control form-control-sm" [ngModel]="draft().synonyms" (ngModelChange)="setDraft('synonyms', $event)"></td>
+            <td><input class="form-control form-control-sm" [ngModel]="draft().description" (ngModelChange)="setDraft('description', $event)"></td>
+            <td class="text-end text-nowrap">
+              <button type="button" class="btn btn-sm btn-primary me-1" [disabled]="!draft().name" (click)="saveDraft()">Save</button>
+              <button type="button" class="btn btn-sm btn-outline-secondary" (click)="cancelEditing()">Cancel</button>
+            </td>
+          </tr>
+        } @else {
+          <tr [class.text-muted]="term.obsolete">
+            <td class="text-nowrap">{{ term.externalId }}</td>
+            <td>{{ term.name }} @if (term.obsolete) { <span class="badge text-bg-secondary">obsolete</span> }</td>
+            <td>{{ term.synonyms.join('; ') }}</td>
+            <td>{{ term.description }}</td>
+            <td class="text-end text-nowrap">
+              <button type="button" class="btn btn-sm btn-link p-0 me-2" [disabled]="!vocabulary.canManage"
+                      [title]="vocabulary.canManage ? 'Edit' : 'Only the vocabulary\'s managers can edit terms'" (click)="startEditing(term)">
+                <i class="bi bi-pencil"></i>
+              </button>
+              <button type="button" class="btn btn-sm btn-link p-0 text-danger" [disabled]="!vocabulary.canManage"
+                      [title]="vocabulary.canManage ? 'Remove' : 'Only the vocabulary\'s managers can remove terms'" (click)="remove(term)">
+                <i class="bi bi-trash"></i>
+              </button>
+            </td>
+          </tr>
+        }
+      } @empty {
+        <tr><td colspan="5" class="text-muted text-center">{{ loading() ? 'Loading…' : 'No terms' }}</td></tr>
+      }
+    </tbody>
+  </table>
+
+  <div class="d-flex justify-content-between align-items-center">
+    <span class="text-muted">{{ total() }} terms</span>
+    <div class="btn-group btn-group-sm">
+      <button type="button" class="btn btn-outline-secondary" [disabled]="page() === 0" (click)="goToPage(page() - 1)">Previous</button>
+      <button type="button" class="btn btn-outline-secondary" disabled>{{ page() + 1 }} / {{ lastPage() + 1 }}</button>
+      <button type="button" class="btn btn-outline-secondary" [disabled]="page() >= lastPage()" (click)="goToPage(page() + 1)">Next</button>
+    </div>
+  </div>
+</div>

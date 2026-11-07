@@ -174,7 +174,7 @@
           id="ontologyType"
           formControlName="ontologyType"
           (change)="onOntologyTypeChange()">
-          @for (ontology of ontologyTypes; track $index) {
+          @for (ontology of ontologyTypes(); track $index) {
             <option [value]="getOptionValue(ontology, $index)">{{ ontology.label }}</option>
           }
         </select>

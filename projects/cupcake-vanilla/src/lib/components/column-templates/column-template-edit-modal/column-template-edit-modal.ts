@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit, signal, Signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, signal, Signal, ChangeDetectionStrategy, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
@@ -6,7 +6,7 @@ import { NgbActiveModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { Observable, of, catchError, debounceTime, distinctUntilChanged, tap, switchMap, map } from 'rxjs';
 import { MetadataColumnTemplate, ONTOLOGY_TYPE_CONFIGS, COLUMN_TYPE_CONFIGS, OntologyTypeConfig, ColumnTypeConfig, OntologySuggestion } from '../../../models';
 import { LabGroup, ResourceVisibility } from '@noatgnu/cupcake-core';
-import { MetadataColumnTemplateService, OntologySearchService } from '../../../services';
+import { MetadataColumnTemplateService, OntologySearchService, VocabularyService } from '../../../services';
 
 @Component({
   selector: 'ccv-column-template-edit-modal',
@@ -38,7 +38,8 @@ export class ColumnTemplateEditModal implements OnInit {
     { value: 'global', label: 'Global' }
   ];
 
-  ontologyTypes: OntologyTypeConfig[] = ONTOLOGY_TYPE_CONFIGS;
+  ontologyTypes = signal<OntologyTypeConfig[]>([ONTOLOGY_TYPE_CONFIGS[0]]);
+  private vocabularyService = inject(VocabularyService);
 
   constructor(
     private fb: FormBuilder,
@@ -83,6 +84,16 @@ export class ColumnTemplateEditModal implements OnInit {
       // Apply ontology filters if ontology type is set
       this.onOntologyTypeChange();
     }
+
+    this.vocabularyService.getOntologyTypeChoices().subscribe(choices => {
+      this.ontologyTypes.set(choices);
+      if (this.template && this.isEdit) {
+        this.editForm.patchValue({
+          ontologyType: this.getOntologyValueForTemplate(this.template.ontologyType, this.template.customOntologyFilters)
+        });
+        this.onOntologyTypeChange();
+      }
+    });
   }
 
   private populateForm() {
@@ -121,12 +132,7 @@ export class ColumnTemplateEditModal implements OnInit {
       return ontologyType;
     }
 
-    console.log('[Template] Looking for ontology match:', {
-      ontologyType,
-      customFilters
-    });
-
-    const matchingOption = this.ontologyTypes.find(opt => {
+    const matchingOption = this.ontologyTypes().find(opt => {
       if (opt.value !== ontologyType) return false;
 
       if (!opt.customFilters) return !customFilters || Object.keys(customFilters).length === 0;
@@ -144,23 +150,13 @@ export class ColumnTemplateEditModal implements OnInit {
       const optTermType = optFilterValue?.['term_type'];
       const templateTermType = templateFilterValue?.['term_type'];
 
-      console.log('[Template] Comparing:', {
-        label: opt.label,
-        optTermType,
-        templateTermType,
-        matches: optTermType === templateTermType
-      });
-
       return optTermType === templateTermType;
     });
 
     if (matchingOption) {
-      const index = this.ontologyTypes.indexOf(matchingOption);
-      console.log('[Template] Found match:', matchingOption.label, 'at index', index);
+      const index = this.ontologyTypes().indexOf(matchingOption);
       return `${matchingOption.value}__${index}`;
     }
-
-    console.warn('[Template] No match found, using base ontology type');
     return ontologyType;
   }
 
@@ -180,7 +176,7 @@ export class ColumnTemplateEditModal implements OnInit {
   }
 
   getOptionValue(ontology: OntologyTypeConfig, index: number): string {
-    const hasMultipleSameValues = this.ontologyTypes.filter(o => o.value === ontology.value).length > 1;
+    const hasMultipleSameValues = this.ontologyTypes().filter(o => o.value === ontology.value).length > 1;
     if (hasMultipleSameValues) {
       return `${ontology.value}__${index}`;
     }
@@ -201,9 +197,9 @@ export class ColumnTemplateEditModal implements OnInit {
 
     if (ontologyValue.includes('__')) {
       const index = parseInt(ontologyValue.split('__')[1]);
-      selectedOntology = this.ontologyTypes[index];
+      selectedOntology = this.ontologyTypes()[index];
     } else {
-      selectedOntology = this.ontologyTypes.find(ont => ont.value === ontologyValue);
+      selectedOntology = this.ontologyTypes().find(ont => ont.value === ontologyValue);
     }
 
     if (selectedOntology && selectedOntology.customFilters) {
@@ -224,11 +220,6 @@ export class ColumnTemplateEditModal implements OnInit {
       if (ontologyType && ontologyType.includes('__')) {
         ontologyType = ontologyType.split('__')[0];
       }
-
-      console.log('[Template] Submitting with:', {
-        ontologyType,
-        customOntologyFilters: formValue.customOntologyFilters
-      });
 
       const templateData: Partial<MetadataColumnTemplate> = {
         ...formValue,

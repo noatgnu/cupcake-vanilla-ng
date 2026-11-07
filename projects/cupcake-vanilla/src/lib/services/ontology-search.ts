@@ -13,6 +13,7 @@ export interface OntologySuggestParams {
   match?: 'contains' | 'startswith';
   limit?: number;
   customFilters?: Record<string, any>;
+  metadataTable?: number;
 }
 
 export interface OntologySuggestResponse {
@@ -63,6 +64,10 @@ export class OntologySearchService extends BaseApiService {
 
     if (params.customFilters) {
       queryParams.custom_filters = JSON.stringify(params.customFilters);
+    }
+
+    if (params.metadataTable) {
+      queryParams.metadata_table = params.metadataTable;
     }
 
     const httpParams = this.buildHttpParams(queryParams);

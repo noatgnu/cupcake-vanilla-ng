@@ -273,6 +273,7 @@ export class MetadataValueEditModal implements OnInit {
             type: this.config.ontologyType,
             match: this.searchType() === 'icontains' ? 'contains' : 'startswith',
             customFilters: this.config.customOntologyFilters,
+            metadataTable: this.config.tableId,
             limit: 10
           }).pipe(
             map(response => response.suggestions || []),

@@ -1,0 +1,82 @@
+<div class="d-flex gap-2 align-items-center mb-2">
+  <input type="search" class="form-control form-control-sm" placeholder="Search vocabularies"
+         [ngModel]="search()" (ngModelChange)="onSearch($event)">
+  <select class="form-select form-select-sm w-auto" [ngModel]="provider()" (ngModelChange)="setProvider($event)">
+    <option value="">All providers</option>
+    @for (option of providers; track option) {
+      <option [value]="option">{{ providerLabels[option] }}</option>
+    }
+  </select>
+  <button type="button" class="btn btn-sm btn-primary text-nowrap" [disabled]="!canCreate()"
+          [title]="canCreate() ? 'Create a custom vocabulary' : 'Only staff and lab group managers can create vocabularies'"
+          (click)="create()">
+    <i class="bi bi-plus-lg me-1"></i>New vocabulary
+  </button>
+</div>
+
+<table class="table table-sm table-hover align-middle small mb-2">
+  <thead>
+    <tr>
+      <th>Vocabulary</th>
+      <th>Provider</th>
+      <th>Available to</th>
+      <th class="text-end">Terms</th>
+      <th>Status</th>
+      <th>Last loaded</th>
+      <th class="text-end"></th>
+    </tr>
+  </thead>
+  <tbody>
+    @for (vocabulary of vocabularies(); track vocabulary.key) {
+      <tr>
+        <td>
+          <div>{{ vocabulary.label }}</div>
+          <div class="text-muted">{{ vocabulary.key }}</div>
+        </td>
+        <td><span class="badge text-bg-light border">{{ providerLabels[vocabulary.provider] }}</span></td>
+        <td>{{ availableTo(vocabulary) }}</td>
+        <td class="text-end">{{ vocabulary.storage === 'terms' ? vocabulary.termCount : '—' }}</td>
+        <td>
+          {{ vocabulary.status }}
+          @if (vocabulary.lastError) {
+            <i class="bi bi-exclamation-triangle text-warning ms-1" [title]="vocabulary.lastError"></i>
+          }
+        </td>
+        <td class="text-nowrap">{{ vocabulary.lastLoadedAt ? (vocabulary.lastLoadedAt | date: 'short') : '—' }}</td>
+        <td class="text-end text-nowrap">
+          <button type="button" class="btn btn-sm btn-link p-0 me-2" [disabled]="vocabulary.storage !== 'terms'"
+                  [title]="vocabulary.storage === 'terms' ? 'Browse terms' : 'Built-in ontologies are browsed from their own pages'"
+                  (click)="openTerms(vocabulary)">
+            <i class="bi bi-list-ul"></i>
+          </button>
+          <button type="button" class="btn btn-sm btn-link p-0 me-2" [disabled]="!vocabulary.canManage"
+                  [title]="vocabulary.canManage ? 'Import terms' : 'Only the vocabulary\'s managers can import terms'"
+                  (click)="openImport(vocabulary)">
+            <i class="bi bi-upload"></i>
+          </button>
+          <button type="button" class="btn btn-sm btn-link p-0 me-2" [disabled]="!vocabulary.canManage"
+                  [title]="vocabulary.canManage ? 'Edit' : 'Only the vocabulary\'s managers can edit it'"
+                  (click)="edit(vocabulary)">
+            <i class="bi bi-pencil"></i>
+          </button>
+          <button type="button" class="btn btn-sm btn-link p-0 text-danger" [disabled]="!vocabulary.canManage"
+                  [title]="vocabulary.canManage ? 'Delete' : 'Only the vocabulary\'s managers can delete it'"
+                  (click)="remove(vocabulary)">
+            <i class="bi bi-trash"></i>
+          </button>
+        </td>
+      </tr>
+    } @empty {
+      <tr><td colspan="7" class="text-muted text-center">{{ loading() ? 'Loading…' : 'No vocabularies' }}</td></tr>
+    }
+  </tbody>
+</table>
+
+<div class="d-flex justify-content-between align-items-center small">
+  <span class="text-muted">{{ total() }} vocabularies</span>
+  <div class="btn-group btn-group-sm">
+    <button type="button" class="btn btn-outline-secondary" [disabled]="page() === 0" (click)="goToPage(page() - 1)">Previous</button>
+    <button type="button" class="btn btn-outline-secondary" disabled>{{ page() + 1 }} / {{ lastPage() + 1 }}</button>
+    <button type="button" class="btn btn-outline-secondary" [disabled]="page() >= lastPage()" (click)="goToPage(page() + 1)">Next</button>
+  </div>
+</div>
