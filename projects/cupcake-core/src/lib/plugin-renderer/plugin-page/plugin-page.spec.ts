@@ -29,6 +29,7 @@ const mockPlugin: Plugin = {
   lifecycleStatus: 'running',
   progressMessage: '',
   progressData: {},
+  connectionVerifiedAt: '2026-01-01T00:00:00Z',
   registeredAt: '2026-01-01T00:00:00Z',
   updatedAt: '2026-01-01T00:00:00Z',
 };

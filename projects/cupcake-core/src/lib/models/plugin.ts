@@ -68,6 +68,7 @@ export interface Plugin {
   lifecycleStatus: PluginLifecycleStatus;
   progressMessage: string;
   progressData: Record<string, unknown>;
+  connectionVerifiedAt: string | null;
   registeredAt: string;
   updatedAt: string;
 }

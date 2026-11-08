@@ -35,6 +35,10 @@ export class PluginService extends BaseApiService {
     return this.post<PluginWithToken>(`${this.base}/${id}/reset-token/`, {});
   }
 
+  checkConnection(id: number): Observable<Plugin> {
+    return this.post<Plugin>(`${this.base}/${id}/check-connection/`, {});
+  }
+
   broadcast(id: number, req: PluginBroadcastRequest): Observable<{ sent: boolean; group: string }> {
     return this.post<{ sent: boolean; group: string }>(`${this.base}/${id}/broadcast/`, req);
   }

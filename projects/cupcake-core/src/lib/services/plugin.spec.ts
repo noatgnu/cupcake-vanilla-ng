@@ -29,6 +29,7 @@ const mockPlugin: Plugin = {
   lifecycleStatus: 'running',
   progressMessage: '',
   progressData: {},
+  connectionVerifiedAt: '2026-01-01T00:00:00Z',
   registeredAt: '2026-01-01T00:00:00Z',
   updatedAt: '2026-01-01T00:00:00Z',
 };
@@ -135,6 +136,18 @@ describe('PluginService', () => {
       const req = httpMock.expectOne(`${mockConfig.apiUrl}/plugins/1/broadcast/`);
       expect(req.request.body.lab_group_id).toBe(5);
       req.flush({ sent: true, group: 'plugin__1__lab_group_5' });
+    });
+  });
+
+  describe('checkConnection', () => {
+    it('should POST /plugins/{id}/check-connection/', (done) => {
+      service.checkConnection(1).subscribe(plugin => {
+        expect(plugin.connectionVerifiedAt).toBe('2026-01-01T00:00:00Z');
+        done();
+      });
+      const req = httpMock.expectOne(`${mockConfig.apiUrl}/plugins/1/check-connection/`);
+      expect(req.request.method).toBe('POST');
+      req.flush({ id: 1, name: 'test-plugin', connection_verified_at: '2026-01-01T00:00:00Z' });
     });
   });
 
