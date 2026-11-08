@@ -78,6 +78,13 @@ export class VocabularyService extends BaseApiService {
   }
 
   /**
+   * Let users see and use a plugin vocabulary, or withdraw it again (staff only).
+   */
+  approveVocabulary(key: string, approved: boolean): Observable<Vocabulary> {
+    return this.post<Vocabulary>(`${this.apiUrl}/vocabularies/${encodeURIComponent(key)}/approve/`, { approved });
+  }
+
+  /**
    * Delete a custom vocabulary that no column or template uses.
    */
   deleteVocabulary(key: string): Observable<void> {

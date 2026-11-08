@@ -42,6 +42,7 @@ export class VocabularyManager implements OnInit {
   page = signal(0);
   search = signal('');
   provider = signal<VocabularyProvider | ''>('');
+  showPending = signal(false);
   loading = signal(false);
   managedLabGroups = signal<LabGroup[]>([]);
 
@@ -71,6 +72,7 @@ export class VocabularyManager implements OnInit {
     this.vocabularyService.getVocabularies({
       search: this.search() || undefined,
       provider: this.provider() || undefined,
+      includeUnapproved: this.showPending() || undefined,
       limit: PAGE_SIZE,
       offset: this.page() * PAGE_SIZE
     }).subscribe({
@@ -94,6 +96,26 @@ export class VocabularyManager implements OnInit {
     this.provider.set(provider);
     this.page.set(0);
     this.load();
+  }
+
+  setShowPending(show: boolean): void {
+    this.showPending.set(show);
+    this.page.set(0);
+    this.load();
+  }
+
+  /**
+   * Approve a plugin vocabulary so users can use it, or withdraw the approval.
+   */
+  toggleApproval(vocabulary: Vocabulary): void {
+    const approved = !vocabulary.approved;
+    this.vocabularyService.approveVocabulary(vocabulary.key, approved).subscribe({
+      next: () => {
+        this.toastService.success(approved ? `${vocabulary.label} is now available to users` : `${vocabulary.label} is hidden from users`);
+        this.load();
+      },
+      error: error => this.toastService.error(error?.error?.error || 'Failed to change the approval')
+    });
   }
 
   goToPage(page: number): void {

@@ -19,12 +19,13 @@ describe('VocabularyManager', () => {
   let confirmDialog: jasmine.SpyObj<ConfirmDialogService>;
   let currentUser: ReturnType<typeof signal<User | null>>;
 
-  const custom = { key: 'custom.strains', label: 'Strains', provider: 'custom', storage: 'terms', canManage: true, termCount: 4, labGroupName: 'Lab A' } as Vocabulary;
-  const builtin = { key: 'ncbi_taxonomy', label: 'NCBI Taxonomy', provider: 'builtin', storage: 'builtin', canManage: false, termCount: 0, labGroupName: null } as Vocabulary;
+  const custom = { key: 'custom.strains', label: 'Strains', provider: 'custom', storage: 'terms', canManage: true, approved: true, termCount: 4, labGroupName: 'Lab A' } as Vocabulary;
+  const builtin = { key: 'ncbi_taxonomy', label: 'NCBI Taxonomy', provider: 'builtin', storage: 'builtin', canManage: false, approved: true, termCount: 0, labGroupName: null } as Vocabulary;
+  const pending = { key: 'plugin.strain-db.strains', label: 'Strain DB', provider: 'plugin', storage: 'terms', canManage: false, approved: false, termCount: 3, labGroupName: null, pluginName: 'strain-db' } as Vocabulary;
 
   const setUp = async (groups: LabGroup[][]) => {
-    vocabularyService = jasmine.createSpyObj('VocabularyService', ['getVocabularies', 'deleteVocabulary']);
-    vocabularyService.getVocabularies.and.returnValue(of({ count: 12, results: [custom, builtin] }));
+    vocabularyService = jasmine.createSpyObj('VocabularyService', ['getVocabularies', 'deleteVocabulary', 'approveVocabulary']);
+    vocabularyService.getVocabularies.and.returnValue(of({ count: 12, results: [custom, builtin, pending] }));
     labGroupService = jasmine.createSpyObj('LabGroupService', ['getMyLabGroups']);
     labGroupService.getMyLabGroups.and.returnValues(...groups.map((results, index) => of({
       count: groups.flat().length, next: index < groups.length - 1 ? 'next' : undefined, results
@@ -104,5 +105,35 @@ describe('VocabularyManager', () => {
     const buttons = (row: Element) => Array.from(row.querySelectorAll('button')) as HTMLButtonElement[];
     expect(buttons(rows[0]).every(button => !button.disabled)).toBeTrue();
     expect(buttons(rows[1]).every(button => button.disabled)).toBeTrue();
+  });
+
+  it('lets staff include vocabularies waiting for approval', async () => {
+    await setUp([[]]);
+    currentUser.set({ isStaff: true } as User);
+    fixture.detectChanges();
+    component.setShowPending(true);
+    expect(vocabularyService.getVocabularies).toHaveBeenCalledWith(jasmine.objectContaining({ includeUnapproved: true, offset: 0 }));
+  });
+
+  it('approves a pending plugin vocabulary for staff', async () => {
+    await setUp([[]]);
+    vocabularyService.approveVocabulary.and.returnValue(of({ ...pending, approved: true }));
+    component.toggleApproval(pending);
+    expect(vocabularyService.approveVocabulary).toHaveBeenCalledWith('plugin.strain-db.strains', true);
+    expect(toastService.success).toHaveBeenCalled();
+  });
+
+  it('marks pending plugin vocabularies and keeps approval to staff', async () => {
+    await setUp([[]]);
+    const row = fixture.nativeElement.querySelectorAll('tbody tr')[2] as HTMLElement;
+    expect(row.textContent).toContain('Pending approval');
+    expect(row.textContent).toContain('strain-db');
+    const toggle = row.querySelector('.approve-toggle') as HTMLButtonElement;
+    expect(toggle.disabled).toBeTrue();
+    expect(toggle.title).toBe('Only staff approve plugin vocabularies');
+    currentUser.set({ isStaff: true } as User);
+    fixture.detectChanges();
+    expect(toggle.disabled).toBeFalse();
+    expect(fixture.nativeElement.querySelectorAll('tbody tr')[0].querySelector('.approve-toggle')).toBeNull();
   });
 });

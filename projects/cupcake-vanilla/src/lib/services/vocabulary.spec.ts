@@ -46,6 +46,16 @@ describe('VocabularyService', () => {
     expect(all[10].key).toBe('v10');
   });
 
+  it('approves a plugin vocabulary by its dotted key', () => {
+    let approved: Vocabulary | undefined;
+    service.approveVocabulary('plugin.strain-db.strains', true).subscribe(result => (approved = result));
+    const request = httpMock.expectOne(`${API}/vocabularies/plugin.strain-db.strains/approve/`);
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({ approved: true });
+    request.flush({ key: 'plugin.strain-db.strains', approved: true, plugin_name: 'strain-db' });
+    expect(approved?.pluginName).toBe('strain-db');
+  });
+
   it('looks a vocabulary up by its dotted key', () => {
     service.getVocabulary('custom.lab_strains').subscribe(result => expect(result.labGroupName).toBe('Strain lab'));
     httpMock.expectOne(`${API}/vocabularies/custom.lab_strains/`).flush({ key: 'custom.lab_strains', lab_group_name: 'Strain lab' });
