@@ -60,3 +60,29 @@ export interface WifiStatus {
   ssid: string | null;
   config: WifiConfig | null;
 }
+
+export interface TailscaleStatus {
+  installed: boolean;
+  configured: boolean;
+  connected: boolean;
+  state: string;
+  dnsName: string;
+  addresses: string[];
+  online: boolean;
+  health: string[];
+  error: string;
+}
+
+export interface CloudflareStatus {
+  installed: boolean;
+  configured: boolean;
+  active: boolean;
+  connected: boolean;
+  connections: number;
+  error: string;
+}
+
+export interface RemoteAccessState {
+  tailscale: TailscaleStatus;
+  cloudflare: CloudflareStatus;
+}

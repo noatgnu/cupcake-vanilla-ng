@@ -1,0 +1,88 @@
+<div class="d-flex align-items-center mb-2">
+  <span class="text-body-secondary small">Read from the appliance when the page opens</span>
+  <button type="button" class="btn btn-sm btn-outline-secondary ms-auto refresh" (click)="load()" [disabled]="loading()">
+    <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+  </button>
+</div>
+
+@if (status(); as s) {
+  <div class="row g-3">
+    <div class="col-lg-6">
+      <div class="card h-100 tailscale">
+        <div class="card-header py-2 d-flex align-items-center">
+          <span class="fw-semibold"><i class="bi bi-diagram-3 me-2"></i>Tailscale</span>
+          @if (!s.tailscale.installed) {
+            <span class="badge text-bg-secondary ms-auto">Not installed</span>
+          } @else if (s.tailscale.error) {
+            <span class="badge text-bg-danger ms-auto">Not answering</span>
+          } @else if (!s.tailscale.configured) {
+            <span class="badge text-bg-secondary ms-auto">Not set up</span>
+          } @else if (s.tailscale.connected) {
+            <span class="badge text-bg-success ms-auto">Connected</span>
+          } @else {
+            <span class="badge text-bg-warning ms-auto">{{ s.tailscale.state }}</span>
+          }
+        </div>
+        <div class="card-body py-2 small">
+          @if (!s.tailscale.installed) {
+            <p class="mb-0 text-body-secondary">Tailscale is not installed on this appliance.</p>
+          } @else if (s.tailscale.error) {
+            <p class="mb-0 text-danger">{{ s.tailscale.error }}</p>
+          } @else if (!s.tailscale.configured) {
+            <p class="mb-0 text-body-secondary">
+              Join a tailnet with <code>sudo /opt/cupcake/configure-tailscale.sh &lt;auth key&gt;</code>.
+            </p>
+          } @else {
+            <dl class="row mb-0">
+              <dt class="col-4">Name</dt>
+              <dd class="col-8 mb-1">{{ s.tailscale.dnsName || '—' }}</dd>
+              <dt class="col-4">Addresses</dt>
+              <dd class="col-8 mb-1">{{ s.tailscale.addresses.join(', ') || '—' }}</dd>
+              <dt class="col-4">Online</dt>
+              <dd class="col-8 mb-1">{{ s.tailscale.online ? 'Yes' : 'No' }}</dd>
+            </dl>
+            @for (warning of s.tailscale.health; track $index) {
+              <div class="text-warning health"><i class="bi bi-exclamation-triangle me-1"></i>{{ warning }}</div>
+            }
+          }
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <div class="card h-100 cloudflare">
+        <div class="card-header py-2 d-flex align-items-center">
+          <span class="fw-semibold"><i class="bi bi-cloud me-2"></i>Cloudflare tunnel</span>
+          @if (!s.cloudflare.installed) {
+            <span class="badge text-bg-secondary ms-auto">Not installed</span>
+          } @else if (!s.cloudflare.configured) {
+            <span class="badge text-bg-secondary ms-auto">Not set up</span>
+          } @else if (!s.cloudflare.active) {
+            <span class="badge text-bg-danger ms-auto">Stopped</span>
+          } @else if (s.cloudflare.connected) {
+            <span class="badge text-bg-success ms-auto">Connected</span>
+          } @else {
+            <span class="badge text-bg-warning ms-auto">Not connected</span>
+          }
+        </div>
+        <div class="card-body py-2 small">
+          @if (!s.cloudflare.installed) {
+            <p class="mb-0 text-body-secondary">cloudflared is not installed on this appliance.</p>
+          } @else if (!s.cloudflare.configured) {
+            <p class="mb-0 text-body-secondary">
+              Set up a tunnel with <code>sudo /opt/cupcake/configure-cloudflared.sh &lt;tunnel token&gt;</code>.
+            </p>
+          } @else if (!s.cloudflare.active) {
+            <p class="mb-0 text-danger">The tunnel service is not running. See <code>systemctl status cloudflared</code>.</p>
+          } @else if (s.cloudflare.error) {
+            <p class="mb-0 text-warning">{{ s.cloudflare.error }}</p>
+          } @else {
+            <p class="mb-0">{{ s.cloudflare.connections }} connection(s) to Cloudflare.</p>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+} @else if (loading()) {
+  <div class="text-body-secondary small"><span class="spinner-border spinner-border-sm me-2"></span>Reading the status…</div>
+}

@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
-import { BackupLog, BackupRunRequest, BlockDevice, StorageConfig, StorageStatus, WifiConfig, WifiStatus } from '../models/appliance';
+import { BackupLog, BackupRunRequest, BlockDevice, RemoteAccessState, StorageConfig, StorageStatus, WifiConfig, WifiStatus } from '../models/appliance';
 import { BaseApiService } from './base-api';
 
 @Injectable({ providedIn: 'root' })
@@ -37,6 +37,10 @@ export class ApplianceService extends BaseApiService {
 
   getBackupLog(id: number): Observable<BackupLog> {
     return this.get<BackupLog>(`${this.base}/${id}/`);
+  }
+
+  getRemoteAccessStatus(): Observable<RemoteAccessState> {
+    return this.get<RemoteAccessState>(`${this.base}/remote-access-status/`);
   }
 
   getWifiInterfaces(): Observable<{ interfaces: string[] }> {
