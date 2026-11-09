@@ -8,7 +8,7 @@
       <div class="card-header py-1 small fw-semibold">{{ definition().title }}</div>
     }
     <div class="card-body py-2 small">
-      @for (entry of $any(data()) | keyvalue; track entry.key) {
+      @for (entry of $any(data()) | keyvalue: inPluginOrder; track entry.key) {
         <div class="row g-0 mb-1">
           <div class="col-5 text-muted">{{ entry.key }}</div>
           <div class="col-7">{{ entry.value }}</div>

@@ -1,10 +1,14 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideHttpClient, withXhr } from '@angular/common/http';
+import { HttpRequest, provideHttpClient, withXhr } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 
 import { PluginWidget } from './plugin-widget';
 import { PluginWidgetDefinition } from '../../models/plugin';
 import { CUPCAKE_CORE_CONFIG } from '../../services/auth';
+
+function call(endpoint: string): (req: HttpRequest<unknown>) => boolean {
+  return req => req.url.endsWith('/plugins/1/call/') && (req.method === 'POST' || req.params.get('endpoint') === endpoint);
+}
 
 describe('PluginWidget', () => {
   let component: PluginWidget;
@@ -15,7 +19,6 @@ describe('PluginWidget', () => {
     id: 'w1',
     type,
     endpoint: '/api/data',
-    src: '/embed',
   });
 
   beforeEach(async () => {
@@ -30,7 +33,7 @@ describe('PluginWidget', () => {
 
     fixture = TestBed.createComponent(PluginWidget);
     component = fixture.componentInstance;
-    fixture.componentRef.setInput('baseUrl', 'http://plugin.local');
+    fixture.componentRef.setInput('pluginId', 1);
     httpMock = TestBed.inject(HttpTestingController);
   });
 
@@ -42,14 +45,14 @@ describe('PluginWidget', () => {
   it('should create', () => {
     fixture.componentRef.setInput('definition', makeDefinition('card'));
     fixture.detectChanges();
-    httpMock.expectOne('http://plugin.local/api/data').flush({});
+    httpMock.expectOne(call('/api/data')).flush({});
     expect(component).toBeTruthy();
   });
 
   it('should render ccc-plugin-card for type card', () => {
     fixture.componentRef.setInput('definition', makeDefinition('card'));
     fixture.detectChanges();
-    httpMock.expectOne('http://plugin.local/api/data').flush({});
+    httpMock.expectOne(call('/api/data')).flush({});
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('ccc-plugin-card')).toBeTruthy();
   });
@@ -57,7 +60,7 @@ describe('PluginWidget', () => {
   it('should render ccc-plugin-list for type list', () => {
     fixture.componentRef.setInput('definition', makeDefinition('list'));
     fixture.detectChanges();
-    httpMock.expectOne('http://plugin.local/api/data').flush([]);
+    httpMock.expectOne(call('/api/data')).flush([]);
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('ccc-plugin-list')).toBeTruthy();
   });
@@ -65,7 +68,7 @@ describe('PluginWidget', () => {
   it('should render ccc-plugin-table for type table', () => {
     fixture.componentRef.setInput('definition', makeDefinition('table'));
     fixture.detectChanges();
-    httpMock.expectOne('http://plugin.local/api/data').flush([]);
+    httpMock.expectOne(call('/api/data')).flush([]);
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('ccc-plugin-table')).toBeTruthy();
   });
@@ -76,16 +79,11 @@ describe('PluginWidget', () => {
     expect(fixture.nativeElement.querySelector('ccc-plugin-form')).toBeTruthy();
   });
 
-  it('should render ccc-plugin-iframe for type iframe', () => {
-    fixture.componentRef.setInput('definition', makeDefinition('iframe'));
-    fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('ccc-plugin-iframe')).toBeTruthy();
-  });
 
   it('should render ccc-plugin-chart for type chart', () => {
     fixture.componentRef.setInput('definition', makeDefinition('chart'));
     fixture.detectChanges();
-    httpMock.expectOne('http://plugin.local/api/data').flush({});
+    httpMock.expectOne(call('/api/data')).flush({});
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('ccc-plugin-chart')).toBeTruthy();
   });

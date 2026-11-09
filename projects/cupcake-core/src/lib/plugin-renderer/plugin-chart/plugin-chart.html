@@ -3,8 +3,91 @@
 } @else if (error()) {
   <div class="text-danger small">{{ error() }}</div>
 } @else {
-  @if (definition().title) {
-    <div class="fw-semibold small mb-1">{{ definition().title }}</div>
+  <div class="d-flex align-items-center mb-1">
+    @if (definition().title) {
+      <span class="fw-semibold small">{{ definition().title }}</span>
+    }
+    @if (geometry()) {
+      <button type="button" class="btn btn-link btn-sm p-0 ms-auto small toggle-table" (click)="showTable.set(!showTable())">
+        {{ showTable() ? 'Chart' : 'Table' }}
+      </button>
+    }
+  </div>
+  @if (geometry(); as g) {
+    @if (showTable()) {
+      <div class="table-responsive chart-table">
+        <table class="table table-sm mb-0 small">
+          <thead>
+            <tr>
+              <th></th>
+              @for (s of g.series; track s.slot) {
+                <th class="text-end">{{ s.label }}</th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (label of g.labels; track $index; let i = $index) {
+              <tr>
+                <td>{{ label }}</td>
+                @for (s of g.series; track s.slot) {
+                  <td class="text-end">{{ format(s.values[i], g.unit) }}</td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      @if (g.series.length > 1) {
+        <div class="legend small mb-1">
+          @for (s of g.series; track s.slot) {
+            <span class="legend-item me-3"><span class="key" [class]="'key series-' + s.slot"></span>{{ s.label }}</span>
+          }
+        </div>
+      }
+      <div class="viz">
+        <div class="y-axis small">
+          @for (tick of g.ticks; track tick.value) {
+            <span class="tick-label" [style.top.%]="tick.top">{{ format(tick.value, g.unit) }}</span>
+          }
+        </div>
+        <div class="plot" tabindex="0" role="img"
+             [attr.aria-label]="(definition().title || 'Chart') + ', ' + g.labels.length + ' points; use the arrow keys to read values'"
+             (pointermove)="track($event)" (pointerleave)="hover.set(null)" (keydown)="step($event)" (blur)="hover.set(null)">
+          <svg [attr.viewBox]="'0 0 ' + width + ' ' + height" preserveAspectRatio="none">
+            @for (tick of g.ticks; track tick.value) {
+              <line class="grid" x1="0" [attr.x2]="width" [attr.y1]="tick.top * height / 100" [attr.y2]="tick.top * height / 100" />
+            }
+            @for (s of g.series; track s.slot) {
+              <path [class]="'line series-' + s.slot" [attr.d]="s.path" />
+            }
+            @if (hover() !== null && hoverLeft() !== null) {
+              <line class="crosshair" [attr.x1]="hoverLeft()! * width / 100" [attr.x2]="hoverLeft()! * width / 100" y1="0" [attr.y2]="height" />
+            }
+          </svg>
+          @if (hover() !== null) {
+            @let index = hover()!;
+            <div class="chart-tooltip small" [class.flip]="hoverLeft()! > 60" [style.left.%]="hoverLeft()">
+              <div class="text-body-secondary">{{ g.labels[index] }}</div>
+              @for (s of g.series; track s.slot) {
+                <div class="d-flex align-items-center">
+                  <span [class]="'key series-' + s.slot"></span>
+                  <strong class="me-1">{{ format(s.values[index], g.unit) }}</strong>
+                  @if (g.series.length > 1) {
+                    <span class="text-body-secondary">{{ s.label }}</span>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+        <div class="x-axis small text-body-secondary">
+          <span>{{ g.labels[0] }}</span>
+          <span>{{ g.labels[g.labels.length - 1] }}</span>
+        </div>
+      </div>
+    }
+  } @else {
+    <div class="text-muted small">No data.</div>
   }
-  <pre class="small bg-light p-2 rounded">{{ data() | json }}</pre>
 }

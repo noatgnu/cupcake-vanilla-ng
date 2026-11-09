@@ -14,7 +14,7 @@ import { PluginRendererService } from '../../services/plugin-renderer';
 })
 export class PluginForm {
   definition = input.required<PluginWidgetDefinition>();
-  baseUrl = input.required<string>();
+  pluginId = input.required<number>();
 
   formData = signal<Record<string, string>>({});
   submitting = signal(false);
@@ -41,7 +41,7 @@ export class PluginForm {
     this.submitting.set(true);
     this.error.set(null);
     this.result.set(null);
-    this.renderer.submit<PluginFormResponse>(this.baseUrl(), endpoint, this.formData()).subscribe({
+    this.renderer.submit<PluginFormResponse>(this.pluginId(), endpoint, this.formData()).subscribe({
       next: r => { this.result.set(r); this.submitting.set(false); },
       error: e => { this.error.set(e.message); this.submitting.set(false); },
     });

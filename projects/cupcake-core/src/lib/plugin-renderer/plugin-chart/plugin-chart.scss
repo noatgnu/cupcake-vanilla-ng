@@ -1,0 +1,128 @@
+:host {
+  display: block;
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-4: #eda100;
+  --series-5: #e87ba4;
+  --series-6: #008300;
+  --series-7: #6250d6;
+  --series-8: #e34948;
+}
+
+:host-context([data-bs-theme="dark"]) {
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+  --series-4: #c98500;
+  --series-5: #d55181;
+  --series-6: #008300;
+  --series-7: #9085e9;
+  --series-8: #e66767;
+}
+
+@for $slot from 1 through 8 {
+  .line.series-#{$slot} { stroke: var(--series-#{$slot}); }
+  .key.series-#{$slot} { background: var(--series-#{$slot}); }
+}
+
+.viz {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: 160px auto;
+}
+
+.y-axis {
+  position: relative;
+  min-width: 3.5rem;
+  margin-right: 0.5rem;
+  color: var(--bs-secondary-color);
+}
+
+.tick-label {
+  position: absolute;
+  right: 0;
+  transform: translateY(-50%);
+  white-space: nowrap;
+  font-size: 0.75rem;
+}
+
+.plot {
+  position: relative;
+  outline: none;
+  touch-action: none;
+
+  &:focus-visible {
+    box-shadow: 0 0 0 2px var(--bs-focus-ring-color);
+  }
+
+  svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+}
+
+.grid {
+  stroke: var(--bs-border-color);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.line {
+  fill: none;
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.crosshair {
+  stroke: var(--bs-secondary-color);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.x-axis {
+  grid-column: 2;
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+}
+
+.key {
+  display: inline-block;
+  width: 12px;
+  height: 2px;
+  margin-right: 4px;
+  border-radius: 1px;
+  flex-shrink: 0;
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+}
+
+.chart-tooltip {
+  position: absolute;
+  top: 0;
+  margin-left: 8px;
+  padding: 4px 8px;
+  background: var(--bs-body-bg);
+  border: 1px solid var(--bs-border-color);
+  border-radius: 4px;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 1;
+
+  &.flip {
+    transform: translateX(calc(-100% - 16px));
+  }
+}
+
+.chart-table {
+  max-height: 200px;
+  overflow-y: auto;
+}

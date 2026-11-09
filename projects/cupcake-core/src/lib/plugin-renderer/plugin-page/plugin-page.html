@@ -4,11 +4,27 @@
   <div class="text-danger small p-3">{{ error() }}</div>
 } @else if (page(); as pg) {
   <div class="p-3">
-    <h6 class="mb-3">{{ pg.title }}</h6>
+    <div class="d-flex align-items-center mb-3 gap-2">
+      <h6 class="mb-0">{{ pg.title }}</h6>
+      <span [class]="'badge status ' + statusClass()">{{ lifecycleStatus() }}</span>
+      @if (progressMessage() && progressMessage() !== 'Running') {
+        <span class="small text-body-secondary progress-message">{{ progressMessage() }}</span>
+      }
+      <span class="ms-auto small text-body-secondary live-state">
+        @if (connected()) {
+          <i class="bi bi-broadcast me-1"></i>Live
+          @if (lastUpdate(); as at) {
+            · updated {{ at.toLocaleTimeString() }}
+          }
+        } @else {
+          <i class="bi bi-pause-circle me-1"></i>Not receiving live updates
+        }
+      </span>
+    </div>
     <div class="row g-3">
       @for (widget of pg.widgets; track widget.id) {
         <div class="col-12">
-          <ccc-plugin-widget [definition]="widget" [baseUrl]="plugin()!.baseUrl" />
+          <ccc-plugin-widget [definition]="widget" [pluginId]="plugin()!.id" [live]="live()[widget.id]" />
         </div>
       }
     </div>

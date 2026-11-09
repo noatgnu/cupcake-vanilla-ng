@@ -4,7 +4,6 @@ export type PluginWidgetType =
   | 'form'
   | 'chart'
   | 'table'
-  | 'iframe'
   | 'custom';
 
 export interface PluginWidgetAction {
@@ -22,7 +21,6 @@ export interface PluginWidgetDefinition {
   actions?: PluginWidgetAction[];
   fields?: string[];
   columns?: string[];
-  src?: string;
   refreshInterval?: number;
 }
 
@@ -43,7 +41,6 @@ export interface PluginManifest {
   displayName: string;
   version: string;
   description?: string;
-  baseUrl: string;
   nav?: PluginNavItem[];
   pages?: PluginPageDef[];
 }
@@ -96,6 +93,12 @@ export interface PluginChartDataset {
 export interface PluginChartData {
   labels: string[];
   datasets: PluginChartDataset[];
+  unit?: string;
+}
+
+export interface PluginWidgetUpdate {
+  widget: string;
+  data: unknown;
 }
 
 export interface PluginFormResponse {

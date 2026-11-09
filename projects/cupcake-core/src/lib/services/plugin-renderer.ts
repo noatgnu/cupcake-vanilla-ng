@@ -7,11 +7,11 @@ import { PluginRecord } from '../models/plugin';
 @Injectable({ providedIn: 'root' })
 export class PluginRendererService extends BaseApiService {
 
-  fetch<T>(baseUrl: string, endpoint: string): Observable<T> {
-    return this.get<T>(`${baseUrl}${endpoint}`);
+  fetch<T>(pluginId: number, endpoint: string): Observable<T> {
+    return this.get<T>(`${this.apiUrl}/plugins/${pluginId}/call/`, { params: this.buildHttpParams({ endpoint }) });
   }
 
-  submit<T>(baseUrl: string, endpoint: string, body: PluginRecord): Observable<T> {
-    return this.post<T>(`${baseUrl}${endpoint}`, body);
+  submit<T>(pluginId: number, endpoint: string, data: PluginRecord): Observable<T> {
+    return this.post<T>(`${this.apiUrl}/plugins/${pluginId}/call/`, { endpoint, data });
   }
 }

@@ -12,7 +12,6 @@ const mockManifest: PluginManifest = {
   name: 'test-plugin',
   displayName: 'Test Plugin',
   version: '1.0.0',
-  baseUrl: 'http://plugin.local',
   nav: [{ label: 'Home', path: 'home' }],
   pages: [{ path: 'home', title: 'Home', widgets: [] }],
 };
@@ -111,7 +110,7 @@ describe('PluginService', () => {
     });
 
     it('should include manifest in request body', (done) => {
-      const manifest = { name: 'x', displayName: 'X', version: '1.0.0', baseUrl: '' };
+      const manifest = { name: 'x', displayName: 'X', version: '1.0.0' };
       service.register({ name: 'x', version: '1.0.0', manifest }).subscribe(() => done());
       const req = httpMock.expectOne(`${mockConfig.apiUrl}/plugins/register/`);
       expect(req.request.body.manifest).toBeDefined();

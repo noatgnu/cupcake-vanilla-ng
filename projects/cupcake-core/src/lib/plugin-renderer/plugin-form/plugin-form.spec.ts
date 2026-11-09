@@ -1,12 +1,17 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient, withXhr } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { HttpRequest } from '@angular/common/http';
 
 import { PluginForm } from './plugin-form';
 import { PluginWidgetDefinition } from '../../models/plugin';
 import { CUPCAKE_CORE_CONFIG } from '../../services/auth';
 
 const definition: PluginWidgetDefinition = { id: 'w1', type: 'form', endpoint: '/api/submit', fields: ['name', 'email'] };
+
+function call(endpoint: string): (req: HttpRequest<unknown>) => boolean {
+  return req => req.url.endsWith('/plugins/1/call/') && (req.method === 'POST' || req.params.get('endpoint') === endpoint);
+}
 
 describe('PluginForm', () => {
   let component: PluginForm;
@@ -26,7 +31,7 @@ describe('PluginForm', () => {
     fixture = TestBed.createComponent(PluginForm);
     component = fixture.componentInstance;
     fixture.componentRef.setInput('definition', definition);
-    fixture.componentRef.setInput('baseUrl', 'http://plugin.local');
+    fixture.componentRef.setInput('pluginId', 1);
     httpMock = TestBed.inject(HttpTestingController);
   });
 
@@ -54,8 +59,9 @@ describe('PluginForm', () => {
     component.setValue('email', 'alice@test.com');
     component.submit();
 
-    const req = httpMock.expectOne('http://plugin.local/api/submit');
+    const req = httpMock.expectOne(call('/api/submit'));
     expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ endpoint: '/api/submit', data: { name: 'Alice', email: 'alice@test.com' } });
     req.flush({ success: true });
     await fixture.whenStable();
 
@@ -65,7 +71,7 @@ describe('PluginForm', () => {
 
   it('should set error on submit failure', async () => {
     component.submit();
-    httpMock.expectOne('http://plugin.local/api/submit').flush({}, { status: 400, statusText: 'Bad Request' });
+    httpMock.expectOne(call('/api/submit')).flush({}, { status: 400, statusText: 'Bad Request' });
     await fixture.whenStable();
     expect(component.error()).toBeTruthy();
     expect(component.submitting()).toBeFalse();
@@ -74,6 +80,6 @@ describe('PluginForm', () => {
   it('should not submit when endpoint is absent', () => {
     fixture.componentRef.setInput('definition', { id: 'w2', type: 'form', fields: ['x'] });
     component.submit();
-    httpMock.expectNone('http://plugin.local');
+    httpMock.expectNone(req => req.url.includes('/call/'));
   });
 });

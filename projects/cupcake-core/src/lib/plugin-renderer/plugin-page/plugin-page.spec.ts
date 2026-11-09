@@ -2,11 +2,13 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient, withXhr } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
-import { of, throwError } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
+import { signal } from '@angular/core';
 
 import { PluginPage } from './plugin-page';
 import { PluginService } from '../../services/plugin';
 import { CUPCAKE_CORE_CONFIG } from '../../services/auth';
+import { WebSocketMessage, WebSocketService } from '../../services/websocket';
 import { Plugin } from '../../models/plugin';
 
 const mockPlugin: Plugin = {
@@ -19,7 +21,6 @@ const mockPlugin: Plugin = {
     name: 'test-plugin',
     displayName: 'Test Plugin',
     version: '1.0.0',
-    baseUrl: 'http://plugin.local',
     pages: [
       { path: 'home', title: 'Home Page', widgets: [] },
     ],
@@ -46,8 +47,15 @@ describe('PluginPage', () => {
   let component: PluginPage;
   let fixture: ComponentFixture<PluginPage>;
   let pluginServiceSpy: jasmine.SpyObj<PluginService>;
+  let socket: { isConnected: ReturnType<typeof signal<boolean>>; messages$: Subject<WebSocketMessage>; subscribe: jasmine.Spy; unsubscribe: jasmine.Spy };
 
   beforeEach(async () => {
+    socket = {
+      isConnected: signal(true),
+      messages$: new Subject<WebSocketMessage>(),
+      subscribe: jasmine.createSpy('subscribe'),
+      unsubscribe: jasmine.createSpy('unsubscribe'),
+    };
     pluginServiceSpy = jasmine.createSpyObj('PluginService', ['getPlugin']);
     pluginServiceSpy.getPlugin.and.returnValue(of(mockPlugin));
 
@@ -57,6 +65,7 @@ describe('PluginPage', () => {
         provideHttpClient(withXhr()),
         provideHttpClientTesting(),
         { provide: PluginService, useValue: pluginServiceSpy },
+        { provide: WebSocketService, useValue: socket },
         { provide: ActivatedRoute, useValue: buildRoute('1', 'home') },
         { provide: CUPCAKE_CORE_CONFIG, useValue: { apiUrl: 'http://api.test', siteName: 'Test' } },
       ],
@@ -103,5 +112,56 @@ describe('PluginPage', () => {
     await fixture.whenStable();
     expect(component.error()).toBeTruthy();
     expect(component.loading()).toBeFalse();
+  });
+
+  async function open(): Promise<void> {
+    createComponent();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+  }
+
+  it('subscribes to the plugin updates once the plugin is loaded', async () => {
+    await open();
+    expect(socket.subscribe).toHaveBeenCalledWith('plugin_updates', { plugin_id: 1, scope: 'global' });
+  });
+
+  it('subscribes again when the connection comes back', async () => {
+    await open();
+    socket.isConnected.set(false);
+    fixture.detectChanges();
+    socket.isConnected.set(true);
+    fixture.detectChanges();
+    expect(socket.subscribe).toHaveBeenCalledTimes(2);
+  });
+
+  it('unsubscribes when the page closes', async () => {
+    await open();
+    fixture.destroy();
+    expect(socket.unsubscribe).toHaveBeenCalledWith('plugin_updates', { plugin_id: 1, scope: 'global' });
+  });
+
+  it('passes widget updates of this plugin to the widgets', async () => {
+    await open();
+    socket.messages$.next({ type: 'plugin.message', plugin_id: 1, payload: { widget: 'w1', data: { Temperature: '51 °C' } } });
+    socket.messages$.next({ type: 'plugin.message', plugin_id: 2, payload: { widget: 'w1', data: { Temperature: 'other' } } });
+    socket.messages$.next({ type: 'plugin.message', plugin_id: 1, payload: { event: 'alert' } });
+    expect(component.live()).toEqual({ w1: { Temperature: '51 °C' } });
+    expect(component.lastUpdate()).not.toBeNull();
+  });
+
+  it('shows lifecycle changes as they happen', async () => {
+    await open();
+    socket.messages$.next({ type: 'plugin.lifecycle', plugin_id: 1, lifecycle_status: 'error', progress_message: 'Sensor not found' });
+    fixture.detectChanges();
+    const element: HTMLElement = fixture.nativeElement;
+    expect(element.querySelector('.badge')?.textContent).toContain('error');
+    expect(element.querySelector('.progress-message')?.textContent).toContain('Sensor not found');
+  });
+
+  it('says when live updates are not arriving', async () => {
+    socket.isConnected.set(false);
+    await open();
+    expect((fixture.nativeElement as HTMLElement).querySelector('.live-state')?.textContent).toContain('Not receiving live updates');
   });
 });

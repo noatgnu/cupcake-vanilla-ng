@@ -180,6 +180,14 @@ export class WebSocketService {
     });
   }
 
+  unsubscribe(subscriptionType: string, options: WebSocketSubscriptionOptions = {}): void {
+    this.send({
+      type: 'unsubscribe',
+      subscription_type: subscriptionType,
+      ...options
+    });
+  }
+
   protected onOpen(_event: Event): void {
     this.isConnecting = false;
     this.connectionState.set('connected');

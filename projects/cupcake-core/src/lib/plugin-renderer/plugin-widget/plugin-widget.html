@@ -1,21 +1,18 @@
 @switch (definition().type) {
   @case ('card') {
-    <ccc-plugin-card [definition]="definition()" [baseUrl]="baseUrl()" />
+    <ccc-plugin-card [definition]="definition()" [pluginId]="pluginId()" [live]="live()" />
   }
   @case ('list') {
-    <ccc-plugin-list [definition]="definition()" [baseUrl]="baseUrl()" />
+    <ccc-plugin-list [definition]="definition()" [pluginId]="pluginId()" [live]="live()" />
   }
   @case ('table') {
-    <ccc-plugin-table [definition]="definition()" [baseUrl]="baseUrl()" />
+    <ccc-plugin-table [definition]="definition()" [pluginId]="pluginId()" [live]="live()" />
   }
   @case ('form') {
-    <ccc-plugin-form [definition]="definition()" [baseUrl]="baseUrl()" />
+    <ccc-plugin-form [definition]="definition()" [pluginId]="pluginId()" />
   }
   @case ('chart') {
-    <ccc-plugin-chart [definition]="definition()" [baseUrl]="baseUrl()" />
-  }
-  @case ('iframe') {
-    <ccc-plugin-iframe [definition]="definition()" [baseUrl]="baseUrl()" />
+    <ccc-plugin-chart [definition]="definition()" [pluginId]="pluginId()" [live]="live()" />
   }
   @default {
     <div class="text-muted small">Unsupported widget type: {{ definition().type }}</div>

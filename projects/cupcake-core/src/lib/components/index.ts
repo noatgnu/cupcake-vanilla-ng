@@ -35,4 +35,3 @@ export * from '../plugin-renderer/plugin-list/plugin-list';
 export * from '../plugin-renderer/plugin-table/plugin-table';
 export * from '../plugin-renderer/plugin-form/plugin-form';
 export * from '../plugin-renderer/plugin-chart/plugin-chart';
-export * from '../plugin-renderer/plugin-iframe/plugin-iframe';
