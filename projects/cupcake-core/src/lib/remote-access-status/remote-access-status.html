@@ -40,6 +40,16 @@
               <dd class="col-8 mb-1">{{ s.tailscale.addresses.join(', ') || '—' }}</dd>
               <dt class="col-4">Online</dt>
               <dd class="col-8 mb-1">{{ s.tailscale.online ? 'Yes' : 'No' }}</dd>
+              <dt class="col-4">HTTPS</dt>
+              <dd class="col-8 mb-1 https">
+                @if (s.tailscale.certificate; as cert) {
+                  https://{{ cert.name }}/ and :8443, certificate until {{ cert.expiresAt | date: 'mediumDate' }}
+                } @else if (s.tailscale.httpsAvailable) {
+                  Waiting for the certificate; it is fetched within minutes of connecting
+                } @else {
+                  Off. Turn on HTTPS certificates in the Tailscale admin console under DNS.
+                }
+              </dd>
             </dl>
             @for (warning of s.tailscale.health; track $index) {
               <div class="text-warning health"><i class="bi bi-exclamation-triangle me-1"></i>{{ warning }}</div>

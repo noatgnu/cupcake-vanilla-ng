@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
+import { DatePipe } from '@angular/common';
 
 import { RemoteAccessState } from '../models/appliance';
 import { ApplianceService } from '../services/appliance';
@@ -6,7 +7,7 @@ import { ToastService } from '../services/toast';
 
 @Component({
   selector: 'ccc-remote-access-status',
-  imports: [],
+  imports: [DatePipe],
   templateUrl: './remote-access-status.html',
   styleUrl: './remote-access-status.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

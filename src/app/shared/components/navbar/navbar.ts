@@ -76,7 +76,7 @@ export class NavbarComponent implements OnDestroy {
   }
 
   private loadPlugins(): void {
-    this.pluginService.listPlugins().subscribe({
+    this.pluginService.listAllPlugins().subscribe({
       next: plugins => this.activePlugins.set(plugins.filter(p => p.isActive)),
       error: () => this.activePlugins.set([]),
     });

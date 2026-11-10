@@ -17,6 +17,8 @@ const tailscale = {
   addresses: ['100.66.187.101'],
   online: true,
   health: ['no DERP home'],
+  https_available: true,
+  certificate: { name: 'cupcake.tail1e420d.ts.net', expires_at: '2027-02-01T00:00:00Z' },
   error: '',
 };
 
@@ -61,6 +63,23 @@ describe('RemoteAccessStatus', () => {
     expect(text).toContain('cupcake.tail1e420d.ts.net');
     expect(text).toContain('100.66.187.101');
     expect(card('tailscale').querySelectorAll('.health').length).toBe(1);
+  });
+
+  it('shows the HTTPS address and certificate expiry of the Tailscale name', () => {
+    answer({ tailscale, cloudflare });
+    const https = card('tailscale').querySelector('.https')?.textContent ?? '';
+    expect(https).toContain('https://cupcake.tail1e420d.ts.net/');
+    expect(https).toContain('2027');
+  });
+
+  it('says how to turn on HTTPS when the tailnet issues no certificates', () => {
+    answer({ tailscale: { ...tailscale, https_available: false, certificate: null }, cloudflare });
+    expect(card('tailscale').querySelector('.https')?.textContent).toContain('Tailscale admin console');
+  });
+
+  it('shows a certificate on its way when the tailnet issues them', () => {
+    answer({ tailscale: { ...tailscale, certificate: null }, cloudflare });
+    expect(card('tailscale').querySelector('.https')?.textContent).toContain('Waiting for the certificate');
   });
 
   it('shows the tunnel connections', () => {

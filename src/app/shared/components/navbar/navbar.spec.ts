@@ -19,8 +19,8 @@ describe('NavbarComponent', () => {
 
   async function create(loggedIn: boolean): Promise<void> {
     authenticated = signal(loggedIn);
-    pluginService = jasmine.createSpyObj('PluginService', ['listPlugins']);
-    pluginService.listPlugins.and.returnValue(of([{ isActive: true } as Plugin, { isActive: false } as Plugin]));
+    pluginService = jasmine.createSpyObj('PluginService', ['listAllPlugins']);
+    pluginService.listAllPlugins.and.returnValue(of([{ isActive: true } as Plugin, { isActive: false } as Plugin]));
     await TestBed.configureTestingModule({
       imports: [NavbarComponent, RouterTestingModule, HttpClientTestingModule],
       providers: [
@@ -52,14 +52,14 @@ describe('NavbarComponent', () => {
 
   it('should not request plugins for a guest', async () => {
     await create(false);
-    expect(pluginService.listPlugins).not.toHaveBeenCalled();
+    expect(pluginService.listAllPlugins).not.toHaveBeenCalled();
   });
 
   it('should load the active plugins once the user is logged in', async () => {
     await create(false);
     authenticated.set(true);
     fixture.detectChanges();
-    expect(pluginService.listPlugins).toHaveBeenCalledTimes(1);
+    expect(pluginService.listAllPlugins).toHaveBeenCalledTimes(1);
     expect(component.activePlugins().length).toBe(1);
   });
 });

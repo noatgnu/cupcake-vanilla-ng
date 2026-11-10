@@ -63,6 +63,11 @@ export interface WifiStatus {
   config: WifiConfig | null;
 }
 
+export interface TailscaleCertificate {
+  name: string;
+  expiresAt: string;
+}
+
 export interface TailscaleStatus {
   installed: boolean;
   configured: boolean;
@@ -72,6 +77,8 @@ export interface TailscaleStatus {
   addresses: string[];
   online: boolean;
   health: string[];
+  httpsAvailable: boolean;
+  certificate: TailscaleCertificate | null;
   error: string;
 }
 

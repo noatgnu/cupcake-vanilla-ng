@@ -55,16 +55,32 @@ describe('PluginService', () => {
   });
 
   describe('listPlugins', () => {
-    it('should GET /plugins/', (done) => {
+    it('should GET a page of /plugins/ with limit 10', (done) => {
       const snake = [{ id: 1, name: 'test-plugin', display_name: 'Test Plugin', version: '1.0.0', description: '', manifest_cache: {}, base_url: 'http://plugin.local', is_active: true, registered_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' }];
-      service.listPlugins().subscribe(plugins => {
-        expect(plugins.length).toBe(1);
-        expect(plugins[0].displayName).toBe('Test Plugin');
+      service.listPlugins().subscribe(page => {
+        expect(page.count).toBe(1);
+        expect(page.results[0].displayName).toBe('Test Plugin');
         done();
       });
-      const req = httpMock.expectOne(`${mockConfig.apiUrl}/plugins/`);
+      const req = httpMock.expectOne(r => r.url === `${mockConfig.apiUrl}/plugins/`);
       expect(req.request.method).toBe('GET');
-      req.flush(snake);
+      expect(req.request.params.get('limit')).toBe('10');
+      expect(req.request.params.get('offset')).toBe('0');
+      req.flush({ count: 1, next: null, previous: null, results: snake });
+    });
+  });
+
+  describe('listAllPlugins', () => {
+    it('should follow the pages until every plugin is read', (done) => {
+      const plugin = (id: number) => ({ id, name: `p${id}`, display_name: `P${id}`, is_active: true });
+      service.listAllPlugins().subscribe(plugins => {
+        expect(plugins.map(p => p.id)).toEqual(Array.from({ length: 12 }, (_, i) => i + 1));
+        done();
+      });
+      const first = httpMock.expectOne(r => r.url === `${mockConfig.apiUrl}/plugins/` && r.params.get('offset') === '0');
+      first.flush({ count: 12, next: 'next-page', previous: null, results: Array.from({ length: 10 }, (_, i) => plugin(i + 1)) });
+      const second = httpMock.expectOne(r => r.url === `${mockConfig.apiUrl}/plugins/` && r.params.get('offset') === '10');
+      second.flush({ count: 12, next: null, previous: 'prev', results: [plugin(11), plugin(12)] });
     });
   });
 
@@ -179,7 +195,7 @@ describe('PluginService', () => {
         next: () => fail('expected error'),
         error: err => { expect(err.status).toBe(500); done(); },
       });
-      httpMock.expectOne(`${mockConfig.apiUrl}/plugins/`).flush({}, { status: 500, statusText: 'Internal Server Error' });
+      httpMock.expectOne(r => r.url === `${mockConfig.apiUrl}/plugins/`).flush({}, { status: 500, statusText: 'Internal Server Error' });
     });
   });
 });

@@ -79,7 +79,7 @@ export class PluginManagement implements OnInit {
 
   load(): void {
     this.loading.set(true);
-    forkJoin({ registered: this.plugins.listPlugins(), installed: this.appliance.listInstalledPlugins() }).subscribe({
+    forkJoin({ registered: this.plugins.listAllPlugins(), installed: this.appliance.listInstalledPlugins() }).subscribe({
       next: ({ registered, installed }) => {
         this.registered.set(registered);
         this.installed.set(installed.plugins);

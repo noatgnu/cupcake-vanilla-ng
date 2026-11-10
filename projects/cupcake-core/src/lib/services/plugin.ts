@@ -1,12 +1,16 @@
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { EMPTY, Observable } from 'rxjs';
+import { expand, map, reduce } from 'rxjs/operators';
 
+import { PaginatedResponse } from '../models/base';
 import { Plugin, PluginBroadcastRequest, PluginRegisterRequest } from '../models/plugin';
 import { BaseApiService } from './base-api';
 
 export interface PluginWithToken extends Plugin {
   token: string;
 }
+
+export const PLUGIN_PAGE_SIZE = 10;
 
 @Injectable({ providedIn: 'root' })
 export class PluginService extends BaseApiService {
@@ -15,8 +19,20 @@ export class PluginService extends BaseApiService {
     return `${this.apiUrl}/plugins`;
   }
 
-  listPlugins(): Observable<Plugin[]> {
-    return this.get<Plugin[]>(`${this.base}/`);
+  listPlugins(params: { limit?: number; offset?: number } = {}): Observable<PaginatedResponse<Plugin>> {
+    return this.get<PaginatedResponse<Plugin>>(`${this.base}/`, {
+      params: this.buildHttpParams({ limit: PLUGIN_PAGE_SIZE, offset: 0, ...params }),
+    });
+  }
+
+  listAllPlugins(): Observable<Plugin[]> {
+    return this.listPlugins().pipe(
+      expand((page, index) =>
+        page.next ? this.listPlugins({ offset: (index + 1) * PLUGIN_PAGE_SIZE }) : EMPTY
+      ),
+      map(page => page.results),
+      reduce((all, results) => all.concat(results), [] as Plugin[]),
+    );
   }
 
   getPlugin(id: number): Observable<Plugin> {

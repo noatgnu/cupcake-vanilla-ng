@@ -64,7 +64,7 @@ describe('PluginManagement', () => {
   afterEach(() => httpMock.verify());
 
   function answerLoad(): void {
-    httpMock.expectOne(`${API}/plugins/`).flush(registered);
+    httpMock.expectOne(r => r.url === `${API}/plugins/`).flush({ count: registered.length, next: null, previous: null, results: registered });
     httpMock.expectOne(`${API}/appliance/plugin-list/`).flush(installed);
     fixture.detectChanges();
   }
