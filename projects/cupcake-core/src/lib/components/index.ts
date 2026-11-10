@@ -20,6 +20,7 @@ export * from '../storage-management/storage-management';
 export * from '../backup-management/backup-management';
 export * from '../wifi-management/wifi-management';
 export * from '../remote-access-status/remote-access-status';
+export * from '../plugin-management/plugin-management';
 
 // Device token management
 export * from './device-token-management/device-token-management';

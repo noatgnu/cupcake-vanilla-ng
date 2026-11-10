@@ -1,3 +1,5 @@
+import { Plugin } from './plugin';
+
 export interface StorageStatus {
   mounted: boolean;
   mountPoint: string;
@@ -85,4 +87,28 @@ export interface CloudflareStatus {
 export interface RemoteAccessState {
   tailscale: TailscaleStatus;
   cloudflare: CloudflareStatus;
+}
+
+export interface InstalledPlugin {
+  name: string;
+  active: boolean;
+  enabled: boolean;
+}
+
+export type PluginServiceCommand = 'start' | 'stop' | 'restart' | 'enable' | 'disable';
+
+export interface PluginPackagePreview {
+  uploadId: string;
+  name: string;
+  displayName: string;
+  version: string;
+  description: string;
+  pages: string[];
+  vocabularies: string[];
+  installedVersion: string | null;
+}
+
+export interface PluginPackageInstalled {
+  plugin: Plugin;
+  port: number;
 }

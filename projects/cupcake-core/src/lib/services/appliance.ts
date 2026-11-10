@@ -1,7 +1,20 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
-import { BackupLog, BackupRunRequest, BlockDevice, RemoteAccessState, StorageConfig, StorageStatus, WifiConfig, WifiStatus } from '../models/appliance';
+import {
+  BackupLog,
+  BackupRunRequest,
+  BlockDevice,
+  InstalledPlugin,
+  PluginPackageInstalled,
+  PluginPackagePreview,
+  PluginServiceCommand,
+  RemoteAccessState,
+  StorageConfig,
+  StorageStatus,
+  WifiConfig,
+  WifiStatus,
+} from '../models/appliance';
 import { BaseApiService } from './base-api';
 
 @Injectable({ providedIn: 'root' })
@@ -64,5 +77,27 @@ export class ApplianceService extends BaseApiService {
     form.append('file', file);
     form.append('cert_type', certType);
     return this.post<{ filename: string }>(`${this.base}/upload-wifi-cert/`, form);
+  }
+
+  uploadPluginPackage(file: File): Observable<PluginPackagePreview> {
+    const form = new FormData();
+    form.append('file', file);
+    return this.post<PluginPackagePreview>(`${this.base}/plugin-upload/`, form);
+  }
+
+  installPluginPackage(uploadId: string): Observable<PluginPackageInstalled> {
+    return this.post<PluginPackageInstalled>(`${this.base}/plugin-install-upload/`, { uploadId });
+  }
+
+  listInstalledPlugins(): Observable<{ plugins: InstalledPlugin[] }> {
+    return this.get<{ plugins: InstalledPlugin[] }>(`${this.base}/plugin-list/`);
+  }
+
+  controlPlugin(name: string, command: PluginServiceCommand): Observable<{ output: string }> {
+    return this.post<{ output: string }>(`${this.base}/plugin-control/`, { name, command });
+  }
+
+  uninstallPlugin(name: string): Observable<{ output: string }> {
+    return this.post<{ output: string }>(`${this.base}/plugin-uninstall/`, { name });
   }
 }

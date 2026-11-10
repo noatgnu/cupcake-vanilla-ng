@@ -1,0 +1,127 @@
+<div class="card mb-3 upload">
+  <div class="card-header py-2 fw-semibold"><i class="bi bi-upload me-2"></i>Install from file</div>
+  <div class="card-body py-2">
+    @if (preview(); as p) {
+      <div class="preview">
+        <div class="d-flex align-items-baseline gap-2">
+          <span class="fw-semibold">{{ p.displayName }}</span>
+          <span class="small text-body-secondary">{{ p.name }} {{ p.version }}</span>
+          @if (p.installedVersion) {
+            <span class="badge text-bg-warning replaces">Replaces {{ p.installedVersion }}</span>
+          }
+        </div>
+        @if (p.description) {
+          <p class="small mb-1">{{ p.description }}</p>
+        }
+        <ul class="small mb-2 ps-3 adds">
+          @if (p.pages.length) {
+            <li>Pages: {{ p.pages.join(', ') }}</li>
+          }
+          @if (p.vocabularies.length) {
+            <li>Vocabularies, shown to users after staff approve them: {{ p.vocabularies.join(', ') }}</li>
+          }
+          @if (!p.pages.length && !p.vocabularies.length) {
+            <li>No pages or vocabularies</li>
+          }
+        </ul>
+        <div class="d-flex gap-2">
+          <button type="button" class="btn btn-sm btn-primary install" (click)="install()" [disabled]="installing()">
+            @if (installing()) {
+              <span class="spinner-border spinner-border-sm me-1"></span>Installing…
+            } @else {
+              {{ p.installedVersion ? 'Update' : 'Install' }}
+            }
+          </button>
+          <button type="button" class="btn btn-sm btn-outline-secondary" (click)="cancel()" [disabled]="installing()">Cancel</button>
+        </div>
+      </div>
+    } @else {
+      <div class="d-flex align-items-center gap-2">
+        <input #file type="file" class="d-none" accept=".tar.gz,.tgz,application/gzip" (change)="choose($event)" />
+        <button type="button" class="btn btn-sm btn-outline-primary choose" (click)="file.click()" [disabled]="uploading()">
+          @if (uploading()) {
+            <span class="spinner-border spinner-border-sm me-1"></span>Checking…
+          } @else {
+            <i class="bi bi-file-earmark-zip me-1"></i>Choose plugin package
+          }
+        </button>
+        <span class="small text-body-secondary">A .tar.gz with run.sh and manifest.json at the top level</span>
+      </div>
+    }
+  </div>
+</div>
+
+<div class="card installed">
+  <div class="card-header py-2 d-flex align-items-center">
+    <span class="fw-semibold"><i class="bi bi-plug me-2"></i>Plugins</span>
+    <button type="button" class="btn btn-sm btn-outline-secondary ms-auto refresh" (click)="load()" [disabled]="loading()">
+      <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+    </button>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-sm table-hover align-middle mb-0 small">
+      <thead>
+        <tr>
+          <th>Plugin</th>
+          <th>Version</th>
+          <th>Service</th>
+          <th>Status</th>
+          <th>Last connection</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of rows(); track row.name) {
+          <tr [attr.data-plugin]="row.name">
+            <td>
+              <div class="fw-semibold">{{ row.displayName }}</div>
+              <div class="text-body-secondary">{{ row.name }}</div>
+            </td>
+            <td>{{ row.version || '—' }}</td>
+            <td class="service">
+              @if (row.service) {
+                <span [class]="'badge ' + (row.service.active ? 'text-bg-success' : 'text-bg-secondary')">{{ row.service.active ? 'Running' : 'Stopped' }}</span>
+                @if (!row.service.enabled) {
+                  <span class="badge text-bg-light ms-1">Not started at boot</span>
+                }
+              } @else {
+                <span class="text-body-secondary">Not on this appliance</span>
+              }
+            </td>
+            <td class="status">
+              @if (row.plugin) {
+                <div>{{ row.plugin.lifecycleStatus }}</div>
+                @if (row.plugin.progressMessage && row.plugin.progressMessage !== 'Running') {
+                  <div class="text-body-secondary">{{ row.plugin.progressMessage }}</div>
+                }
+              } @else {
+                <span class="text-body-secondary">Not registered</span>
+              }
+            </td>
+            <td>{{ row.plugin?.connectionVerifiedAt ? (row.plugin!.connectionVerifiedAt | date: 'short') : '—' }}</td>
+            <td class="text-end text-nowrap">
+              @if (row.service?.active) {
+                <button type="button" class="btn btn-sm btn-outline-secondary stop" (click)="control(row, 'stop')" [disabled]="isBusy(row)">Stop</button>
+              } @else {
+                <button type="button" class="btn btn-sm btn-outline-secondary start" (click)="control(row, 'start')"
+                        [disabled]="isBusy(row) || !row.service"
+                        [title]="row.service ? '' : 'The plugin is not installed on this appliance'">Start</button>
+              }
+              <button type="button" class="btn btn-sm btn-outline-secondary ms-1 restart" (click)="control(row, 'restart')"
+                      [disabled]="isBusy(row) || !row.service"
+                      [title]="row.service ? '' : 'The plugin is not installed on this appliance'">Restart</button>
+              <button type="button" class="btn btn-sm btn-outline-secondary ms-1 check" (click)="checkConnection(row)"
+                      [disabled]="isBusy(row) || !row.plugin"
+                      [title]="row.plugin ? '' : 'The plugin is not registered with the backend'">Check connection</button>
+              <button type="button" class="btn btn-sm btn-outline-danger ms-1 uninstall" (click)="uninstall(row)"
+                      [disabled]="isBusy(row) || !row.service"
+                      [title]="row.service ? '' : 'The plugin is not installed on this appliance'">Uninstall</button>
+            </td>
+          </tr>
+        } @empty {
+          <tr><td colspan="6" class="text-body-secondary">{{ loading() ? 'Loading…' : 'No plugins installed.' }}</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>
