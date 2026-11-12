@@ -100,6 +100,12 @@
             </td>
             <td>{{ row.plugin?.connectionVerifiedAt ? (row.plugin!.connectionVerifiedAt | date: 'short') : '—' }}</td>
             <td class="text-end text-nowrap">
+              @if (pageLink(row); as link) {
+                <a class="btn btn-sm btn-outline-primary me-1 open" [routerLink]="link">Open</a>
+              } @else {
+                <button type="button" class="btn btn-sm btn-outline-primary me-1 open" disabled
+                        title="The plugin has no pages">Open</button>
+              }
               @if (row.service?.active) {
                 <button type="button" class="btn btn-sm btn-outline-secondary stop" (click)="control(row, 'stop')" [disabled]="isBusy(row)">Stop</button>
               } @else {

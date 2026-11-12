@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient, withXhr } from '@angular/common/http';
+import { provideRouter } from '@angular/router';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { PluginManagement, STARTUP_RECHECK_MS } from './plugin-management';
@@ -17,6 +18,7 @@ const registered = [
     version: '1.0.0',
     lifecycle_status: 'running',
     progress_message: 'Above 75 °C: cpu-thermal',
+    manifest_cache: { nav: [{ label: 'Device temperature', path: 'temperature' }], pages: [{ path: 'temperature', title: 'T', widgets: [] }] },
     connection_verified_at: '2026-11-10T10:00:00Z',
   },
   { id: 5, name: 'remote-lims', display_name: 'Remote LIMS', version: '2.0.0', lifecycle_status: 'running', progress_message: 'Running' },
@@ -48,6 +50,7 @@ describe('PluginManagement', () => {
       providers: [
         provideHttpClient(withXhr()),
         provideHttpClientTesting(),
+        provideRouter([]),
         { provide: CUPCAKE_CORE_CONFIG, useValue: { apiUrl: API } },
         { provide: ConfirmDialogService, useValue: { confirm } },
       ],
@@ -90,6 +93,13 @@ describe('PluginManagement', () => {
     expect(row('device-temperature').textContent).toContain('Above 75 °C');
     expect(row('remote-lims').querySelector('.service')?.textContent).toContain('Not on this appliance');
     expect(row('leftover').querySelector('.status')?.textContent).toContain('Not registered');
+  });
+
+  it('links each plugin with pages to its first page', () => {
+    expect((row('device-temperature').querySelector('a.open') as HTMLAnchorElement).getAttribute('href')).toBe('/plugins/4/temperature');
+    const none = row('remote-lims').querySelector('button.open') as HTMLButtonElement;
+    expect(none.disabled).toBeTrue();
+    expect(none.title).toContain('no pages');
   });
 
   it('disables actions that do not apply, with the reason', () => {

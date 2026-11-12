@@ -2,12 +2,16 @@ import { ChangeDetectionStrategy, Component, DestroyRef, effect, inject, OnInit,
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 
-import { Plugin, PluginLifecycleStatus, PluginPageDef, PluginWidgetUpdate } from '../../models/plugin';
+import { Plugin, PluginLifecycleStatus, PluginManifest, PluginPageDef, PluginWidgetUpdate } from '../../models/plugin';
 import { PluginService } from '../../services/plugin';
 import { WebSocketMessage, WebSocketService } from '../../services/websocket';
 import { PluginWidget } from '../plugin-widget/plugin-widget';
 
 export const PLUGIN_SUBSCRIPTION = 'plugin_updates';
+
+export function firstPagePath(manifest: PluginManifest | null | undefined): string | null {
+  return manifest?.nav?.[0]?.path ?? manifest?.pages?.[0]?.path ?? null;
+}
 
 export function isWidgetUpdate(payload: unknown): payload is PluginWidgetUpdate {
   return !!payload && typeof payload === 'object' && typeof (payload as PluginWidgetUpdate).widget === 'string'
@@ -37,36 +41,62 @@ export class PluginPage implements OnInit {
   lastUpdate = signal<Date | null>(null);
   connected = this.websocket.isConnected;
 
+  private subscribedId: number | null = null;
+
   constructor() {
     effect(() => {
       const plugin = this.plugin();
-      if (plugin && this.connected()) {
-        untracked(() => this.websocket.subscribe(PLUGIN_SUBSCRIPTION, { plugin_id: plugin.id, scope: 'global' }));
-      }
+      const connected = this.connected();
+      untracked(() => {
+        if (this.subscribedId !== null && this.subscribedId !== plugin?.id) {
+          this.websocket.unsubscribe(PLUGIN_SUBSCRIPTION, { plugin_id: this.subscribedId, scope: 'global' });
+          this.subscribedId = null;
+        }
+        if (plugin && connected) {
+          this.websocket.subscribe(PLUGIN_SUBSCRIPTION, { plugin_id: plugin.id, scope: 'global' });
+          this.subscribedId = plugin.id;
+        }
+      });
     });
     this.destroyRef.onDestroy(() => {
-      const plugin = this.plugin();
-      if (plugin) {
-        this.websocket.unsubscribe(PLUGIN_SUBSCRIPTION, { plugin_id: plugin.id, scope: 'global' });
+      if (this.subscribedId !== null) {
+        this.websocket.unsubscribe(PLUGIN_SUBSCRIPTION, { plugin_id: this.subscribedId, scope: 'global' });
       }
     });
     this.websocket.messages$.pipe(takeUntilDestroyed()).subscribe(message => this.receive(message));
   }
 
   ngOnInit(): void {
-    const id = Number(this.route.snapshot.paramMap.get('pluginId'));
-    const path = this.route.snapshot.paramMap.get('pagePath') ?? '';
+    this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => {
+      this.open(Number(params.get('pluginId')), params.get('pagePath'));
+    });
+  }
+
+  private open(id: number, path: string | null): void {
+    const current = this.plugin();
+    if (current && current.id === id) {
+      this.showPage(current, path);
+      return;
+    }
+    this.loading.set(true);
+    this.error.set(null);
+    this.live.set({});
+    this.lastUpdate.set(null);
     this.pluginService.getPlugin(id).subscribe({
       next: p => {
         this.plugin.set(p);
         this.lifecycleStatus.set(p.lifecycleStatus);
         this.progressMessage.set(p.progressMessage);
-        const found = p.manifestCache?.pages?.find(pg => pg.path === path) ?? null;
-        this.page.set(found);
+        this.showPage(p, path);
         this.loading.set(false);
       },
       error: e => { this.error.set(e.message); this.loading.set(false); },
     });
+  }
+
+  private showPage(plugin: Plugin, path: string | null): void {
+    const wanted = path ?? firstPagePath(plugin.manifestCache);
+    this.page.set(plugin.manifestCache?.pages?.find(pg => pg.path === wanted) ?? null);
   }
 
   statusClass(): string {

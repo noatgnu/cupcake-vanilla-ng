@@ -1,8 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient, withXhr } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { ActivatedRoute, convertToParamMap } from '@angular/router';
-import { of, Subject, throwError } from 'rxjs';
+import { ActivatedRoute, convertToParamMap, ParamMap } from '@angular/router';
+import { BehaviorSubject, of, Subject, throwError } from 'rxjs';
 import { signal } from '@angular/core';
 
 import { PluginPage } from './plugin-page';
@@ -21,8 +21,10 @@ const mockPlugin: Plugin = {
     name: 'test-plugin',
     displayName: 'Test Plugin',
     version: '1.0.0',
+    nav: [{ label: 'Home', path: 'home' }],
     pages: [
       { path: 'home', title: 'Home Page', widgets: [] },
+      { path: 'other', title: 'Other Page', widgets: [] },
     ],
   },
   baseUrl: 'http://plugin.local',
@@ -35,12 +37,11 @@ const mockPlugin: Plugin = {
   updatedAt: '2026-01-01T00:00:00Z',
 };
 
-function buildRoute(pluginId: string, pagePath: string) {
-  return {
-    snapshot: {
-      paramMap: convertToParamMap({ pluginId, pagePath }),
-    },
-  };
+let params$: BehaviorSubject<ParamMap>;
+
+function buildRoute(pluginId: string, pagePath?: string) {
+  params$ = new BehaviorSubject(convertToParamMap(pagePath === undefined ? { pluginId } : { pluginId, pagePath }));
+  return { paramMap: params$.asObservable() };
 }
 
 describe('PluginPage', () => {
@@ -163,5 +164,27 @@ describe('PluginPage', () => {
     socket.isConnected.set(false);
     await open();
     expect((fixture.nativeElement as HTMLElement).querySelector('.live-state')?.textContent).toContain('Not receiving live updates');
+  });
+
+  it('opens the first page when the address names none', async () => {
+    TestBed.overrideProvider(ActivatedRoute, { useValue: buildRoute('1') });
+    await open();
+    expect(component.page()?.title).toBe('Home Page');
+  });
+
+  it('switches pages of the same plugin without reading it again', async () => {
+    await open();
+    params$.next(convertToParamMap({ pluginId: '1', pagePath: 'other' }));
+    expect(component.page()?.title).toBe('Other Page');
+    expect(pluginServiceSpy.getPlugin).toHaveBeenCalledTimes(1);
+  });
+
+  it('moves the live subscription when another plugin is opened', async () => {
+    await open();
+    pluginServiceSpy.getPlugin.and.returnValue(of({ ...mockPlugin, id: 2 }));
+    params$.next(convertToParamMap({ pluginId: '2', pagePath: 'home' }));
+    fixture.detectChanges();
+    expect(socket.unsubscribe).toHaveBeenCalledWith('plugin_updates', { plugin_id: 1, scope: 'global' });
+    expect(socket.subscribe).toHaveBeenCalledWith('plugin_updates', { plugin_id: 2, scope: 'global' });
   });
 });

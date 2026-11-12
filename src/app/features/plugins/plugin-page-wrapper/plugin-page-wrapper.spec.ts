@@ -3,6 +3,7 @@ import { provideHttpClient, withXhr } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { CUPCAKE_CORE_CONFIG } from '@noatgnu/cupcake-core';
+import { of } from 'rxjs';
 
 import { PluginPageWrapper } from './plugin-page-wrapper';
 
@@ -19,7 +20,7 @@ describe('PluginPageWrapper', () => {
         { provide: CUPCAKE_CORE_CONFIG, useValue: { apiUrl: 'http://localhost:8000/api' } },
         {
           provide: ActivatedRoute,
-          useValue: { snapshot: { paramMap: convertToParamMap({ pluginId: '1', pagePath: 'home' }) } },
+          useValue: { paramMap: of(convertToParamMap({ pluginId: '1', pagePath: 'home' })) },
         },
       ]
     })

@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, OnInit, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { forkJoin, Observable } from 'rxjs';
 
@@ -9,6 +10,7 @@ import { ApplianceService } from '../services/appliance';
 import { ConfirmDialogService } from '../services/confirm-dialog';
 import { PluginService } from '../services/plugin';
 import { ToastService } from '../services/toast';
+import { firstPagePath } from '../plugin-renderer/plugin-page/plugin-page';
 
 export const STARTUP_RECHECK_MS = 4000;
 
@@ -29,7 +31,7 @@ export function errorText(error: unknown, fallback: string): string {
 
 @Component({
   selector: 'ccc-plugin-management',
-  imports: [DatePipe],
+  imports: [DatePipe, RouterLink],
   templateUrl: './plugin-management.html',
   styleUrl: './plugin-management.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -152,6 +154,11 @@ export class PluginManagement implements OnInit {
     if (confirmed) {
       this.run(row, 'uninstall', this.appliance.uninstallPlugin(row.name), `${row.displayName} uninstalled`);
     }
+  }
+
+  pageLink(row: PluginRow): (string | number)[] | null {
+    const path = row.plugin ? firstPagePath(row.plugin.manifestCache) : null;
+    return row.plugin && path ? ['/plugins', row.plugin.id, path] : null;
   }
 
   isBusy(row: PluginRow): boolean {
