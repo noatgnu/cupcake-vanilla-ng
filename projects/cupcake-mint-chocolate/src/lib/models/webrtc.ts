@@ -109,8 +109,21 @@ export interface PeerInfo {
   hasScreenShare: boolean;
 }
 
+export type WebRTCPermissionKind = 'audio' | 'video' | 'screenShare' | 'chat';
+
+export type WebRTCPermissions = Record<WebRTCPermissionKind, boolean>;
+
+export type WebRTCPermissionOverrides = Record<WebRTCPermissionKind, boolean | null>;
+
+export interface WebRTCPermissionChange {
+  userId: number;
+  permissions: WebRTCPermissions;
+  overrides: WebRTCPermissionOverrides;
+  changedBy: string;
+}
+
 export interface WebRTCMessage {
-  type: 'connection.established' | 'check.response' | 'peer.check' | 'offer' | 'answer' | 'ice_candidate' | 'peer.state_update' | 'peer.joined' | 'peer.left' | 'heartbeat.response' | 'error';
+  type: 'connection.established' | 'check.response' | 'peer.check' | 'offer' | 'answer' | 'ice_candidate' | 'peer.state_update' | 'peer.joined' | 'peer.left' | 'peer.permissions' | 'heartbeat.response' | 'error';
   message?: string;
   peerId?: string;
   clientPeerId?: string;

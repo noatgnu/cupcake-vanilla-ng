@@ -12,6 +12,7 @@ import {
   ChatMessage,
   DataChannelMessage,
   FileOfferData,
+  WebRTCPermissions,
   FileTransferRequest,
   FileTransferAccept,
   FileChunk,
@@ -37,6 +38,7 @@ export class WebRTCService {
   private _activePeers = new BehaviorSubject<PeerInfo[]>([]);
   private _chatMessages = new Subject<ChatMessage>();
   private _fileTransferProgress = new Subject<FileTransferProgress>();
+  private receivedFileOffers = new Map<string, FileOfferData>();
   private _dataChannelReady = new BehaviorSubject<boolean>(false);
 
   localStream$ = this._localStream.asObservable();
@@ -68,10 +70,51 @@ export class WebRTCService {
     audio: true
   };
 
+  private screenSharing = false;
+
   constructor(
     private signalling: WebRTCSignallingService,
     private zone: NgZone
-  ) {}
+  ) {
+    this.signalling.permissions$.subscribe(() => this.applyPermissions());
+    this.signalling.peers$.subscribe(() => this.applyRemotePermissions());
+  }
+
+  private applyPermissions(): void {
+    const own = this.signalling.ownPermissions;
+    if (!own.screenShare && this.screenSharing) {
+      this.stopScreenShare();
+    }
+    if (!own.video && !this.screenSharing && this.localStream?.getVideoTracks().length) {
+      this.disableVideo();
+    }
+    if (!own.audio && this.localStream?.getAudioTracks().length) {
+      this.disableAudio();
+    }
+    this.applyRemotePermissions();
+  }
+
+  private applyRemotePermissions(): void {
+    this.peerConnections.forEach(connection => this.applyPermissionsTo(connection));
+  }
+
+  private applyPermissionsTo(connection: PeerConnection): void {
+    const allowed = this.signalling.permissionsFor(connection.userId);
+    const sharingScreen = this.signalling.peers.find(peer => peer.id === connection.peerId)?.hasScreenShare ?? false;
+    connection.pc.getReceivers().forEach(receiver => {
+      if (receiver.track.kind === 'audio') {
+        receiver.track.enabled = allowed.audio;
+      } else {
+        receiver.track.enabled = sharingScreen ? allowed.screenShare : allowed.video;
+      }
+    });
+  }
+
+  private requirePermission(kind: keyof WebRTCPermissions, action: string): void {
+    if (!this.signalling.ownPermissions[kind]) {
+      throw new Error(`The session owner has not allowed you to ${action}`);
+    }
+  }
 
   async startSession(
     sessionId: string,
@@ -155,6 +198,7 @@ export class WebRTCService {
   }
 
   async startScreenShare(): Promise<void> {
+    this.requirePermission('screenShare', 'share your screen');
     try {
       const screenStream = await (navigator.mediaDevices as any).getDisplayMedia({
         video: true,
@@ -170,6 +214,7 @@ export class WebRTCService {
       this._localStreamReady.next(true);
 
       this.replaceTracksInAllPeers();
+      this.screenSharing = true;
 
       this.updatePeerState(undefined, false, false, true);
 
@@ -185,6 +230,7 @@ export class WebRTCService {
   }
 
   stopScreenShare(): void {
+    this.screenSharing = false;
     if (this.localStream) {
       this.localStream.getTracks().forEach(track => track.stop());
       this.localStream = undefined;
@@ -198,6 +244,7 @@ export class WebRTCService {
   }
 
   async enableVideo(deviceId?: string): Promise<void> {
+    this.requirePermission('video', 'turn on your camera');
     if (!this.localStream) {
       console.log('[WebRTC] Creating local stream for video');
       try {
@@ -336,6 +383,7 @@ export class WebRTCService {
   }
 
   async enableAudio(deviceId?: string): Promise<void> {
+    this.requirePermission('audio', 'unmute your microphone');
     if (!this.localStream) {
       console.log('[WebRTC] Creating local stream for audio');
       try {
@@ -764,6 +812,7 @@ export class WebRTCService {
         const connection = this.peerConnections.get(peerId);
         if (connection) {
           connection.stream = stream;
+          this.applyPermissionsTo(connection);
         }
 
         const streams = this._remoteStreams.value;
@@ -861,9 +910,7 @@ export class WebRTCService {
       this.zone.run(() => {
         switch (message.type) {
           case 'chat':
-            const chatMessage: ChatMessage = message.data as ChatMessage;
-            this._chatMessages.next(chatMessage);
-            console.log('Chat message received:', chatMessage);
+            this.receiveChatMessage(message.data as ChatMessage, peerId);
             break;
 
           case 'file_request':
@@ -903,7 +950,27 @@ export class WebRTCService {
     }
   }
 
+  private receiveChatMessage(chatMessage: ChatMessage, peerId: string): void {
+    const sender = this.peerConnections.get(peerId);
+    if (!sender || !this.signalling.permissionsFor(sender.userId).chat) {
+      return;
+    }
+    const received: ChatMessage = {
+      ...chatMessage,
+      peerId,
+      userId: sender.userId,
+      username: sender.username
+    };
+    if (received.fileOffer) {
+      this.receivedFileOffers.set(received.fileOffer.fileId, received.fileOffer);
+    }
+    this._chatMessages.next(received);
+  }
+
   sendChatMessage(message: string): void {
+    if (!this.signalling.ownPermissions.chat) {
+      return;
+    }
     const openConnections = Array.from(this.peerConnections.values()).filter(
       conn => conn.dataChannel && conn.dataChannel.readyState === 'open'
     );
@@ -1040,6 +1107,9 @@ export class WebRTCService {
   }
 
   offerFile(file: File): void {
+    if (!this.signalling.ownPermissions.chat) {
+      return;
+    }
     const fileId = `${Date.now()}-${Math.random().toString(36).substring(7)}`;
     const chunkSize = this.DEFAULT_CHUNK_SIZE;
     const totalChunks = Math.ceil(file.size / chunkSize);
@@ -1136,59 +1206,46 @@ export class WebRTCService {
   }
 
   private async handleFileAccept(accept: FileTransferAccept, fromPeerId: string): Promise<void> {
-    console.log('File transfer accepted:', accept.fileId);
-
-    const chatMessages = (this._chatMessages as any)._buffer || [];
-    const relatedMessage = chatMessages.find((msg: ChatMessage) => msg.fileOffer?.fileId === accept.fileId);
-
-    if (!relatedMessage?.fileOffer) {
+    const fileOffer = this.receivedFileOffers.get(accept.fileId);
+    if (!fileOffer) {
       console.error('Cannot find file offer for accepted transfer:', accept.fileId);
       return;
     }
 
-    const fileOffer = relatedMessage.fileOffer;
+    const transfer: FileTransferState = {
+      fileId: accept.fileId,
+      fileName: fileOffer.fileName,
+      fileSize: fileOffer.fileSize,
+      fileType: fileOffer.fileType,
+      chunks: new Map(),
+      totalChunks: fileOffer.totalChunks,
+      chunkSize: fileOffer.chunkSize,
+      sentChunks: 0,
+      receivedChunks: 0,
+      status: 'transferring',
+      requestedBy: new Set()
+    };
+    this.fileTransfers.set(accept.fileId, transfer);
 
+    let downloadStream: WritableStream<Uint8Array>;
     try {
-      const downloadStream = await this.createFileDownloadStream(fileOffer.fileName);
-
-      const transfer: FileTransferState = {
-        fileId: accept.fileId,
-        fileName: fileOffer.fileName,
-        fileSize: fileOffer.fileSize,
-        fileType: fileOffer.fileType,
-        chunks: new Map(),
-        totalChunks: fileOffer.totalChunks,
-        chunkSize: fileOffer.chunkSize,
-        sentChunks: 0,
-        receivedChunks: 0,
-        status: 'transferring',
-        requestedBy: new Set(),
-        downloadStream: downloadStream,
-        streamWriter: downloadStream.getWriter()
-      };
-
-      this.fileTransfers.set(accept.fileId, transfer);
-      console.log('Streaming download started for:', fileOffer.fileName);
+      downloadStream = await this.createFileDownloadStream(fileOffer.fileName);
     } catch (error) {
-      console.error('Failed to create download stream:', error);
-
-      const transfer: FileTransferState = {
-        fileId: accept.fileId,
-        fileName: fileOffer.fileName,
-        fileSize: fileOffer.fileSize,
-        fileType: fileOffer.fileType,
-        chunks: new Map(),
-        totalChunks: fileOffer.totalChunks,
-        chunkSize: fileOffer.chunkSize,
-        sentChunks: 0,
-        receivedChunks: 0,
-        status: 'transferring',
-        requestedBy: new Set()
-      };
-
-      this.fileTransfers.set(accept.fileId, transfer);
-      console.log('Fallback to in-memory assembly for:', fileOffer.fileName);
+      console.error('Failed to create download stream, assembling in memory:', error);
+      return;
     }
+
+    const writer = downloadStream.getWriter();
+    if (this.fileTransfers.get(accept.fileId) !== transfer) {
+      writer.abort('Transfer finished before the file could be saved');
+      return;
+    }
+    for (let index = 0; transfer.chunks.has(index); index++) {
+      writer.write(new Uint8Array(transfer.chunks.get(index)!));
+    }
+    transfer.chunks.clear();
+    transfer.downloadStream = downloadStream;
+    transfer.streamWriter = writer;
   }
 
   private async createFileDownloadStream(fileName: string): Promise<WritableStream<Uint8Array>> {

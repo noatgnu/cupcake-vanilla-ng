@@ -6,8 +6,27 @@ import {
   WebRTCMessage,
   PeerInfo,
   PeerRole,
-  PeerConnectionState
+  PeerConnectionState,
+  WebRTCPermissions,
+  WebRTCPermissionOverrides,
+  WebRTCPermissionChange
 } from '../models/webrtc';
+
+const PERMISSION_FIELDS: Record<keyof WebRTCPermissions, string> = {
+  audio: 'audio',
+  video: 'video',
+  screenShare: 'screen_share',
+  chat: 'chat'
+};
+
+function fromServer<T>(flags: Record<string, T>): Record<keyof WebRTCPermissions, T> {
+  return {
+    audio: flags['audio'],
+    video: flags['video'],
+    screenShare: flags['screen_share'],
+    chat: flags['chat']
+  };
+}
 
 @Injectable({
   providedIn: 'root'
@@ -26,6 +45,12 @@ export class WebRTCSignallingService {
   private _peers = new BehaviorSubject<PeerInfo[]>([]);
   private _messages = new Subject<WebRTCMessage>();
   private _iceServers = new BehaviorSubject<RTCIceServer[]>([]);
+  private _userId = new BehaviorSubject<number | null>(null);
+  private _readOnly = new BehaviorSubject<boolean>(false);
+  private _canModerate = new BehaviorSubject<boolean>(false);
+  private _permissions = new BehaviorSubject<Map<number, WebRTCPermissions>>(new Map());
+  private _overrides = new BehaviorSubject<Map<number, WebRTCPermissionOverrides>>(new Map());
+  private _permissionChanges = new Subject<WebRTCPermissionChange>();
 
   connected$ = this._connected.asObservable();
   peerId$ = this._peerId.asObservable();
@@ -33,27 +58,25 @@ export class WebRTCSignallingService {
   peers$ = this._peers.asObservable();
   messages$ = this._messages.asObservable();
   iceServers$ = this._iceServers.asObservable();
+  readOnly$ = this._readOnly.asObservable();
+  canModerate$ = this._canModerate.asObservable();
+  permissions$ = this._permissions.asObservable();
+  overrides$ = this._overrides.asObservable();
+  permissionChanges$ = this._permissionChanges.asObservable();
 
   constructor(
     private authService: AuthService,
     private zone: NgZone,
     @Optional() @Inject(CUPCAKE_CORE_CONFIG) private config: CupcakeCoreConfig | null
-  ) {
-    this.baseUrl = this.getBaseUrl();
-  }
+  ) {}
 
   private getBaseUrl(): string {
-    if (this.config && this.config.websocketUrl) {
-      return this.config.websocketUrl;
+    if (this.config?.websocketUrl) {
+      return this.config.websocketUrl.replace(/\/$/, '');
     }
-    if (this.config && this.config.apiUrl) {
-      const apiUrl = this.config.apiUrl.replace(/^https?:\/\//, '');
-      const protocol = this.config.apiUrl.startsWith('https') ? 'wss:' : 'ws:';
-      return `${protocol}//${apiUrl}`;
-    }
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = window.location.host;
-    return `${protocol}//${host}`;
+    const api = new URL(this.config?.apiUrl || '/', window.location.href);
+    const protocol = api.protocol === 'https:' ? 'wss:' : 'ws:';
+    return `${protocol}//${api.host}`;
   }
 
   connect(sessionId: string): void {
@@ -67,6 +90,7 @@ export class WebRTCSignallingService {
     }
 
     this.clientPeerId = this.getClientPeerId();
+    this.baseUrl = this.getBaseUrl();
 
     const wsPath = this.baseUrl.endsWith('/ws') ? '' : '/ws';
     let wsUrl = `${this.baseUrl}${wsPath}/ccmc/webrtc/${sessionId}/?token=${token}`;
@@ -184,6 +208,51 @@ export class WebRTCSignallingService {
     this._peerId.next(null);
     this._sessionId.next(null);
     this._peers.next([]);
+    this._userId.next(null);
+    this._readOnly.next(false);
+    this._canModerate.next(false);
+    this._permissions.next(new Map());
+    this._overrides.next(new Map());
+  }
+
+  setPermissions(userId: number, changes: Partial<WebRTCPermissionOverrides>): void {
+    const message: Record<string, unknown> = { type: 'set_permissions', user_id: userId };
+    (Object.keys(changes) as (keyof WebRTCPermissions)[]).forEach(kind => {
+      message[PERMISSION_FIELDS[kind]] = changes[kind];
+    });
+    this.send(message);
+  }
+
+  permissionsFor(userId: number): WebRTCPermissions {
+    return this._permissions.value.get(userId) ?? { audio: true, video: true, screenShare: true, chat: true };
+  }
+
+  overridesFor(userId: number): WebRTCPermissionOverrides {
+    return this._overrides.value.get(userId) ?? { audio: null, video: null, screenShare: null, chat: null };
+  }
+
+  get ownPermissions(): WebRTCPermissions {
+    const userId = this._userId.value;
+    return userId === null ? { audio: true, video: true, screenShare: true, chat: true } : this.permissionsFor(userId);
+  }
+
+  get readOnly(): boolean {
+    return this._readOnly.value;
+  }
+
+  get canModerate(): boolean {
+    return this._canModerate.value;
+  }
+
+  private storePermissions(userId: number, permissions: Record<string, boolean>, overrides?: Record<string, boolean | null>): void {
+    const allPermissions = new Map(this._permissions.value);
+    allPermissions.set(userId, fromServer(permissions));
+    this._permissions.next(allPermissions);
+    if (overrides) {
+      const allOverrides = new Map(this._overrides.value);
+      allOverrides.set(userId, fromServer(overrides));
+      this._overrides.next(allOverrides);
+    }
   }
 
   sendCheck(peerRole: PeerRole = PeerRole.PARTICIPANT): void {
@@ -277,6 +346,10 @@ export class WebRTCSignallingService {
         this.handlePeerStateUpdate(message);
         break;
 
+      case 'peer.permissions':
+        this.handlePeerPermissions(message);
+        break;
+
       case 'error':
         console.error('WebRTC signalling error:', message.message);
         break;
@@ -311,6 +384,18 @@ export class WebRTCSignallingService {
     if (iceServers) {
       this._iceServers.next(iceServers);
       console.log('[Signalling] ICE servers received:', iceServers);
+    }
+    if (message.user_id !== undefined) {
+      this._userId.next(message.user_id);
+    }
+    this._readOnly.next(message.read_only === true);
+    this._canModerate.next(message.can_moderate === true);
+    if (message.permissions) {
+      const permissions = new Map<number, WebRTCPermissions>();
+      Object.entries(message.permissions as Record<string, Record<string, boolean>>).forEach(([userId, flags]) => {
+        permissions.set(Number(userId), fromServer(flags));
+      });
+      this._permissions.next(permissions);
     }
     console.log('[Signalling] WebRTC connection established:', message);
   }
@@ -378,6 +463,10 @@ export class WebRTCSignallingService {
       hasScreenShare: false
     };
 
+    if (message.permissions) {
+      this.storePermissions(userId, message.permissions);
+    }
+
     const currentPeers = this._peers.value;
     if (!currentPeers.find(p => p.id === peerId)) {
       this._peers.next([...currentPeers, newPeer]);
@@ -444,6 +533,17 @@ export class WebRTCSignallingService {
 
     this._peers.next(updatedPeers);
     this._messages.next(message);
+  }
+
+  private handlePeerPermissions(message: any): void {
+    const userId: number = message.user_id;
+    this.storePermissions(userId, message.permissions, message.overrides);
+    this._permissionChanges.next({
+      userId,
+      permissions: fromServer(message.permissions),
+      overrides: fromServer(message.overrides),
+      changedBy: message.changed_by
+    });
   }
 
   get peerId(): string | null {
