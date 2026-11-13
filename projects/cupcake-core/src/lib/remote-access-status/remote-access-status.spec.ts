@@ -13,12 +13,12 @@ const tailscale = {
   configured: true,
   connected: true,
   state: 'Running',
-  dns_name: 'cupcake.tail1e420d.ts.net',
-  addresses: ['100.66.187.101'],
+  dns_name: 'appliance.example.ts.net',
+  addresses: ['100.64.0.10'],
   online: true,
   health: ['no DERP home'],
   https_available: true,
-  certificate: { name: 'cupcake.tail1e420d.ts.net', expires_at: '2027-02-01T00:00:00Z' },
+  certificate: { name: 'appliance.example.ts.net', expires_at: '2027-02-01T00:00:00Z' },
   error: '',
 };
 
@@ -60,15 +60,15 @@ describe('RemoteAccessStatus', () => {
     answer({ tailscale, cloudflare });
     const text = card('tailscale').textContent ?? '';
     expect(text).toContain('Connected');
-    expect(text).toContain('cupcake.tail1e420d.ts.net');
-    expect(text).toContain('100.66.187.101');
+    expect(text).toContain('appliance.example.ts.net');
+    expect(text).toContain('100.64.0.10');
     expect(card('tailscale').querySelectorAll('.health').length).toBe(1);
   });
 
   it('shows the HTTPS address and certificate expiry of the Tailscale name', () => {
     answer({ tailscale, cloudflare });
     const https = card('tailscale').querySelector('.https')?.textContent ?? '';
-    expect(https).toContain('https://cupcake.tail1e420d.ts.net/');
+    expect(https).toContain('https://appliance.example.ts.net/');
     expect(https).toContain('2027');
   });
 
