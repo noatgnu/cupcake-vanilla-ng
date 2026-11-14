@@ -80,4 +80,30 @@ describe('WebRTCService', () => {
     setPermissions(7, { audio: true });
     expect(audio.enabled).toBeTrue();
   });
+
+  it('renegotiates when sharing the screen adds a video track the connection did not send before', async () => {
+    const track = { kind: 'video' } as MediaStreamTrack;
+    const connection = service['peerConnections'].get('colleague-peer')!;
+    const addTrack = jasmine.createSpy('addTrack');
+    connection.pc = { getSenders: () => [], addTrack } as any;
+    const renegotiate = spyOn<any>(service, 'renegotiateConnection').and.resolveTo();
+    service['localStream'] = { getTracks: () => [track] } as any;
+    await service['replaceTracksInAllPeers']();
+    expect(addTrack).toHaveBeenCalledWith(track, service['localStream']);
+    expect(renegotiate).toHaveBeenCalledWith('colleague-peer');
+  });
+
+  it('replaces an existing video track without renegotiating', async () => {
+    const track = { kind: 'video' } as MediaStreamTrack;
+    const replaceTrack = jasmine.createSpy('replaceTrack').and.resolveTo();
+    service['peerConnections'].get('colleague-peer')!.pc = {
+      getSenders: () => [{ track: { kind: 'video' }, replaceTrack }],
+      addTrack: jasmine.createSpy('addTrack')
+    } as any;
+    const renegotiate = spyOn<any>(service, 'renegotiateConnection').and.resolveTo();
+    service['localStream'] = { getTracks: () => [track] } as any;
+    await service['replaceTracksInAllPeers']();
+    expect(replaceTrack).toHaveBeenCalledWith(track);
+    expect(renegotiate).not.toHaveBeenCalled();
+  });
 });

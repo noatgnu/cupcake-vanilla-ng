@@ -213,7 +213,7 @@ export class WebRTCService {
       this._localStream.next(this.localStream || null);
       this._localStreamReady.next(true);
 
-      this.replaceTracksInAllPeers();
+      await this.replaceTracksInAllPeers();
       this.screenSharing = true;
 
       this.updatePeerState(undefined, false, false, true);
@@ -1077,24 +1077,30 @@ export class WebRTCService {
     return shouldInitiate;
   }
 
-  private replaceTracksInAllPeers(): void {
+  private async replaceTracksInAllPeers(): Promise<void> {
     if (!this.localStream) return;
+    const stream = this.localStream;
 
-    this.peerConnections.forEach((connection) => {
+    for (const connection of this.peerConnections.values()) {
       const senders = connection.pc.getSenders();
+      let added = false;
 
-      this.localStream!.getTracks().forEach(track => {
+      for (const track of stream.getTracks()) {
         const sender = senders.find(s => s.track?.kind === track.kind);
-
         if (sender) {
-          sender.replaceTrack(track).catch(error => {
+          await sender.replaceTrack(track).catch(error => {
             console.error(`Error replacing ${track.kind} track:`, error);
           });
         } else {
-          connection.pc.addTrack(track, this.localStream!);
+          connection.pc.addTrack(track, stream);
+          added = true;
         }
-      });
-    });
+      }
+
+      if (added) {
+        await this.renegotiateConnection(connection.peerId);
+      }
+    }
   }
 
   private updatePeerState(
