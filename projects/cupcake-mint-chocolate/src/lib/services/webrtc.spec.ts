@@ -159,4 +159,32 @@ describe('WebRTCService', () => {
     expect((pc as any).createOffer).not.toHaveBeenCalled();
     expect(service['peerConnections'].get('colleague-peer')!.renegotiateWhenStable).toBeTrue();
   });
+
+  it('keeps each person\'s tracks in their own stream even when the browser shares one stream between them', () => {
+    service['peerConnections'].set('viewer-peer', {
+      peerId: 'viewer-peer', userId: 8, username: 'viewer', role: 'viewer', queuedCandidates: [], pc: { getReceivers: () => [] }
+    } as any);
+    const shared = new MediaStream();
+    const handlers: Record<string, any> = {};
+    for (const peerId of ['colleague-peer', 'viewer-peer']) {
+      const pc: any = { getReceivers: () => [] };
+      service['setupPeerConnectionHandlers'](pc, peerId);
+      handlers[peerId] = pc.ontrack;
+    }
+    const colleagueVideo = { kind: 'video', id: 'colleague-video' } as any;
+    const viewerVideo = { kind: 'video', id: 'viewer-video' } as any;
+    spyOn(MediaStream.prototype, 'addTrack').and.callFake(function (this: any, track: any) {
+      (this.__tracks ??= []).push(track);
+    });
+    spyOn(MediaStream.prototype, 'getTracks').and.callFake(function (this: any) {
+      return this.__tracks ?? [];
+    });
+    handlers['colleague-peer']({ track: colleagueVideo, streams: [shared] });
+    handlers['viewer-peer']({ track: viewerVideo, streams: [shared] });
+    const colleagueStream = service['peerConnections'].get('colleague-peer')!.stream!;
+    const viewerStream = service['peerConnections'].get('viewer-peer')!.stream!;
+    expect(colleagueStream).not.toBe(viewerStream);
+    expect(colleagueStream.getTracks()).toEqual([colleagueVideo]);
+    expect(viewerStream.getTracks()).toEqual([viewerVideo]);
+  });
 });

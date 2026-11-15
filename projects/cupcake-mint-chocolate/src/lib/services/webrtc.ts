@@ -610,7 +610,10 @@ export class WebRTCService {
 
       this.zone.run(() => {
         const connection = this.peerConnections.get(peerId);
-        const stream = event.streams[0] ?? connection?.stream ?? new MediaStream();
+        const stream = connection?.stream ?? new MediaStream();
+        stream.getTracks()
+          .filter(track => track.kind === event.track.kind && track !== event.track)
+          .forEach(track => stream.removeTrack(track));
         if (!stream.getTracks().includes(event.track)) {
           stream.addTrack(event.track);
         }
