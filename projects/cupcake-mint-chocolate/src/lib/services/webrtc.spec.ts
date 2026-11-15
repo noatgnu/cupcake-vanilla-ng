@@ -26,7 +26,8 @@ describe('WebRTCService', () => {
       userId: 7,
       username: 'colleague',
       role: 'participant',
-      pc: { getReceivers: () => [] }
+      pc: { getReceivers: () => [] },
+      queuedCandidates: []
     } as any);
     received = [];
     service.chatMessages$.subscribe(message => received.push(message));
@@ -81,29 +82,81 @@ describe('WebRTCService', () => {
     expect(audio.enabled).toBeTrue();
   });
 
-  it('renegotiates when sharing the screen adds a video track the connection did not send before', async () => {
-    const track = { kind: 'video' } as MediaStreamTrack;
-    const connection = service['peerConnections'].get('colleague-peer')!;
-    const addTrack = jasmine.createSpy('addTrack');
-    connection.pc = { getSenders: () => [], addTrack } as any;
+  function transceiver(kind: string, track: object | null = null) {
+    return {
+      currentDirection: 'sendrecv',
+      receiver: { track: { kind } },
+      sender: { track, replaceTrack: jasmine.createSpy(`replace ${kind}`).and.resolveTo() }
+    };
+  }
+
+  it('sends local media by swapping tracks on the existing transceivers, without renegotiating', async () => {
+    const camera = { kind: 'video' };
+    const audio = transceiver('audio');
+    const video = transceiver('video');
+    service['peerConnections'].get('colleague-peer')!.pc = { getTransceivers: () => [audio, video] } as any;
+    service['localStream'] = { getTracks: () => [camera] } as any;
+    const renegotiate = spyOn<any>(service, 'renegotiateConnection');
+    await service['sendLocalTracksToAll']();
+    expect(video.sender.replaceTrack).toHaveBeenCalledWith(camera);
+    expect(audio.sender.replaceTrack).not.toHaveBeenCalled();
+    expect(renegotiate).not.toHaveBeenCalled();
+  });
+
+  it('stops sending a kind of media by clearing its track', async () => {
+    const video = transceiver('video', { kind: 'video' });
+    service['peerConnections'].get('colleague-peer')!.pc = { getTransceivers: () => [video] } as any;
+    service['localStream'] = { getTracks: () => [] } as any;
+    await service['sendLocalTracksToAll']();
+    expect(video.sender.replaceTrack).toHaveBeenCalledWith(null);
+  });
+
+  function negotiatingConnection(signalingState: RTCSignalingState) {
+    const pc = {
+      signalingState,
+      localDescription: { type: 'answer', sdp: 'answer' },
+      setLocalDescription: jasmine.createSpy('setLocalDescription').and.callFake(async (description?: RTCSessionDescriptionInit) => {
+        pc.signalingState = description?.type === 'rollback' ? 'stable' : pc.signalingState;
+      }),
+      setRemoteDescription: jasmine.createSpy('setRemoteDescription').and.callFake(async () => {
+        pc.signalingState = 'have-remote-offer';
+      }),
+      getTransceivers: () => [],
+      createAnswer: jasmine.createSpy('createAnswer').and.callFake(async () => {
+        pc.signalingState = 'stable';
+        return { type: 'answer', sdp: 'answer' };
+      }),
+      addIceCandidate: jasmine.createSpy('addIceCandidate')
+    };
+    service['peerConnections'].get('colleague-peer')!.pc = pc as any;
+    return pc;
+  }
+
+  it('ignores a colliding offer on the side that is not polite', async () => {
+    signalling['_peerId'].next('a-peer');
+    const pc = negotiatingConnection('have-local-offer');
+    const sendAnswer = spyOn(signalling, 'sendAnswer');
+    await service['handleOffer']('colleague-peer', 7, 'colleague', { type: 'offer', sdp: 'offer' });
+    expect(pc.setRemoteDescription).not.toHaveBeenCalled();
+    expect(sendAnswer).not.toHaveBeenCalled();
+  });
+
+  it('rolls back, answers and then sends its own change again on the polite side', async () => {
+    signalling['_peerId'].next('z-peer');
+    const pc = negotiatingConnection('have-local-offer');
+    spyOn(signalling, 'sendAnswer');
     const renegotiate = spyOn<any>(service, 'renegotiateConnection').and.resolveTo();
-    service['localStream'] = { getTracks: () => [track] } as any;
-    await service['replaceTracksInAllPeers']();
-    expect(addTrack).toHaveBeenCalledWith(track, service['localStream']);
+    await service['handleOffer']('colleague-peer', 7, 'colleague', { type: 'offer', sdp: 'offer' });
+    expect(pc.setLocalDescription.calls.first().args[0]).toEqual({ type: 'rollback' });
+    expect(signalling.sendAnswer).toHaveBeenCalled();
     expect(renegotiate).toHaveBeenCalledWith('colleague-peer');
   });
 
-  it('replaces an existing video track without renegotiating', async () => {
-    const track = { kind: 'video' } as MediaStreamTrack;
-    const replaceTrack = jasmine.createSpy('replaceTrack').and.resolveTo();
-    service['peerConnections'].get('colleague-peer')!.pc = {
-      getSenders: () => [{ track: { kind: 'video' }, replaceTrack }],
-      addTrack: jasmine.createSpy('addTrack')
-    } as any;
-    const renegotiate = spyOn<any>(service, 'renegotiateConnection').and.resolveTo();
-    service['localStream'] = { getTracks: () => [track] } as any;
-    await service['replaceTracksInAllPeers']();
-    expect(replaceTrack).toHaveBeenCalledWith(track);
-    expect(renegotiate).not.toHaveBeenCalled();
+  it('waits for the pending answer before offering another change', async () => {
+    const pc = negotiatingConnection('have-local-offer');
+    (pc as any).createOffer = jasmine.createSpy('createOffer');
+    await service['renegotiateConnection']('colleague-peer');
+    expect((pc as any).createOffer).not.toHaveBeenCalled();
+    expect(service['peerConnections'].get('colleague-peer')!.renegotiateWhenStable).toBeTrue();
   });
 });

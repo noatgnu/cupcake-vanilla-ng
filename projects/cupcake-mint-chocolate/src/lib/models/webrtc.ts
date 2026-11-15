@@ -172,6 +172,9 @@ export interface PeerConnection {
   answered: boolean;
   connected: boolean;
   queuedCandidates: RTCIceCandidate[];
+  makingOffer?: boolean;
+  ignoringOffer?: boolean;
+  renegotiateWhenStable?: boolean;
 }
 
 export interface ChatMessage {

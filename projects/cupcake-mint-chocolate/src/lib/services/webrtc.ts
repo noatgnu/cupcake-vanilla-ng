@@ -160,368 +160,152 @@ export class WebRTCService {
     videoDeviceId?: string,
     audioDeviceId?: string
   ): Promise<void> {
-    try {
-      const constraints: MediaConstraintsConfig = {
-        video: enableVideo ? {
-          ...this.defaultMediaConstraints.video as MediaTrackConstraints,
-          ...(videoDeviceId ? { deviceId: { exact: videoDeviceId } } : {})
-        } : false,
-        audio: enableAudio ? {
-          ...(this.defaultMediaConstraints.audio as MediaTrackConstraints || {}),
-          ...(audioDeviceId ? { deviceId: { exact: audioDeviceId } } : {})
-        } : false
-      };
-
-      console.log('[WebRTC] Starting local media with constraints:', constraints);
-
-      this.localStream = await navigator.mediaDevices.getUserMedia(constraints);
-      this._localStream.next(this.localStream || null);
-      this._localStreamReady.next(true);
-
-      this.updatePeerState(
-        undefined,
-        enableVideo,
-        enableAudio,
-        false
-      );
-
-      console.log('[WebRTC] Local media started:', {
-        hasVideo: this.localStream.getVideoTracks().length > 0,
-        hasAudio: this.localStream.getAudioTracks().length > 0,
-        videoTrack: this.localStream.getVideoTracks()[0]?.label,
-        audioTrack: this.localStream.getAudioTracks()[0]?.label
-      });
-    } catch (error) {
-      console.error('Error accessing media devices:', error);
-      throw error;
-    }
+    const constraints: MediaConstraintsConfig = {
+      video: enableVideo ? this.videoConstraints(videoDeviceId) : false,
+      audio: enableAudio ? this.audioConstraints(audioDeviceId) : false
+    };
+    this.localStream = await navigator.mediaDevices.getUserMedia(constraints);
+    this._localStream.next(this.localStream);
+    this._localStreamReady.next(true);
+    await this.sendLocalTracksToAll();
+    this.updatePeerState(undefined, enableVideo, enableAudio, false);
   }
 
   async startScreenShare(): Promise<void> {
     this.requirePermission('screenShare', 'share your screen');
-    try {
-      const screenStream = await (navigator.mediaDevices as any).getDisplayMedia({
-        video: true,
-        audio: false
-      });
-
-      if (this.localStream) {
-        this.localStream.getTracks().forEach(track => track.stop());
-      }
-
-      this.localStream = screenStream;
-      this._localStream.next(this.localStream || null);
-      this._localStreamReady.next(true);
-
-      await this.replaceTracksInAllPeers();
-      this.screenSharing = true;
-
-      this.updatePeerState(undefined, false, false, true);
-
-      screenStream.getVideoTracks()[0].addEventListener('ended', () => {
-        this.stopScreenShare();
-      });
-
-      console.log('Screen sharing started');
-    } catch (error) {
-      console.error('Error starting screen share:', error);
-      throw error;
-    }
+    const screenStream: MediaStream = await (navigator.mediaDevices as any).getDisplayMedia({ video: true, audio: false });
+    const screenTrack = screenStream.getVideoTracks()[0];
+    await this.useLocalTrack(screenTrack);
+    this.screenSharing = true;
+    this.updatePeerState(undefined, false, undefined, true);
+    screenTrack.addEventListener('ended', () => this.stopScreenShare());
   }
 
   stopScreenShare(): void {
-    this.screenSharing = false;
-    if (this.localStream) {
-      this.localStream.getTracks().forEach(track => track.stop());
-      this.localStream = undefined;
-      this._localStream.next(null);
-      this._localStreamReady.next(false);
+    if (!this.screenSharing) {
+      return;
     }
-
-    this.updatePeerState(undefined, false, false, false);
-
-    console.log('Screen sharing stopped');
+    this.screenSharing = false;
+    this.dropLocalTrack('video');
+    this.updatePeerState(undefined, false, undefined, false);
   }
 
   async enableVideo(deviceId?: string): Promise<void> {
     this.requirePermission('video', 'turn on your camera');
-    if (!this.localStream) {
-      console.log('[WebRTC] Creating local stream for video');
-      try {
-        const newStream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            ...this.defaultMediaConstraints.video as MediaTrackConstraints,
-            ...(deviceId ? { deviceId: { exact: deviceId } } : {})
-          }
-        });
-
-        this.localStream = newStream;
-        this._localStream.next(this.localStream || null);
-        const newVideoTrack = newStream.getVideoTracks()[0];
-
-        for (const connection of this.peerConnections.values()) {
-          connection.pc.addTrack(newVideoTrack, this.localStream!);
-          console.log(`[WebRTC] Added video track for peer ${connection.peerId}`);
-
-          await this.renegotiateConnection(connection.peerId);
-        }
-
-        this.updatePeerState(undefined, true, undefined, undefined);
-        this._localStreamReady.next(true);
-        console.log('[WebRTC] Video enabled with new stream:', newVideoTrack.label);
-      } catch (error) {
-        console.error('[WebRTC] Error creating stream for video:', error);
-        throw error;
-      }
+    if (this.localStream?.getVideoTracks().length && !this.screenSharing) {
       return;
     }
-
-    const hasVideoTrack = this.localStream.getVideoTracks().length > 0;
-    if (hasVideoTrack) {
-      console.log('[WebRTC] Video already enabled');
-      return;
-    }
-
-    try {
-      const newStream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          ...this.defaultMediaConstraints.video as MediaTrackConstraints,
-          ...(deviceId ? { deviceId: { exact: deviceId } } : {})
-        }
-      });
-
-      const newVideoTrack = newStream.getVideoTracks()[0];
-      this.localStream.addTrack(newVideoTrack);
-
-      for (const connection of this.peerConnections.values()) {
-        connection.pc.addTrack(newVideoTrack, this.localStream!);
-        console.log(`[WebRTC] Added video track for peer ${connection.peerId}`);
-
-        await this.renegotiateConnection(connection.peerId);
-      }
-
-      this.updatePeerState(undefined, true, undefined, undefined);
-      this._localStreamReady.next(true);
-      console.log('[WebRTC] Video enabled:', newVideoTrack.label);
-    } catch (error) {
-      console.error('[WebRTC] Error enabling video:', error);
-      throw error;
-    }
+    const stream = await navigator.mediaDevices.getUserMedia({ video: this.videoConstraints(deviceId) });
+    this.screenSharing = false;
+    await this.useLocalTrack(stream.getVideoTracks()[0]);
+    this.updatePeerState(undefined, true, undefined, false);
   }
 
   async disableVideo(): Promise<void> {
-    if (!this.localStream) {
+    if (!this.localStream?.getVideoTracks().length || this.screenSharing) {
       return;
     }
-
-    const videoTrack = this.localStream.getVideoTracks()[0];
-    if (videoTrack) {
-      videoTrack.stop();
-      this.localStream.removeTrack(videoTrack);
-
-      this.peerConnections.forEach((connection) => {
-        const sender = connection.pc.getSenders().find(s => s.track?.kind === 'video');
-        if (sender) {
-          connection.pc.removeTrack(sender);
-          console.log(`[WebRTC] Removed video track for peer ${connection.peerId}`);
-        }
-      });
-
-      this.updatePeerState(undefined, false, undefined, undefined);
-      console.log('[WebRTC] Video disabled');
-    }
+    this.dropLocalTrack('video');
+    this.updatePeerState(undefined, false, undefined, undefined);
   }
 
   async switchVideoDevice(deviceId: string): Promise<void> {
-    if (!this.localStream) {
-      console.log('[WebRTC] No local stream yet, device will be used when video is enabled');
+    if (!this.localStream?.getVideoTracks().length || this.screenSharing) {
       return;
     }
-
-    const hasVideoTrack = this.localStream.getVideoTracks().length > 0;
-    if (!hasVideoTrack) {
-      console.log('[WebRTC] Video is not enabled, device will be used when video is enabled');
-      return;
-    }
-
-    try {
-      const oldVideoTrack = this.localStream.getVideoTracks()[0];
-
-      const newStream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          ...this.defaultMediaConstraints.video as MediaTrackConstraints,
-          deviceId: { exact: deviceId }
-        }
-      });
-
-      const newVideoTrack = newStream.getVideoTracks()[0];
-
-      if (oldVideoTrack) {
-        oldVideoTrack.stop();
-        this.localStream.removeTrack(oldVideoTrack);
-      }
-
-      this.localStream.addTrack(newVideoTrack);
-
-      this.peerConnections.forEach((connection) => {
-        const sender = connection.pc.getSenders().find(s => s.track?.kind === 'video');
-        if (sender) {
-          sender.replaceTrack(newVideoTrack);
-          console.log(`[WebRTC] Replaced video track for peer ${connection.peerId}`);
-        } else {
-          connection.pc.addTrack(newVideoTrack, this.localStream!);
-          console.log(`[WebRTC] Added video track for peer ${connection.peerId}`);
-        }
-      });
-
-      this._localStreamReady.next(true);
-      console.log('[WebRTC] Video device switched to:', newVideoTrack.label);
-    } catch (error) {
-      console.error('[WebRTC] Error switching video device:', error);
-      throw error;
-    }
+    const stream = await navigator.mediaDevices.getUserMedia({ video: this.videoConstraints(deviceId) });
+    await this.useLocalTrack(stream.getVideoTracks()[0]);
   }
 
   async enableAudio(deviceId?: string): Promise<void> {
     this.requirePermission('audio', 'unmute your microphone');
-    if (!this.localStream) {
-      console.log('[WebRTC] Creating local stream for audio');
-      try {
-        const newStream = await navigator.mediaDevices.getUserMedia({
-          audio: {
-            ...(this.defaultMediaConstraints.audio as MediaTrackConstraints || {}),
-            ...(deviceId ? { deviceId: { exact: deviceId } } : {})
-          }
-        });
-
-        this.localStream = newStream;
-        this._localStream.next(this.localStream || null);
-        const newAudioTrack = newStream.getAudioTracks()[0];
-
-        for (const connection of this.peerConnections.values()) {
-          connection.pc.addTrack(newAudioTrack, this.localStream!);
-          console.log(`[WebRTC] Added audio track for peer ${connection.peerId}`);
-
-          await this.renegotiateConnection(connection.peerId);
-        }
-
-        this.updatePeerState(undefined, undefined, true, undefined);
-        this._localStreamReady.next(true);
-        console.log('[WebRTC] Audio enabled with new stream:', newAudioTrack.label);
-      } catch (error) {
-        console.error('[WebRTC] Error creating stream for audio:', error);
-        throw error;
-      }
+    if (this.localStream?.getAudioTracks().length) {
       return;
     }
-
-    const hasAudioTrack = this.localStream.getAudioTracks().length > 0;
-    if (hasAudioTrack) {
-      console.log('[WebRTC] Audio already enabled');
-      return;
-    }
-
-    try {
-      const newStream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          ...(this.defaultMediaConstraints.audio as MediaTrackConstraints || {}),
-          ...(deviceId ? { deviceId: { exact: deviceId } } : {})
-        }
-      });
-
-      const newAudioTrack = newStream.getAudioTracks()[0];
-      this.localStream.addTrack(newAudioTrack);
-
-      for (const connection of this.peerConnections.values()) {
-        connection.pc.addTrack(newAudioTrack, this.localStream!);
-        console.log(`[WebRTC] Added audio track for peer ${connection.peerId}`);
-
-        await this.renegotiateConnection(connection.peerId);
-      }
-
-      this.updatePeerState(undefined, undefined, true, undefined);
-      this._localStreamReady.next(true);
-      console.log('[WebRTC] Audio enabled:', newAudioTrack.label);
-    } catch (error) {
-      console.error('[WebRTC] Error enabling audio:', error);
-      throw error;
-    }
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: this.audioConstraints(deviceId) });
+    await this.useLocalTrack(stream.getAudioTracks()[0]);
+    this.updatePeerState(undefined, undefined, true, undefined);
   }
 
   async disableAudio(): Promise<void> {
-    if (!this.localStream) {
+    if (!this.localStream?.getAudioTracks().length) {
       return;
     }
-
-    const audioTrack = this.localStream.getAudioTracks()[0];
-    if (audioTrack) {
-      audioTrack.stop();
-      this.localStream.removeTrack(audioTrack);
-
-      this.peerConnections.forEach((connection) => {
-        const sender = connection.pc.getSenders().find(s => s.track?.kind === 'audio');
-        if (sender) {
-          connection.pc.removeTrack(sender);
-          console.log(`[WebRTC] Removed audio track for peer ${connection.peerId}`);
-        }
-      });
-
-      this.updatePeerState(undefined, undefined, false, undefined);
-      console.log('[WebRTC] Audio disabled');
-    }
+    this.dropLocalTrack('audio');
+    this.updatePeerState(undefined, undefined, false, undefined);
   }
 
   async switchAudioDevice(deviceId: string): Promise<void> {
+    if (!this.localStream?.getAudioTracks().length) {
+      return;
+    }
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: this.audioConstraints(deviceId) });
+    await this.useLocalTrack(stream.getAudioTracks()[0]);
+  }
+
+  private videoConstraints(deviceId?: string): MediaTrackConstraints {
+    return {
+      ...this.defaultMediaConstraints.video as MediaTrackConstraints,
+      ...(deviceId ? { deviceId: { exact: deviceId } } : {})
+    };
+  }
+
+  private audioConstraints(deviceId?: string): MediaTrackConstraints {
+    return {
+      ...(this.defaultMediaConstraints.audio as MediaTrackConstraints || {}),
+      ...(deviceId ? { deviceId: { exact: deviceId } } : {})
+    };
+  }
+
+  private async useLocalTrack(track: MediaStreamTrack): Promise<void> {
     if (!this.localStream) {
-      console.log('[WebRTC] No local stream yet, device will be used when audio is enabled');
+      this.localStream = new MediaStream();
+    }
+    this.localStream.getTracks().filter(existing => existing.kind === track.kind).forEach(existing => {
+      existing.stop();
+      this.localStream!.removeTrack(existing);
+    });
+    this.localStream.addTrack(track);
+    this._localStream.next(this.localStream);
+    this._localStreamReady.next(true);
+    await this.sendLocalTracksToAll();
+  }
+
+  private dropLocalTrack(kind: 'audio' | 'video'): void {
+    if (!this.localStream) {
       return;
     }
+    this.localStream.getTracks().filter(track => track.kind === kind).forEach(track => {
+      track.stop();
+      this.localStream!.removeTrack(track);
+    });
+    this._localStream.next(this.localStream);
+    this.sendLocalTracksToAll();
+  }
 
-    const hasAudioTrack = this.localStream.getAudioTracks().length > 0;
-    if (!hasAudioTrack) {
-      console.log('[WebRTC] Audio is not enabled, device will be used when audio is enabled');
-      return;
-    }
+  private mediaTransceiver(pc: RTCPeerConnection, kind: 'audio' | 'video'): RTCRtpTransceiver | undefined {
+    return pc.getTransceivers().find(transceiver => transceiver.receiver.track.kind === kind && transceiver.currentDirection !== 'stopped');
+  }
 
-    try {
-      const oldAudioTrack = this.localStream.getAudioTracks()[0];
-
-      const newStream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          ...(this.defaultMediaConstraints.audio as MediaTrackConstraints || {}),
-          deviceId: { exact: deviceId }
-        }
-      });
-
-      const newAudioTrack = newStream.getAudioTracks()[0];
-
-      if (oldAudioTrack) {
-        oldAudioTrack.stop();
-        this.localStream.removeTrack(oldAudioTrack);
+  private async sendLocalTracks(connection: PeerConnection): Promise<void> {
+    for (const kind of ['audio', 'video'] as const) {
+      const transceiver = this.mediaTransceiver(connection.pc, kind);
+      if (!transceiver) {
+        continue;
       }
-
-      this.localStream.addTrack(newAudioTrack);
-
-      this.peerConnections.forEach((connection) => {
-        const sender = connection.pc.getSenders().find(s => s.track?.kind === 'audio');
-        if (sender) {
-          sender.replaceTrack(newAudioTrack);
-          console.log(`[WebRTC] Replaced audio track for peer ${connection.peerId}`);
-        } else {
-          connection.pc.addTrack(newAudioTrack, this.localStream!);
-          console.log(`[WebRTC] Added audio track for peer ${connection.peerId}`);
-        }
-      });
-
-      this._localStreamReady.next(true);
-      console.log('[WebRTC] Audio device switched to:', newAudioTrack.label);
-    } catch (error) {
-      console.error('[WebRTC] Error switching audio device:', error);
-      throw error;
+      const track = this.localStream?.getTracks().find(candidate => candidate.kind === kind) ?? null;
+      if (transceiver.sender.track !== track) {
+        await transceiver.sender.replaceTrack(track);
+      }
     }
   }
 
+  private async sendLocalTracksToAll(): Promise<void> {
+    await Promise.all([...this.peerConnections.values()].map(connection => this.sendLocalTracks(connection)));
+  }
+
   endSession(): void {
+    this.screenSharing = false;
     this.peerConnections.forEach((conn, peerId) => {
       this.closePeerConnection(peerId);
     });
@@ -624,6 +408,9 @@ export class WebRTCService {
       if (shouldInitiate) {
         console.log(`[WebRTC] Initiating connection to ${username} (${peerId})`);
         try {
+          pc.addTransceiver('audio', { direction: 'sendrecv' });
+          pc.addTransceiver('video', { direction: 'sendrecv' });
+          await this.sendLocalTracks(this.peerConnections.get(peerId)!);
           const offer = await pc.createOffer();
           console.log(`[WebRTC] Offer created for ${peerId}:`, offer);
           await pc.setLocalDescription(offer);
@@ -659,7 +446,25 @@ export class WebRTCService {
       pc = this.peerConnections.get(peerId)!.pc;
     }
 
+    const existing = this.peerConnections.get(peerId)!;
+    const collision = existing.makingOffer || pc.signalingState !== 'stable';
+    existing.ignoringOffer = collision && !this.isPolite(peerId);
+    if (existing.ignoringOffer) {
+      return;
+    }
+    if (collision) {
+      await pc.setLocalDescription({ type: 'rollback' });
+      existing.renegotiateWhenStable = true;
+    }
+
     await pc.setRemoteDescription(new RTCSessionDescription(sdp));
+    for (const kind of ['audio', 'video'] as const) {
+      const transceiver = this.mediaTransceiver(pc, kind);
+      if (transceiver && transceiver.direction !== 'sendrecv') {
+        transceiver.direction = 'sendrecv';
+      }
+    }
+    await this.sendLocalTracks(existing);
 
     const answer = await pc.createAnswer();
     await pc.setLocalDescription(answer);
@@ -680,6 +485,9 @@ export class WebRTCService {
       );
       connection.queuedCandidates = [];
     }
+    if (connection) {
+      await this.renegotiateIfRequested(connection);
+    }
   }
 
   private async handleAnswer(peerId: string, sdp: RTCSessionDescriptionInit): Promise<void> {
@@ -697,6 +505,7 @@ export class WebRTCService {
       );
       connection.queuedCandidates = [];
     }
+    await this.renegotiateIfRequested(connection);
   }
 
   private async handleIceCandidate(peerId: string, candidate: RTCIceCandidateInit): Promise<void> {
@@ -709,7 +518,13 @@ export class WebRTCService {
     const iceCandidate = new RTCIceCandidate(candidate);
 
     if (connection.pc.remoteDescription) {
-      await connection.pc.addIceCandidate(iceCandidate);
+      try {
+        await connection.pc.addIceCandidate(iceCandidate);
+      } catch (error) {
+        if (!connection.ignoringOffer) {
+          throw error;
+        }
+      }
     } else {
       connection.queuedCandidates.push(iceCandidate);
     }
@@ -761,20 +576,6 @@ export class WebRTCService {
     const dataChannel = pc.createDataChannel('data', { ordered: true });
     this.setupDataChannelHandlers(dataChannel, peerId);
 
-    if (this.localStream) {
-      console.log(`[WebRTC] Adding local tracks to peer ${peerId}:`, {
-        videoTracks: this.localStream.getVideoTracks().length,
-        audioTracks: this.localStream.getAudioTracks().length,
-        tracks: this.localStream.getTracks().map(t => ({kind: t.kind, label: t.label, enabled: t.enabled}))
-      });
-      this.localStream.getTracks().forEach(track => {
-        console.log(`[WebRTC] Adding ${track.kind} track to ${peerId}:`, track.label, 'enabled:', track.enabled);
-        pc.addTrack(track, this.localStream!);
-      });
-    } else {
-      console.log(`[WebRTC] No local stream available to add tracks to peer ${peerId}`);
-    }
-
     this.setupPeerConnectionHandlers(pc, peerId);
 
     const connection: PeerConnection = {
@@ -808,8 +609,11 @@ export class WebRTCService {
       console.log(`Received track from peer ${peerId}:`, event.track.kind);
 
       this.zone.run(() => {
-        const stream = event.streams[0];
         const connection = this.peerConnections.get(peerId);
+        const stream = event.streams[0] ?? connection?.stream ?? new MediaStream();
+        if (!stream.getTracks().includes(event.track)) {
+          stream.addTrack(event.track);
+        }
         if (connection) {
           connection.stream = stream;
           this.applyPermissionsTo(connection);
@@ -1050,17 +854,34 @@ export class WebRTCService {
       return;
     }
 
+    if (connection.makingOffer || connection.pc.signalingState !== 'stable') {
+      connection.renegotiateWhenStable = true;
+      return;
+    }
+
     try {
-      console.log(`[WebRTC] Renegotiating connection with ${peerId}`);
+      connection.makingOffer = true;
       const offer = await connection.pc.createOffer();
       await connection.pc.setLocalDescription(offer);
 
       if (connection.pc.localDescription) {
         this.signalling.sendOffer(peerId, connection.pc.localDescription);
-        console.log(`[WebRTC] Sent renegotiation offer to ${peerId}`);
       }
     } catch (error) {
       console.error(`[WebRTC] Error renegotiating connection with ${peerId}:`, error);
+    } finally {
+      connection.makingOffer = false;
+    }
+  }
+
+  private isPolite(peerId: string): boolean {
+    return (this.signalling.peerId ?? '') > peerId;
+  }
+
+  private async renegotiateIfRequested(connection: PeerConnection): Promise<void> {
+    if (connection.renegotiateWhenStable && connection.pc.signalingState === 'stable') {
+      connection.renegotiateWhenStable = false;
+      await this.renegotiateConnection(connection.peerId);
     }
   }
 
@@ -1075,32 +896,6 @@ export class WebRTCService {
     console.log(`[WebRTC] Connection initiation: myId(${myPeerId.substring(0, 8)}...) < targetId(${targetPeerId.substring(0, 8)}...) = ${shouldInitiate}`);
     console.log(`[WebRTC] Roles (for info only): My role: ${this.role}, Target role: ${peerRole}`);
     return shouldInitiate;
-  }
-
-  private async replaceTracksInAllPeers(): Promise<void> {
-    if (!this.localStream) return;
-    const stream = this.localStream;
-
-    for (const connection of this.peerConnections.values()) {
-      const senders = connection.pc.getSenders();
-      let added = false;
-
-      for (const track of stream.getTracks()) {
-        const sender = senders.find(s => s.track?.kind === track.kind);
-        if (sender) {
-          await sender.replaceTrack(track).catch(error => {
-            console.error(`Error replacing ${track.kind} track:`, error);
-          });
-        } else {
-          connection.pc.addTrack(track, stream);
-          added = true;
-        }
-      }
-
-      if (added) {
-        await this.renegotiateConnection(connection.peerId);
-      }
-    }
   }
 
   private updatePeerState(
