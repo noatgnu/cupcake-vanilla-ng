@@ -113,6 +113,14 @@
                       WiFi
                     </a>
                   </li>
+                  @if (currentUser()?.isSuperuser) {
+                    <li>
+                      <a class="dropdown-item" routerLink="/admin/power">
+                        <i class="bi bi-power me-2"></i>
+                        Power
+                      </a>
+                    </li>
+                  }
                 }
                 <li>
                   <a class="dropdown-item" routerLink="/admin/site-config">

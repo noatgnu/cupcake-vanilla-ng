@@ -1,4 +1,6 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
+
+import { MaintenanceService } from './maintenance';
 
 export interface ToastMessage {
   id: string;
@@ -13,6 +15,7 @@ export interface ToastMessage {
 })
 export class ToastService {
   private toastsSignal = signal<ToastMessage[]>([]);
+  private readonly maintenance = inject(MaintenanceService);
   
   readonly toasts = this.toastsSignal.asReadonly();
 
@@ -39,7 +42,13 @@ export class ToastService {
     this.show(message, 'success', duration);
   }
 
+  /**
+   * Show an error, unless the backend is restarting or out of reach and the maintenance overlay already says so.
+   */
   error(message: string, duration = 8000) {
+    if (this.maintenance.active()) {
+      return;
+    }
     this.show(message, 'error', duration);
   }
 

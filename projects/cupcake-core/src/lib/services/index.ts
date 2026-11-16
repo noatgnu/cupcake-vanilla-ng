@@ -7,6 +7,7 @@ export * from './notification';
 export * from './site-config';
 export * from './theme';
 export * from './toast';
+export * from './maintenance';
 export * from './user-management';
 export * from './resource';
 export * from './websocket';

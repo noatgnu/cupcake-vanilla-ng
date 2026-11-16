@@ -1,10 +1,11 @@
 import { Routes } from '@angular/router';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { LoginComponent, RegisterComponent, SiteConfigComponent, UserManagementComponent, UserProfileComponent, LabGroupsComponent, authGuard, adminGuard } from '@noatgnu/cupcake-core';
+import { AuthService, LoginComponent, RegisterComponent, SiteConfigComponent, UserManagementComponent, UserProfileComponent, LabGroupsComponent, authGuard, adminGuard } from '@noatgnu/cupcake-core';
 import { StoragePage } from './features/admin/storage-page/storage-page';
 import { BackupPage } from './features/admin/backup-page/backup-page';
 import { WifiPage } from './features/admin/wifi-page/wifi-page';
+import { PowerPage } from './features/admin/power-page/power-page';
 import { UserDevicesPage } from './features/user-devices/user-devices-page/user-devices-page';
 import { PluginPageWrapper } from './features/plugins/plugin-page-wrapper/plugin-page-wrapper';
 import { MetadataTablesComponent} from './features/metadata-tables/metadata-tables';
@@ -17,6 +18,15 @@ const applianceGuard = () => {
   const env = inject(EnvironmentService);
   const router = inject(Router);
   if (!env.isAppliance()) {
+    return router.parseUrl('/metadata');
+  }
+  return true;
+};
+
+const superuserGuard = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  if (!auth.currentUser()?.isSuperuser) {
     return router.parseUrl('/metadata');
   }
   return true;
@@ -120,6 +130,11 @@ export const routes: Routes = [
     path: 'admin/wifi',
     component: WifiPage,
     canActivate: [authGuard, adminGuard, applianceGuard]
+  },
+  {
+    path: 'admin/power',
+    component: PowerPage,
+    canActivate: [authGuard, adminGuard, applianceGuard, superuserGuard]
   },
   {
     path: 'user/devices',

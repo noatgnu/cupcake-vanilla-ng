@@ -5,7 +5,7 @@ import { CommonModule } from '@angular/common';
 import { NavbarComponent } from './shared/components/navbar/navbar';
 import { DesktopService } from '@noatgnu/cupcake-vanilla';
 import { AsyncTaskMonitorService, AuthService, WebSocketService } from '@noatgnu/cupcake-core';
-import { ToastService, ToastContainerComponent, PoweredByFooterComponent } from '@noatgnu/cupcake-core';
+import { ToastService, ToastContainerComponent, PoweredByFooterComponent, MaintenanceOverlay } from '@noatgnu/cupcake-core';
 import { environment } from '../environments/environment';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map, startWith } from 'rxjs/operators';
@@ -13,7 +13,7 @@ import { filter, map, startWith } from 'rxjs/operators';
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, NgbModule, CommonModule, NavbarComponent, PoweredByFooterComponent, ToastContainerComponent],
+  imports: [RouterOutlet, NgbModule, CommonModule, NavbarComponent, PoweredByFooterComponent, ToastContainerComponent, MaintenanceOverlay],
   templateUrl: './app.html',
   styleUrl: './app.scss',
   changeDetection: ChangeDetectionStrategy.OnPush

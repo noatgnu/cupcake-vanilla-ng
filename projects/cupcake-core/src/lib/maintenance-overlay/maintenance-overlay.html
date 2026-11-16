@@ -1,0 +1,14 @@
+@if (maintenance.active()) {
+  <div class="maintenance-overlay" role="alertdialog" aria-modal="true" aria-labelledby="maintenanceTitle" aria-live="assertive">
+    <div class="maintenance-card text-center">
+      <div class="spinner-border text-primary mb-3" role="status"></div>
+      @if (maintenance.reason() === 'restarting') {
+        <h5 id="maintenanceTitle">Cupcake is restarting</h5>
+        <p class="text-muted mb-0">Everything comes back by itself as soon as it is ready.</p>
+      } @else {
+        <h5 id="maintenanceTitle">Cupcake cannot be reached</h5>
+        <p class="text-muted mb-0">It may be restarting, or this device lost its connection. Reconnecting automatically.</p>
+      }
+    </div>
+  </div>
+}

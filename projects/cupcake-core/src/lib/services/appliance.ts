@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import {
+  AppliancePowerAction,
   BackupLog,
   BackupRunRequest,
   BlockDevice,
@@ -99,5 +100,19 @@ export class ApplianceService extends BaseApiService {
 
   uninstallPlugin(name: string): Observable<{ output: string }> {
     return this.post<{ output: string }>(`${this.base}/plugin-uninstall/`, { name });
+  }
+
+  /**
+   * Restart the backend, reboot the appliance or shut it down. Superusers only; the action starts a few seconds later.
+   */
+  power(action: AppliancePowerAction): Observable<{ message: string }> {
+    return this.post<{ message: string }>(`${this.base}/power/`, { action });
+  }
+
+  /**
+   * The appliance's addresses; answers without a login, so it shows whether the backend is up.
+   */
+  getNetworkInfo(): Observable<{ hostname: string; addresses: string[] }> {
+    return this.get<{ hostname: string; addresses: string[] }>(`${this.base}/network-info/`);
   }
 }

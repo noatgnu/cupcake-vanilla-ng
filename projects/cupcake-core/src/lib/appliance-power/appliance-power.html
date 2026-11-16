@@ -1,0 +1,58 @@
+<div class="card">
+  <div class="card-header">
+    <h5 class="mb-0"><i class="bi bi-power me-2"></i>Power</h5>
+  </div>
+  <div class="card-body">
+    @switch (state()) {
+      @case ('sending') {
+        <div class="alert alert-info d-flex align-items-center gap-2 power-status">
+          <span class="spinner-border spinner-border-sm"></span>Sending {{ current()?.label?.toLowerCase() }}…
+        </div>
+      }
+      @case ('waiting') {
+        <div class="alert alert-warning d-flex align-items-center gap-2 power-status">
+          <span class="spinner-border spinner-border-sm"></span>
+          {{ current()?.action === 'reboot' ? 'The appliance is restarting.' : 'The backend is restarting.' }}
+          This page shows when it is answering again.
+        </div>
+      }
+      @case ('back') {
+        <div class="alert alert-success power-status">
+          <i class="bi bi-check-circle me-2"></i>The appliance is answering again. Reload other open pages if they do not reconnect by themselves.
+        </div>
+      }
+      @case ('slow') {
+        <div class="alert alert-danger power-status">
+          <i class="bi bi-exclamation-triangle me-2"></i>The appliance has not answered for 10 minutes. Check it at the device.
+        </div>
+      }
+      @case ('off') {
+        <div class="alert alert-secondary power-status">
+          <i class="bi bi-power me-2"></i>The appliance is shutting down. Wait until its lights stop before unplugging it.
+        </div>
+      }
+    }
+
+    <div class="list-group">
+      @for (option of options; track option.action) {
+        <div class="list-group-item d-flex align-items-center gap-3">
+          <i class="bi fs-4" [class]="option.icon"></i>
+          <div class="flex-grow-1">
+            <div class="fw-semibold">{{ option.label }}</div>
+            <small class="text-muted">{{ option.description }}</small>
+          </div>
+          <button
+            type="button"
+            class="btn btn-sm text-nowrap"
+            [class]="option.buttonClass"
+            [attr.data-action]="option.action"
+            [disabled]="!isSuperuser() || busy() || state() === 'off'"
+            [attr.title]="!isSuperuser() ? 'Only superusers can restart or shut down the appliance' : busy() ? 'Wait for the current action to finish' : state() === 'off' ? 'The appliance is shutting down' : null"
+            (click)="run(option)">
+            {{ option.label }}
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+</div>

@@ -104,6 +104,8 @@ export interface InstalledPlugin {
 
 export type PluginServiceCommand = 'start' | 'stop' | 'restart' | 'enable' | 'disable';
 
+export type AppliancePowerAction = 'restart-backend' | 'reboot' | 'shutdown';
+
 export interface PluginPackagePreview {
   uploadId: string;
   name: string;
