@@ -6,7 +6,7 @@ import { of } from 'rxjs';
 import { Vocabulary } from '../../models';
 import { AsyncTaskService } from '../../services/async-task';
 import { VocabularyService } from '../../services/vocabulary';
-import { VocabularyImportModal } from './vocabulary-import-modal';
+import { VocabularyImportModal, guessColumns } from './vocabulary-import-modal';
 
 describe('VocabularyImportModal', () => {
   let fixture: ComponentFixture<VocabularyImportModal>;
@@ -86,5 +86,15 @@ describe('VocabularyImportModal', () => {
     jasmine.clock().tick(1);
     expect(toastService.error).toHaveBeenCalledWith('Bad file');
     expect(activeModal.close).not.toHaveBeenCalled();
+  });
+
+  it('matches the term columns to the file headers', () => {
+    expect(guessColumns(['id', 'name', 'synonyms'])).toEqual({
+      nameColumn: 'name', idColumn: 'id', descriptionColumn: '', synonymsColumn: 'synonyms'
+    });
+    expect(guessColumns(['Accession', 'Label', 'Definition'])).toEqual({
+      nameColumn: 'Label', idColumn: 'Accession', descriptionColumn: 'Definition', synonymsColumn: ''
+    });
+    expect(guessColumns(['strain', 'notes']).nameColumn).toBe('strain');
   });
 });

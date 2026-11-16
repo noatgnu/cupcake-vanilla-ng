@@ -2,7 +2,10 @@ import { Injectable, signal, computed, effect, inject, untracked } from '@angula
 import { SiteConfigService } from './site-config';
 
 export type ThemeMode = 'light' | 'dark' | 'auto';
-export type ThemePalette = 'default' | 'eink';
+export type ThemePalette = 'default' | 'eink' | 'scifi-compact';
+
+const PALETTES: ThemePalette[] = ['default', 'eink', 'scifi-compact'];
+const DARK_PALETTES: ThemePalette[] = ['scifi-compact'];
 
 @Injectable({
   providedIn: 'root'
@@ -20,6 +23,9 @@ export class ThemeService {
   readonly palette = this._palette.asReadonly();
 
   readonly isDark = computed(() => {
+    if (DARK_PALETTES.includes(this._palette())) {
+      return true;
+    }
     const mode = this._mode();
     if (mode === 'auto') {
       return this.mediaQuery.matches;
@@ -93,7 +99,7 @@ export class ThemeService {
 
     const targetClass = `theme-${palette}`;
     if (!root.classList.contains(targetClass)) {
-      root.classList.remove('theme-default', 'theme-eink');
+      root.classList.remove(...PALETTES.map(name => `theme-${name}`));
       root.classList.add(targetClass);
     }
 
@@ -157,6 +163,6 @@ export class ThemeService {
 
   private loadStoredPalette(): ThemePalette {
     const stored = localStorage.getItem(this.PALETTE_KEY) as ThemePalette;
-    return stored && ['default', 'eink'].includes(stored) ? stored : 'default';
+    return stored && PALETTES.includes(stored) ? stored : 'default';
   }
 }

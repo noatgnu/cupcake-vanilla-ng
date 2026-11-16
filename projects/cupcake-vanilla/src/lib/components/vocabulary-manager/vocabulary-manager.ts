@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, injec
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import { NgbModal, NgbPagination } from '@ng-bootstrap/ng-bootstrap';
 import { AuthService, ConfirmDialogService, LabGroup, LabGroupService, ToastService } from '@noatgnu/cupcake-core';
 import { EMPTY, Subject, debounceTime, distinctUntilChanged, expand, map, reduce } from 'rxjs';
 
@@ -21,9 +21,16 @@ export const PROVIDER_LABELS: Record<VocabularyProvider, string> = {
   plugin: 'Plugin'
 };
 
+export const PROVIDER_BADGES: Record<VocabularyProvider, string> = {
+  builtin: 'bg-secondary',
+  addon: 'bg-info',
+  custom: 'bg-primary',
+  plugin: 'bg-warning text-dark'
+};
+
 @Component({
   selector: 'ccv-vocabulary-manager',
-  imports: [FormsModule, DatePipe],
+  imports: [FormsModule, DatePipe, NgbPagination],
   templateUrl: './vocabulary-manager.html',
   styleUrl: './vocabulary-manager.css',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -50,6 +57,7 @@ export class VocabularyManager implements OnInit {
   canCreate = computed(() => this.isStaff() || this.managedLabGroups().length > 0);
 
   readonly providerLabels = PROVIDER_LABELS;
+  readonly providerBadges = PROVIDER_BADGES;
   readonly providers = Object.keys(PROVIDER_LABELS) as VocabularyProvider[];
   readonly pageSize = PAGE_SIZE;
   private searchChanges = new Subject<string>();

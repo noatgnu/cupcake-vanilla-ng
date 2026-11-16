@@ -8,10 +8,9 @@ import { WifiPage } from './features/admin/wifi-page/wifi-page';
 import { UserDevicesPage } from './features/user-devices/user-devices-page/user-devices-page';
 import { PluginPageWrapper } from './features/plugins/plugin-page-wrapper/plugin-page-wrapper';
 import { MetadataTablesComponent} from './features/metadata-tables/metadata-tables';
-import { MetadataTableTemplates, ColumnTemplates, FavoriteManagement, MetadataTableDetails } from '@noatgnu/cupcake-vanilla';
+import { MetadataTableTemplates, ColumnTemplates, FavoriteManagement, MetadataTableDetails, VocabularyManager } from '@noatgnu/cupcake-vanilla';
 import { MetadataSelector } from './features/metadata-selector/metadata-selector';
 import { SharedTableComponent } from './features/shared-table/shared-table';
-import { VocabulariesPage } from './features/vocabularies/vocabularies-page/vocabularies-page';
 import { EnvironmentService } from './shared/services/environment';
 
 const applianceGuard = () => {
@@ -69,7 +68,7 @@ export const routes: Routes = [
   },
   {
     path: 'vocabularies',
-    component: VocabulariesPage,
+    component: VocabularyManager,
     canActivate: [authGuard]
   },
   {

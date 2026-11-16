@@ -136,4 +136,20 @@ describe('VocabularyManager', () => {
     expect(toggle.disabled).toBeFalse();
     expect(fixture.nativeElement.querySelectorAll('tbody tr')[0].querySelector('.approve-toggle')).toBeNull();
   });
+
+  it('uses the same page layout as the other template pages', async () => {
+    await setUp([[]]);
+    const page: HTMLElement = fixture.nativeElement;
+    expect(page.querySelector('.navbar .navbar-brand')?.textContent?.trim()).toBe('Vocabularies');
+    expect(page.querySelector('.navbar button.btn-primary')?.textContent?.trim()).toBe('New vocabulary');
+    expect(page.querySelector('.card-header h5')?.textContent?.trim()).toBe('Search & Filters');
+    expect(page.querySelector('.card-header .badge')?.textContent?.trim()).toBe('12');
+    expect(page.querySelector('ngb-pagination')).not.toBeNull();
+  });
+
+  it('moves between pages from the pager', async () => {
+    await setUp([[]]);
+    component.goToPage(1);
+    expect(vocabularyService.getVocabularies).toHaveBeenCalledWith(jasmine.objectContaining({ offset: 10, limit: 10 }));
+  });
 });

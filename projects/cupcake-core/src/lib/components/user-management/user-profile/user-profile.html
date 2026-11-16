@@ -338,7 +338,7 @@
                 </div>
                 <div class="card-body">
                   <p class="text-muted small mb-3">
-                    Choose a display theme. Light or dark mode is controlled by the toggle in the navigation bar.
+                    Choose a display theme. Light or dark mode is controlled by the toggle in the navigation bar; Stylized Sci-Fi Compact is always dark.
                   </p>
                   <div class="d-flex gap-3">
                     <div
@@ -370,6 +370,21 @@
                         }
                       </div>
                       <small class="text-muted">Monochrome, no animation, optimised for e-ink displays</small>
+                    </div>
+                    <div
+                      class="theme-option border rounded p-3 flex-fill"
+                      [class.border-primary]="themeService.palette() === 'scifi-compact'"
+                      [class.border-2]="themeService.palette() === 'scifi-compact'"
+                      role="button"
+                      (click)="themeService.setPalette('scifi-compact')">
+                      <div class="d-flex align-items-center gap-2 mb-2">
+                        <i class="bi bi-crosshair fs-5"></i>
+                        <strong>Stylized Sci-Fi Compact</strong>
+                        @if (themeService.palette() === 'scifi-compact') {
+                          <i class="bi bi-check-circle-fill text-primary ms-auto"></i>
+                        }
+                      </div>
+                      <small class="text-muted">Dark terminal with neon accents, squared panels and monospace numbers</small>
                     </div>
                   </div>
                 </div>

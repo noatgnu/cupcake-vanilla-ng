@@ -11,6 +11,25 @@ import { VocabularyService } from '../../services/vocabulary';
 
 const FORMATS: Record<string, VocabularyFileFormat> = { obo: 'obo', owl: 'owl', csv: 'csv', tsv: 'tsv', txt: 'tsv' };
 const POLL_INTERVAL_MS = 2000;
+const COLUMN_NAMES: Record<'nameColumn' | 'idColumn' | 'descriptionColumn' | 'synonymsColumn', string[]> = {
+  nameColumn: ['name', 'label', 'term', 'term name'],
+  idColumn: ['id', 'accession', 'identifier', 'term id'],
+  descriptionColumn: ['description', 'definition'],
+  synonymsColumn: ['synonyms', 'synonym', 'aliases', 'alias']
+};
+
+/**
+ * The file column for each part of a term, matched on common header names; the name falls back to the first column.
+ */
+export function guessColumns(columns: string[]): Pick<VocabularyColumnMapping, keyof typeof COLUMN_NAMES> {
+  const find = (names: string[]) => columns.find(column => names.includes(column.trim().toLowerCase())) ?? '';
+  return {
+    nameColumn: find(COLUMN_NAMES.nameColumn) || (columns[0] ?? ''),
+    idColumn: find(COLUMN_NAMES.idColumn),
+    descriptionColumn: find(COLUMN_NAMES.descriptionColumn),
+    synonymsColumn: find(COLUMN_NAMES.synonymsColumn)
+  };
+}
 const FINISHED: string[] = [TaskStatus.SUCCESS, TaskStatus.FAILURE, TaskStatus.CANCELLED];
 
 @Component({
@@ -56,7 +75,7 @@ export class VocabularyImportModal {
         next: preview => {
           this.busy.set(false);
           this.preview.set(preview);
-          this.mapping.update(mapping => ({ ...mapping, nameColumn: preview.columns[0] ?? '' }));
+          this.mapping.update(mapping => ({ ...mapping, ...guessColumns(preview.columns) }));
         },
         error: error => {
           this.busy.set(false);

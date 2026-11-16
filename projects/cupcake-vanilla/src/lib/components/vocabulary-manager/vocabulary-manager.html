@@ -1,103 +1,179 @@
-<div class="d-flex gap-2 align-items-center mb-2">
-  <input type="search" class="form-control form-control-sm" placeholder="Search vocabularies"
-         [ngModel]="search()" (ngModelChange)="onSearch($event)">
-  <select class="form-select form-select-sm w-auto" [ngModel]="provider()" (ngModelChange)="setProvider($event)">
-    <option value="">All providers</option>
-    @for (option of providers; track option) {
-      <option [value]="option">{{ providerLabels[option] }}</option>
-    }
-  </select>
-  @if (isStaff()) {
-    <div class="form-check form-switch text-nowrap mb-0 small">
-      <input id="showPending" class="form-check-input" type="checkbox" [checked]="showPending()" (change)="setShowPending($any($event.target).checked)">
-      <label class="form-check-label" for="showPending">Include pending</label>
+<div class="vocabularies-container">
+  <nav class="navbar navbar-expand-lg bg-body-tertiary shadow-sm">
+    <div class="container-fluid">
+      <div class="d-flex align-items-center justify-content-between w-100">
+        <h4 class="navbar-brand m-0 fw-bold">
+          <i class="bi bi-book me-2"></i>Vocabularies
+        </h4>
+        <button type="button" class="btn btn-primary btn-sm" [disabled]="!canCreate()"
+                [title]="canCreate() ? 'Create a custom vocabulary' : 'Only staff and lab group managers can create vocabularies'"
+                (click)="create()">
+          <i class="bi bi-plus me-1"></i>New vocabulary
+        </button>
+      </div>
     </div>
-  }
-  <button type="button" class="btn btn-sm btn-primary text-nowrap" [disabled]="!canCreate()"
-          [title]="canCreate() ? 'Create a custom vocabulary' : 'Only staff and lab group managers can create vocabularies'"
-          (click)="create()">
-    <i class="bi bi-plus-lg me-1"></i>New vocabulary
-  </button>
-</div>
+  </nav>
 
-<table class="table table-sm table-hover align-middle small mb-2">
-  <thead>
-    <tr>
-      <th>Vocabulary</th>
-      <th>Provider</th>
-      <th>Available to</th>
-      <th class="text-end">Terms</th>
-      <th>Status</th>
-      <th>Last loaded</th>
-      <th class="text-end"></th>
-    </tr>
-  </thead>
-  <tbody>
-    @for (vocabulary of vocabularies(); track vocabulary.key) {
-      <tr>
-        <td>
-          <div>{{ vocabulary.label }}</div>
-          <div class="text-muted">{{ vocabulary.key }}</div>
-        </td>
-        <td>
-          <span class="badge text-bg-light border">{{ providerLabels[vocabulary.provider] }}</span>
-          @if (vocabulary.pluginName) {
-            <div class="text-muted">{{ vocabulary.pluginName }}</div>
+  <div class="vocabularies-content p-4">
+    <div class="card mb-4">
+      <div class="card-header">
+        <h5 class="mb-0">
+          <i class="bi bi-search me-2"></i>Search & Filters
+        </h5>
+      </div>
+      <div class="card-body">
+        <div class="row g-3 align-items-center">
+          <div class="col-md-6">
+            <div class="form-floating">
+              <input type="search" class="form-control" id="vocabularySearch" placeholder="Search vocabularies"
+                     [ngModel]="search()" (ngModelChange)="onSearch($event)">
+              <label for="vocabularySearch">
+                <i class="bi bi-search me-1"></i>Search Vocabularies
+              </label>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="form-floating">
+              <select class="form-select" id="vocabularyProvider" [ngModel]="provider()" (ngModelChange)="setProvider($event)">
+                <option value="">All providers</option>
+                @for (option of providers; track option) {
+                  <option [value]="option">{{ providerLabels[option] }}</option>
+                }
+              </select>
+              <label for="vocabularyProvider">Provider</label>
+            </div>
+          </div>
+          @if (isStaff()) {
+            <div class="col-md-2">
+              <div class="form-check form-switch mb-0">
+                <input id="showPending" class="form-check-input" type="checkbox" [checked]="showPending()"
+                       (change)="setShowPending($any($event.target).checked)">
+                <label class="form-check-label" for="showPending">Include pending</label>
+              </div>
+            </div>
           }
-        </td>
-        <td>{{ availableTo(vocabulary) }}</td>
-        <td class="text-end">{{ vocabulary.storage === 'terms' ? vocabulary.termCount : '—' }}</td>
-        <td>
-          {{ vocabulary.status }}
-          @if (!vocabulary.approved) {
-            <span class="badge text-bg-warning ms-1">Pending approval</span>
-          }
-          @if (vocabulary.lastError) {
-            <i class="bi bi-exclamation-triangle text-warning ms-1" [title]="vocabulary.lastError"></i>
-          }
-        </td>
-        <td class="text-nowrap">{{ vocabulary.lastLoadedAt ? (vocabulary.lastLoadedAt | date: 'short') : '—' }}</td>
-        <td class="text-end text-nowrap">
-          @if (vocabulary.provider === 'plugin') {
-            <button type="button" class="btn btn-sm btn-link p-0 me-2 approve-toggle" [disabled]="!isStaff()"
-                    [title]="!isStaff() ? 'Only staff approve plugin vocabularies' : vocabulary.approved ? 'Hide from users' : 'Approve for users'"
-                    (click)="toggleApproval(vocabulary)">
-              <i class="bi" [class.bi-check-circle]="!vocabulary.approved" [class.bi-x-circle]="vocabulary.approved"></i>
-            </button>
-          }
-          <button type="button" class="btn btn-sm btn-link p-0 me-2" [disabled]="vocabulary.storage !== 'terms'"
-                  [title]="vocabulary.storage === 'terms' ? 'Browse terms' : 'Built-in ontologies are browsed from their own pages'"
-                  (click)="openTerms(vocabulary)">
-            <i class="bi bi-list-ul"></i>
-          </button>
-          <button type="button" class="btn btn-sm btn-link p-0 me-2" [disabled]="!vocabulary.canManage"
-                  [title]="vocabulary.canManage ? 'Import terms' : 'Only the vocabulary\'s managers can import terms'"
-                  (click)="openImport(vocabulary)">
-            <i class="bi bi-upload"></i>
-          </button>
-          <button type="button" class="btn btn-sm btn-link p-0 me-2" [disabled]="!vocabulary.canManage"
-                  [title]="vocabulary.canManage ? 'Edit' : 'Only the vocabulary\'s managers can edit it'"
-                  (click)="edit(vocabulary)">
-            <i class="bi bi-pencil"></i>
-          </button>
-          <button type="button" class="btn btn-sm btn-link p-0 text-danger" [disabled]="!vocabulary.canManage"
-                  [title]="vocabulary.canManage ? 'Delete' : 'Only the vocabulary\'s managers can delete it'"
-                  (click)="remove(vocabulary)">
-            <i class="bi bi-trash"></i>
-          </button>
-        </td>
-      </tr>
-    } @empty {
-      <tr><td colspan="7" class="text-muted text-center">{{ loading() ? 'Loading…' : 'No vocabularies' }}</td></tr>
-    }
-  </tbody>
-</table>
+        </div>
+      </div>
+    </div>
 
-<div class="d-flex justify-content-between align-items-center small">
-  <span class="text-muted">{{ total() }} vocabularies</span>
-  <div class="btn-group btn-group-sm">
-    <button type="button" class="btn btn-outline-secondary" [disabled]="page() === 0" (click)="goToPage(page() - 1)">Previous</button>
-    <button type="button" class="btn btn-outline-secondary" disabled>{{ page() + 1 }} / {{ lastPage() + 1 }}</button>
-    <button type="button" class="btn btn-outline-secondary" [disabled]="page() >= lastPage()" (click)="goToPage(page() + 1)">Next</button>
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+          <i class="bi bi-table me-2"></i>Vocabularies
+          <span class="badge bg-primary ms-2">{{ total() }}</span>
+        </h5>
+        @if (loading()) {
+          <div class="spinner-border spinner-border-sm text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+        }
+      </div>
+      <div class="card-body p-0">
+        @if (vocabularies().length > 0) {
+          <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+              <thead>
+                <tr>
+                  <th><i class="bi bi-tag me-1"></i>Vocabulary</th>
+                  <th><i class="bi bi-box me-1"></i>Provider</th>
+                  <th><i class="bi bi-globe me-1"></i>Available to</th>
+                  <th class="text-end"><i class="bi bi-list-ol me-1"></i>Terms</th>
+                  <th><i class="bi bi-activity me-1"></i>Status</th>
+                  <th><i class="bi bi-clock-history me-1"></i>Last loaded</th>
+                  <th><i class="bi bi-gear me-1"></i>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (vocabulary of vocabularies(); track vocabulary.key) {
+                  <tr>
+                    <td>
+                      <strong>{{ vocabulary.label }}</strong>
+                      <div class="text-muted small">{{ vocabulary.key }}</div>
+                    </td>
+                    <td>
+                      <span class="badge" [class]="providerBadges[vocabulary.provider]">{{ providerLabels[vocabulary.provider] }}</span>
+                      @if (vocabulary.pluginName) {
+                        <div class="text-muted small">{{ vocabulary.pluginName }}</div>
+                      }
+                    </td>
+                    <td>{{ availableTo(vocabulary) }}</td>
+                    <td class="text-end">{{ vocabulary.storage === 'terms' ? vocabulary.termCount : '—' }}</td>
+                    <td>
+                      <span class="badge" [class]="vocabulary.status === 'active' ? 'bg-success' : 'bg-secondary'">{{ vocabulary.status }}</span>
+                      @if (!vocabulary.approved) {
+                        <span class="badge bg-warning text-dark ms-1">Pending approval</span>
+                      }
+                      @if (vocabulary.lastError) {
+                        <i class="bi bi-exclamation-triangle text-warning ms-1" [title]="vocabulary.lastError"></i>
+                      }
+                    </td>
+                    <td class="text-nowrap">{{ vocabulary.lastLoadedAt ? (vocabulary.lastLoadedAt | date: 'short') : '—' }}</td>
+                    <td>
+                      <div class="btn-group btn-group-sm" role="group">
+                        @if (vocabulary.provider === 'plugin') {
+                          <button type="button" class="btn btn-outline-success approve-toggle" [disabled]="!isStaff()"
+                                  [title]="!isStaff() ? 'Only staff approve plugin vocabularies' : vocabulary.approved ? 'Hide from users' : 'Approve for users'"
+                                  (click)="toggleApproval(vocabulary)">
+                            <i class="bi" [class.bi-check-circle]="!vocabulary.approved" [class.bi-x-circle]="vocabulary.approved"></i>
+                          </button>
+                        }
+                        <button type="button" class="btn btn-outline-secondary" [disabled]="vocabulary.storage !== 'terms'"
+                                [title]="vocabulary.storage === 'terms' ? 'Browse terms' : 'Built-in ontologies are browsed from their own pages'"
+                                (click)="openTerms(vocabulary)">
+                          <i class="bi bi-list-ul"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-info" [disabled]="!vocabulary.canManage"
+                                [title]="vocabulary.canManage ? 'Import terms' : 'Only the vocabulary\'s managers can import terms'"
+                                (click)="openImport(vocabulary)">
+                          <i class="bi bi-upload"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-primary" [disabled]="!vocabulary.canManage"
+                                [title]="vocabulary.canManage ? 'Edit' : 'Only the vocabulary\'s managers can edit it'"
+                                (click)="edit(vocabulary)">
+                          <i class="bi bi-pencil"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-danger" [disabled]="!vocabulary.canManage"
+                                [title]="vocabulary.canManage ? 'Delete' : 'Only the vocabulary\'s managers can delete it'"
+                                (click)="remove(vocabulary)">
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          @if (total() > pageSize) {
+            <div class="d-flex justify-content-center p-3">
+              <ngb-pagination
+                [collectionSize]="total()"
+                [page]="page() + 1"
+                [pageSize]="pageSize"
+                [maxSize]="5"
+                [boundaryLinks]="true"
+                [rotate]="true"
+                (pageChange)="goToPage($event - 1)"
+                class="pagination-sm">
+              </ngb-pagination>
+            </div>
+          }
+        } @else {
+          <div class="empty-state text-center py-5">
+            <i class="bi bi-book fs-1 text-muted mb-3"></i>
+            <h5 class="text-muted">{{ loading() ? 'Loading…' : 'No Vocabularies Found' }}</h5>
+            @if (!loading()) {
+              <p class="text-muted">
+                @if (search() || provider()) {
+                  Try adjusting your search criteria.
+                } @else {
+                  Create a custom vocabulary to get started.
+                }
+              </p>
+            }
+          </div>
+        }
+      </div>
+    </div>
   </div>
 </div>
