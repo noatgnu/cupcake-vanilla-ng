@@ -1,6 +1,6 @@
 import { Injectable, NgZone, inject } from '@angular/core';
 import { Observable, NEVER, Subject } from 'rxjs';
-import { DesktopRuntime, DesktopAPI } from '@noatgnu/cupcake-core';
+import { AuthResponse, DesktopRuntime, DesktopAPI } from '@noatgnu/cupcake-core';
 
 interface WailsRuntime {
   Call: { ByName: (name: string, ...args: any[]) => Promise<any> };
@@ -234,6 +234,18 @@ export class DesktopService {
       });
     }
     return this.windowStateSubject.asObservable();
+  }
+
+  /**
+   * The account the desktop launcher signs in automatically, as the backend's login response, or null when the
+   * app uses the login screen or does not run in Wails.
+   */
+  async getAutomaticSignIn(): Promise<AuthResponse | null> {
+    const wails = this._runtime === 'wails' ? await this.wailsRuntimeReady : null;
+    if (!wails) {
+      return null;
+    }
+    return wails.Call.ByName('main.App.GetAutomaticSignIn');
   }
 
   async logToFile(message: string): Promise<void> {
