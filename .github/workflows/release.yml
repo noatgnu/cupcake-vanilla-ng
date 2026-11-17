@@ -39,11 +39,6 @@ jobs:
             asset_name: cupcake-vanilla-windows-amd64.exe
           - os: macos-latest
             platform: darwin
-            arch: amd64
-            artifact_name: cupcake-vanilla
-            asset_name: cupcake-vanilla-darwin-amd64
-          - os: macos-latest
-            platform: darwin
             arch: arm64
             artifact_name: cupcake-vanilla
             asset_name: cupcake-vanilla-darwin-arm64
@@ -116,10 +111,6 @@ jobs:
         run: |
           export PATH="$HOME/go/bin:$PATH"
           mkdir -p build/bin/${{ matrix.platform }}-${{ matrix.arch }}
-          if [ "${{ matrix.platform }}" = "darwin" ] && [ "${{ matrix.arch }}" = "amd64" ]; then
-            export CGO_CFLAGS="-arch x86_64"
-            export CGO_LDFLAGS="-arch x86_64"
-          fi
           GOOS=${{ matrix.platform }} GOARCH=${{ matrix.arch }} CGO_ENABLED=1 go build \
             -tags "${{ matrix.gtk3 && 'gtk3' || '' }}" \
             -ldflags="-s -w" \

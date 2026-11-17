@@ -40,11 +40,6 @@ jobs:
             arch: amd64
             artifact_name: cupcake-vanilla.exe
             asset_name: cupcake-vanilla-windows-amd64-debug.exe
-          - os: macos-15-intel
-            platform: darwin
-            arch: amd64
-            artifact_name: cupcake-vanilla
-            asset_name: cupcake-vanilla-darwin-amd64-debug
           - os: macos-latest
             platform: darwin
             arch: arm64
