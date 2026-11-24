@@ -1,4 +1,4 @@
-import { Injectable, NgZone } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { BehaviorSubject, Subject, Subscription } from 'rxjs';
 import { WebRTCSignallingService } from './webrtc-signalling';
 import {
@@ -73,8 +73,7 @@ export class WebRTCService {
   private screenSharing = false;
 
   constructor(
-    private signalling: WebRTCSignallingService,
-    private zone: NgZone
+    private signalling: WebRTCSignallingService
   ) {
     this.signalling.permissions$.subscribe(() => this.applyPermissions());
     this.signalling.peers$.subscribe(() => this.applyRemotePermissions());
@@ -608,48 +607,44 @@ export class WebRTCService {
     pc.ontrack = (event) => {
       console.log(`Received track from peer ${peerId}:`, event.track.kind);
 
-      this.zone.run(() => {
-        const connection = this.peerConnections.get(peerId);
-        const stream = connection?.stream ?? new MediaStream();
-        stream.getTracks()
-          .filter(track => track.kind === event.track.kind && track !== event.track)
-          .forEach(track => stream.removeTrack(track));
-        if (!stream.getTracks().includes(event.track)) {
-          stream.addTrack(event.track);
-        }
-        if (connection) {
-          connection.stream = stream;
-          this.applyPermissionsTo(connection);
-        }
+      const connection = this.peerConnections.get(peerId);
+      const stream = connection?.stream ?? new MediaStream();
+      stream.getTracks()
+        .filter(track => track.kind === event.track.kind && track !== event.track)
+        .forEach(track => stream.removeTrack(track));
+      if (!stream.getTracks().includes(event.track)) {
+        stream.addTrack(event.track);
+      }
+      if (connection) {
+        connection.stream = stream;
+        this.applyPermissionsTo(connection);
+      }
 
-        const streams = this._remoteStreams.value;
-        streams.set(peerId, stream);
-        this._remoteStreams.next(streams);
-      });
+      const streams = this._remoteStreams.value;
+      streams.set(peerId, stream);
+      this._remoteStreams.next(streams);
     };
 
     pc.onconnectionstatechange = () => {
       console.log(`Connection state with peer ${peerId}: ${pc.connectionState}`);
 
-      this.zone.run(() => {
-        const connection = this.peerConnections.get(peerId);
-        if (!connection) return;
+      const connection = this.peerConnections.get(peerId);
+      if (!connection) return;
 
-        if (pc.connectionState === 'connected') {
-          connection.connected = true;
-          this._connectionState.next('connected');
-          this.signalling.sendPeerState(PeerConnectionState.CONNECTED);
-          console.log(`[WebRTC] Peer connection established with ${peerId}, sent state update to backend`);
-        } else if (pc.connectionState === 'connecting') {
-          this.signalling.sendPeerState(PeerConnectionState.CONNECTING);
-        } else if (pc.connectionState === 'failed') {
-          this.signalling.sendPeerState(PeerConnectionState.FAILED);
-          this.closePeerConnection(peerId);
-        } else if (pc.connectionState === 'disconnected') {
-          this.signalling.sendPeerState(PeerConnectionState.DISCONNECTED);
-          this.closePeerConnection(peerId);
-        }
-      });
+      if (pc.connectionState === 'connected') {
+        connection.connected = true;
+        this._connectionState.next('connected');
+        this.signalling.sendPeerState(PeerConnectionState.CONNECTED);
+        console.log(`[WebRTC] Peer connection established with ${peerId}, sent state update to backend`);
+      } else if (pc.connectionState === 'connecting') {
+        this.signalling.sendPeerState(PeerConnectionState.CONNECTING);
+      } else if (pc.connectionState === 'failed') {
+        this.signalling.sendPeerState(PeerConnectionState.FAILED);
+        this.closePeerConnection(peerId);
+      } else if (pc.connectionState === 'disconnected') {
+        this.signalling.sendPeerState(PeerConnectionState.DISCONNECTED);
+        this.closePeerConnection(peerId);
+      }
     };
 
     pc.ondatachannel = (event) => {
@@ -714,44 +709,42 @@ export class WebRTCService {
     try {
       const message: DataChannelMessage = JSON.parse(data);
 
-      this.zone.run(() => {
-        switch (message.type) {
-          case 'chat':
-            this.receiveChatMessage(message.data as ChatMessage, peerId);
-            break;
+      switch (message.type) {
+        case 'chat':
+          this.receiveChatMessage(message.data as ChatMessage, peerId);
+          break;
 
-          case 'file_request':
-            this.handleFileRequest(message.data as FileTransferRequest, peerId);
-            break;
+        case 'file_request':
+          this.handleFileRequest(message.data as FileTransferRequest, peerId);
+          break;
 
-          case 'file_accept':
-            this.handleFileAccept(message.data as FileTransferAccept, peerId);
-            break;
+        case 'file_accept':
+          this.handleFileAccept(message.data as FileTransferAccept, peerId);
+          break;
 
-          case 'file_chunk':
-            this.handleFileChunk(message.data as FileChunk);
-            break;
+        case 'file_chunk':
+          this.handleFileChunk(message.data as FileChunk);
+          break;
 
-          case 'file_complete':
-            this.handleFileComplete(message.data.fileId);
-            break;
+        case 'file_complete':
+          this.handleFileComplete(message.data.fileId);
+          break;
 
-          case 'file_cancel':
-            this.handleFileCancel(message.data.fileId);
-            break;
+        case 'file_cancel':
+          this.handleFileCancel(message.data.fileId);
+          break;
 
-          case 'ping':
-            this.sendDataChannelMessage(peerId, { type: 'pong', data: {} });
-            break;
+        case 'ping':
+          this.sendDataChannelMessage(peerId, { type: 'pong', data: {} });
+          break;
 
-          case 'pong':
-            console.log(`Received pong from peer ${peerId}`);
-            break;
+        case 'pong':
+          console.log(`Received pong from peer ${peerId}`);
+          break;
 
-          default:
-            console.log('Unknown data channel message type:', message.type);
-        }
-      });
+        default:
+          console.log('Unknown data channel message type:', message.type);
+      }
     } catch (error) {
       console.error('Error parsing data channel message:', error);
     }
@@ -1188,9 +1181,7 @@ export class WebRTCService {
       percentage: (transfer.receivedChunks / transfer.totalChunks) * 100
     };
 
-    this.zone.run(() => {
-      this._fileTransferProgress.next(progress);
-    });
+    this._fileTransferProgress.next(progress);
   }
 
   private async handleFileComplete(fileId: string): Promise<void> {

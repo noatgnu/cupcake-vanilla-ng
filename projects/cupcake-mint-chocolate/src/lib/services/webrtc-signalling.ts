@@ -1,4 +1,4 @@
-import { Injectable, NgZone, Inject, Optional } from '@angular/core';
+import { Injectable, Inject, Optional } from '@angular/core';
 import { webSocket, WebSocketSubject } from 'rxjs/webSocket';
 import { BehaviorSubject, Subject, Subscription, timer } from 'rxjs';
 import { AuthService, CUPCAKE_CORE_CONFIG, CupcakeCoreConfig } from '@noatgnu/cupcake-core';
@@ -66,7 +66,6 @@ export class WebRTCSignallingService {
 
   constructor(
     private authService: AuthService,
-    private zone: NgZone,
     @Optional() @Inject(CUPCAKE_CORE_CONFIG) private config: CupcakeCoreConfig | null
   ) {}
 
@@ -110,9 +109,7 @@ export class WebRTCSignallingService {
       openObserver: {
         next: () => {
           console.log('WebRTC signalling connection opened');
-          this.zone.run(() => {
-            this._connected.next(true);
-          });
+          this._connected.next(true);
         }
       },
       closeObserver: {
@@ -122,15 +119,13 @@ export class WebRTCSignallingService {
           if (event.code === 4001) {
             console.error('WebRTC authentication failed - token invalid, please re-login');
             this.shouldReconnect = false;
-            this.zone.run(() => {
-              this.authService.logout().subscribe({
-                next: () => {
-                  console.log('Logged out due to WebRTC authentication failure');
-                },
-                error: (err) => {
-                  console.error('Error during logout, forcing logout:', err);
-                }
-              });
+            this.authService.logout().subscribe({
+              next: () => {
+                console.log('Logged out due to WebRTC authentication failure');
+              },
+              error: (err) => {
+                console.error('Error during logout, forcing logout:', err);
+              }
             });
             return;
           } else if (event.code === 4003) {
@@ -138,10 +133,8 @@ export class WebRTCSignallingService {
             this.shouldReconnect = false;
           }
 
-          this.zone.run(() => {
-            this._connected.next(false);
-            this._peerId.next(null);
-          });
+          this._connected.next(false);
+          this._peerId.next(null);
         }
       },
       deserializer: msg => {
@@ -156,9 +149,7 @@ export class WebRTCSignallingService {
 
     this.wsSubscription = this.ws.subscribe({
       next: (message: WebRTCMessage) => {
-        this.zone.run(() => {
-          this.handleMessage(message);
-        });
+        this.handleMessage(message);
       },
       error: (error) => {
         console.error('WebRTC signalling error:', error);
@@ -168,9 +159,7 @@ export class WebRTCSignallingService {
           type: error?.type,
           target: error?.target?.url
         });
-        this.zone.run(() => {
-          this._connected.next(false);
-        });
+        this._connected.next(false);
 
         if (this.shouldReconnect && this._sessionId.value) {
           console.log('Attempting to reconnect in 5 seconds...');
@@ -186,9 +175,7 @@ export class WebRTCSignallingService {
       },
       complete: () => {
         console.log('WebRTC signalling connection completed');
-        this.zone.run(() => {
-          this._connected.next(false);
-        });
+        this._connected.next(false);
       }
     });
   }

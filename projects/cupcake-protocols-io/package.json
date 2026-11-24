@@ -1,6 +1,6 @@
 {
   "name": "@noatgnu/cupcake-protocols-io",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "An extension for cupcake-core and cupcake-red-velvet that provides the api and interfaces for the protocols.io integration: accounts, browsing, protocol import and export, and session runs.",
   "author": "Toan Phung",
   "license": "MIT",
@@ -13,8 +13,8 @@
     "url": "https://github.com/noatgnu/cupcake-vanilla-ng/issues"
   },
   "peerDependencies": {
-    "@angular/common": "^22.0.0",
-    "@angular/core": "^22.0.0",
+    "@angular/common": "^22.3.0",
+    "@angular/core": "^22.3.0",
     "@noatgnu/cupcake-core": "^1.4.6",
     "@noatgnu/cupcake-red-velvet": "^1.5.0",
     "rxjs": "~7.8.0"

@@ -1,4 +1,4 @@
-import { Injectable, NgZone, inject } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Observable, NEVER, Subject } from 'rxjs';
 import { AuthResponse, DesktopRuntime, DesktopAPI } from '@noatgnu/cupcake-core';
 
@@ -18,7 +18,6 @@ declare const window: WindowWithDesktop;
   providedIn: 'root'
 })
 export class DesktopService {
-  private ngZone = inject(NgZone);
   private readonly _runtime: DesktopRuntime;
   private backendStatusSubject = new Subject<any>();
   private windowStateSubject = new Subject<'maximized' | 'unmaximized'>();
@@ -93,9 +92,7 @@ export class DesktopService {
     if (!this.hasWails() || !this.wailsRuntime) return;
 
     this.wailsRuntime.Events.On('backend:status', (event: { name: string; data: unknown }) => {
-      this.ngZone.run(() => {
-        this.backendStatusSubject.next(event.data || event);
-      });
+      this.backendStatusSubject.next(event.data || event);
     });
   }
 
@@ -213,7 +210,7 @@ export class DesktopService {
     if (this._runtime === 'electron' && window.electronAPI) {
       return new Observable(observer => {
         const unsubscribe = window.electronAPI!.onBackendStatusChange((status: any) => {
-          this.ngZone.run(() => observer.next(status));
+          observer.next(status);
         });
         return () => unsubscribe();
       });
@@ -228,7 +225,7 @@ export class DesktopService {
     if (this._runtime === 'electron' && window.electronAPI) {
       return new Observable(observer => {
         const unsubscribe = window.electronAPI!.onWindowStateChange((state: 'maximized' | 'unmaximized') => {
-          this.ngZone.run(() => observer.next(state));
+          observer.next(state);
         });
         return () => unsubscribe();
       });
