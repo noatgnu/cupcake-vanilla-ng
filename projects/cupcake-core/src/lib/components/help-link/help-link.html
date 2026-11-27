@@ -1,0 +1,8 @@
+@if (help.pageUrl(); as url) {
+  <a [class]="linkClass()" [href]="url" target="_blank" rel="noopener" title="Help for this page" aria-label="Help for this page">
+    <i class="bi bi-question-circle" aria-hidden="true"></i>
+    @if (showLabel()) {
+      <span>Help</span>
+    }
+  </a>
+}

@@ -19,3 +19,4 @@ export * from './device-token';
 export * from './plugin';
 export * from './plugin-renderer';
 export * from './confirm-dialog';
+export * from './help';

@@ -2,7 +2,7 @@ import { Component, inject, OnDestroy, signal, ChangeDetectionStrategy, effect, 
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { NgbCollapse, NgbDropdownModule } from '@ng-bootstrap/ng-bootstrap';
-import { AuthService, User, SiteConfigService, UserManagementService, ThemeService, DemoModeService, PluginService, Plugin } from '@noatgnu/cupcake-core';
+import { AuthService, User, SiteConfigService, UserManagementService, ThemeService, DemoModeService, PluginService, Plugin, HelpLink } from '@noatgnu/cupcake-core';
 import { AsyncTaskUIService, NotificationService, Websocket } from '@noatgnu/cupcake-vanilla';
 import { NotificationPanel } from '../notification-panel/notification-panel';
 import { AsyncTaskMonitorComponent } from '../async-task-monitor/async-task-monitor';
@@ -15,7 +15,7 @@ import { EnvironmentService } from '../../services/environment';
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  imports: [CommonModule, RouterModule, NgbDropdownModule, NgbCollapse, NotificationPanel, AsyncTaskMonitorComponent],
+  imports: [CommonModule, RouterModule, NgbDropdownModule, NgbCollapse, NotificationPanel, AsyncTaskMonitorComponent, HelpLink],
   templateUrl: './navbar.html',
   styleUrl: './navbar.scss',
   changeDetection: ChangeDetectionStrategy.OnPush

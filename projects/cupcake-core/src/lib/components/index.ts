@@ -27,6 +27,9 @@ export * from '../plugin-management/plugin-management';
 // Device token management
 export * from './device-token-management/device-token-management';
 
+// Help
+export * from './help-link/help-link';
+
 // Confirm dialog
 export * from './confirm-dialog/confirm-dialog';
 
